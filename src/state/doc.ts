@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { create } from 'zustand'
 import type { Connection, Instance, Params, ParamValue, PartDef, PortRef, Vec3 } from '@/parts/kernel/types'
-import { defaultParams } from '@/parts/kernel/build'
+import { buildPart, defaultParams } from '@/parts/kernel/build'
 import { getPart } from '@/parts/kernel/registry'
 
 /* ------------------------------------------------------------------ */
@@ -38,6 +38,8 @@ interface ViewFlags {
   labels: boolean
   shadows: boolean
   xray: boolean
+  /** Post-processing level. 'off' skips the composer entirely. */
+  quality: 'off' | 'balanced' | 'high'
 }
 
 export interface DocState {
@@ -67,6 +69,8 @@ export interface DocState {
   removeInstances: (ids: string[]) => void
   moveInstance: (id: string, pos: Vec3, commit?: boolean) => void
   rotateInstance: (id: string, rot: Vec3, commit?: boolean) => void
+  /** Move several parts in one edit — what a gizmo drag actually does. */
+  transformInstances: (updates: { id: string; pos?: Vec3; rot?: Vec3 }[], commit?: boolean) => void
   setParam: (id: string, key: string, value: ParamValue, commit?: boolean) => void
   renameInstance: (id: string, name: string) => void
   toggleLock: (id: string) => void
@@ -153,7 +157,7 @@ export const useDoc = create<DocState>()((set, get) => {
     hovered: null,
     pendingWire: null,
     snap: { enabled: true, grid: 2.54, angle: 15, ports: true },
-    view: { grid: true, ports: true, wires: true, labels: false, shadows: true, xray: false },
+    view: { grid: true, ports: true, wires: true, labels: false, shadows: true, xray: false, quality: 'high' },
     issues: {},
     frameToken: 0,
     frameTarget: 'all',
@@ -170,13 +174,21 @@ export const useDoc = create<DocState>()((set, get) => {
         return null
       }
       const id = uid('i')
+      const resolved = { ...defaultParams(def), ...params }
+      // Drop the part onto the ground plane. Through-hole parts stand on their
+      // lead tips, which is exactly what they do on a real bench.
+      const seat: Vec3 = [...at] as Vec3
+      if (at[1] === 0) {
+        const bbox = buildPart(def, resolved).bbox
+        if (!bbox.isEmpty()) seat[1] = -bbox.min.y
+      }
       edit((d) => {
         d.instances[id] = {
           id,
           defId,
           name: nextName(d, def),
-          params: { ...defaultParams(def), ...params },
-          pos: [...at] as Vec3,
+          params: resolved,
+          pos: seat,
           rot: [0, 0, 0],
         }
         d.order.push(id)
@@ -239,6 +251,16 @@ export const useDoc = create<DocState>()((set, get) => {
       edit((d) => {
         const inst = d.instances[id]
         if (inst && !inst.locked) inst.rot = [...rot] as Vec3
+      }, commit),
+
+    transformInstances: (updates, commit = true) =>
+      edit((d) => {
+        for (const u of updates) {
+          const inst = d.instances[u.id]
+          if (!inst || inst.locked) continue
+          if (u.pos) inst.pos = [...u.pos] as Vec3
+          if (u.rot) inst.rot = [...u.rot] as Vec3
+        }
       }, commit),
 
     setParam: (id, key, value, commit = true) =>

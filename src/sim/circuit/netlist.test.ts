@@ -188,3 +188,36 @@ describe('starter projects', () => {
     expect(i).toBeLessThan(0.03)
   })
 })
+
+describe('reference node', () => {
+  it('ignores a Ground part that is not wired to anything', () => {
+    const d = doc()
+    const sup = d.put('bench-supply', { voltage: 9 })
+    const res = d.put('resistor-axial', { value: 1000 })
+    d.put('ground') // placed but never connected
+    d.join([sup, 'p'], [res, '1'])
+    d.join([res, '2'], [sup, 'n'])
+
+    const nl = buildNetlist(d)
+    nl.circuit.step(0)
+    // The supply's negative rail must still become 0 V, or every reading in
+    // the document would float.
+    expect(nl.circuit.voltage(nl.nodeOf.get(portKey(sup, 'p'))!)).toBeCloseTo(9, 1)
+    expect(nl.warnings.some((w) => /not connected/i.test(w))).toBe(true)
+  })
+
+  it('uses a Ground part once it is wired', () => {
+    const d = doc()
+    const sup = d.put('bench-supply', { voltage: 9 })
+    const res = d.put('resistor-axial', { value: 1000 })
+    const gnd = d.put('ground')
+    d.join([sup, 'p'], [res, '1'])
+    d.join([res, '2'], [sup, 'n'])
+    d.join([sup, 'n'], [gnd, 'gnd'])
+
+    const nl = buildNetlist(d)
+    nl.circuit.step(0)
+    expect(nl.nodeOf.get(portKey(gnd, 'gnd'))).toBe(-1)
+    expect(nl.warnings.some((w) => /not connected/i.test(w))).toBe(false)
+  })
+})

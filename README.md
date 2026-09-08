@@ -81,6 +81,18 @@ bookkeeping than it saves.
 - **Reactive** via backward-Euler companion models, so transients are real:
   an RC charges to 63.2 % in one time constant, an inductor ramps at V/L.
 - **Sources** can carry a waveform — sine, square, triangle, pulse.
+- **Behavioural** parts (555, logic, microcontroller, regulator, H-bridge,
+  shift register) are evaluated in JavaScript each timestep and present
+  themselves to the solver as a Thevenin source per pin: a voltage behind a
+  series resistance, referenced to the part's own ground. That single
+  primitive covers push-pull outputs, open drain, and high-Z inputs — and it
+  means a 555 driving an LED loads down exactly as the real chip does.
+
+The solver runs on its own timer, not inside `requestAnimationFrame`. Tying it
+to the render loop meant a heavy viewport starved the simulation, which is
+backwards. Each tick has a wall-clock budget; if the circuit cannot keep up,
+the shortfall is reported in the status bar rather than silently pretended
+away.
 
 Two deliberate modelling choices:
 
@@ -148,6 +160,13 @@ not exist, or any parameter extreme breaks the build.
 sheet stock and PCBs are made) · `lathe` (revolved profile — LED domes, screw
 heads, binding posts) · `tube` (a swept polyline — leads, formed wire) ·
 `plane` · `group` (nested, for sub-assemblies).
+
+Cylinders and lathes take `phi: [startDeg, sweepDeg]` for a partial revolution
+— sleeves, stripes, D-shafts. Use it rather than stacking a second full
+cylinder on top of the first: coincident surfaces z-fight and speckle.
+Cylinders also take `chamfer`, and boxes `bevel`. Tessellation is derived from
+each radius, so a 0.25 mm lead and a 40 mm can are both round without either
+wasting triangles or showing facets.
 
 Tag a solid `lens` and its emission is driven by simulated LED current, and it
 casts light into the scene.

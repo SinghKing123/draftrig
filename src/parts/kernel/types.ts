@@ -99,11 +99,22 @@ export interface Profile {
 
 export type Solid =
   | (SolidBase & { kind: 'box'; size: Vec3; bevel?: number })
-  | (SolidBase & { kind: 'cyl'; r: number; h: number; r2?: number; seg?: number; capped?: boolean })
+  | (SolidBase & {
+      kind: 'cyl'
+      r: number
+      h: number
+      r2?: number
+      seg?: number
+      capped?: boolean
+      /** Break the end edges by this much. Real parts have no sharp arrises. */
+      chamfer?: number
+      /** Partial revolution as [startDeg, sweepDeg] — sleeves, stripes, D-shafts. */
+      phi?: Vec2
+    })
   | (SolidBase & { kind: 'sphere'; r: number; seg?: number })
   | (SolidBase & { kind: 'torus'; r: number; tube: number; seg?: number })
   | (SolidBase & { kind: 'extrude'; profile: Profile; depth: number; bevel?: number })
-  | (SolidBase & { kind: 'lathe'; points: Vec2[]; seg?: number })
+  | (SolidBase & { kind: 'lathe'; points: Vec2[]; seg?: number; phi?: Vec2 })
   /** Polyline swept as a round tube — leads, wires, bends. */
   | (SolidBase & { kind: 'tube'; path: Vec3[]; r: number; seg?: number })
   /** A flat quad used for silkscreen / labels / decals. */
@@ -176,8 +187,12 @@ export type DeviceModel =
   | { type: 'opamp'; inp: string; inn: string; out: string; vcc?: string; vee?: string; gain?: number }
   /** Ideal wire / net tie. */
   | { type: 'short'; a: string; b: string }
-  /** Behavioural block evaluated in JS each timestep (MCU, sensor, logic IC). */
-  | { type: 'behavioral'; pins: string[]; evalId: string }
+  /**
+   * Block evaluated in JS each timestep (MCU, 555, logic IC). Each listed pin
+   * becomes a Thevenin source referenced to `ref`, which the behaviour drives
+   * or releases. Omit `ref` to reference global ground.
+   */
+  | { type: 'behavioral'; pins: string[]; evalId: string; ref?: string }
 
 export interface ElectricalSpec {
   /** Devices this part contributes. Node names are port ids, or `#internal`. */

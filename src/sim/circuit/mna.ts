@@ -20,7 +20,7 @@ export type SolvedDevice =
   | { k: 'v'; a: number; b: number; v: number; wave?: WaveSpec }
   | { k: 'c'; a: number; b: number; c: number }
   | { k: 'l'; a: number; b: number; l: number; dcr: number }
-  | { k: 'd'; a: number; b: number; is: number; n: number }
+  | { k: 'd'; a: number; b: number; is: number; n: number; bv?: number }
   | { k: 'sw'; a: number; b: number; r: number }
   | { k: 'bjt'; c: number; b: number; e: number; pnp: boolean; bf: number; is: number }
   | { k: 'mos'; d: number; g: number; s: number; p: boolean; vth: number; kp: number; rds: number }
@@ -51,18 +51,16 @@ export interface StepResult {
   branch: Float64Array
 }
 
-interface Branch {
-  /** Index into `extra` unknowns. */
-  idx: number
-}
-
 export class Circuit {
   readonly nodeCount: number
   readonly devices: SolvedDevice[]
   private readonly opts: Required<CircuitOptions>
 
-  /** Extra unknowns: one per voltage source, inductor and op-amp output. */
-  private branchOf = new Map<number, Branch>()
+  /**
+   * Branch unknown index per device, or -1. An array rather than a Map: this
+   * is read for every device on every Newton iteration of every timestep.
+   */
+  private branchIndex: Int32Array
   private extraCount = 0
   private size = 0
 
@@ -76,6 +74,16 @@ export class Circuit {
   private A: Float64Array
   private rhs: Float64Array
 
+  /**
+   * Scratch for the LU solve. Allocating these per iteration was costing more
+   * than the arithmetic — a 33-unknown circuit churned ~140 MB/s of garbage
+   * and ran at a twelfth of real time.
+   */
+  private luA: Float64Array
+  private luB: Float64Array
+  private luX: Float64Array
+  private prev: Float64Array
+
   time = 0
 
   constructor(nodeCount: number, devices: SolvedDevice[], opts: CircuitOptions = {}) {
@@ -83,11 +91,11 @@ export class Circuit {
     this.devices = devices
     this.opts = { maxIter: opts.maxIter ?? 120, abstol: opts.abstol ?? 1e-9, reltol: opts.reltol ?? 1e-4 }
 
-    devices.forEach((d, i) => {
-      if (d.k === 'v' || d.k === 'l' || d.k === 'op') {
-        this.branchOf.set(i, { idx: this.extraCount++ })
-      }
-    })
+    this.branchIndex = new Int32Array(devices.length).fill(-1)
+    for (let i = 0; i < devices.length; i++) {
+      const k = devices[i].k
+      if (k === 'v' || k === 'l' || k === 'op') this.branchIndex[i] = this.extraCount++
+    }
 
     this.size = nodeCount + this.extraCount
     this.x = new Float64Array(this.size)
@@ -95,6 +103,70 @@ export class Circuit {
     this.indI = new Float64Array(devices.length)
     this.A = new Float64Array(this.size * this.size)
     this.rhs = new Float64Array(this.size)
+    this.luA = new Float64Array(this.size * this.size)
+    this.luB = new Float64Array(this.size)
+    this.luX = new Float64Array(this.size)
+    this.prev = new Float64Array(this.size)
+  }
+
+  /**
+   * LU with partial pivoting, in place on the preallocated workspace.
+   * Returns false if the matrix is singular.
+   */
+  private solveInto(): boolean {
+    const n = this.size
+    if (n === 0) return true
+    const A = this.luA
+    const b = this.luB
+    A.set(this.A)
+    b.set(this.rhs)
+
+    for (let k = 0; k < n; k++) {
+      let piv = k
+      let best = Math.abs(A[k * n + k])
+      for (let r = k + 1; r < n; r++) {
+        const v = Math.abs(A[r * n + k])
+        if (v > best) {
+          best = v
+          piv = r
+        }
+      }
+      if (best < 1e-18) return false
+
+      if (piv !== k) {
+        const rowK = k * n
+        const rowP = piv * n
+        for (let c = k; c < n; c++) {
+          const t = A[rowK + c]
+          A[rowK + c] = A[rowP + c]
+          A[rowP + c] = t
+        }
+        const t = b[k]
+        b[k] = b[piv]
+        b[piv] = t
+      }
+
+      const akk = A[k * n + k]
+      const rowK = k * n
+      for (let r = k + 1; r < n; r++) {
+        const rowR = r * n
+        const f = A[rowR + k] / akk
+        if (f === 0) continue
+        A[rowR + k] = 0
+        for (let c = k + 1; c < n; c++) A[rowR + c] -= f * A[rowK + c]
+        b[r] -= f * b[k]
+      }
+    }
+
+    const x = this.luX
+    for (let r = n - 1; r >= 0; r--) {
+      let s = b[r]
+      const row = r * n
+      for (let c = r + 1; c < n; c++) s -= A[row + c] * x[c]
+      x[r] = s / A[row + r]
+    }
+    for (let i = 0; i < n; i++) if (!isFinite(x[i])) return false
+    return true
   }
 
   /* ---------------- stamping helpers ---------------- */
@@ -156,7 +228,8 @@ export class Circuit {
     // solvable instead of producing a singular matrix.
     for (let n = 0; n < this.nodeCount; n++) this.addA(n, n, GMIN)
 
-    this.devices.forEach((d, i) => {
+    for (let i = 0; i < this.devices.length; i++) {
+      const d = this.devices[i]
       switch (d.k) {
         case 'r': {
           this.conductance(d.a, d.b, 1 / Math.max(d.r, 1e-9))
@@ -171,7 +244,7 @@ export class Circuit {
           break
         }
         case 'v': {
-          const br = this.nodeCount + this.branchOf.get(i)!.idx
+          const br = this.nodeCount + this.branchIndex[i]
           this.addA(d.a, br, 1)
           this.addA(d.b, br, -1)
           this.addA(br, d.a, 1)
@@ -188,7 +261,7 @@ export class Circuit {
           break
         }
         case 'l': {
-          const br = this.nodeCount + this.branchOf.get(i)!.idx
+          const br = this.nodeCount + this.branchIndex[i]
           this.addA(d.a, br, 1)
           this.addA(d.b, br, -1)
           this.addA(br, d.a, 1)
@@ -205,7 +278,7 @@ export class Circuit {
         }
         case 'd': {
           const v = this.nodeV(d.a) - this.nodeV(d.b)
-          const { g, ieq } = diodeLinearise(v, d.is, d.n)
+          const { g, ieq } = diodeLinearise(v, d.is, d.n, d.bv)
           this.conductance(d.a, d.b, g)
           this.current(d.a, d.b, ieq)
           break
@@ -219,7 +292,7 @@ export class Circuit {
           break
         }
         case 'op': {
-          const br = this.nodeCount + this.branchOf.get(i)!.idx
+          const br = this.nodeCount + this.branchIndex[i]
           // Output branch: current flows out of the op-amp into node o.
           this.addA(d.o, br, 1)
           const vd = this.nodeV(d.p) - this.nodeV(d.n)
@@ -237,7 +310,7 @@ export class Circuit {
           break
         }
       }
-    })
+    }
   }
 
   /**
@@ -328,7 +401,8 @@ export class Circuit {
   /** One Newton-converged step. `h = 0` gives the DC operating point. */
   step(h: number): StepResult {
     const { maxIter, abstol, reltol } = this.opts
-    const prev = new Float64Array(this.size)
+    const prev = this.prev
+    const linear = !this.hasNonlinear()
     let iterations = 0
     let converged = false
 
@@ -336,8 +410,15 @@ export class Circuit {
       iterations = it + 1
       prev.set(this.x)
       this.assemble(h, this.time + h)
-      const sol = luSolve(this.A, this.rhs, this.size)
-      if (!sol) break
+      if (!this.solveInto()) break
+      const sol = this.luX
+
+      if (linear) {
+        // Nothing to iterate: one solve is the answer.
+        this.x.set(sol)
+        converged = true
+        break
+      }
 
       // Damped update keeps exponential junctions from overshooting.
       let maxDelta = 0
@@ -348,14 +429,10 @@ export class Circuit {
         else if (d < -limit) d = -limit
         this.x[i] = prev[i] + d
         const tol = abstol + reltol * Math.abs(this.x[i])
-        maxDelta = Math.max(maxDelta, Math.abs(sol[i] - prev[i]) / tol)
+        const rel = Math.abs(sol[i] - prev[i]) / tol
+        if (rel > maxDelta) maxDelta = rel
       }
 
-      if (!this.hasNonlinear()) {
-        this.x.set(sol)
-        converged = true
-        break
-      }
       if (maxDelta < 1) {
         this.x.set(sol)
         converged = true
@@ -364,10 +441,11 @@ export class Circuit {
     }
 
     if (converged && h > 0) {
-      this.devices.forEach((d, i) => {
+      for (let i = 0; i < this.devices.length; i++) {
+        const d = this.devices[i]
         if (d.k === 'c') this.capV[i] = this.nodeV(d.a) - this.nodeV(d.b)
-        if (d.k === 'l') this.indI[i] = this.x[this.nodeCount + this.branchOf.get(i)!.idx]
-      })
+        else if (d.k === 'l') this.indI[i] = this.x[this.nodeCount + this.branchIndex[i]]
+      }
       this.time += h
     }
 
@@ -400,6 +478,22 @@ export class Circuit {
     return this.nodeV(node)
   }
 
+  /**
+   * Retune a device between timesteps. Behavioural parts drive their pins by
+   * adjusting the Thevenin source and series resistance the netlist gave them;
+   * the matrix is reassembled from `devices` on every iteration, so a plain
+   * field update is all that is needed.
+   */
+  setSourceValue(index: number, v: number): void {
+    const d = this.devices[index]
+    if (d?.k === 'v') d.v = v
+  }
+
+  setResistance(index: number, r: number): void {
+    const d = this.devices[index]
+    if (d?.k === 'r' || d?.k === 'sw') d.r = Math.max(r, 1e-4)
+  }
+
   /** Current through a device, amps, positive from its first to second node. */
   deviceCurrent(index: number): number {
     const d = this.devices[index]
@@ -413,12 +507,12 @@ export class Circuit {
       case 'v':
       case 'l':
       case 'op':
-        return this.x[this.nodeCount + (this.branchOf.get(index)?.idx ?? 0)]
+        return this.x[this.nodeCount + Math.max(this.branchIndex[index], 0)]
       case 'c':
         return 0
       case 'd': {
         const v = this.nodeV(d.a) - this.nodeV(d.b)
-        return diodeLinearise(v, d.is, d.n).i
+        return diodeLinearise(v, d.is, d.n, d.bv).i
       }
       case 'mos': {
         const sgn = d.p ? -1 : 1
@@ -442,21 +536,42 @@ export class Circuit {
 /* Device linearisation                                                */
 /* ------------------------------------------------------------------ */
 
-/**
- * Shockley diode linearised about `v`, with the standard voltage limiting that
- * keeps exp() from overflowing during early Newton iterations.
- */
-export function diodeLinearise(v: number, is: number, n: number): { g: number; i: number; ieq: number } {
-  const nvt = n * VT
+/** One exponential junction, with the limiting that keeps Newton stable. */
+function junction(v: number, is: number, nvt: number): { g: number; i: number } {
   const VCRIT = nvt * Math.log(nvt / (Math.SQRT2 * is))
   let vd = v
   if (vd > VCRIT) vd = VCRIT + nvt * Math.log(1 + (v - VCRIT) / nvt)
   else if (vd < -5 * nvt) vd = -5 * nvt
-
   const e = Math.exp(vd / nvt)
-  const i = is * (e - 1)
-  const g = Math.max((is / nvt) * e, GMIN)
-  return { g, i, ieq: i - g * vd }
+  return { i: is * (e - 1), g: Math.max((is / nvt) * e, GMIN) }
+}
+
+/** Saturation current of the reverse breakdown knee. */
+const IS_BV = 1e-10
+
+/**
+ * Shockley diode linearised about `v`. Passing `bv` adds a reverse breakdown
+ * knee, which is what makes a Zener a Zener rather than an open circuit.
+ */
+export function diodeLinearise(
+  v: number,
+  is: number,
+  n: number,
+  bv?: number,
+): { g: number; i: number; ieq: number } {
+  const nvt = n * VT
+  const fwd = junction(v, is, nvt)
+  let i = fwd.i
+  let g = fwd.g
+
+  if (bv !== undefined && bv > 0) {
+    // A second junction facing the other way, offset by the breakdown voltage.
+    const rev = junction(-(v + bv), IS_BV, VT)
+    i -= rev.i
+    g += rev.g
+  }
+
+  return { g, i, ieq: i - g * v }
 }
 
 /** Saturation current that puts `vf` volts across the junction at `iref`. */

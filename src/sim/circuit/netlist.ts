@@ -4,6 +4,7 @@ import type { Connection, DeviceModel, Instance, Port } from '@/parts/kernel/typ
 import { getPart } from '@/parts/kernel/registry'
 import { buildPart, instanceMatrix } from '@/parts/kernel/build'
 import { awgToMm2, wireResistance } from '@/parts/kernel/units'
+import { HI_Z } from '@/sim/behaviour'
 import type { Doc } from '@/state/doc'
 
 /** Stable key for one electrical terminal. */
@@ -56,12 +57,30 @@ export interface WireRef {
   ampacity: number
 }
 
+/** One behavioural part, bound to the devices that let it drive its pins. */
+export interface BehaviourBinding {
+  instanceId: string
+  evalId: string
+  params: import('@/parts/kernel/types').Params
+  /** Node the part's outputs are referenced to (its own ground pin). */
+  refNode: number
+  pins: {
+    id: string
+    node: number
+    /** Index of the Thevenin source in `circuit.devices`. */
+    vIndex: number
+    /** Index of its series resistance. */
+    rIndex: number
+  }[]
+}
+
 export interface Netlist {
   circuit: Circuit
   /** Terminal key -> node index (GROUND for the reference node). */
   nodeOf: Map<string, number>
   devices: DeviceRef[]
   wires: WireRef[]
+  behaviours: BehaviourBinding[]
   /** Node index -> the terminals sharing it, for probe labelling. */
   netMembers: Map<number, string[]>
   warnings: string[]
@@ -74,6 +93,8 @@ interface PendingDevice {
   /** Terminal keys, in the order the solved device consumes them. */
   build: (nodeOf: (key: string) => number, addNode: (key: string) => number) => SolvedDevice[]
   luminous?: boolean
+  /** Set for behavioural parts so their pin sources can be found afterwards. */
+  behaviour?: { evalId: string; pins: string[]; ref?: string; params: import('@/parts/kernel/types').Params }
 }
 
 /** World-space port positions for an instance, used for wire lengths. */
@@ -176,19 +197,37 @@ export function buildNetlist(doc: Doc): Netlist {
   }
 
   // 4. Reference node.
+  //
+  // A Ground part only counts if something is actually wired to it. Taking an
+  // unconnected one as the reference would leave the entire real circuit
+  // floating, and every reading would be meaningless.
+  const wiredRoots = new Set<string>()
+  for (const { conn } of electricalWires) {
+    wiredRoots.add(uf.find(portKey(conn.a.instanceId, conn.a.portId)))
+    wiredRoots.add(uf.find(portKey(conn.b.instanceId, conn.b.portId)))
+  }
+
   let groundKey: string | null = null
+  let strandedGround = false
   for (const inst of instances) {
-    if (inst.defId === 'ground') {
-      groundKey = portKey(inst.id, 'gnd')
+    if (inst.defId !== 'ground') continue
+    const key = portKey(inst.id, 'gnd')
+    if (wiredRoots.has(uf.find(key))) {
+      groundKey = key
       break
     }
+    strandedGround = true
   }
+  if (strandedGround && !groundKey) {
+    warnings.push('The Ground part is not connected to anything — wire it to your supply’s negative terminal.')
+  }
+
   if (!groundKey) {
     // Fall back to the negative terminal of the first source in the document.
     const src = pending.find((p) => p.model.type === 'vsource')
     if (src && src.model.type === 'vsource') {
       groundKey = portKey(src.instanceId, src.model.b)
-      if (pending.some((p) => p.model.type === 'vsource')) {
+      if (!strandedGround) {
         warnings.push('No ground part found — using the first source’s negative terminal as 0 V.')
       }
     }
@@ -228,11 +267,29 @@ export function buildNetlist(doc: Doc): Netlist {
   // 6. Build solved devices.
   const solved: SolvedDevice[] = []
   const deviceRefs: DeviceRef[] = []
+  const behaviours: BehaviourBinding[] = []
   for (const p of pending) {
+    const base = solved.length
     const built = p.build(nodeFor, addNode)
     for (const d of built) {
       deviceRefs.push({ index: solved.length, instanceId: p.instanceId, model: p.model, luminous: p.luminous })
       solved.push(d)
+    }
+    if (p.behaviour) {
+      // build() emitted, per pin and in order: the Thevenin source then its
+      // series resistance.
+      behaviours.push({
+        instanceId: p.instanceId,
+        evalId: p.behaviour.evalId,
+        params: p.behaviour.params,
+        refNode: p.behaviour.ref ? nodeFor(portKey(p.instanceId, p.behaviour.ref)) : GROUND,
+        pins: p.behaviour.pins.map((id, i) => ({
+          id,
+          node: nodeFor(portKey(p.instanceId, id)),
+          vIndex: base + i * 2,
+          rIndex: base + i * 2 + 1,
+        })),
+      })
     }
   }
 
@@ -267,6 +324,7 @@ export function buildNetlist(doc: Doc): Netlist {
     nodeOf,
     devices: deviceRefs,
     wires: wireRefs,
+    behaviours,
     netMembers,
     warnings,
     errors,
@@ -285,6 +343,10 @@ function compileDevice(inst: Instance, model: DeviceModel): PendingDevice {
     instanceId: iid,
     model,
     luminous: model.type === 'diode' ? model.luminous : undefined,
+    behaviour:
+      model.type === 'behavioral'
+        ? { evalId: model.evalId, pins: model.pins, ref: model.ref, params: inst.params }
+        : undefined,
     build: (nodeOf, addNode) => {
       const n = (portId: string): number => (portId.startsWith('#') ? addNode(`${iid}${portId}`) : nodeOf(t(portId)))
       switch (model.type) {
@@ -361,8 +423,18 @@ function compileDevice(inst: Instance, model: DeviceModel): PendingDevice {
           }]
         }
 
-        case 'behavioral':
-          return []
+        case 'behavioral': {
+          // One Thevenin source per pin, all referenced to the part's own
+          // ground. They start released; the behaviour drives them each step.
+          const ref = model.ref ? n(model.ref) : -1
+          const out: SolvedDevice[] = []
+          for (const pin of model.pins) {
+            const mid = addNode(`${iid}#bh_${pin}`)
+            out.push({ k: 'v', a: mid, b: ref, v: 0 })
+            out.push({ k: 'r', a: n(pin), b: mid, r: HI_Z })
+          }
+          return out
+        }
       }
     },
   }

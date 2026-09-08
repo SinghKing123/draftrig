@@ -5,6 +5,7 @@ import { usePortIndex, type WorldPort } from './portIndex'
 import { useDoc } from '@/state/doc'
 import { useSim } from '@/state/sim'
 import { portKey } from '@/sim/circuit/netlist'
+import { wasClick } from './pointer'
 
 const UP = new THREE.Vector3(0, 1, 0)
 
@@ -105,6 +106,8 @@ export function Ports() {
   const onClick = (e: ThreeEvent<MouseEvent>) => {
     const i = e.instanceId
     if (i === undefined) return
+    // A camera orbit that happens to end over a terminal is not a click on it.
+    if (!wasClick()) return
     e.stopPropagation()
     const p = ports[i]
     if (!p) return
@@ -147,13 +150,16 @@ export function PendingWire({ cursor }: { cursor: THREE.Vector3 | null }) {
   const geometry = useMemo(() => new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]), [])
 
   useFrame(() => {
-    if (!pending || !cursor || !ref.current) return
+    const line = ref.current
+    if (!pending || !cursor || !line) return
     const a = index.get(pending.instanceId, pending.portId)
     if (!a) return
     const pos = geometry.getAttribute('position') as THREE.BufferAttribute
     pos.setXYZ(0, a.pos.x, a.pos.y, a.pos.z)
     pos.setXYZ(1, cursor.x, cursor.y, cursor.z)
     pos.needsUpdate = true
+    // LineDashedMaterial draws solid unless the distances are recomputed.
+    line.computeLineDistances()
   })
 
   if (!pending) return null

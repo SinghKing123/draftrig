@@ -32,6 +32,20 @@ export interface BuiltPart {
 
 const DEG = Math.PI / 180
 
+/**
+ * Chord tolerance for curved surfaces, mm. Segment counts are derived from the
+ * radius so a 0.25 mm lead and a 40 mm can both look round without either
+ * wasting triangles or showing facets.
+ */
+const CHORD_TOL = 0.045
+
+export function autoSeg(radius: number, min = 10, max = 44): number {
+  const r = Math.max(radius, 1e-4)
+  if (r <= CHORD_TOL) return min
+  const theta = Math.acos(Math.max(-1, 1 - CHORD_TOL / r))
+  return Math.max(min, Math.min(max, Math.ceil((2 * Math.PI) / theta)))
+}
+
 /* ------------------------------------------------------------------ */
 /* Primitive builders                                                  */
 /* ------------------------------------------------------------------ */
@@ -124,15 +138,39 @@ function primitive(s: Solid): THREE.BufferGeometry | null {
       return new THREE.BoxGeometry(w, h, d)
     }
     case 'cyl': {
-      const seg = s.seg ?? 24
+      const sweep = s.phi ? (s.phi[1] * DEG) : Math.PI * 2
+      const phiStart = s.phi ? s.phi[0] * DEG : 0
+      const full = !s.phi || Math.abs(sweep - Math.PI * 2) < 1e-6
+      const seg = s.seg ?? Math.max(3, Math.round(autoSeg(Math.max(s.r, s.r2 ?? 0)) * (sweep / (Math.PI * 2))))
+      const straight = s.r2 === undefined || Math.abs(s.r2 - s.r) < 1e-6
+      const c = s.chamfer ?? 0
+      if (!full) {
+        return new THREE.CylinderGeometry(s.r2 ?? s.r, s.r, s.h, seg, 1, s.capped === false, phiStart, sweep)
+      }
+      if (c > 0 && straight && s.capped !== false && c < s.r * 0.9 && c < s.h * 0.45) {
+        // A chamfered cylinder is a lathe: flat, break, wall, break, flat.
+        const r = s.r
+        const h = s.h
+        const pts: Vec2[] = [
+          [0, -h / 2],
+          [r - c, -h / 2],
+          [r, -h / 2 + c],
+          [r, h / 2 - c],
+          [r - c, h / 2],
+          [0, h / 2],
+        ]
+        return new THREE.LatheGeometry(pts.map(([x, y]) => new THREE.Vector2(Math.max(x, 1e-4), y)), seg)
+      }
       return new THREE.CylinderGeometry(s.r2 ?? s.r, s.r, s.h, seg, 1, s.capped === false)
     }
     case 'sphere': {
-      const seg = s.seg ?? 20
-      return new THREE.SphereGeometry(s.r, seg, Math.max(6, seg >> 1))
+      const seg = s.seg ?? autoSeg(s.r, 12, 40)
+      return new THREE.SphereGeometry(s.r, seg, Math.max(8, seg >> 1))
     }
-    case 'torus':
-      return new THREE.TorusGeometry(s.r, s.tube, Math.max(6, (s.seg ?? 20) >> 1), s.seg ?? 24)
+    case 'torus': {
+      const seg = s.seg ?? autoSeg(s.r, 14, 48)
+      return new THREE.TorusGeometry(s.r, s.tube, Math.max(8, autoSeg(s.tube, 8, 20)), seg)
+    }
     case 'extrude': {
       const g = new THREE.ExtrudeGeometry(profileToShape(s.profile), {
         depth: s.depth,
@@ -145,13 +183,19 @@ function primitive(s: Solid): THREE.BufferGeometry | null {
       g.translate(0, 0, -s.depth / 2)
       return g
     }
-    case 'lathe':
+    case 'lathe': {
+      const maxR = s.points.reduce((m, [x]) => Math.max(m, x), 0)
+      const sweep = s.phi ? s.phi[1] * DEG : Math.PI * 2
+      const seg = s.seg ?? Math.max(3, Math.round(autoSeg(maxR, 12, 48) * (sweep / (Math.PI * 2))))
       return new THREE.LatheGeometry(
         s.points.map(([x, y]) => new THREE.Vector2(Math.max(x, 1e-4), y)),
-        s.seg ?? 24,
+        seg,
+        s.phi ? s.phi[0] * DEG : 0,
+        sweep,
       )
+    }
     case 'tube':
-      return tubeGeometry(s.path, s.r, s.seg ?? 10)
+      return tubeGeometry(s.path, s.r, s.seg ?? autoSeg(s.r, 8, 20))
     case 'plane':
       return new THREE.PlaneGeometry(s.size[0], s.size[1])
     case 'group':
@@ -167,7 +211,8 @@ function primitiveVolume(s: Solid): number {
     case 'cyl': {
       const r1 = s.r
       const r2 = s.r2 ?? s.r
-      return (Math.PI * s.h * (r1 * r1 + r1 * r2 + r2 * r2)) / 3
+      const frac = s.phi ? Math.min(Math.abs(s.phi[1]) / 360, 1) : 1
+      return ((Math.PI * s.h * (r1 * r1 + r1 * r2 + r2 * r2)) / 3) * frac
     }
     case 'sphere':
       return (4 / 3) * Math.PI * s.r ** 3
@@ -177,13 +222,14 @@ function primitiveVolume(s: Solid): number {
       return profileArea(s.profile) * s.depth
     case 'lathe': {
       // Pappus: revolve the polygon about the Y axis.
+      const frac = s.phi ? Math.min(Math.abs(s.phi[1]) / 360, 1) : 1
       let v = 0
       for (let i = 0; i < s.points.length - 1; i++) {
         const [x1, y1] = s.points[i]
         const [x2, y2] = s.points[i + 1]
         v += Math.PI * ((x1 * x1 + x1 * x2 + x2 * x2) / 3) * Math.abs(y2 - y1)
       }
-      return v
+      return v * frac
     }
     case 'tube': {
       let len = 0

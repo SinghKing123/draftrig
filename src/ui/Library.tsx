@@ -62,6 +62,23 @@ export function Library() {
       </div>
 
       <div className="panel-body scroll-y">
+        {searching && results.length > 0 && (
+          // While searching, show one ranked list. Grouping by category would
+          // bury the best match under whichever section happens to sort first.
+          <div>
+            <div className="lib-section">{results.length} result{results.length === 1 ? '' : 's'}</div>
+            {results.map((def) => (
+              <button key={def.id} className="part-item" onClick={() => place(def)} title={def.doc?.description ?? def.blurb}>
+                <span className="swatch">{initials(def)}</span>
+                <span className="pi-text">
+                  <span className="pi-name">{def.name}</span>
+                  <span className="pi-blurb">{def.blurb}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+
         {results.length === 0 && (
           <div className="lib-empty">
             Nothing matches “{query}”.
@@ -70,7 +87,7 @@ export function Library() {
           </div>
         )}
 
-        {SECTION_ORDER.map((section) => {
+        {!searching && SECTION_ORDER.map((section) => {
           const cats = ([...grouped.keys()] as PartCategory[])
             .filter((c) => CATEGORY_META[c]?.section === section)
             .sort((a, b) => CATEGORY_META[a].order - CATEGORY_META[b].order)
@@ -80,7 +97,7 @@ export function Library() {
               <div className="lib-section">{section}</div>
               {cats.map((cat) => {
                 const parts = grouped.get(cat) ?? []
-                const isOpen = searching || open[cat]
+                const isOpen = open[cat]
                 return (
                   <div key={cat}>
                     <button

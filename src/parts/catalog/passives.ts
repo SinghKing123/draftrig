@@ -60,30 +60,48 @@ const resistorAxial: PartDef = {
     const tol = parseInt(str(p, 'tolerance', '5'), 10)
     const bands = resistorBands(num(p, 'value', 220), tol)
 
-    const out: Solid[] = [
-      // Body: shoulders + barrel gives the classic dog-bone silhouette.
-      { kind: 'cyl', mat, r: w.r, h: w.len * 0.82, rot: [0, 0, 90], at: [0, y, 0] },
-      { kind: 'cyl', mat, r: w.r * 0.72, h: w.len, rot: [0, 0, 90], at: [0, y, 0] },
+    // A real axial resistor is a turned dog-bone: a straight barrel with a
+    // rounded shoulder tapering down to where the lead leaves the end cap.
+    const L = w.len
+    const R = w.r
+    const neck = R * 0.34
+    const taper = Math.min(L * 0.17, R * 1.1)
+    const half = L / 2
+    const profile: [number, number][] = [
+      [0, -half],
+      [neck, -half],
+      [neck * 1.5, -half + taper * 0.18],
+      [R * 0.8, -half + taper * 0.55],
+      [R, -half + taper],
+      [R, half - taper],
+      [R * 0.8, half - taper * 0.55],
+      [neck * 1.5, half - taper * 0.18],
+      [neck, half],
+      [0, half],
     ]
 
-    // Bands sit toward one end; the tolerance band is set apart at the other.
-    const bodyHalf = (w.len * 0.82) / 2
-    const bw = w.len * 0.088
-    const gap = bw * 1.75
+    const out: Solid[] = [{ kind: 'lathe', mat, points: profile, rot: [0, 0, 90], at: [0, y, 0] }]
+
+    // Bands are printed on the straight barrel, which is what constrains how
+    // many will fit — same as the real part.
+    const barrel = L - 2 * taper
+    const bw = Math.min(L * 0.085, barrel / 6)
+    const gap = bw * 1.85
     const valueBands = bands.slice(0, -1)
-    const startX = -bodyHalf + bw * 1.4
+    const startX = -barrel / 2 + bw * 0.9
     valueBands.forEach((c, i) => {
       out.push({
-        kind: 'cyl', mat: { color: c, rough: 0.42 }, r: w.r * 1.02, h: bw,
-        rot: [0, 0, 90], at: [startX + i * gap, y, 0], noCollide: true,
+        kind: 'cyl', mat: { color: c, rough: 0.42, clearcoat: 0.3 }, r: R * 1.008, h: bw,
+        chamfer: bw * 0.2, rot: [0, 0, 90], at: [startX + i * gap, y, 0], noCollide: true,
       })
     })
     out.push({
-      kind: 'cyl', mat: { color: bands[bands.length - 1], rough: 0.3, metal: 0.7 },
-      r: w.r * 1.02, h: bw, rot: [0, 0, 90], at: [bodyHalf - bw * 1.4, y, 0], noCollide: true,
+      kind: 'cyl', mat: { color: bands[bands.length - 1], rough: 0.28, metal: 0.75 },
+      r: R * 1.008, h: bw, chamfer: bw * 0.2, rot: [0, 0, 90],
+      at: [barrel / 2 - bw * 0.9, y, 0], noCollide: true,
     })
 
-    out.push(...axialLeads({ pitch: num(p, 'pitch', 10.16), bodyLen: w.len, bodyY: y, leadR: w.lead }))
+    out.push(...axialLeads({ pitch: num(p, 'pitch', 10.16), bodyLen: L, bodyY: y, leadR: w.lead }))
     return out
   },
   ports: (p) => {
@@ -167,17 +185,27 @@ const capElectrolytic: PartDef = {
     const h = d * 1.6
     const r = d / 2
     const pitch = d <= 5 ? 2.0 : d <= 8 ? 3.5 : 5.0
+    const cy = h / 2 + 0.6
+    const sleeveH = h - 1.4
     return [
-      { kind: 'cyl', mat: 'alu-6063', r: r * 0.98, h, at: [0, h / 2 + 0.6, 0] },
-      { kind: 'cyl', mat: 'elcap-sleeve', r, h: h - 1.2, at: [0, h / 2 + 0.6, 0] },
-      // Negative stripe.
-      { kind: 'cyl', mat: { color: '#C9CFD8', rough: 0.5 }, r: r * 1.004, h: h - 1.2,
-        at: [0, h / 2 + 0.6, 0], seg: 24, tag: 'stripe', noCollide: true },
-      { kind: 'cyl', mat: 'elcap-sleeve', r: r * 1.006, h: h - 1.2, at: [0, h / 2 + 0.6, 0], seg: 24,
-        rot: [0, 0, 0], noCollide: true },
-      // Score lines on the top vent.
-      { kind: 'box', mat: { color: '#9AA0A8', rough: 0.5 }, size: [r * 1.6, 0.15, 0.5], at: [0, h + 0.62, 0], noCollide: true },
-      { kind: 'box', mat: { color: '#9AA0A8', rough: 0.5 }, size: [0.5, 0.15, r * 1.6], at: [0, h + 0.62, 0], noCollide: true },
+      // Aluminium can, with the rolled-over top edge broken.
+      { kind: 'cyl', mat: 'alu-6063', r: r * 0.985, h, chamfer: Math.min(0.5, r * 0.14), at: [0, cy, 0] },
+      // Rubber bung at the base.
+      { kind: 'cyl', mat: { color: '#1A1614', rough: 0.9, density: 1.3 }, r: r * 0.9, h: 1.2, at: [0, 0.8, 0] },
+      // PVC sleeve over the can.
+      { kind: 'cyl', mat: 'elcap-sleeve', r, h: sleeveH, at: [0, cy, 0] },
+      // The negative stripe is a partial sleeve, not a second full cylinder —
+      // coincident surfaces would z-fight and speckle the whole can.
+      { kind: 'cyl', mat: { color: '#D3D8DF', rough: 0.55, density: 1.4 }, r: r * 1.006, h: sleeveH,
+        phi: [200, 44], capped: false, at: [0, cy, 0], tag: 'stripe', noCollide: true },
+      // Minus symbols down the stripe.
+      { kind: 'box', mat: { color: '#2A3550', rough: 0.6, density: 0.01 }, size: [r * 0.5, sleeveH * 0.06, 0.3],
+        at: [-r * 1.0, cy + sleeveH * 0.22, 0], rot: [0, 90, 0], noCollide: true },
+      { kind: 'box', mat: { color: '#2A3550', rough: 0.6, density: 0.01 }, size: [r * 0.5, sleeveH * 0.06, 0.3],
+        at: [-r * 1.0, cy - sleeveH * 0.18, 0], rot: [0, 90, 0], noCollide: true },
+      // Pressure-relief score on the top.
+      { kind: 'box', mat: { color: '#8E959E', rough: 0.55, density: 0.01 }, size: [r * 1.5, 0.12, 0.45], at: [0, h + 0.62, 0], noCollide: true },
+      { kind: 'box', mat: { color: '#8E959E', rough: 0.55, density: 0.01 }, size: [0.45, 0.12, r * 1.5], at: [0, h + 0.62, 0], noCollide: true },
       ...radialLeads({ pitch, fromY: 0.6 }),
     ]
   },
@@ -246,16 +274,28 @@ const led5mm: PartDef = {
       density: 1.2,
     }
     const R = 2.5
-    const pts: [number, number][] = [
-      [0, 0], [2.9, 0], [2.9, 1.0], [R, 1.0], [R, 5.6],
-    ]
-    for (let i = 1; i <= 8; i++) {
-      const a = (i / 8) * (Math.PI / 2)
+    const FR = 2.9 // flange radius
+    const FLAT = 2.42 // the cathode-side flat, measured from the axis
+
+    // Flange with its flat: the arc, closed by the chord that marks pin 1.
+    const a0 = Math.acos(-FLAT / FR)
+    const flange: [number, number][] = []
+    const steps = 22
+    for (let i = 0; i <= steps; i++) {
+      const a = a0 + (i / steps) * (2 * Math.PI - 2 * a0)
+      flange.push([FR * Math.cos(a), FR * Math.sin(a)])
+    }
+
+    // Body and dome above the flange.
+    const pts: [number, number][] = [[0, 1.0], [R, 1.0], [R, 5.6]]
+    for (let i = 1; i <= 10; i++) {
+      const a = (i / 10) * (Math.PI / 2)
       pts.push([R * Math.cos(a), 5.6 + R * Math.sin(a)])
     }
     const leadLen = num(p, 'lead', 4.5)
     return [
-      { kind: 'lathe', mat: lens, points: pts, seg: 28, tag: 'lens' },
+      { kind: 'extrude', mat: lens, profile: { outline: flange }, depth: 1.0, rot: [-90, 0, 0], at: [0, 0.5, 0] },
+      { kind: 'lathe', mat: lens, points: pts, tag: 'lens' },
       // Internal cup + post, visible through the epoxy.
       { kind: 'cyl', mat: 'steel', r: 1.15, h: 1.0, r2: 0.85, at: [0, 3.2, 0], tag: 'cup', noCollide: true },
       { kind: 'box', mat: 'steel', size: [0.55, 3.4, 0.55], at: [-1.0, 2.0, 0], noCollide: true },

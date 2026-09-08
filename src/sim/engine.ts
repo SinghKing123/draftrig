@@ -1,4 +1,6 @@
 import { buildNetlist, portKey, type Netlist } from './circuit/netlist'
+import { BehaviourRunner } from './behaviour/runner'
+import '@/sim/behaviour/library'
 import { GROUND } from './circuit/mna'
 import { useDoc, type Doc } from '@/state/doc'
 import { useSim, type SimIssue } from '@/state/sim'
@@ -14,7 +16,14 @@ import { eng } from '@/parts/kernel/units'
  */
 
 const TRACE_LEN = 4096
-const MAX_STEPS_PER_FRAME = 4000
+/**
+ * Milliseconds of wall clock the solver may spend inside one tick. Bounding by
+ * time rather than step count is what keeps a slow frame from turning into a
+ * death spiral: we fall behind real time instead of locking up.
+ */
+const STEP_BUDGET_MS = 7
+/** How often the solver wakes up, independent of the render loop. */
+const TICK_MS = 8
 /** Store writes per second. Decoupled from the integration rate. */
 const PUBLISH_HZ = 30
 
@@ -29,13 +38,22 @@ export interface Trace {
 
 class SimEngine {
   private netlist: Netlist | null = null
-  private raf = 0
+  private timer: ReturnType<typeof setTimeout> | 0 = 0
   private lastFrame = 0
   private lastPublish = 0
   private dirty = true
   private traces = new Map<string, Trace>()
-  /** Wall-clock time carried over when a frame could not fully catch up. */
+  /** Wall-clock time carried over when a tick could not fully catch up. */
   private debt = 0
+  /** Fraction of requested simulation time actually delivered, 0..1. */
+  private realtimeRatio = 1
+  /**
+   * Behaviour state lives here rather than in the netlist so a 555 keeps
+   * oscillating when the user nudges a part and the circuit is recompiled.
+   */
+  private behaviourState = new Map<string, Record<string, unknown>>()
+  /** Rebuilt whenever the netlist is. */
+  private behaviours: BehaviourRunner | null = null
 
   /* ---------------- lifecycle ---------------- */
 
@@ -43,25 +61,32 @@ class SimEngine {
     this.dirty = true
   }
 
+  /**
+   * The solver runs on its own timer rather than inside requestAnimationFrame.
+   * Tying it to the render loop meant a heavy scene starved the simulation —
+   * a circuit would run slow simply because the viewport was busy, which is
+   * exactly backwards.
+   */
   start(): void {
-    if (this.raf) return
+    if (this.timer) return
     this.lastFrame = performance.now()
     this.debt = 0
-    const loop = (now: number) => {
-      this.raf = requestAnimationFrame(loop)
-      this.frame(now)
+    const loop = () => {
+      this.timer = setTimeout(loop, TICK_MS)
+      this.frame(performance.now())
     }
-    this.raf = requestAnimationFrame(loop)
+    this.timer = setTimeout(loop, TICK_MS)
   }
 
   stop(): void {
-    if (this.raf) cancelAnimationFrame(this.raf)
-    this.raf = 0
+    if (this.timer) clearTimeout(this.timer)
+    this.timer = 0
   }
 
   reset(): void {
     this.dirty = true
     this.traces.clear()
+    this.behaviourState.clear()
     this.debt = 0
     useSim.getState().resetOutputs()
     this.rebuild(useDoc.getState().doc)
@@ -75,9 +100,21 @@ class SimEngine {
   /* ---------------- compile ---------------- */
 
   private rebuild(doc: Doc): void {
-    this.netlist = buildNetlist(doc)
-    this.netlist.circuit.reset()
+    const nl = buildNetlist(doc)
+    this.netlist = nl
+    this.bindBehaviours(nl)
+    nl.circuit.reset()
     this.dirty = false
+  }
+
+  private bindBehaviours(nl: Netlist): void {
+    this.behaviours = new BehaviourRunner(
+      nl,
+      this.behaviourState,
+      // Read parameters live so inspector controls take effect immediately
+      // instead of waiting for the next netlist rebuild.
+      (id) => useDoc.getState().doc.instances[id]?.params,
+    )
   }
 
   /* ---------------- step ---------------- */
@@ -94,21 +131,36 @@ class SimEngine {
     this.lastFrame = now
 
     if (sim.running) {
-      const target = wall * sim.speed + this.debt
+      // Live parameters are picked up once per tick, not once per timestep.
+      this.behaviours?.refreshParams()
       const dt = sim.dt
-      let steps = Math.floor(target / dt)
-      if (steps > MAX_STEPS_PER_FRAME) {
-        this.debt = 0
-        steps = MAX_STEPS_PER_FRAME
-      } else {
-        this.debt = target - steps * dt
-      }
-      for (let i = 0; i < steps; i++) {
+      const target = wall * sim.speed + this.debt
+      const steps = Math.floor(target / dt)
+      this.debt = target - steps * dt
+
+      const deadline = now + STEP_BUDGET_MS
+      let done = 0
+      for (; done < steps; done++) {
+        this.behaviours?.run(nl.circuit.time, dt)
         const r = nl.circuit.step(dt)
         if (!r.converged) break
         this.sample(nl)
+        // Check the clock every so often rather than every step.
+        if ((done & 63) === 63 && performance.now() > deadline) {
+          done++
+          break
+        }
       }
+      // Whatever we could not do this tick is dropped, not banked. Banking it
+      // would make the next tick even more expensive.
+      if (done < steps) this.debt = 0
+      this.realtimeRatio = steps > 0 ? done / steps : 1
     } else if (nl.circuit.time === 0) {
+      // Settle the operating point: solve, let the behaviours react to what
+      // they see, then solve again so their outputs are reflected.
+      this.behaviours?.run(0, 0)
+      nl.circuit.step(0)
+      this.behaviours?.run(0, 0)
       nl.circuit.step(0)
     }
 
@@ -252,6 +304,7 @@ class SimEngine {
     for (const e of nl.errors) issues.push({ severity: 'error', message: e })
 
     useSim.getState().publish({
+      realtimeRatio: this.realtimeRatio,
       time: nl.circuit.time,
       nodeV,
       wireI,

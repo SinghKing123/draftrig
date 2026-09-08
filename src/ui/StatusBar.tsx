@@ -16,6 +16,7 @@ export function StatusBar() {
   const running = useSim((s) => s.running)
   const converged = useSim((s) => s.converged)
   const issues = useSim((s) => s.issues)
+  const realtime = useSim((s) => s.realtimeRatio)
 
   const { mass, cost } = useMemo(() => {
     let m = 0
@@ -41,6 +42,13 @@ export function StatusBar() {
         <span className={`sb-dot ${running ? 'live' : errors ? 'err' : 'ok'}`} />
         {running ? (converged ? 'Simulating' : 'Not converging') : errors ? `${errors} issue${errors > 1 ? 's' : ''}` : 'Ready'}
       </span>
+
+      {running && realtime < 0.9 && (
+        <span className="sb-item" title="The circuit is too heavy to solve at this speed. Lower the speed, or simplify it.">
+          <span className="sb-dot err" />
+          Running at <b>{Math.round(realtime * 100)}%</b> of the selected speed
+        </span>
+      )}
 
       <span className="sb-item">Parts <b>{order.length}</b></span>
       <span className="sb-item">Connections <b>{connections.length}</b></span>

@@ -1,66 +1,27 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
-import { Canvas, useThree, type ThreeEvent } from '@react-three/fiber'
+import { Canvas, type ThreeEvent } from '@react-three/fiber'
 import { GizmoHelper, GizmoViewport, Grid, OrbitControls, TransformControls } from '@react-three/drei'
-import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import { PartObject } from './PartObject'
 import { Ports, PendingWire } from './Ports'
 import { Wires } from './Wires'
 import { PortIndexProvider, usePortIndex } from './portIndex'
 import { CameraRig } from './CameraRig'
+import { Lights, PostFx, StudioEnvironment } from './Render'
 import { useDoc, useInstanceList } from '@/state/doc'
+import { installPointerTracker, wasClick } from './pointer'
 import type { Vec3 } from '@/parts/kernel/types'
 
 /* ------------------------------------------------------------------ */
 /* Lighting                                                            */
 /* ------------------------------------------------------------------ */
 
-/**
- * A neutral studio environment generated on the GPU — no network fetch, and
- * it gives metals and glossy plastics something to reflect.
- */
-function StudioEnvironment() {
-  const { gl, scene } = useThree()
-  useEffect(() => {
-    const pmrem = new THREE.PMREMGenerator(gl)
-    const env = pmrem.fromScene(new RoomEnvironment(), 0.04)
-    scene.environment = env.texture
-    return () => {
-      env.texture.dispose()
-      pmrem.dispose()
-      scene.environment = null
-    }
-  }, [gl, scene])
-  return null
-}
-
-function Lights() {
-  const shadows = useDoc((s) => s.view.shadows)
-  return (
-    <>
-      <hemisphereLight args={['#9FB4CC', '#20242A', 1.1]} />
-      <directionalLight
-        position={[420, 640, 380]}
-        intensity={2.1}
-        castShadow={shadows}
-        shadow-mapSize={[2048, 2048]}
-        shadow-bias={-0.0006}
-        shadow-normalBias={0.6}
-      >
-        <orthographicCamera attach="shadow-camera" args={[-500, 500, 500, -500, 10, 2200]} />
-      </directionalLight>
-      <directionalLight position={[-380, 280, -320]} intensity={0.55} color="#8FB6FF" />
-      <directionalLight position={[120, -220, 420]} intensity={0.25} color="#FFD9A8" />
-    </>
-  )
-}
-
 /* ------------------------------------------------------------------ */
 /* Ground / grid                                                       */
 /* ------------------------------------------------------------------ */
 
-function Ground({ onPointerMissed }: { onPointerMissed: (e: ThreeEvent<PointerEvent>) => void }) {
+function Ground({ onPointerUp }: { onPointerUp: (e: ThreeEvent<PointerEvent>) => void }) {
   const showGrid = useDoc((s) => s.view.grid)
   return (
     <>
@@ -68,7 +29,7 @@ function Ground({ onPointerMissed }: { onPointerMissed: (e: ThreeEvent<PointerEv
         rotation={[-Math.PI / 2, 0, 0]}
         position={[0, -0.05, 0]}
         receiveShadow
-        onPointerDown={onPointerMissed}
+        onPointerUp={onPointerUp}
         name="ground"
       >
         <planeGeometry args={[6000, 6000]} />
@@ -98,25 +59,30 @@ function Ground({ onPointerMissed }: { onPointerMissed: (e: ThreeEvent<PointerEv
 /* Selection transform                                                 */
 /* ------------------------------------------------------------------ */
 
+/** True while a gizmo drag is in progress — read by the deselect handlers. */
+export const dragging = { active: false }
+
 function SelectionTransform({ controls }: { controls: React.MutableRefObject<OrbitControlsImpl | null> }) {
   const selection = useDoc((s) => s.selection)
   const instances = useDoc((s) => s.doc.instances)
   const mode = useDoc((s) => s.mode)
   const transformMode = useDoc((s) => s.transformMode)
   const snap = useDoc((s) => s.snap)
-  const moveInstance = useDoc((s) => s.moveInstance)
-  const rotateInstance = useDoc((s) => s.rotateInstance)
+  const transformInstances = useDoc((s) => s.transformInstances)
   const beginEdit = useDoc((s) => s.beginEdit)
   const index = usePortIndex()
 
-  const anchor = useRef<THREE.Group>(null)
+  // The gizmo needs a real object to attach to, and it must exist on the same
+  // render that mounts TransformControls — a ref is populated too late.
+  const [anchor, setAnchor] = useState<THREE.Group | null>(null)
   const start = useRef<{ pos: THREE.Vector3; rot: THREE.Euler; instances: { id: string; pos: Vec3; rot: Vec3 }[] } | null>(null)
 
   const active = mode === 'build' && selection.length > 0
 
-  // Park the gizmo at the centroid of the selection.
+  // Park the gizmo at the centroid of the selection — but never mid-drag, or
+  // it fights the pointer as the parts it is measuring move under it.
   useEffect(() => {
-    if (!anchor.current || !selection.length) return
+    if (!anchor || !selection.length || start.current) return
     const c = new THREE.Vector3()
     let n = 0
     for (const id of selection) {
@@ -126,31 +92,31 @@ function SelectionTransform({ controls }: { controls: React.MutableRefObject<Orb
       n++
     }
     if (n) c.divideScalar(n)
-    anchor.current.position.copy(c)
-    anchor.current.rotation.set(0, 0, 0)
-  }, [selection, instances])
+    anchor.position.copy(c)
+    anchor.rotation.set(0, 0, 0)
+  }, [anchor, selection, instances])
 
   const onMouseDown = useCallback(() => {
-    if (!anchor.current) return
+    if (!anchor) return
     if (controls.current) controls.current.enabled = false
+    dragging.active = true
     beginEdit()
     start.current = {
-      pos: anchor.current.position.clone(),
-      rot: anchor.current.rotation.clone(),
+      pos: anchor.position.clone(),
+      rot: anchor.rotation.clone(),
       instances: selection
         .map((id) => instances[id])
         .filter(Boolean)
         .map((i) => ({ id: i.id, pos: [...i.pos] as Vec3, rot: [...i.rot] as Vec3 })),
     }
-  }, [selection, instances, beginEdit, controls])
+  }, [anchor, selection, instances, beginEdit, controls])
 
   const onChange = useCallback(() => {
-    const a = anchor.current
     const s = start.current
-    if (!a || !s) return
+    if (!anchor || !s) return
 
     if (transformMode === 'move') {
-      const delta = a.position.clone().sub(s.pos)
+      const delta = anchor.position.clone().sub(s.pos)
       if (snap.enabled && snap.grid > 0) {
         delta.set(
           Math.round(delta.x / snap.grid) * snap.grid,
@@ -158,26 +124,33 @@ function SelectionTransform({ controls }: { controls: React.MutableRefObject<Orb
           Math.round(delta.z / snap.grid) * snap.grid,
         )
       }
-      for (const it of s.instances) {
-        moveInstance(it.id, [it.pos[0] + delta.x, it.pos[1] + delta.y, it.pos[2] + delta.z], false)
-      }
+      transformInstances(
+        s.instances.map((it) => ({ id: it.id, pos: [it.pos[0] + delta.x, it.pos[1] + delta.y, it.pos[2] + delta.z] as Vec3 })),
+        false,
+      )
     } else {
       const step = snap.enabled ? snap.angle : 0
       const deg = (r: number) => {
         const d = (r * 180) / Math.PI
         return step > 0 ? Math.round(d / step) * step : d
       }
-      const dr: Vec3 = [deg(a.rotation.x - s.rot.x), deg(a.rotation.y - s.rot.y), deg(a.rotation.z - s.rot.z)]
-      for (const it of s.instances) {
-        rotateInstance(it.id, [it.rot[0] + dr[0], it.rot[1] + dr[1], it.rot[2] + dr[2]], false)
-      }
+      const dr: Vec3 = [
+        deg(anchor.rotation.x - s.rot.x),
+        deg(anchor.rotation.y - s.rot.y),
+        deg(anchor.rotation.z - s.rot.z),
+      ]
+      transformInstances(
+        s.instances.map((it) => ({ id: it.id, rot: [it.rot[0] + dr[0], it.rot[1] + dr[1], it.rot[2] + dr[2]] as Vec3 })),
+        false,
+      )
     }
-  }, [transformMode, snap, moveInstance, rotateInstance])
+  }, [anchor, transformMode, snap, transformInstances])
 
   const onMouseUp = useCallback(() => {
     if (controls.current) controls.current.enabled = true
-    // Port snapping: pull a single dragged part onto the nearest matching terminal.
-    if (snap.ports && selection.length === 1 && transformMode === 'move') {
+    // Port snapping: pull a single dragged part onto the nearest matching
+    // terminal, so parts seat into breadboards and slots instead of near them.
+    if (snap.enabled && snap.ports && selection.length === 1 && transformMode === 'move') {
       const id = selection[0]
       const mine = index.ofInstance(id)
       let best: { d: number; offset: THREE.Vector3 } | null = null
@@ -190,21 +163,28 @@ function SelectionTransform({ controls }: { controls: React.MutableRefObject<Orb
       if (best && best.d > 1e-4) {
         const inst = useDoc.getState().doc.instances[id]
         if (inst) {
-          moveInstance(id, [inst.pos[0] + best.offset.x, inst.pos[1] + best.offset.y, inst.pos[2] + best.offset.z], false)
+          transformInstances(
+            [{ id, pos: [inst.pos[0] + best.offset.x, inst.pos[1] + best.offset.y, inst.pos[2] + best.offset.z] }],
+            false,
+          )
         }
       }
     }
     start.current = null
-  }, [controls, snap.ports, selection, transformMode, index, moveInstance])
+    // Let the click-vs-drag guard settle before re-enabling deselection.
+    requestAnimationFrame(() => {
+      dragging.active = false
+    })
+  }, [controls, snap.enabled, snap.ports, selection, transformMode, index, transformInstances])
 
   return (
     <>
-      <group ref={anchor} />
-      {active && anchor.current && (
+      <group ref={setAnchor} />
+      {active && anchor && (
         <TransformControls
-          object={anchor.current}
+          object={anchor}
           mode={transformMode === 'move' ? 'translate' : 'rotate'}
-          size={0.85}
+          size={0.8}
           onMouseDown={onMouseDown}
           onMouseUp={onMouseUp}
           onObjectChange={onChange}
@@ -242,7 +222,10 @@ function SceneContents() {
     [mode, select, toggleSelect, selectionSet],
   )
 
+  // Only a genuine click clears the selection. Without this every camera orbit
+  // that starts over empty space throws away what you had selected.
   const onMiss = useCallback(() => {
+    if (dragging.active || !wasClick()) return
     clearSelection()
     setPendingWire(null)
   }, [clearSelection, setPendingWire])
@@ -250,10 +233,10 @@ function SceneContents() {
   return (
     <>
       <color attach="background" args={['#0A0C0F']} />
-      <fog attach="fog" args={['#0A0C0F', 1400, 4200]} />
+      <fog attach="fog" args={['#0A0C0F', 2200, 6000]} />
       <StudioEnvironment />
       <Lights />
-      <Ground onPointerMissed={onMiss} />
+      <Ground onPointerUp={onMiss} />
 
       <group onPointerMove={(e) => setCursor(e.point.clone())}>
         {instances.map((inst) => (
@@ -295,6 +278,8 @@ function SceneContents() {
       <GizmoHelper alignment="bottom-right" margin={[76, 76]}>
         <GizmoViewport axisColors={['#FF6B6B', '#3DD68C', '#4C8DFF']} labelColor="#0B0D10" />
       </GizmoHelper>
+
+      <PostFx />
     </>
   )
 }
@@ -305,17 +290,21 @@ function SceneContents() {
 
 export function Viewport() {
   const clearSelection = useDoc((s) => s.clearSelection)
+  useEffect(() => installPointerTracker(), [])
   return (
     <Canvas
       shadows
       dpr={[1, 2]}
       gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
-      camera={{ position: [260, 200, 300], fov: 38, near: 1, far: 12000 }}
+      camera={{ position: [300, 230, 340], fov: 36, near: 0.4, far: 20000 }}
       onCreated={({ gl }) => {
-        gl.toneMapping = THREE.ACESFilmicToneMapping
-        gl.toneMappingExposure = 1.05
+        gl.toneMapping = THREE.NoToneMapping
+        gl.shadowMap.type = THREE.PCFSoftShadowMap
       }}
-      onPointerMissed={() => clearSelection()}
+      onPointerMissed={() => {
+        if (dragging.active || !wasClick()) return
+        clearSelection()
+      }}
     >
       <PortIndexProvider>
         <SceneContents />

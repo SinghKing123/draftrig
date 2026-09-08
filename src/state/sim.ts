@@ -27,6 +27,11 @@ export interface SimState {
   converged: boolean
   /** Newton iterations on the most recent step. */
   iterations: number
+  /**
+   * How much of the requested simulation time the solver actually delivered.
+   * Below 1 means the circuit is too heavy to run at the selected speed.
+   */
+  realtimeRatio: number
 
   /** `instanceId:portId` -> volts. */
   nodeV: Record<string, number>
@@ -64,6 +69,7 @@ export const useSim = create<SimState>()((set) => ({
   dt: 25e-6,
   converged: true,
   iterations: 0,
+  realtimeRatio: 1,
 
   nodeV: {},
   wireI: {},
@@ -95,5 +101,5 @@ export const useSim = create<SimState>()((set) => ({
   publish: (patch) => set(patch),
 
   resetOutputs: () =>
-    set({ time: 0, nodeV: {}, wireI: {}, instI: {}, power: {}, glow: {}, issues: [], converged: true }),
+    set({ time: 0, nodeV: {}, wireI: {}, instI: {}, power: {}, glow: {}, issues: [], converged: true, realtimeRatio: 1 }),
 }))

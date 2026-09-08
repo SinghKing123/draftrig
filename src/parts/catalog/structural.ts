@@ -1,4 +1,4 @@
-import type { PartDef, Port, Profile, Vec2 } from '../kernel/types'
+import type { PartDef, Port, Profile, Vec2, Vec3 } from '../kernel/types'
 import { registerParts } from '../kernel/registry'
 import { circle, num, str } from './_helpers'
 
@@ -9,6 +9,7 @@ import { circle, num, str } from './_helpers'
 /** Slot cross-section, measured from the outer face inward. */
 const SLOT = {
   mouth: 6.2, // opening width at the surface
+  lead: 0.45, // 45 degree lead-in at the mouth, so a nut slides in
   d1: 1.9, // depth of the straight mouth
   d2: 2.9, // depth where the undercut has fully opened
   d3: 5.4, // channel floor
@@ -16,6 +17,16 @@ const SLOT = {
 }
 
 const BORE_R = 2.1
+/** Outer corner radius. Extruded aluminium is never sharp-cornered. */
+const CORNER_R = 1.4
+
+/** Emit a quarter-round corner, angles in radians, counter-clockwise. */
+function corner(pts: Vec2[], cx: number, cy: number, r: number, a0: number, a1: number, steps = 4): void {
+  for (let i = 0; i <= steps; i++) {
+    const a = a0 + ((a1 - a0) * i) / steps
+    pts.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r])
+  }
+}
 
 /**
  * Trace a T-slot profile for an extrusion `w` x `h` mm, where both are
@@ -30,24 +41,30 @@ function tslotProfile(w: number, h: number, module: number): Profile {
   /** Emit one face, walking from `sx,sy` along (dx,dy) with inward normal (nx,ny). */
   const face = (sx: number, sy: number, dx: number, dy: number, nx: number, ny: number, len: number) => {
     const cells = Math.max(1, Math.round(len / module))
+    const lead = SLOT.lead
     for (let i = 0; i < cells; i++) {
       const c = (i + 0.5) * module // slot centre along the face
       const at = (u: number, v: number): Vec2 => [sx + dx * (c + u) + nx * v, sy + dy * (c + u) + ny * v]
-      pts.push(at(-half, 0), at(-half, SLOT.d1), at(-halfIn, SLOT.d2), at(-halfIn, SLOT.d3))
-      pts.push(at(halfIn, SLOT.d3), at(halfIn, SLOT.d2), at(half, SLOT.d1), at(half, 0))
+      // Mouth lead-in, straight mouth, undercut, channel, and back out.
+      pts.push(at(-half - lead, 0), at(-half, lead))
+      pts.push(at(-half, SLOT.d1), at(-halfIn, SLOT.d2), at(-halfIn, SLOT.d3))
+      pts.push(at(halfIn, SLOT.d3), at(halfIn, SLOT.d2), at(half, SLOT.d1))
+      pts.push(at(half, lead), at(half + lead, 0))
     }
   }
 
   const x0 = -w / 2
   const y0 = -h / 2
-  // Counter-clockwise: bottom, right, top, left.
-  pts.push([x0, y0])
+  const r = CORNER_R
+  const HALF_PI = Math.PI / 2
+  // Counter-clockwise from the bottom-left corner: corner, face, corner, face.
+  corner(pts, x0 + r, y0 + r, r, Math.PI, 1.5 * Math.PI)
   face(x0, y0, 1, 0, 0, 1, w)
-  pts.push([x0 + w, y0])
+  corner(pts, x0 + w - r, y0 + r, r, 1.5 * Math.PI, 2 * Math.PI)
   face(x0 + w, y0, 0, 1, -1, 0, h)
-  pts.push([x0 + w, y0 + h])
+  corner(pts, x0 + w - r, y0 + h - r, r, 0, HALF_PI)
   face(x0 + w, y0 + h, -1, 0, 0, -1, w)
-  pts.push([x0, y0 + h])
+  corner(pts, x0 + r, y0 + h - r, r, HALF_PI, Math.PI)
   face(x0, y0 + h, 0, -1, 1, 0, h)
 
   const holes: Vec2[][] = []
@@ -171,8 +188,11 @@ const extrusion: PartDef = {
 /* Sheet / panel stock                                                 */
 /* ================================================================== */
 
-const SHEET_MATS: Record<string, { mat: string; label: string; price: number }> = {
-  plywood: { mat: 'plywood', label: 'Birch plywood', price: 0.00004 },
+/** Nominal ply thickness, mm. Real sheets are built from ~1.5 mm veneers. */
+const PLY_LAYER = 1.6
+
+const SHEET_MATS: Record<string, { mat: string; label: string; price: number; laminated?: boolean }> = {
+  plywood: { mat: 'plywood', label: 'Birch plywood', price: 0.00004, laminated: true },
   mdf: { mat: 'mdf', label: 'MDF', price: 0.00003 },
   pine: { mat: 'pine', label: 'Pine', price: 0.00005 },
   oak: { mat: 'oak', label: 'White oak', price: 0.00018 },
@@ -211,8 +231,25 @@ const panel: PartDef = {
     const r = num(p, 'corner', 0)
     const mat = SHEET_MATS[str(p, 'material', 'plywood')]?.mat ?? 'plywood'
     const wantHoles = p.holes === true
+    const laminated = SHEET_MATS[str(p, 'material', 'plywood')]?.laminated === true
+
     if (r <= 0 && !wantHoles) {
-      return [{ kind: 'box', mat, size: [w, t, d], at: [0, t / 2, 0] }]
+      // A sawn edge is never a perfect arris; a small break catches the light
+      // and stops the panel reading as an untextured slab.
+      const edge = Math.min(0.6, t * 0.16, w * 0.004, d * 0.004)
+      if (laminated && t >= PLY_LAYER * 2.5) {
+        // Plywood shows its veneers on every cut edge — build it as the stack
+        // it actually is, with the grain direction alternating.
+        const n = Math.max(3, Math.round(t / PLY_LAYER) | 1) // always odd, like real ply
+        const lt = t / n
+        return Array.from({ length: n }, (_, i) => ({
+          kind: 'box' as const,
+          mat: i % 2 === 0 ? mat : { color: '#B08A55', rough: 0.78, density: 0.6 },
+          size: [w, lt, d] as Vec3,
+          at: [0, lt / 2 + i * lt, 0] as Vec3,
+        }))
+      }
+      return [{ kind: 'box', mat, size: [w, t, d], at: [0, t / 2, 0], bevel: edge > 0.05 ? edge : undefined }]
     }
     const outline: Vec2[] = r > 0 ? roundedOutline(w, d, r) : [[-w / 2, -d / 2], [w / 2, -d / 2], [w / 2, d / 2], [-w / 2, d / 2]]
     const holes: Vec2[][] = []
