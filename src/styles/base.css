@@ -1,0 +1,45 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #root { height: 100%; width: 100%; overflow: hidden; }
+
+body {
+  background: var(--bg-0);
+  color: var(--tx-0);
+  font-family: var(--font);
+  font-size: var(--fs-md);
+  font-feature-settings: "cv02","cv03","cv04","ss01","tnum";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  user-select: none;
+  cursor: default;
+}
+
+::selection { background: var(--brand-glow); color: #fff; }
+
+/* --- scrollbars --- */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--line-2); border-radius: 6px;
+  border: 3px solid transparent; background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--line-3); background-clip: content-box; }
+::-webkit-scrollbar-corner { background: transparent; }
+
+button, input, select, textarea { font: inherit; color: inherit; }
+button { background: none; border: none; cursor: pointer; }
+canvas { display: block; outline: none; }
+
+:focus-visible { outline: 2px solid var(--brand); outline-offset: 1px; }
+
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.num  { font-variant-numeric: tabular-nums; }
+
+.scroll-y { overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; }
+
+/* utility */
+.row { display: flex; align-items: center; }
+.col { display: flex; flex-direction: column; }
+.grow { flex: 1 1 auto; min-width: 0; min-height: 0; }
+.sep-v { width: 1px; align-self: stretch; background: var(--line); margin: 8px 2px; }
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

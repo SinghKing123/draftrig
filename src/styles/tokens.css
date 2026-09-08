@@ -1,0 +1,68 @@
+/* ============================================================
+   BUILDsim design tokens
+   Semantics:  blue  = you / selection / UI intent
+               amber = energized / current / live simulation
+   ============================================================ */
+:root {
+  /* --- surfaces --- */
+  --void:      #08090B;   /* viewport background */
+  --bg-0:      #0C0E12;   /* app canvas */
+  --bg-1:      #111419;   /* panels */
+  --bg-2:      #161A20;   /* raised / headers */
+  --bg-3:      #1D222A;   /* inputs, wells */
+  --bg-4:      #262C36;   /* hover */
+
+  --line:      #22272F;
+  --line-2:    #2E353F;
+  --line-3:    #3D4552;
+
+  /* --- text --- */
+  --tx-0:      #EEF2F7;
+  --tx-1:      #B6C0CD;
+  --tx-2:      #7C8797;
+  --tx-3:      #545E6C;
+
+  /* --- brand --- */
+  --brand:     #4C8DFF;
+  --brand-hi:  #6FA4FF;
+  --brand-lo:  #2C6BDB;
+  --brand-dim: rgba(76, 141, 255, 0.14);
+  --brand-glow:rgba(76, 141, 255, 0.35);
+
+  /* --- energy / simulation --- */
+  --volt:      #FFB020;
+  --volt-hi:   #FFC85C;
+  --volt-dim:  rgba(255, 176, 32, 0.16);
+
+  /* --- status --- */
+  --ok:        #3DD68C;
+  --warn:      #F5B942;
+  --err:       #FF6B6B;
+  --info:      #59B0FF;
+
+  /* --- signal palette (nets, probes, traces) --- */
+  --sig-1: #4C8DFF;  --sig-2: #FFB020;  --sig-3: #3DD68C;  --sig-4: #FF6B9D;
+  --sig-5: #A78BFA;  --sig-6: #22D3EE;  --sig-7: #FF8A4C;  --sig-8: #C3E88D;
+
+  /* --- geometry --- */
+  --r-xs: 3px;  --r-sm: 5px;  --r-md: 8px;  --r-lg: 12px;  --r-xl: 16px;
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;  --sp-5: 24px; --sp-6: 32px;
+
+  /* --- type --- */
+  --font: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+  --fs-xs: 10.5px; --fs-sm: 11.5px; --fs-md: 12.5px; --fs-lg: 14px; --fs-xl: 17px;
+
+  /* --- elevation --- */
+  --sh-1: 0 1px 2px rgba(0,0,0,.4);
+  --sh-2: 0 4px 14px rgba(0,0,0,.45), 0 1px 3px rgba(0,0,0,.4);
+  --sh-3: 0 16px 48px rgba(0,0,0,.6), 0 2px 8px rgba(0,0,0,.5);
+
+  --dur: 120ms;
+  --ease: cubic-bezier(.22,.61,.36,1);
+
+  /* --- layout --- */
+  --topbar-h: 44px;
+  --statusbar-h: 24px;
+  --rail-w: 48px;
+}
