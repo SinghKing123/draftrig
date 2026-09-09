@@ -182,7 +182,7 @@ export function Landing() {
                 <span className="kicker">Under the hood</span>
                 <h2 className="sec-title">A real solver, not an animation.</h2>
                 <p className="sec-sub" style={{ marginBottom: 18 }}>
-                  Twinbench runs modified nodal analysis, the same method SPICE uses. Non-linear
+                  {BRAND.name} runs modified nodal analysis, the same method SPICE uses. Non-linear
                   parts are solved by Newton-Raphson at every timestep. Capacitors and inductors use
                   backward-Euler companion models.
                 </p>

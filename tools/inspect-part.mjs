@@ -7,7 +7,7 @@ await page.waitForTimeout(2500)
 
 const part = process.argv[2] || 'bench-supply'
 await page.evaluate((id) => {
-  const doc = window.twinbench.doc.getState()
+  const doc = window.draftrig.doc.getState()
   doc.newDoc()
   doc.addPart(id, [0, 0, 0])
   doc.requestFrame('all')

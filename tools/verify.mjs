@@ -3,8 +3,7 @@ import { promises as dns } from 'node:dns'
 const UA = { 'user-agent': 'name-check/1.0', accept: 'application/rdap+json' }
 
 // Controls first: domains whose answer we already know, to prove the method.
-const NAMES = ['google','github','protobench','buildsim','wokwi','tinkercad','rigwright',
-               'twinbench','wholebench','artebench','draftrig','trialrig','mockrig']
+const NAMES = ['google', '3dsmth', '3dsmith', 'threedsmth', 'draftrig']
 
 async function rdap(domain) {
   try {

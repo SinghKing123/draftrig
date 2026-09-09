@@ -24,8 +24,31 @@ export interface ProjectRecord extends ProjectSummary {
   doc: Doc
 }
 
-const LOCAL_INDEX = 'twinbench.projects'
-const LOCAL_DOC = (id: string) => `twinbench.project.${id}`
+const LOCAL_INDEX = 'draftrig.projects'
+const LOCAL_DOC = (id: string) => `draftrig.project.${id}`
+
+/**
+ * Projects saved before the rename live under the old key. Move them across
+ * once, on first load, so nobody opens the library to find their work gone.
+ * The old keys are left in place: copying is cheap, and a failed migration
+ * that has already deleted the source is not recoverable.
+ */
+function migrateLegacyKeys(): void {
+  try {
+    if (localStorage.getItem(LOCAL_INDEX)) return
+    const legacyIndex = localStorage.getItem('twinbench.projects')
+    if (!legacyIndex) return
+    for (const entry of JSON.parse(legacyIndex) as { id: string }[]) {
+      const doc = localStorage.getItem(`twinbench.project.${entry.id}`)
+      if (doc) localStorage.setItem(LOCAL_DOC(entry.id), doc)
+    }
+    localStorage.setItem(LOCAL_INDEX, legacyIndex)
+  } catch {
+    /* unreadable or full storage: the library simply starts empty */
+  }
+}
+
+migrateLegacyKeys()
 
 /* ------------------------------------------------------------------ */
 /* Browser storage                                                     */

@@ -5,7 +5,7 @@ import { useDoc } from '@/state/doc'
  * First run tour.
  *
  * A dark overlay with a hole cut around whichever part of the interface is
- * being explained, plus a card next to it. Six steps, about thirty seconds,
+ * being explained, plus a card next to it. Seven steps, about forty seconds,
  * skippable at any point and never shown twice.
  */
 

@@ -1,9 +1,9 @@
-# Putting Twinbench online
+# Putting Draftrig online
 
 Written for someone doing this for the first time. Every step says what it costs
 and whether it can be undone.
 
-The app works with **none** of this done — it runs locally, and projects save in
+The app works with **none** of this done. It runs locally, and projects save in
 the browser. Accounts and cloud sync are additive. Do these steps when you want
 them, not before.
 
@@ -22,16 +22,16 @@ Open <http://localhost:5173>. The landing page is at `/`, the editor at `/app`.
 
 ---
 
-## 2. Put it on the internet — free
+## 2. Put it on the internet, free
 
-Twinbench is a static site, so hosting is free and takes about five minutes.
+Draftrig is a static site, so hosting is free and takes about five minutes.
 
 1. Put the code on GitHub (a private repo is fine).
 2. Go to [vercel.com](https://vercel.com), sign in with GitHub, click **Add New
    → Project**, and pick the repo.
 3. Vercel detects Vite on its own. Press **Deploy**.
 
-You get a URL like `twinbench-abc123.vercel.app`. Every push to your main branch
+You get a URL like `draftrig-abc123.vercel.app`. Every push to your main branch
 redeploys automatically.
 
 `vercel.json` is already in the repo. It does one important thing: tells the
@@ -57,13 +57,13 @@ This is what makes sign-in and cloud-saved projects work.
 
 That creates two tables. The important part is the row-level security policies:
 they are enforced by the database itself, so no bug in the app can leak one
-user's projects to another. That is worth understanding — it is the difference
+user's projects to another. That is worth understanding, it is the difference
 between "we check permissions in code" and "the database refuses".
 
 ### 3b. Let people sign in with Google
 
 1. In Supabase: **Authentication → Providers → Google**, and switch it on. Leave
-   the page open — you need the **Callback URL** it shows you.
+   the page open, you need the **Callback URL** it shows you.
 2. In [Google Cloud Console](https://console.cloud.google.com): create a
    project, then **APIs & Services → Credentials → Create Credentials → OAuth
    client ID**, type **Web application**.
@@ -89,7 +89,7 @@ VITE_SUPABASE_ANON_KEY=eyJ...
 On Vercel, add the same two under **Settings → Environment Variables**, then
 redeploy.
 
-The anon key is *meant* to be public — it ships in the browser bundle by design.
+The anon key is *meant* to be public. It ships in the browser bundle by design.
 Row-level security is what protects the data. Never put the **service role** key
 anywhere near the front end; that one bypasses every policy.
 
@@ -99,15 +99,29 @@ anywhere near the front end; that one bypasses every policy.
 
 ## 4. Point a domain at it
 
-1. Buy `twinbench.com` from any registrar — Cloudflare and Namecheap are both
-   fine, around **$12 a year**. Registrars sell identical products; ignore the
-   upsells.
+Every registrar sells the identical product. A `.com` costs Verisign's wholesale
+fee plus ICANN's $0.18, and the difference between registrars is only how much
+markup they add on top. Ignore every upsell they offer.
+
+| Registrar  | Year one | Every year after |
+| ---------- | -------- | ---------------- |
+| Cloudflare | $10.44   | $10.44           |
+| Porkbun    | ~$11     | ~$11             |
+| Namecheap  | ~$10     | ~$15             |
+| GoDaddy    | ~$1 to $5 | ~$22            |
+
+Cloudflare sells at cost and never raises the price at renewal, which is why it
+is the one to use. GoDaddy's first year is the cheapest and its renewal is the
+most expensive, which is the whole business model.
+
+1. Register `draftrig.com` at Cloudflare. Add **WHOIS privacy**, which is free
+   everywhere and keeps your home address off a public database.
 2. In Vercel: **Settings → Domains → Add**, type the domain, and follow the DNS
    instructions it gives you.
 3. Update Supabase's **Site URL** and Google's **Authorised origins** to the new
    address, or sign-in will break.
 
-**Cost:** about $12/year. HTTPS is automatic and free.
+**Cost:** about $10.44/year, forever. HTTPS is automatic and free.
 
 ---
 
@@ -141,5 +155,5 @@ Resist doing it early.
 
 The landing page is about 24 kB gzipped. The 3D engine, solver and part catalog
 are in separate chunks that only download when someone opens the editor. Keep it
-that way — if you find yourself importing `@/parts` or anything from `@/scene`
+that way. If you find yourself importing `@/parts` or anything from `@/scene`
 into a marketing route, you have just put a 3D engine on your front page.

@@ -10,7 +10,7 @@ await app.waitForTimeout(2500)
 // Drive through the store rather than the onboarding UI: more robust, and it
 // is the same path a saved project takes.
 await app.evaluate(() => {
-  const tb = window.twinbench
+  const tb = window.draftrig
   const s = tb.starters.find((x) => x.id === 'led')
   tb.doc.getState().loadDoc(s.build())
   tb.engine.reset()
@@ -20,7 +20,7 @@ await app.waitForTimeout(600)
 await app.reload({ waitUntil: 'networkidle' })
 await app.waitForTimeout(2500)
 await app.evaluate(() => {
-  const tb = window.twinbench
+  const tb = window.draftrig
   const s = tb.starters.find((x) => x.id === 'led')
   tb.doc.getState().loadDoc(s.build())
   tb.engine.reset()

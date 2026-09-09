@@ -10,6 +10,7 @@ import { useSim } from '@/state/sim'
 import { engine } from '@/sim/engine'
 import { downloadProject, openProject } from '@/io/project'
 import type { SaveState } from '@/app/App'
+import { BRAND, FILE_EXT } from '@/brand'
 
 const MODES: { id: EditorMode; label: string; icon: typeof IconCursor; hint: string }[] = [
   { id: 'build', label: 'Build', icon: IconCursor, hint: 'Place and arrange parts' },
@@ -79,7 +80,7 @@ export function TopBar({ saveState = 'idle' }: { saveState?: SaveState }) {
         {SAVE_LABEL[saveState]}
       </span>
 
-      <button className="btn ghost icon" title="Open a .twinbench file" onClick={() => fileInput.current?.click()}>
+      <button className="btn ghost icon" title={`Open a .${FILE_EXT} file`} onClick={() => fileInput.current?.click()}>
         <IconOpen />
       </button>
       <button className="btn ghost icon" title="Download a copy" onClick={() => downloadProject(useDoc.getState().doc)}>
@@ -88,7 +89,7 @@ export function TopBar({ saveState = 'idle' }: { saveState?: SaveState }) {
       <input
         ref={fileInput}
         type="file"
-        accept=".twinbench,.buildsim,.json"
+        accept={`.${FILE_EXT},.twinbench,.buildsim,.json`}
         style={{ display: 'none' }}
         onChange={async (e) => {
           const file = e.target.files?.[0]
@@ -98,7 +99,7 @@ export function TopBar({ saveState = 'idle' }: { saveState?: SaveState }) {
             engine.reset()
           } catch (err) {
             console.error(err)
-            window.alert('That file could not be read as a Twinbench project.')
+            window.alert(`That file could not be read as a ${BRAND.name} project.`)
           }
           e.target.value = ''
         }}

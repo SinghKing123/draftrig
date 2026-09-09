@@ -13,7 +13,7 @@ await page.getByText('2020 frame cube').click()
 await page.waitForTimeout(2500)
 
 const shot = async (label, patch) => {
-  await page.evaluate((p) => window.twinbench.doc.getState().setView(p), patch)
+  await page.evaluate((p) => window.draftrig.doc.getState().setView(p), patch)
   await page.waitForTimeout(1800)
   await page.screenshot({ path: `shots/ab-${label}.png`, clip: { x: 270, y: 45, width: 700, height: 600 } })
 }

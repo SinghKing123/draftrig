@@ -1,20 +1,21 @@
 /**
  * Every piece of brand-facing copy lives here.
  *
- * WORKING TITLE. "Twinbench" is a placeholder while the real name is decided.
  * Renaming is a change to this file and nothing else: no product name, tagline
- * or domain is duplicated into a component, a page title or a meta tag.
+ * or domain is duplicated into a component, a page title or a meta tag. The one
+ * exception is index.html, which is served before any JavaScript runs and so
+ * carries its own copy of the title and description for crawlers.
  *
  * When the logo arrives, set `logoSrc` to its path and the mark in
- * src/ui/Logo.tsx will use it instead of the drawn placeholder.
+ * src/ui/Logo.tsx will use it instead of the placeholder drawn in code.
  */
 
 export const BRAND = {
   /** Displayed everywhere. The two halves are styled differently in the mark. */
-  name: 'Twinbench',
-  nameParts: { strong: 'Twin', light: 'bench' },
+  name: 'Draftrig',
+  nameParts: { strong: 'Draft', light: 'rig' },
 
-  domain: 'twinbench.com',
+  domain: 'draftrig.com',
 
   /** Path to a logo image. Null uses the placeholder mark drawn in code. */
   logoSrc: null as string | null,
@@ -29,7 +30,7 @@ export const BRAND = {
   /** Short form for the app chrome. */
   short: 'Design and simulate real builds in 3D.',
 
-  support: 'hello@twinbench.com',
+  support: 'hello@draftrig.com',
 
   social: {
     x: '',
@@ -38,7 +39,10 @@ export const BRAND = {
   },
 } as const
 
-/** Page title helper: "Editor · Twinbench" */
+/** Page title helper: "Editor · Draftrig" */
 export function pageTitle(section?: string): string {
-  return section ? `${section} · ${BRAND.name}` : `${BRAND.name}, ${BRAND.tagline}`
+  return section ? `${section} · ${BRAND.name}` : `${BRAND.name}. ${BRAND.tagline}`
 }
+
+/** File extension for saved projects. Lower case, no dot. */
+export const FILE_EXT = 'draftrig'

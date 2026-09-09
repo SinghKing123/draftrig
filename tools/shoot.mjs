@@ -40,7 +40,7 @@ await page.getByRole('button', { name: /Bill of materials/i }).click()
 await page.waitForTimeout(600)
 await page.screenshot({ path: `${OUT}/04-bom.png` })
 
-// The frame starter — the mechanical side.
+// The frame starter, the mechanical side.
 await page.evaluate(() => window.dispatchEvent(new KeyboardEvent('keydown', { key: '1' })))
 await page.reload({ waitUntil: 'networkidle' })
 await page.waitForTimeout(2000)

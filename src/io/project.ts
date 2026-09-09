@@ -1,5 +1,6 @@
 import type { Doc } from '@/state/doc'
 import { emptyDoc } from '@/state/doc'
+import { BRAND, FILE_EXT } from '@/brand'
 
 /**
  * Project files are plain JSON: instances reference part ids and carry their
@@ -9,9 +10,11 @@ import { emptyDoc } from '@/state/doc'
 
 export const FILE_VERSION = 1
 
+/** Every name this project has shipped under. All of them still load. */
+const FORMATS = ['draftrig', 'twinbench', 'buildsim'] as const
+
 interface ProjectFile {
-  /** 'buildsim' is the pre-rename format; still readable. */
-  format: 'twinbench' | 'buildsim'
+  format: (typeof FORMATS)[number]
   version: number
   savedAt: string
   doc: Doc
@@ -19,7 +22,7 @@ interface ProjectFile {
 
 export function serializeProject(doc: Doc): string {
   const payload: ProjectFile = {
-    format: 'twinbench',
+    format: 'draftrig',
     version: FILE_VERSION,
     savedAt: new Date().toISOString(),
     doc,
@@ -29,12 +32,12 @@ export function serializeProject(doc: Doc): string {
 
 export function parseProject(text: string): Doc {
   const data = JSON.parse(text) as Partial<ProjectFile>
-  // Files written before the rename still load.
-  if ((data.format !== 'twinbench' && data.format !== 'buildsim') || !data.doc) {
-    throw new Error('Not a Twinbench project file')
+  // Files written under an earlier name still load.
+  if (!FORMATS.includes(data.format as (typeof FORMATS)[number]) || !data.doc) {
+    throw new Error(`Not a ${BRAND.name} project file`)
   }
   if ((data.version ?? 0) > FILE_VERSION) {
-    throw new Error(`This file was written by a newer version of Twinbench (v${data.version}).`)
+    throw new Error(`This file was written by a newer version of ${BRAND.name} (v${data.version}).`)
   }
   return normalise(data.doc)
 }
@@ -54,14 +57,14 @@ function normalise(doc: Partial<Doc>): Doc {
 }
 
 const safeFileName = (name: string): string =>
-  (name.trim() || 'twinbench-project').replace(/[^\w.\- ]+/g, '').replace(/\s+/g, '-').toLowerCase()
+  (name.trim() || `${FILE_EXT}-project`).replace(/[^\w.\- ]+/g, '').replace(/\s+/g, '-').toLowerCase()
 
 export function downloadProject(doc: Doc): void {
   const blob = new Blob([serializeProject(doc)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `${safeFileName(doc.name)}.twinbench`
+  a.download = `${safeFileName(doc.name)}.${FILE_EXT}`
   a.click()
   // Give the browser a moment to start the download before revoking.
   setTimeout(() => URL.revokeObjectURL(url), 4000)

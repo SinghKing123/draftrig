@@ -10,7 +10,7 @@ await page.goto('http://localhost:4173/app', { waitUntil: 'networkidle' })
 await page.waitForTimeout(1500)
 // Software rendering makes the viewport the slow part in headless; we are
 // measuring the solver, so turn the heavy post-processing off.
-await page.evaluate(() => window.twinbench.doc.getState().setView({ quality: 'off', shadows: false }))
+await page.evaluate(() => window.draftrig.doc.getState().setView({ quality: 'off', shadows: false }))
 await page.getByText('555 blinker').click()
 await page.waitForTimeout(2000)
 await page.keyboard.press('Space')
@@ -20,7 +20,7 @@ const samples = await page.evaluate(async () => {
   const out = []
   const t0 = performance.now()
   while (performance.now() - t0 < 6000) {
-    const s = window.twinbench.sim.getState()
+    const s = window.draftrig.sim.getState()
     out.push({ t: s.time, glow: Math.max(0, ...Object.values(s.glow)), rt: s.realtimeRatio })
     await new Promise((r) => setTimeout(r, 60))
   }

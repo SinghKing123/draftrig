@@ -1,11 +1,13 @@
 import { BRAND } from '@/brand'
 
 /**
- * The Twinbench mark: a solid form and its ghost twin, overlapping, with a live
- * node where they meet. The solid square is the thing you will build; the
- * dashed one is the copy you get to test first.
+ * The placeholder mark: a frame, half built and half still drafted.
  *
- * Drawn to stay legible at 16 px, two shapes, one accent, no fine detail.
+ * The solid run is the rig you have actually made. The dashed run closing the
+ * square is the part that only exists on the bench so far. The live node sits
+ * where the two meet, which is the whole product in one shape.
+ *
+ * Drawn to stay legible at 16 px: two strokes, one accent, no fine detail.
  */
 export function LogoMark({ size = 22 }: { size?: number }) {
   // Once a real logo exists, brand.logoSrc points at it and this whole
@@ -15,20 +17,21 @@ export function LogoMark({ size = 22 }: { size?: number }) {
   }
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden="true">
-      {/* The twin: tested, not yet real. */}
-      <rect
-        x="12.5" y="4.5" width="15" height="15" rx="3.5"
-        stroke="var(--brand)" strokeWidth="1.8" strokeOpacity="0.55"
-        strokeDasharray="3.4 2.6"
+      {/* Drafted: not built yet. */}
+      <path
+        d="M7 6.5 H26 V25.5"
+        stroke="var(--brand)" strokeWidth="2" strokeOpacity="0.5"
+        strokeDasharray="3.2 2.8" strokeLinecap="round" strokeLinejoin="round"
       />
-      {/* The build itself. */}
-      <rect
-        x="4.5" y="12.5" width="15" height="15" rx="3.5"
-        fill="rgba(76,141,255,0.12)" stroke="var(--brand)" strokeWidth="1.8"
+      {/* Built. */}
+      <path
+        d="M7 6.5 V25.5 H26"
+        stroke="var(--brand)" strokeWidth="2.4"
+        strokeLinecap="round" strokeLinejoin="round"
       />
-      {/* Where the two agree. */}
-      <circle cx="16" cy="16" r="4.6" fill="var(--bg-1)" />
-      <circle cx="16" cy="16" r="2.6" fill="var(--volt)" />
+      {/* Where the two meet, carrying current. */}
+      <circle cx="7" cy="6.5" r="3.6" fill="var(--bg-1)" />
+      <circle cx="7" cy="6.5" r="2.4" fill="var(--volt)" />
     </svg>
   )
 }

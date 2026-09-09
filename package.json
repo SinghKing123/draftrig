@@ -1,9 +1,9 @@
 {
-  "name": "twinbench",
+  "name": "draftrig",
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Twinbench - design, wire and simulate the whole build, circuit and structure, before you spend anything.",
+  "description": "Draftrig - design, wire and simulate the whole build, circuit and structure, before you spend anything.",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",

@@ -1,8 +1,8 @@
-# Twinbench
+# Draftrig
 
 **Build it twice. The first time is free.**
 
-A 3D design and simulation environment for real builds — electronics *and* the
+A 3D design and simulation environment for real builds: electronics *and* the
 structure they live in. Wire a circuit on a breadboard, frame it in 2020
 extrusion, cut the plywood deck, and find out whether it works before you spend
 anything.
@@ -15,8 +15,8 @@ npm run typecheck
 npm run build
 ```
 
-Landing page at `/`, editor at `/app`. It runs with no configuration at all —
-projects save to the browser. See **[SETUP.md](SETUP.md)** to add accounts,
+Landing page at `/`, editor at `/app`. It runs with no configuration at all,
+and projects save to the browser. See **[SETUP.md](SETUP.md)** to add accounts,
 cloud sync and a domain.
 
 ## Shape of the app
@@ -29,7 +29,7 @@ cloud sync and a domain.
 ```
 
 Accounts are **additive**. With no backend configured the editor is fully
-functional and the account UI hides itself — local development, self-hosting and
+functional and the account UI hides itself, so local development, self-hosting and
 an offline user all run the same code path.
 
 ---
@@ -40,7 +40,7 @@ an offline user all run the same code path.
 
 Every part is a pure function from parameters to a declarative solid tree, a set
 of ports, and an electrical model. Nothing is baked. One resistor definition
-covers every value, tolerance, power rating and lead pitch — and generates its
+covers every value, tolerance, power rating and lead pitch, and generates its
 own colour bands from the value. One extrusion definition covers 2020, 2040,
 4040 at any length, with a real T-slot cross-section.
 
@@ -61,7 +61,7 @@ That matters for three reasons:
 src/
   parts/
     kernel/          the part system itself
-      types.ts       Solid / Port / PartDef — the whole authoring language
+      types.ts       Solid / Port / PartDef, the whole authoring language
       build.ts       solid tree -> three.js geometry + mass properties
       materials.ts   named materials with real densities
       units.ts       engineering notation, colour codes, E-series, wire tables
@@ -88,8 +88,8 @@ its natural seating plane sits at `y = 0`.
 
 ## The circuit solver
 
-Modified nodal analysis, written from scratch. Dense LU with partial pivoting —
-the circuits people build in a sandbox are small, and sparsity would cost more
+Modified nodal analysis, written from scratch. Dense LU with partial pivoting.
+The circuits people build in a sandbox are small, and sparsity would cost more
 bookkeeping than it saves.
 
 - **Linear**: resistors, capacitors, inductors, voltage and current sources,
@@ -99,12 +99,12 @@ bookkeeping than it saves.
   rail saturation.
 - **Reactive** via backward-Euler companion models, so transients are real:
   an RC charges to 63.2 % in one time constant, an inductor ramps at V/L.
-- **Sources** can carry a waveform — sine, square, triangle, pulse.
+- **Sources** can carry a waveform: sine, square, triangle, pulse.
 - **Behavioural** parts (555, logic, microcontroller, regulator, H-bridge,
   shift register) are evaluated in JavaScript each timestep and present
   themselves to the solver as a Thevenin source per pin: a voltage behind a
   series resistance, referenced to the part's own ground. That single
-  primitive covers push-pull outputs, open drain, and high-Z inputs — and it
+  primitive covers push-pull outputs, open drain, and high-Z inputs, and it
   means a 555 driving an LED loads down exactly as the real chip does.
 
 The solver runs on its own timer, not inside `requestAnimationFrame`. Tying it
@@ -149,7 +149,7 @@ const myPart: PartDef = {
     { kind: 'cyl', mat: 'resistor-beige', r: 1.15, h: 6.3, rot: [0, 0, 90], at: [0, 3.2, 0] },
   ],
 
-  // Pure. `dir` is the outward normal — wires launch along it and mates align to it.
+  // Pure. `dir` is the outward normal: wires launch along it and mates align to it.
   ports: (p) => [
     { id: '1', label: 'A', kind: 'electrical', pos: [-5, -1.6, 0], dir: [0, -1, 0] },
     { id: '2', label: 'B', kind: 'electrical', pos: [ 5, -1.6, 0], dir: [0, -1, 0] },
@@ -175,13 +175,13 @@ not exist, or any parameter extreme breaks the build.
 ### Available solids
 
 `box` (with optional bevel) · `cyl` (cone if `r2` differs) · `sphere` · `torus`
-· `extrude` (a 2D profile with holes, swept — this is how T-slot extrusion,
-sheet stock and PCBs are made) · `lathe` (revolved profile — LED domes, screw
-heads, binding posts) · `tube` (a swept polyline — leads, formed wire) ·
+· `extrude` (a 2D profile with holes, swept, which is how T-slot extrusion,
+sheet stock and PCBs are made) · `lathe` (revolved profile: LED domes, screw
+heads, binding posts) · `tube` (a swept polyline: leads, formed wire) ·
 `plane` · `group` (nested, for sub-assemblies).
 
-Cylinders and lathes take `phi: [startDeg, sweepDeg]` for a partial revolution
-— sleeves, stripes, D-shafts. Use it rather than stacking a second full
+Cylinders and lathes take `phi: [startDeg, sweepDeg]` for a partial revolution:
+sleeves, stripes, D-shafts. Use it rather than stacking a second full
 cylinder on top of the first: coincident surfaces z-fight and speckle.
 Cylinders also take `chamfer`, and boxes `bevel`. Tessellation is derived from
 each radius, so a 0.25 mm lead and a 40 mm can are both round without either
@@ -212,6 +212,6 @@ Left drag orbits, right drag pans, wheel zooms.
 
 ## Project files
 
-`.twinbench` files are plain JSON: parts by id plus their parameters, and the
-connections between them. No geometry is stored — it is regenerated on load, so
+`.draftrig` files are plain JSON: parts by id plus their parameters, and the
+connections between them. No geometry is stored, it is regenerated on load, so
 a saved project picks up part improvements for free.

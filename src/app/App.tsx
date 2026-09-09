@@ -26,7 +26,7 @@ import { STARTERS } from '@/io/starters'
  */
 declare global {
   interface Window {
-    twinbench: {
+    draftrig: {
       doc: typeof useDoc
       sim: typeof useSim
       engine: typeof engine
@@ -34,7 +34,7 @@ declare global {
     }
   }
 }
-window.twinbench = { doc: useDoc, sim: useSim, engine, starters: STARTERS }
+window.draftrig = { doc: useDoc, sim: useSim, engine, starters: STARTERS }
 
 /** Debounce for autosave: long enough not to thrash, short enough to trust. */
 const AUTOSAVE_MS = 1500
