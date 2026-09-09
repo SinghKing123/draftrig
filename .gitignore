@@ -13,3 +13,8 @@ coined.txt
 err*.txt
 shots
 cerr.txt
+
+# Name-search scratch output
+*free.txt
+*err.txt
+pairs.txt
