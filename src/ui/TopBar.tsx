@@ -1,5 +1,7 @@
 import { useRef } from 'react'
+import { Link } from 'react-router-dom'
 import { Wordmark } from './Logo'
+import { AccountMenu } from './AccountMenu'
 import {
   IconCursor, IconOpen, IconPause, IconPlay, IconRedo, IconReset, IconSave, IconUndo, IconWire, IconZap,
 } from './Icons'
@@ -7,6 +9,7 @@ import { useDoc, type EditorMode } from '@/state/doc'
 import { useSim } from '@/state/sim'
 import { engine } from '@/sim/engine'
 import { downloadProject, openProject } from '@/io/project'
+import type { SaveState } from '@/app/App'
 
 const MODES: { id: EditorMode; label: string; icon: typeof IconCursor; hint: string }[] = [
   { id: 'build', label: 'Build', icon: IconCursor, hint: 'Place and arrange parts' },
@@ -21,7 +24,14 @@ const SPEEDS = [
   { v: 1, label: 'Real time' },
 ]
 
-export function TopBar() {
+const SAVE_LABEL: Record<SaveState, string> = {
+  idle: '',
+  saving: 'Saving…',
+  saved: 'Saved',
+  error: 'Not saved',
+}
+
+export function TopBar({ saveState = 'idle' }: { saveState?: SaveState }) {
   const mode = useDoc((s) => s.mode)
   const setMode = useDoc((s) => s.setMode)
   const name = useDoc((s) => s.doc.name)
@@ -49,7 +59,9 @@ export function TopBar() {
 
   return (
     <header className="topbar">
-      <Wordmark />
+      <Link to="/" title="Back to the site" style={{ textDecoration: 'none' }}>
+        <Wordmark />
+      </Link>
       <div className="sep-v" />
 
       <input
@@ -59,17 +71,24 @@ export function TopBar() {
         onChange={(e) => rename(e.target.value)}
         aria-label="Project name"
       />
+      <span
+        className="save-state"
+        data-state={saveState}
+        title={saveState === 'error' ? 'Could not save. Your work is still here — try again shortly.' : undefined}
+      >
+        {SAVE_LABEL[saveState]}
+      </span>
 
-      <button className="btn ghost icon" title="Open project" onClick={() => fileInput.current?.click()}>
+      <button className="btn ghost icon" title="Open a .twinbench file" onClick={() => fileInput.current?.click()}>
         <IconOpen />
       </button>
-      <button className="btn ghost icon" title="Save project" onClick={() => downloadProject(useDoc.getState().doc)}>
+      <button className="btn ghost icon" title="Download a copy" onClick={() => downloadProject(useDoc.getState().doc)}>
         <IconSave />
       </button>
       <input
         ref={fileInput}
         type="file"
-        accept=".buildsim,.json"
+        accept=".twinbench,.buildsim,.json"
         style={{ display: 'none' }}
         onChange={async (e) => {
           const file = e.target.files?.[0]
@@ -79,7 +98,7 @@ export function TopBar() {
             engine.reset()
           } catch (err) {
             console.error(err)
-            window.alert('That file could not be read as a BUILDsim project.')
+            window.alert('That file could not be read as a Twinbench project.')
           }
           e.target.value = ''
         }}
@@ -135,6 +154,9 @@ export function TopBar() {
         {running ? <IconPause /> : <IconPlay />}
         {running ? 'Pause' : 'Run'}
       </button>
+
+      <div className="sep-v" />
+      <AccountMenu />
     </header>
   )
 }

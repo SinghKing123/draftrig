@@ -3,3 +3,11 @@ dist
 .DS_Store
 *.local
 shots
+
+.env
+.env.local
+dist
+names.txt
+free*.txt
+coined.txt
+err*.txt

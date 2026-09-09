@@ -9,7 +9,7 @@ const problems = []
 page.on('console', (m) => { if (m.type() === 'error') problems.push(m.text()) })
 page.on('pageerror', (e) => problems.push(String(e.message)))
 
-await page.goto('http://localhost:4173/', { waitUntil: 'networkidle' })
+await page.goto('http://localhost:4173/app', { waitUntil: 'networkidle' })
 await page.waitForTimeout(1800)
 
 async function addPart(name) {

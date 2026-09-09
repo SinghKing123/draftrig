@@ -1,6 +1,9 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
-html, body, #root { height: 100%; width: 100%; overflow: hidden; }
+/* The document scrolls normally, which is what the marketing pages need. The
+   editor opts out by pinning itself to the viewport instead. */
+html, body, #root { min-height: 100%; width: 100%; }
+html { scroll-behavior: smooth; }
 
 body {
   background: var(--bg-0);

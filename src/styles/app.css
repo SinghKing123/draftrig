@@ -2,11 +2,14 @@
    BUILDsim — application chrome
    ============================================================ */
 
+/* The editor owns the whole viewport and never scrolls the document. */
 .app {
+  position: fixed;
+  inset: 0;
   display: grid;
   grid-template-rows: var(--topbar-h) 1fr var(--statusbar-h);
-  height: 100%;
   background: var(--bg-0);
+  overflow: hidden;
 }
 
 .app-body {
@@ -77,6 +80,15 @@
   min-width: 110px;
   max-width: 240px;
 }
+.save-state {
+  font-size: var(--fs-xs);
+  color: var(--tx-3);
+  min-width: 46px;
+  transition: color var(--dur) var(--ease);
+}
+.save-state[data-state='saved'] { color: var(--ok); }
+.save-state[data-state='error'] { color: var(--err); }
+
 .doc-name:hover { background: var(--bg-3); }
 .doc-name:focus { background: var(--bg-3); border-color: var(--brand); outline: none; }
 

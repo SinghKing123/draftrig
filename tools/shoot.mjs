@@ -5,7 +5,7 @@ import { mkdirSync } from 'node:fs'
 
 const OUT = process.env.SHOT_DIR || 'shots'
 mkdirSync(OUT, { recursive: true })
-const URL = process.env.APP_URL || 'http://localhost:4173/'
+const URL = process.env.APP_URL || 'http://localhost:4173/app'
 
 const browser = await chromium.launch({
   channel: 'msedge',

@@ -1,4 +1,6 @@
-# BUILDsim
+# Twinbench
+
+**Build it twice. The first time is free.**
 
 A 3D design and simulation environment for real builds — electronics *and* the
 structure they live in. Wire a circuit on a breadboard, frame it in 2020
@@ -8,10 +10,27 @@ anything.
 ```
 npm install
 npm run dev        # http://localhost:5173
-npm test           # solver + catalog + netlist tests
+npm test           # solver + catalog + netlist + behaviour tests
 npm run typecheck
 npm run build
 ```
+
+Landing page at `/`, editor at `/app`. It runs with no configuration at all —
+projects save to the browser. See **[SETUP.md](SETUP.md)** to add accounts,
+cloud sync and a domain.
+
+## Shape of the app
+
+```
+/            marketing page      ~24 kB gzipped, no 3D engine
+/app         the editor          three.js, solver and catalog, lazily loaded
+/projects    project library     cloud when signed in, browser otherwise
+/signin      Google or email link
+```
+
+Accounts are **additive**. With no backend configured the editor is fully
+functional and the account UI hides itself — local development, self-hosting and
+an offline user all run the same code path.
 
 ---
 
@@ -193,6 +212,6 @@ Left drag orbits, right drag pans, wheel zooms.
 
 ## Project files
 
-`.buildsim` files are plain JSON: parts by id plus their parameters, and the
+`.twinbench` files are plain JSON: parts by id plus their parameters, and the
 connections between them. No geometry is stored — it is regenerated on load, so
 a saved project picks up part improvements for free.

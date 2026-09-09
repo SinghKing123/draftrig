@@ -1,4 +1,4 @@
-import type { PartDef, Solid } from '../kernel/types'
+import type { PartDef, Solid, Vec3 } from '../kernel/types'
 import { registerParts } from '../kernel/registry'
 import { eng } from '../kernel/units'
 import { bool, num, str } from './_helpers'
@@ -119,29 +119,40 @@ const benchSupply: PartDef = {
   ],
   solids: () => {
     const w = 120, h = 70, d = 150
+    // The front panel faces +Z, which is toward the default camera. A part
+    // whose controls point away from the viewer looks like a blank box.
     return [
       { kind: 'box', mat: { color: '#2E3238', rough: 0.65, density: 1.2 }, size: [w, h, d], at: [0, h / 2, 0], bevel: 2 },
-      { kind: 'box', mat: { color: '#15181C', rough: 0.5, density: 1.2 }, size: [w - 8, h - 8, 2], at: [0, h / 2, -d / 2 - 0.5], bevel: 1 },
-      // Display.
+      // Recessed front fascia.
+      { kind: 'box', mat: { color: '#15181C', rough: 0.5, density: 1.2 }, size: [w - 8, h - 8, 2], at: [0, h / 2, d / 2 + 0.5], bevel: 1 },
+      // Seven-segment display.
       { kind: 'box', mat: { color: '#0B1A14', rough: 0.2, emissive: '#39E08A', emissiveIntensity: 0.55, density: 2.5 },
-        size: [58, 24, 1], at: [-22, h - 24, -d / 2 - 1.6], tag: 'display', noCollide: true },
+        size: [58, 24, 1], at: [-22, h - 24, d / 2 + 1.6], tag: 'display', noCollide: true },
       // Knobs.
-      { kind: 'cyl', mat: { color: '#1A1D22', rough: 0.5, density: 1.1 }, r: 9, h: 12, rot: [90, 0, 0], at: [34, h - 26, -d / 2 - 6] },
-      { kind: 'cyl', mat: { color: '#1A1D22', rough: 0.5, density: 1.1 }, r: 9, h: 12, rot: [90, 0, 0], at: [34, h - 50, -d / 2 - 6] },
-      // Binding posts.
-      { kind: 'cyl', mat: { color: '#C0272D', rough: 0.4, density: 1.2 }, r: 5.5, h: 9, rot: [90, 0, 0], at: [-30, 16, -d / 2 - 4.5] },
-      { kind: 'cyl', mat: { color: '#1A1C1E', rough: 0.4, density: 1.2 }, r: 5.5, h: 9, rot: [90, 0, 0], at: [-6, 16, -d / 2 - 4.5] },
-      { kind: 'cyl', mat: { color: '#3DD68C', rough: 0.4, density: 1.2 }, r: 5.5, h: 9, rot: [90, 0, 0], at: [18, 16, -d / 2 - 4.5] },
-      // Vents.
-      { kind: 'box', mat: { color: '#191C21', rough: 0.8, density: 0.01 }, size: [w - 20, 30, 1], at: [0, h - 20, d / 2 + 0.2], noCollide: true },
+      { kind: 'cyl', mat: { color: '#1A1D22', rough: 0.5, density: 1.1 }, r: 9, h: 12, chamfer: 1.2, rot: [90, 0, 0], at: [34, h - 26, d / 2 + 6] },
+      { kind: 'cyl', mat: { color: '#1A1D22', rough: 0.5, density: 1.1 }, r: 9, h: 12, chamfer: 1.2, rot: [90, 0, 0], at: [34, h - 50, d / 2 + 6] },
+      // Knob pointers, so the settings read as settings.
+      { kind: 'box', mat: { color: '#E6EAF0', rough: 0.6, density: 0.01 }, size: [1.4, 6, 0.6], at: [34, h - 20, d / 2 + 8], noCollide: true },
+      { kind: 'box', mat: { color: '#E6EAF0', rough: 0.6, density: 0.01 }, size: [1.4, 6, 0.6], at: [34, h - 44, d / 2 + 8], noCollide: true },
+      // Binding posts: red, black, green earth.
+      { kind: 'cyl', mat: { color: '#C0272D', rough: 0.4, density: 1.2 }, r: 5.5, h: 9, chamfer: 0.8, rot: [90, 0, 0], at: [-30, 16, d / 2 + 4.5] },
+      { kind: 'cyl', mat: { color: '#1A1C1E', rough: 0.4, density: 1.2 }, r: 5.5, h: 9, chamfer: 0.8, rot: [90, 0, 0], at: [-6, 16, d / 2 + 4.5] },
+      { kind: 'cyl', mat: { color: '#3DD68C', rough: 0.4, density: 1.2 }, r: 5.5, h: 9, chamfer: 0.8, rot: [90, 0, 0], at: [18, 16, d / 2 + 4.5] },
+      // Cooling vents on the back.
+      { kind: 'box', mat: { color: '#191C21', rough: 0.8, density: 0.01 }, size: [w - 20, 30, 1], at: [0, h - 20, -d / 2 - 0.2], noCollide: true },
+      // Rubber feet.
+      ...([[-1, -1], [1, -1], [-1, 1], [1, 1]] as const).map(([sx, sz]) => ({
+        kind: 'cyl' as const, mat: 'rubber', r: 6, h: 3,
+        at: [sx * (w / 2 - 12), 1.5, sz * (d / 2 - 12)] as Vec3,
+      })),
     ]
   },
   ports: () => {
     const d = 150
     return [
-      { id: 'p', label: '+ Output', kind: 'electrical', pos: [-30, 16, -d / 2 - 9], dir: [0, 0, -1], role: 'power', imax: 10 },
-      { id: 'n', label: '− Output', kind: 'electrical', pos: [-6, 16, -d / 2 - 9], dir: [0, 0, -1], role: 'gnd', imax: 10 },
-      { id: 'e', label: 'Earth', kind: 'electrical', pos: [18, 16, -d / 2 - 9], dir: [0, 0, -1], role: 'shield', imax: 10 },
+      { id: 'p', label: '+ Output', kind: 'electrical', pos: [-30, 16, d / 2 + 9], dir: [0, 0, 1], role: 'power', imax: 10 },
+      { id: 'n', label: '− Output', kind: 'electrical', pos: [-6, 16, d / 2 + 9], dir: [0, 0, 1], role: 'gnd', imax: 10 },
+      { id: 'e', label: 'Earth', kind: 'electrical', pos: [18, 16, d / 2 + 9], dir: [0, 0, 1], role: 'shield', imax: 10 },
       { id: 'base', label: 'Underside', kind: 'mechanical', pos: [0, 0, 0], dir: [0, -1, 0], mate: { type: 'face' } },
     ]
   },

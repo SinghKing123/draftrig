@@ -4,7 +4,7 @@ const page = await browser.newPage({ viewport: { width: 1600, height: 950 } })
 const logs = []
 page.on('console', (m) => logs.push(`[${m.type()}] ${m.text()}`))
 page.on('pageerror', (e) => logs.push(`[pageerror] ${e.stack || e.message}`))
-await page.goto(process.env.APP_URL || 'http://localhost:4173/', { waitUntil: 'networkidle' })
+await page.goto(process.env.APP_URL || 'http://localhost:4173/app', { waitUntil: 'networkidle' })
 await page.waitForTimeout(3000)
 console.log('--- console ---')
 console.log(logs.join('\n') || '(none)')

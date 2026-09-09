@@ -1,30 +1,63 @@
-import React from 'react'
+import React, { Suspense, lazy } from 'react'
 import { createRoot } from 'react-dom/client'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import '@/styles/tokens.css'
 import '@/styles/base.css'
 import '@/styles/app.css'
-import '@/parts' // registers the catalog
-import { App } from '@/app/App'
-import { useDoc } from '@/state/doc'
-import { useSim } from '@/state/sim'
-import { engine } from '@/sim/engine'
+import '@/styles/site.css'
+import { AuthProvider } from '@/auth/AuthProvider'
+import { Landing } from '@/routes/Landing'
+import { SignIn } from '@/routes/SignIn'
+import { AuthCallback } from '@/routes/AuthCallback'
+import { Projects } from '@/routes/Projects'
+import { LogoMark } from '@/ui/Logo'
 
 /**
- * Expose the stores for tooling. The screenshot and regression harness in
- * tools/ drives the app through this rather than through fragile UI clicks.
+ * The editor is the only route that needs three.js, the solver and the part
+ * geometry. Splitting it out keeps the landing page a fraction of the size —
+ * nobody should download a 3D engine to read what the product does.
  */
-declare global {
-  interface Window {
-    buildsim: { doc: typeof useDoc; sim: typeof useSim; engine: typeof engine }
-  }
+const Editor = lazy(() => import('@/app/App').then((m) => ({ default: m.Editor })))
+
+/**
+ * Exposed for the screenshot and regression harness in tools/, which drives the
+ * app through this rather than through fragile UI clicks.
+ */
+/** Holding screen while the editor chunk arrives. */
+function EditorLoading() {
+  return (
+    <div style={{ display: 'grid', placeItems: 'center', height: '100%', background: 'var(--bg-0)', gap: 14 }}>
+      <LogoMark size={40} />
+      <span style={{ color: 'var(--tx-3)', fontSize: 'var(--fs-lg)' }}>Loading the editor…</span>
+    </div>
+  )
 }
-window.buildsim = { doc: useDoc, sim: useSim, engine }
+
+function EditorRoute() {
+  return (
+    <Suspense fallback={<EditorLoading />}>
+      <Editor />
+    </Suspense>
+  )
+}
 
 const el = document.getElementById('root')
 if (!el) throw new Error('#root is missing from index.html')
 
 createRoot(el).render(
   <React.StrictMode>
-    <App />
+    <BrowserRouter>
+      <AuthProvider>
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route path="/app" element={<EditorRoute />} />
+          <Route path="/app/:projectId" element={<EditorRoute />} />
+          <Route path="/projects" element={<Projects />} />
+          <Route path="/signin" element={<SignIn />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
   </React.StrictMode>,
 )

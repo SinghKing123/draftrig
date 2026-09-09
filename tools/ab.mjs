@@ -7,13 +7,13 @@ const browser = await chromium.launch({ channel: 'msedge', args: ['--use-angle=s
 const page = await browser.newPage({ viewport: { width: 1000, height: 700 } })
 page.on('pageerror', (e) => console.log('PAGEERROR', e.message))
 
-await page.goto('http://localhost:4173/', { waitUntil: 'networkidle' })
+await page.goto('http://localhost:4173/app', { waitUntil: 'networkidle' })
 await page.waitForTimeout(1500)
 await page.getByText('2020 frame cube').click()
 await page.waitForTimeout(2500)
 
 const shot = async (label, patch) => {
-  await page.evaluate((p) => window.buildsim.doc.getState().setView(p), patch)
+  await page.evaluate((p) => window.twinbench.doc.getState().setView(p), patch)
   await page.waitForTimeout(1800)
   await page.screenshot({ path: `shots/ab-${label}.png`, clip: { x: 270, y: 45, width: 700, height: 600 } })
 }
