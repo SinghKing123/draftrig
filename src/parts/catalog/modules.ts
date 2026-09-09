@@ -58,12 +58,12 @@ function mountHoles(w: number, d: number, inset: number, y: number): Port[] {
 /* ================================================================== */
 
 const MCU_PROGRAMS = [
-  { value: 'blink', label: 'Blink — toggle D13' },
-  { value: 'fade', label: 'Fade — PWM ramp on D9' },
-  { value: 'pwm', label: 'PWM — fixed duty on D5' },
-  { value: 'button', label: 'Button — D2 toggles D13' },
-  { value: 'chase', label: 'Chase — sequence D2 to D7' },
-  { value: 'off', label: 'No program — all pins input' },
+  { value: 'blink', label: 'Blink, toggle D13' },
+  { value: 'fade', label: 'Fade, PWM ramp on D9' },
+  { value: 'pwm', label: 'PWM, fixed duty on D5' },
+  { value: 'button', label: 'Button, D2 toggles D13' },
+  { value: 'chase', label: 'Chase, sequence D2 to D7' },
+  { value: 'off', label: 'No program, all pins input' },
 ]
 
 const W = 68.6
@@ -88,7 +88,7 @@ const mcuBoard: PartDef = {
     mpn: 'A000066',
     price: 24,
     description:
-      'An Uno-compatible board. Pick one of the stock sketches and the pins behave the way that program makes them behave — outputs drive through a real 28 Ω source impedance, so an LED without a resistor is still a mistake.',
+      'An Uno-compatible board. Pick one of the stock sketches and the pins behave the way that program makes them behave, outputs drive through a real 28 Ω source impedance, so an LED without a resistor is still a mistake.',
   },
   params: [
     { key: 'program', label: 'Sketch', type: 'enum', default: 'blink', group: 'Control', options: MCU_PROGRAMS },
@@ -191,11 +191,11 @@ const mcuBoard: PartDef = {
     limits: { imax: 0.2, vmax: 12 },
   },
   readouts: (p) => [
-    { label: 'Sketch', value: MCU_PROGRAMS.find((x) => x.value === str(p, 'program', 'blink'))?.label ?? '—' },
+    { label: 'Sketch', value: MCU_PROGRAMS.find((x) => x.value === str(p, 'program', 'blink'))?.label ?? 'None' },
     { label: 'Logic level', value: '5 V' },
     { label: 'Per-pin current', value: '20 mA (40 mA absolute max)' },
     { label: 'Total I/O current', value: '200 mA' },
-    { label: 'Powered from', value: str(p, 'power', 'usb') === 'usb' ? 'USB (5 V)' : 'VIN (7–12 V)' },
+    { label: 'Powered from', value: str(p, 'power', 'usb') === 'usb' ? 'USB (5 V)' : 'VIN (7 to 12 V)' },
   ],
 }
 
@@ -278,7 +278,7 @@ const esp32: PartDef = {
     limits: { vmax: 3.6, imax: 0.04 },
   },
   readouts: () => [
-    { label: 'Logic level', value: '3.3 V — not 5 V tolerant' },
+    { label: 'Logic level', value: '3.3 V, not 5 V tolerant' },
     { label: 'Clock', value: '240 MHz, dual core' },
     { label: 'Per-pin current', value: '12 mA' },
     { label: 'Wi-Fi peak draw', value: '~250 mA' },
@@ -293,13 +293,13 @@ const motorDriver: PartDef = {
   id: 'motor-driver',
   name: 'Motor driver',
   category: 'module',
-  blurb: 'Dual H-bridge — direction and speed',
+  blurb: 'Dual H-bridge for direction and speed',
   tags: ['motor driver', 'h-bridge', 'l298n', 'drv8833', 'tb6612', 'pwm', 'module', 'driver'],
   doc: { mpn: 'L298N', price: 3.5, description: 'Dual H-bridge module. Drives a motor forwards, backwards or braked, with PWM on the enable pin for speed.' },
   params: [
     { key: 'kind', label: 'Output stage', type: 'enum', default: 'bipolar', group: 'Electrical', options: [
-      { value: 'bipolar', label: 'L298N — bipolar, 1.4 V drop' },
-      { value: 'mosfet', label: 'DRV8833 — MOSFET, low drop' },
+      { value: 'bipolar', label: 'L298N, bipolar, 1.4 V drop' },
+      { value: 'mosfet', label: 'DRV8833, MOSFET, low drop' },
     ] },
     { key: 'vlogic', label: 'Logic level', type: 'number', unit: 'V', default: 5, min: 3.3, max: 5.5, step: 0.1, group: 'Electrical' },
     { key: 'alwaysEnabled', label: 'Enable jumper fitted', type: 'bool', default: true, group: 'Control' },
@@ -358,7 +358,7 @@ const motorDriver: PartDef = {
     return [
       { label: 'Output drop', value: bipolar ? '~1.4 V per side' : '~0.25 V per side' },
       { label: 'Continuous current', value: bipolar ? '2 A per channel' : '1.5 A per channel' },
-      { label: 'Motor supply', value: bipolar ? '5 – 35 V' : '2.7 – 10.8 V' },
+      { label: 'Motor supply', value: bipolar ? '5 to 35 V' : '2.7 to 10.8 V' },
       { label: 'Truth table', value: 'IN1≠IN2 drives, IN1=IN2 brakes' },
     ]
   },
@@ -372,7 +372,7 @@ const relayModule: PartDef = {
   id: 'relay-module',
   name: 'Relay module',
   category: 'module',
-  blurb: 'Opto-isolated — switch mains-level loads',
+  blurb: 'Opto-isolated, for mains-level loads',
   tags: ['relay', 'module', 'switch', 'isolated', 'contact', 'srd', 'mains'],
   doc: { price: 2.2, description: 'Single-channel relay board with an opto-isolated input. The coil side and the contact side share no electrical connection.' },
   params: [
@@ -430,7 +430,7 @@ const relayModule: PartDef = {
     { label: 'Coil', value: `${str(p, 'coilV', '5')} V, ~70 mA` },
     { label: 'Contact rating', value: '10 A at 250 VAC / 30 VDC' },
     { label: 'Trigger', value: p.activeLow === true ? 'Active low' : 'Active high' },
-    { label: 'Isolation', value: 'Optocoupled — no shared ground' },
+    { label: 'Isolation', value: 'Optocoupled, no shared ground' },
   ],
 }
 
@@ -442,7 +442,7 @@ const buck: PartDef = {
   id: 'buck-converter',
   name: 'Buck converter',
   category: 'power',
-  blurb: 'Switching step-down — efficient, stays cool',
+  blurb: 'Switching step-down. Stays cool under load',
   tags: ['buck', 'converter', 'dc-dc', 'step down', 'lm2596', 'mp1584', 'switching', 'regulator'],
   doc: { mpn: 'LM2596', price: 1.6, description: 'Switching step-down module. Unlike a linear regulator it converts rather than burns the difference, so a 12 V to 5 V drop at 2 A costs about a watt instead of fourteen.' },
   params: [

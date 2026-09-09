@@ -74,7 +74,7 @@ export function TopBar({ saveState = 'idle' }: { saveState?: SaveState }) {
       <span
         className="save-state"
         data-state={saveState}
-        title={saveState === 'error' ? 'Could not save. Your work is still here — try again shortly.' : undefined}
+        title={saveState === 'error' ? 'Could not save. Your work is still here, try again shortly.' : undefined}
       >
         {SAVE_LABEL[saveState]}
       </span>
@@ -110,7 +110,7 @@ export function TopBar({ saveState = 'idle' }: { saveState?: SaveState }) {
 
       <div className="grow" />
 
-      <div className="modes" role="tablist">
+      <div className="modes" role="tablist" data-tour="modes">
         {MODES.map((m) => {
           const Icon = m.icon
           return (
@@ -150,7 +150,7 @@ export function TopBar({ saveState = 'idle' }: { saveState?: SaveState }) {
       <button className="btn ghost icon" title="Reset simulation (F5)" onClick={() => engine.reset()}>
         <IconReset />
       </button>
-      <button className="btn run primary" data-running={running} onClick={toggleRun} title="Run / pause (Space)">
+      <button className="btn run primary" data-tour="run" data-running={running} onClick={toggleRun} title="Run / pause (Space)">
         {running ? <IconPause /> : <IconPlay />}
         {running ? 'Pause' : 'Run'}
       </button>

@@ -24,8 +24,8 @@ export function documentBounds(only?: Set<string>): THREE.Box3 {
 }
 
 /**
- * Frames the model on request. Keeps the camera's current viewing direction —
- * a fit that also swings the camera around is disorienting.
+ * Frames the model on request. Keeps the camera's current viewing direction,
+ * because a fit that also swings the camera around is disorienting.
  */
 export function CameraRig({ controls }: { controls: React.MutableRefObject<OrbitControlsImpl | null> }) {
   const { camera, size } = useThree()

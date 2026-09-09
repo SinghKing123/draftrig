@@ -5,9 +5,14 @@ import { BRAND } from '@/brand'
  * node where they meet. The solid square is the thing you will build; the
  * dashed one is the copy you get to test first.
  *
- * Drawn to stay legible at 16 px — two shapes, one accent, no fine detail.
+ * Drawn to stay legible at 16 px, two shapes, one accent, no fine detail.
  */
 export function LogoMark({ size = 22 }: { size?: number }) {
+  // Once a real logo exists, brand.logoSrc points at it and this whole
+  // placeholder drops out.
+  if (BRAND.logoSrc) {
+    return <img src={BRAND.logoSrc} width={size} height={size} alt="" style={{ display: 'block' }} />
+  }
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden="true">
       {/* The twin: tested, not yet real. */}

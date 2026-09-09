@@ -1,5 +1,5 @@
 /* ============================================================
-   BUILDsim — application chrome
+   BUILDsim, application chrome
    ============================================================ */
 
 /* The editor owns the whole viewport and never scrolls the document. */
@@ -441,7 +441,8 @@ select.input option { background: var(--bg-2); }
   display: flex; align-items: center; gap: 8px;
   animation: hint-in 220ms var(--ease);
 }
-@keyframes hint-in { from { opacity: 0; transform: translate(-50%, -6px); } }
+/* Same rule as tour-in: no opacity, or a pending animation hides the hint. */
+@keyframes hint-in { from { transform: translate(-50%, -6px); } }
 .vp-hint b { color: var(--brand-hi); font-weight: 600; }
 
 .vp-stats {
@@ -633,3 +634,131 @@ kbd {
   background: transparent;
 }
 .resizer-v:hover { background: var(--brand-dim); }
+
+/* ============================================================
+   First run: tour and welcome
+   ============================================================ */
+
+.tour { position: fixed; inset: 0; z-index: 300; pointer-events: none; }
+
+.tour-hole {
+  position: fixed;
+  border-radius: var(--r-md);
+  box-shadow: 0 0 0 9999px rgba(6, 8, 11, 0.74);
+  border: 1.5px solid var(--brand);
+  pointer-events: none;
+  /* No transition on position or size. A transition that has not been given a
+     frame yet renders its start value, which would leave the spotlight sitting
+     in the middle of the screen instead of over the thing being explained.
+     Correctness first; the snap between steps is fine. */
+}
+
+.tour-center {
+  position: fixed;
+  inset: 0;
+  z-index: 301;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+.tour-center .tour-card { position: static; }
+
+.tour-card {
+  position: fixed;
+  z-index: 301;
+  pointer-events: auto;
+  padding: 20px;
+  border-radius: var(--r-lg);
+  background: var(--bg-2);
+  border: 1px solid var(--line-2);
+  box-shadow: var(--sh-3);
+  animation: tour-in 200ms var(--ease);
+}
+/* Deliberately does NOT animate opacity. If the browser never gets round to
+   starting this animation (a throttled tab, a busy compositor) the element
+   sits on the first frame forever, and an element that starts at opacity 0
+   would then be permanently invisible. Motion only: worst case the card is
+   eight pixels low. */
+@keyframes tour-in { from { transform: translateY(8px); } }
+.tour-card h3 { font-size: 16px; font-weight: 620; margin-bottom: 8px; letter-spacing: -0.012em; }
+.tour-card p { font-size: var(--fs-lg); line-height: 1.6; color: var(--tx-2); }
+.tour-count {
+  font-size: var(--fs-xs); font-weight: 700; letter-spacing: 0.09em;
+  text-transform: uppercase; color: var(--brand); margin-bottom: 9px;
+}
+.tour-foot { display: flex; align-items: center; gap: 7px; margin-top: 18px; }
+.tour-dots { display: flex; gap: 5px; }
+.tour-dots span {
+  width: 5px; height: 5px; border-radius: 50%; background: var(--line-3);
+  transition: background var(--dur) var(--ease), width var(--dur) var(--ease);
+}
+.tour-dots span[data-on='true'] { background: var(--brand); width: 14px; border-radius: 3px; }
+.tour-skip { color: var(--tx-3); font-size: var(--fs-md); padding: 0 8px; }
+.tour-skip:hover { color: var(--tx-1); }
+
+/* --- welcome --- */
+
+.welcome-scrim {
+  position: fixed; inset: 0; z-index: 250;
+  display: grid; place-items: center;
+  background: rgba(6, 8, 11, 0.72);
+  backdrop-filter: blur(6px);
+}
+
+.welcome {
+  width: min(520px, calc(100vw - 40px));
+  padding: 34px 34px 28px;
+  border-radius: var(--r-xl);
+  background: var(--bg-1);
+  border: 1px solid var(--line-2);
+  box-shadow: var(--sh-3);
+  animation: tour-in 240ms var(--ease);
+}
+.welcome.intro { text-align: center; }
+.welcome h2 {
+  font-size: 22px; font-weight: 660; letter-spacing: -0.02em;
+  margin: 16px 0 10px;
+}
+.welcome.starters h2 { margin-top: 0; }
+.welcome p { font-size: var(--fs-lg); line-height: 1.62; color: var(--tx-2); }
+.welcome-actions { display: flex; gap: 10px; justify-content: center; margin-top: 24px; flex-wrap: wrap; }
+.welcome-fine { margin-top: 16px; font-size: var(--fs-md); color: var(--tx-3); }
+
+.btn.lg { height: 38px; padding: 0 16px; font-size: var(--fs-lg); }
+.btn.wide { width: 100%; justify-content: center; }
+
+.starter-list { display: grid; gap: 8px; margin: 22px 0 16px; }
+.starter {
+  display: flex; align-items: center; gap: 12px;
+  width: 100%; padding: 13px 14px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  text-align: left;
+  transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease),
+    transform var(--dur) var(--ease);
+}
+.starter:hover { border-color: var(--brand); background: var(--bg-3); transform: translateX(2px); }
+.starter[disabled] { opacity: 0.5; pointer-events: none; }
+.starter-icon {
+  flex: 0 0 auto; width: 28px; height: 28px; border-radius: var(--r-sm);
+  display: grid; place-items: center;
+  background: var(--brand-dim); color: var(--brand-hi);
+}
+.starter b { display: block; font-size: var(--fs-lg); font-weight: 600; color: var(--tx-0); }
+.starter i {
+  display: block; font-style: normal; font-size: var(--fs-md);
+  color: var(--tx-3); margin-top: 2px;
+}
+
+.empty-hint {
+  text-align: center;
+  padding: 26px 30px;
+  border-radius: var(--r-lg);
+  background: rgba(17, 20, 25, 0.82);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--line);
+  pointer-events: auto;
+}
+.empty-hint p { font-size: 15px; color: var(--tx-1); font-weight: 550; }
+.empty-hint p.sub { font-size: var(--fs-lg); color: var(--tx-3); font-weight: 400; margin: 6px 0 16px; }

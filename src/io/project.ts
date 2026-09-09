@@ -4,7 +4,7 @@ import { emptyDoc } from '@/state/doc'
 /**
  * Project files are plain JSON: instances reference part ids and carry their
  * parameters, so a saved build stays readable and stays valid as the catalog
- * grows. There is no geometry in the file — it is regenerated on load.
+ * grows. There is no geometry in the file, it is regenerated on load.
  */
 
 export const FILE_VERSION = 1

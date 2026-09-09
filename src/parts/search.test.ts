@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import '@/parts'
-import { searchParts } from '@/parts/kernel/registry'
+import { requirePart, searchParts, valueTargetFor } from '@/parts/kernel/registry'
 
 describe('part search', () => {
   it('puts the obvious answer first', () => {
@@ -34,5 +34,50 @@ describe('part search', () => {
 
   it('returns everything for an empty query', () => {
     expect(searchParts('  ').length).toBeGreaterThan(20)
+  })
+})
+
+describe('value search', () => {
+  it('finds parts by the value you would actually type', () => {
+    // These are the exact examples the site and the tour tell people to try.
+    expect(searchParts('10k').map((d) => d.id)).toContain('resistor-axial')
+    expect(searchParts('220').map((d) => d.id)).toContain('resistor-axial')
+    expect(searchParts('4k7').map((d) => d.id)).toContain('resistor-axial')
+    expect(searchParts('100n').map((d) => d.id)).toContain('capacitor-ceramic')
+    expect(searchParts('470u').map((d) => d.id)).toContain('capacitor-electrolytic')
+  })
+
+  it('picks the unit that suits the magnitude', () => {
+    // 10k is a plausible resistance and an absurd capacitance.
+    const forTenK = searchParts('10k')[0]
+    expect(['resistor-axial', 'potentiometer']).toContain(forTenK.id)
+    // 100n is only sane as a capacitance.
+    expect(searchParts('100n')[0].category).toBe('passive')
+  })
+
+  it('does not mistake a part number for a value', () => {
+    expect(searchParts('2N3904')[0].id).toBe('transistor-to92')
+    expect(searchParts('1N4148')[0].id).toBe('diode-do35')
+  })
+
+  it('reports which parameter a value should be written to', () => {
+    const resistor = requirePart('resistor-axial')
+    expect(valueTargetFor(resistor, '10k')).toEqual({ key: 'value', value: 10000 })
+    const cap = requirePart('capacitor-ceramic')
+    expect(valueTargetFor(cap, '100n')?.key).toBe('value')
+    expect(valueTargetFor(cap, '100n')?.value).toBeCloseTo(1e-7, 12)
+    // A word is not a value.
+    expect(valueTargetFor(resistor, 'resistor')).toBeNull()
+  })
+})
+
+describe('the examples we tell people to try', () => {
+  // Every value the tour, the landing page chips and the empty library state
+  // suggest. If one of these stops returning anything, the product is telling
+  // people to do something that does not work.
+  const SUGGESTED = ['10k', '2020', '555', 'mosfet', 'plywood', 'breadboard', 'switch', '100n']
+
+  it.each(SUGGESTED)('"%s" returns something', (q) => {
+    expect(searchParts(q).length).toBeGreaterThan(0)
   })
 })

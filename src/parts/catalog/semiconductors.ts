@@ -88,11 +88,11 @@ function to220(standoff: number, bodyMat: string): Solid[] {
 /* ================================================================== */
 
 const BJTS: Record<string, { label: string; pnp: boolean; bf: number; ic: number; vce: number; order: string }> = {
-  '2N3904': { label: '2N3904 — NPN, 200 mA', pnp: false, bf: 200, ic: 0.2, vce: 40, order: 'ebc' },
-  '2N3906': { label: '2N3906 — PNP, 200 mA', pnp: true, bf: 180, ic: 0.2, vce: 40, order: 'ebc' },
-  BC547: { label: 'BC547 — NPN, 100 mA', pnp: false, bf: 290, ic: 0.1, vce: 45, order: 'cbe' },
-  BC557: { label: 'BC557 — PNP, 100 mA', pnp: true, bf: 240, ic: 0.1, vce: 45, order: 'cbe' },
-  '2N2222': { label: '2N2222 — NPN, 800 mA', pnp: false, bf: 150, ic: 0.8, vce: 40, order: 'ebc' },
+  '2N3904': { label: '2N3904, NPN, 200 mA', pnp: false, bf: 200, ic: 0.2, vce: 40, order: 'ebc' },
+  '2N3906': { label: '2N3906, PNP, 200 mA', pnp: true, bf: 180, ic: 0.2, vce: 40, order: 'ebc' },
+  BC547: { label: 'BC547, NPN, 100 mA', pnp: false, bf: 290, ic: 0.1, vce: 45, order: 'cbe' },
+  BC557: { label: 'BC557, PNP, 100 mA', pnp: true, bf: 240, ic: 0.1, vce: 45, order: 'cbe' },
+  '2N2222': { label: '2N2222, NPN, 800 mA', pnp: false, bf: 150, ic: 0.8, vce: 40, order: 'ebc' },
 }
 
 const transistor: PartDef = {
@@ -101,7 +101,7 @@ const transistor: PartDef = {
   category: 'semiconductor',
   blurb: 'Small-signal BJT in TO-92',
   tags: ['transistor', 'bjt', 'npn', 'pnp', '2n3904', 'bc547', '2n2222', 'switch', 'amplifier'],
-  doc: { price: 0.06, description: 'Small-signal bipolar transistor. Watch the pinout — it differs between the 2N and BC families.' },
+  doc: { price: 0.06, description: 'Small-signal bipolar transistor. Watch the pinout, it differs between the 2N and BC families.' },
   params: [
     {
       key: 'model', label: 'Device', type: 'enum', default: '2N3904', group: 'Electrical',
@@ -139,17 +139,17 @@ const transistor: PartDef = {
 /* ================================================================== */
 
 const FETS: Record<string, { label: string; p: boolean; vth: number; kp: number; rds: number; id: number; vds: number }> = {
-  IRLZ44N: { label: 'IRLZ44N — logic level, 47 A', p: false, vth: 1.6, kp: 22, rds: 0.022, id: 47, vds: 55 },
-  IRF540N: { label: 'IRF540N — 33 A', p: false, vth: 3.5, kp: 18, rds: 0.044, id: 33, vds: 100 },
-  IRF9540N: { label: 'IRF9540N — P-channel, 23 A', p: true, vth: 3.5, kp: 9, rds: 0.117, id: 23, vds: 100 },
-  '2N7000': { label: '2N7000 — small signal, 200 mA', p: false, vth: 2.1, kp: 0.35, rds: 1.8, id: 0.2, vds: 60 },
+  IRLZ44N: { label: 'IRLZ44N, logic level, 47 A', p: false, vth: 1.6, kp: 22, rds: 0.022, id: 47, vds: 55 },
+  IRF540N: { label: 'IRF540N, 33 A', p: false, vth: 3.5, kp: 18, rds: 0.044, id: 33, vds: 100 },
+  IRF9540N: { label: 'IRF9540N, P-channel, 23 A', p: true, vth: 3.5, kp: 9, rds: 0.117, id: 23, vds: 100 },
+  '2N7000': { label: '2N7000, small signal, 200 mA', p: false, vth: 2.1, kp: 0.35, rds: 1.8, id: 0.2, vds: 60 },
 }
 
 const mosfet: PartDef = {
   id: 'mosfet',
   name: 'MOSFET',
   category: 'semiconductor',
-  blurb: 'Power switch — logic level or standard gate',
+  blurb: 'Power switch, logic level or standard gate drive',
   tags: ['mosfet', 'fet', 'transistor', 'irlz44n', 'irf540', 'switch', 'power', 'pwm'],
   doc: { price: 0.9, description: 'Enhancement-mode power MOSFET. A logic-level part turns fully on from a 5 V gate; a standard one does not.' },
   params: [
@@ -189,7 +189,7 @@ const mosfet: PartDef = {
       { label: 'Gate threshold', value: `${m.vth.toFixed(1)} V` },
       { label: 'On resistance', value: eng(m.rds, 'Ω') },
       { label: 'Max drain current', value: eng(m.id, 'A') },
-      { label: 'Logic level', value: m.vth < 2.5 ? 'Yes — full on at 5 V' : 'No — needs 10 V gate drive' },
+      { label: 'Logic level', value: m.vth < 2.5 ? 'Yes, full on at 5 V' : 'No, needs 10 V gate drive' },
     ]
   },
 }
@@ -202,7 +202,7 @@ const regulator: PartDef = {
   id: 'regulator-linear',
   name: 'Linear regulator',
   category: 'power',
-  blurb: 'Fixed or adjustable — burns the difference as heat',
+  blurb: 'Fixed or adjustable. Burns the difference as heat',
   tags: ['regulator', '7805', 'lm317', 'ldo', 'linear', 'voltage', 'power', '3.3v', '5v'],
   doc: { price: 0.45, description: 'Three-terminal linear regulator. Everything above the output voltage is dissipated in the package, so check the thermals.' },
   params: [
@@ -261,7 +261,7 @@ const zener: PartDef = {
   id: 'diode-zener',
   name: 'Zener diode',
   category: 'semiconductor',
-  blurb: 'Clamps in reverse — a voltage reference',
+  blurb: 'Clamps in reverse, a voltage reference',
   tags: ['zener', 'diode', 'reference', 'clamp', 'regulator', 'protection'],
   doc: { manufacturer: 'Generic', mpn: 'BZX55C', price: 0.05, description: 'Reverse breakdown is the point: bias it backwards through a resistor and it holds its rated voltage.' },
   params: [
@@ -309,7 +309,7 @@ const bridge: PartDef = {
   id: 'bridge-rectifier',
   name: 'Bridge rectifier',
   category: 'semiconductor',
-  blurb: 'Four diodes — AC in, DC out',
+  blurb: 'Four diodes, AC in, DC out',
   tags: ['bridge', 'rectifier', 'diode', 'ac', 'dc', 'power supply', 'w04'],
   doc: { mpn: 'W04M', price: 0.4, description: 'Full-wave bridge in one package. Both AC terminals swap roles each half cycle, so the output is always the same polarity.' },
   params: [

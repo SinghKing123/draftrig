@@ -5,7 +5,7 @@ import { IconList, IconOpen, IconX } from './Icons'
 
 /**
  * Account control. Renders nothing at all when the deployment has no auth
- * backend configured — an app with no accounts should not show a broken
+ * backend configured, an app with no accounts should not show a broken
  * sign-in button.
  */
 export function AccountMenu({ compact = false }: { compact?: boolean }) {

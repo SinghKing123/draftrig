@@ -1,6 +1,6 @@
 /**
  * Full part system: the catalog plus the geometry compiler.
- * Importing this pulls in three.js — use `@/parts/catalog` if you only need
+ * Importing this pulls in three.js, use `@/parts/catalog` if you only need
  * to enumerate or search parts.
  */
 import './catalog'

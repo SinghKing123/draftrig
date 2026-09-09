@@ -146,7 +146,7 @@ export function Inspector() {
       if (list) list.push(spec)
       else map.set(g, [spec])
     }
-    // Live controls come first — they are what you reach for while simulating.
+    // Live controls come first, they are what you reach for while simulating.
     return [...map.entries()].sort(([a], [b]) => (a === 'Control' ? -1 : b === 'Control' ? 1 : 0))
   }, [def])
 
@@ -206,7 +206,7 @@ export function Inspector() {
   const size = built ? built.bbox.getSize(new THREE.Vector3()) : null
 
   return (
-    <aside className="panel">
+    <aside className="panel" data-tour="inspector">
       <div className="panel-head">
         Inspector
         <div className="grow" />
@@ -257,7 +257,7 @@ export function Inspector() {
           <Group title="Measurements">
             {electricalPorts.slice(0, 12).map((p) => {
               const v = nodeV[portKey(inst.id, p.id)]
-              return <Readout key={p.id} k={p.label} v={v === undefined ? '—' : eng(v, 'V')} />
+              return <Readout key={p.id} k={p.label} v={v === undefined ? 'n/a' : eng(v, 'V')} />
             })}
             {electricalPorts.length > 12 && (
               <div className="readout"><span className="k">…</span><span className="v">{electricalPorts.length - 12} more terminals</span></div>

@@ -95,7 +95,7 @@ function Bom() {
             <td style={{ color: 'var(--tx-2)' }}>{r.detail}</td>
             <td className="num">{r.qty}</td>
             <td className="num">{formatMass(r.unitMass * r.qty)}</td>
-            <td className="num">{r.unitPrice > 0 ? formatMoney(r.unitPrice * r.qty) : '—'}</td>
+            <td className="num">{r.unitPrice > 0 ? formatMoney(r.unitPrice * r.qty) : 'n/a'}</td>
           </tr>
         ))}
       </tbody>
@@ -178,7 +178,7 @@ export function Console() {
   ]
 
   return (
-    <div className="console" data-collapsed={collapsed}>
+    <div className="console" data-tour="console" data-collapsed={collapsed}>
       <div className="console-tabs">
         {tabs.map((t) => {
           const Icon = t.icon

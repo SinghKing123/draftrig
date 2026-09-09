@@ -177,7 +177,7 @@ const pushbutton: PartDef = {
   id: 'pushbutton-tactile',
   name: 'Pushbutton',
   category: 'electromech',
-  blurb: 'Momentary tactile switch — click it while simulating',
+  blurb: 'Momentary switch you can click while it runs',
   tags: ['button', 'switch', 'tactile', 'momentary', 'push'],
   doc: { description: '6 mm tactile switch. The two pins on each side are permanently joined inside the body.', price: 0.12 },
   params: [
@@ -220,7 +220,7 @@ const toggleSwitch: PartDef = {
   tags: ['switch', 'toggle', 'spst', 'spdt', 'latching'],
   doc: { description: 'Panel-mount toggle switch.', price: 1.1 },
   params: [
-    { key: 'poles', label: 'Configuration', type: 'enum', default: 'spst', group: 'Body', options: [{ value: 'spst', label: 'SPST — on / off' }, { value: 'spdt', label: 'SPDT — changeover' }] },
+    { key: 'poles', label: 'Configuration', type: 'enum', default: 'spst', group: 'Body', options: [{ value: 'spst', label: 'SPST, on / off' }, { value: 'spdt', label: 'SPDT, changeover' }] },
     { key: 'on', label: 'On', type: 'bool', default: false, group: 'Control' },
   ],
   solids: (p) => {
@@ -263,7 +263,7 @@ const potentiometer: PartDef = {
   id: 'potentiometer',
   name: 'Potentiometer',
   category: 'electromech',
-  blurb: 'Rotary pot — drag the knob while simulating',
+  blurb: 'Rotary pot you can turn while it runs',
   tags: ['potentiometer', 'pot', 'variable resistor', 'rheostat', 'knob', 'trimmer'],
   doc: { description: 'Single-turn rotary potentiometer. Wiper position is live during simulation.', price: 0.9 },
   params: [
@@ -299,7 +299,7 @@ const potentiometer: PartDef = {
       const total = num(p, 'value', 10000)
       const raw = Math.min(1, Math.max(0, num(p, 'pos', 50) / 100))
       const frac = str(p, 'taper', 'lin') === 'log' ? Math.pow(raw, 2.2) : raw
-      const MIN = 0.5 // never a true short — real wipers have contact resistance
+      const MIN = 0.5 // never a true short, real wipers have contact resistance
       return [
         { type: 'resistor', r: Math.max(MIN, total * frac), a: 'a', b: 'w' },
         { type: 'resistor', r: Math.max(MIN, total * (1 - frac)), a: 'w', b: 'b' },
@@ -325,7 +325,7 @@ const buzzer: PartDef = {
   id: 'buzzer-piezo',
   name: 'Piezo buzzer',
   category: 'electromech',
-  blurb: 'Active buzzer — audible in simulation',
+  blurb: 'Self-oscillating active buzzer',
   tags: ['buzzer', 'piezo', 'sound', 'beeper', 'speaker'],
   doc: { description: 'Self-oscillating active buzzer. Drive it with DC and it sounds.', price: 0.6 },
   params: [
@@ -355,7 +355,7 @@ const dcMotor: PartDef = {
   id: 'motor-dc',
   name: 'DC motor',
   category: 'motion',
-  blurb: 'Brushed motor with a real torque–speed curve',
+  blurb: 'Brushed motor with a real torque and speed curve',
   tags: ['motor', 'dc', 'brushed', '130', 'gearmotor', 'actuator'],
   doc: { description: 'Small brushed DC motor. Speed and stall current follow the standard first-order model.', price: 2.4 },
   params: [

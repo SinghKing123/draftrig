@@ -51,7 +51,7 @@ class DocBuilder {
 
 /** The first circuit anyone builds: supply, resistor, LED. */
 function ledCircuit(): Doc {
-  const b = new DocBuilder('Blinking start — LED and resistor')
+  const b = new DocBuilder('Blinking start, LED and resistor')
 
   const bb = b.add('breadboard', [0, 0, 0], { size: '830' }, [0, 0, 0], 'Breadboard')
   const bat = b.add('battery-holder', [-190, 0, 90], { cell: 'aa', count: 3 }, [0, 0, 0], 'Battery pack')
@@ -71,9 +71,9 @@ function ledCircuit(): Doc {
   return b.doc
 }
 
-/** A 2020 frame — the mechanical half of the tool, in one click. */
+/** A 2020 frame, the mechanical half of the tool, in one click. */
 function frameCube(): Doc {
-  const b = new DocBuilder('2020 frame — 300 mm cube')
+  const b = new DocBuilder('2020 frame, 300 mm cube')
   const L = 300
   const params = { size: '2020', length: L, finish: 'alu-anod-black' }
 
@@ -106,7 +106,7 @@ function frameCube(): Doc {
   return b.doc
 }
 
-/** Motor, switch and supply — the smallest thing that moves. */
+/** Motor, switch and supply, the smallest thing that moves. */
 function motorRig(): Doc {
   const b = new DocBuilder('Motor test rig')
   const psu = b.add('bench-supply', [-190, 0, 0], { voltage: 6, ilimit: 2 }, [0, 0, 0], 'Bench supply')
@@ -125,7 +125,7 @@ function motorRig(): Doc {
 
 /** The 555 astable everyone builds first, at a visible one hertz. */
 function blinker555(): Doc {
-  const b = new DocBuilder('555 blinker — one hertz')
+  const b = new DocBuilder('555 blinker, one hertz')
 
   // f = 1.44 / ((R1 + 2*R2) * C). 10k, 68k and 10uF lands just under 1 Hz.
   const R1 = 10_000
@@ -191,7 +191,7 @@ export interface Starter {
 }
 
 export const STARTERS: Starter[] = [
-  { id: 'led', title: 'LED on a breadboard', blurb: 'Supply, resistor and LED — see the current arrive', build: ledCircuit },
+  { id: 'led', title: 'LED on a breadboard', blurb: 'Supply, resistor and LED, see the current arrive', build: ledCircuit },
   { id: 'blink555', title: '555 blinker', blurb: 'The classic astable, flashing at one hertz', build: blinker555 },
   { id: 'mcu', title: 'Microcontroller blink', blurb: 'A board running a sketch, driving a real LED', build: mcuBlink },
   { id: 'frame', title: '2020 frame cube', blurb: 'A 300 mm extrusion frame with a plywood deck', build: frameCube },

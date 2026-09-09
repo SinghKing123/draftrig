@@ -21,7 +21,7 @@ export function AuthCallback() {
     if (loading) return
 
     if (!user) {
-      // No session came back — most often a link that was already used.
+      // No session came back, most often a link that was already used.
       const t = setTimeout(() => navigate('/signin', { replace: true }), 2200)
       setStatus('That sign-in link did not work. Taking you back…')
       return () => clearTimeout(t)

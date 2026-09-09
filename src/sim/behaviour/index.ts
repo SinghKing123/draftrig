@@ -3,7 +3,7 @@ import type { Params } from '@/parts/kernel/types'
 /**
  * Behavioural devices.
  *
- * Some parts cannot be expressed as a handful of R/L/C/diode stamps — a 555, a
+ * Some parts cannot be expressed as a handful of R/L/C/diode stamps, a 555, a
  * logic gate, a microcontroller running a program. Those are evaluated in
  * JavaScript once per timestep and present themselves to the solver as a
  * Thevenin source per pin: a voltage behind a series resistance, referenced to

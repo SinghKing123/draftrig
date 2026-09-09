@@ -93,12 +93,12 @@ const extrusion: PartDef = {
   doc: {
     description:
       'Modular aluminium framing profile. Every face carries a T-slot, so brackets, nuts and panels attach anywhere along the length.',
-    price: 0.012, // per mm — roughly $12/m
+    price: 0.012, // per mm, roughly $12/m
   },
   params: [
     {
       key: 'size', label: 'Profile', type: 'enum', default: '2020', group: 'Stock',
-      options: Object.entries(EXTRUSION_SIZES).map(([value, v]) => ({ value, label: `${value} — ${v.label} mm` })),
+      options: Object.entries(EXTRUSION_SIZES).map(([value, v]) => ({ value, label: `${value}, ${v.label} mm` })),
     },
     { key: 'length', label: 'Length', type: 'number', unit: 'mm', default: 300, min: 10, max: 4000, step: 10, group: 'Stock' },
     {
@@ -130,7 +130,7 @@ const extrusion: PartDef = {
     const len = num(p, 'length', 300)
     const ports: Port[] = []
 
-    // End faces — where you tap for a butt joint.
+    // End faces, where you tap for a butt joint.
     for (let i = 0; i < Math.round(s.w / s.module); i++) {
       for (let j = 0; j < Math.round(s.h / s.module); j++) {
         const y = (j + 0.5) * s.module
@@ -208,7 +208,7 @@ const panel: PartDef = {
   id: 'panel-sheet',
   name: 'Sheet panel',
   category: 'panel',
-  blurb: 'Ply, MDF, acrylic, aluminium or steel — any size',
+  blurb: 'Ply, MDF, acrylic, aluminium or steel, any size',
   tags: ['sheet', 'panel', 'plywood', 'mdf', 'acrylic', 'aluminium', 'steel', 'plate', 'board'],
   doc: { description: 'Flat stock cut to size. Use it for enclosure walls, table tops, mounting plates and gussets.' },
   params: [
@@ -238,7 +238,7 @@ const panel: PartDef = {
       // and stops the panel reading as an untextured slab.
       const edge = Math.min(0.6, t * 0.16, w * 0.004, d * 0.004)
       if (laminated && t >= PLY_LAYER * 2.5) {
-        // Plywood shows its veneers on every cut edge — build it as the stack
+        // Plywood shows its veneers on every cut edge, build it as the stack
         // it actually is, with the grain direction alternating.
         const n = Math.max(3, Math.round(t / PLY_LAYER) | 1) // always odd, like real ply
         const lt = t / n

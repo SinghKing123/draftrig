@@ -1,5 +1,5 @@
 /**
- * BUILDsim part kernel — type definitions.
+ * BUILDsim part kernel, type definitions.
  *
  * Design rule: a part is DATA, not a mesh file. Every part is a pure function
  * from parameters -> declarative solids + ports + models. That makes parts
@@ -66,7 +66,7 @@ export interface Material {
   transmission?: number
   /** Clearcoat for glossy plastics / conformal coat. */
   clearcoat?: number
-  /** g / cm^3 — used for mass properties and physics. */
+  /** g / cm^3, used for mass properties and physics. */
   density?: number
   name?: string
 }
@@ -75,7 +75,7 @@ export interface Material {
 export type MatRef = string | Material
 
 /* ------------------------------------------------------------------ */
-/* Solids — the declarative geometry language                          */
+/* Solids, the declarative geometry language                          */
 /* ------------------------------------------------------------------ */
 
 interface SolidBase {
@@ -108,14 +108,14 @@ export type Solid =
       capped?: boolean
       /** Break the end edges by this much. Real parts have no sharp arrises. */
       chamfer?: number
-      /** Partial revolution as [startDeg, sweepDeg] — sleeves, stripes, D-shafts. */
+      /** Partial revolution as [startDeg, sweepDeg], sleeves, stripes, D-shafts. */
       phi?: Vec2
     })
   | (SolidBase & { kind: 'sphere'; r: number; seg?: number })
   | (SolidBase & { kind: 'torus'; r: number; tube: number; seg?: number })
   | (SolidBase & { kind: 'extrude'; profile: Profile; depth: number; bevel?: number })
   | (SolidBase & { kind: 'lathe'; points: Vec2[]; seg?: number; phi?: Vec2 })
-  /** Polyline swept as a round tube — leads, wires, bends. */
+  /** Polyline swept as a round tube, leads, wires, bends. */
   | (SolidBase & { kind: 'tube'; path: Vec3[]; r: number; seg?: number })
   /** A flat quad used for silkscreen / labels / decals. */
   | (SolidBase & { kind: 'plane'; size: Vec2 })
@@ -123,7 +123,7 @@ export type Solid =
   | (SolidBase & { kind: 'group'; children: Solid[] })
 
 /* ------------------------------------------------------------------ */
-/* Ports — where parts connect to the world                            */
+/* Ports, where parts connect to the world                            */
 /* ------------------------------------------------------------------ */
 
 export type PortKind =
@@ -149,7 +149,7 @@ export interface Port {
   kind: PortKind
   /** Local position, mm. */
   pos: Vec3
-  /** Outward direction — used for wire launch angle and mate alignment. */
+  /** Outward direction, used for wire launch angle and mate alignment. */
   dir: Vec3
   /* electrical */
   role?: SignalRole
@@ -162,7 +162,7 @@ export interface Port {
 }
 
 /* ------------------------------------------------------------------ */
-/* Electrical model — what the solver stamps                           */
+/* Electrical model, what the solver stamps                           */
 /* ------------------------------------------------------------------ */
 
 export interface Waveform {
@@ -254,7 +254,7 @@ export interface PartDef {
 }
 
 /* ------------------------------------------------------------------ */
-/* Instances — a part placed in a document                             */
+/* Instances, a part placed in a document                             */
 /* ------------------------------------------------------------------ */
 
 export interface Instance {

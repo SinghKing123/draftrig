@@ -3,7 +3,7 @@
  *
  * Three.js pointer events fire on release regardless of how far the pointer
  * travelled, so orbiting the camera would otherwise register as a click on
- * whatever happens to be under the cursor — clearing the selection every time
+ * whatever happens to be under the cursor, clearing the selection every time
  * you look around. Every interaction that should only happen on a *click* asks
  * this module first.
  */

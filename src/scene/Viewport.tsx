@@ -59,7 +59,7 @@ function Ground({ onPointerUp }: { onPointerUp: (e: ThreeEvent<PointerEvent>) =>
 /* Selection transform                                                 */
 /* ------------------------------------------------------------------ */
 
-/** True while a gizmo drag is in progress — read by the deselect handlers. */
+/** True while a gizmo drag is in progress, read by the deselect handlers. */
 export const dragging = { active: false }
 
 function SelectionTransform({ controls }: { controls: React.MutableRefObject<OrbitControlsImpl | null> }) {
@@ -73,13 +73,13 @@ function SelectionTransform({ controls }: { controls: React.MutableRefObject<Orb
   const index = usePortIndex()
 
   // The gizmo needs a real object to attach to, and it must exist on the same
-  // render that mounts TransformControls — a ref is populated too late.
+  // render that mounts TransformControls, a ref is populated too late.
   const [anchor, setAnchor] = useState<THREE.Group | null>(null)
   const start = useRef<{ pos: THREE.Vector3; rot: THREE.Euler; instances: { id: string; pos: Vec3; rot: Vec3 }[] } | null>(null)
 
   const active = mode === 'build' && selection.length > 0
 
-  // Park the gizmo at the centroid of the selection — but never mid-drag, or
+  // Park the gizmo at the centroid of the selection, but never mid-drag, or
   // it fights the pointer as the parts it is measuring move under it.
   useEffect(() => {
     if (!anchor || !selection.length || start.current) return

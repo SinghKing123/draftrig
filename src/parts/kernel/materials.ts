@@ -2,7 +2,7 @@ import type { Material, MatRef } from './types'
 
 /**
  * Named material library. Densities are g/cm^3 and feed mass properties,
- * so they must stay physically honest — the BOM and physics both read them.
+ * so they must stay physically honest, the BOM and physics both read them.
  */
 export const MATERIALS: Record<string, Material> = {
   /* --- plastics --- */

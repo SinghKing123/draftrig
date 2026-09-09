@@ -13,7 +13,7 @@ export interface WorldPort {
   dir: THREE.Vector3
 }
 
-const CELL = 12 // mm — spatial hash cell, a little larger than a wire pitch
+const CELL = 12 // mm, spatial hash cell, a little larger than a wire pitch
 
 /**
  * World-space index of every port in the document.

@@ -11,7 +11,7 @@ import { materialKey, resolveMaterial } from './materials'
  */
 
 export interface BuiltMesh {
-  /** Material key — meshes are merged per key. */
+  /** Material key, meshes are merged per key. */
   key: string
   material: Material
   geometry: THREE.BufferGeometry
@@ -203,7 +203,7 @@ function primitive(s: Solid): THREE.BufferGeometry | null {
   }
 }
 
-/** Analytic volume in mm^3 — far cheaper and steadier than mesh integration. */
+/** Analytic volume in mm^3, far cheaper and steadier than mesh integration. */
 function primitiveVolume(s: Solid): number {
   switch (s.kind) {
     case 'box':
@@ -353,7 +353,7 @@ export interface BuiltInstance extends BuiltPart {
 
 const cache = new Map<string, BuiltInstance>()
 
-/** Params that actually affect geometry are all of them — so key on all. */
+/** Params that actually affect geometry are all of them, so key on all. */
 function cacheKey(def: PartDef, params: Params): string {
   const keys = Object.keys(params).sort()
   let s = def.id

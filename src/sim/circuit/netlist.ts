@@ -132,7 +132,7 @@ function toWaveSpec(w: NonNullable<Extract<DeviceModel, { type: 'vsource' }>['wa
  *
  * Terminals that share a `groupId` inside one part are the same node (that is
  * how a breadboard column or a tactile switch's paired pins behave). Explicit
- * wires are *not* merged — they become small resistors, so the solver reports
+ * wires are *not* merged, they become small resistors, so the solver reports
  * a real current through every wire and a real drop along it.
  */
 export function buildNetlist(doc: Doc): Netlist {
@@ -219,7 +219,7 @@ export function buildNetlist(doc: Doc): Netlist {
     strandedGround = true
   }
   if (strandedGround && !groundKey) {
-    warnings.push('The Ground part is not connected to anything — wire it to your supply’s negative terminal.')
+    warnings.push('The Ground part is not connected to anything, wire it to your supply’s negative terminal.')
   }
 
   if (!groundKey) {
@@ -228,7 +228,7 @@ export function buildNetlist(doc: Doc): Netlist {
     if (src && src.model.type === 'vsource') {
       groundKey = portKey(src.instanceId, src.model.b)
       if (!strandedGround) {
-        warnings.push('No ground part found — using the first source’s negative terminal as 0 V.')
+        warnings.push('No ground part found, using the first source’s negative terminal as 0 V.')
       }
     }
   }
@@ -308,7 +308,7 @@ export function buildNetlist(doc: Doc): Netlist {
     errors.push('This circuit has no 0 V reference. Add a Ground part or connect a supply’s negative terminal.')
   }
   if (!pending.some((p) => p.model.type === 'vsource') && solved.length) {
-    warnings.push('No power source in the circuit — every node will read 0 V.')
+    warnings.push('No power source in the circuit, every node will read 0 V.')
   }
 
   const netMembers = new Map<number, string[]>()

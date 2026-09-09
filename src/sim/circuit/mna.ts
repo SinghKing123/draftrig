@@ -76,7 +76,7 @@ export class Circuit {
 
   /**
    * Scratch for the LU solve. Allocating these per iteration was costing more
-   * than the arithmetic — a 33-unknown circuit churned ~140 MB/s of garbage
+   * than the arithmetic, a 33-unknown circuit churned ~140 MB/s of garbage
    * and ran at a twelfth of real time.
    */
   private luA: Float64Array
@@ -368,7 +368,7 @@ export class Circuit {
     let gds = 0
 
     if (vov <= 0) {
-      // Cut-off — leave only the leakage handled by GMIN.
+      // Cut-off, leave only the leakage handled by GMIN.
       gds = 1e-12
     } else if (vds >= vov) {
       // Saturation, with a small channel-length modulation term for stability.

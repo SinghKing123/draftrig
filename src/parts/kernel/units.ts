@@ -27,7 +27,7 @@ export function eng(value: number, unit = '', sig = 3): string {
   return (neg ? '-' : '') + s + p.s + unit
 }
 
-/** "4k7" / "100n" style — how the value is actually printed on parts. */
+/** "4k7" / "100n" style, how the value is actually printed on parts. */
 export function engCompact(value: number): string {
   const s = eng(value, '', 3)
   const m = s.match(/^(-?[\d.]+)([a-zµ]?)$/i)
@@ -37,13 +37,32 @@ export function engCompact(value: number): string {
   return num + pre
 }
 
-/** Parse "4k7", "4.7k", "4700" -> 4700. Returns NaN on failure. */
+/**
+ * Prefix symbol to exponent.
+ *
+ * Case matters and cannot be folded away: "M" is mega and "m" is milli, so a
+ * case-insensitive lookup turns 10 milliohms into 10 megohms. Only the
+ * genuinely unambiguous spellings are aliased: "u" and "U" for micro, since
+ * nobody types µ, and "K" for kilo, since there is no capital-K prefix.
+ */
+const PREFIX_EXP: Record<string, number> = {
+  T: 12, G: 9, M: 6, k: 3, K: 3,
+  m: -3, µ: -6, u: -6, U: -6, n: -9, p: -12, f: -15,
+}
+
+/**
+ * Parse "4k7", "4.7k", "470u", "4700" into a number. NaN if it is not a value.
+ *
+ * Handles the two ways engineers write these: a trailing prefix ("4.7k") and a
+ * prefix standing in for the decimal point ("4k7"), which is how values are
+ * printed on schematics precisely because a full stop can be lost in a photocopy.
+ */
 export function parseEng(text: string): number {
   const t = text.trim().replace(/[Ω\s]/g, '')
-  const m = t.match(/^(-?\d*\.?\d*)([TGMkmµunpf]?)(\d*)$/i)
+  const m = t.match(/^(-?\d*\.?\d*)([TGMkKmµuUnpf]?)(\d*)$/)
   if (!m) return NaN
   const [, head, pre, tail] = m
-  const mult = pre ? (PREFIX.find((p) => p.s === pre || p.s.toLowerCase() === pre.toLowerCase())?.e ?? 0) : 0
+  const mult = pre ? (PREFIX_EXP[pre] ?? 0) : 0
   const num = tail ? parseFloat(head + '.' + tail) : parseFloat(head)
   if (isNaN(num)) return NaN
   return num * Math.pow(10, mult)
@@ -97,7 +116,7 @@ export function resistorBands(ohms: number, tolerance = 5): string[] {
 
 /**
  * Preferred-number tables. E12 and E24 are the rounded values the industry
- * actually stocks, not 10^(i/n) — 10^(16/24) is 4.64, but the part is 4.7k.
+ * actually stocks, not 10^(i/n), 10^(16/24) is 4.64, but the part is 4.7k.
  */
 const E12_TABLE = [1.0, 1.2, 1.5, 1.8, 2.2, 2.7, 3.3, 3.9, 4.7, 5.6, 6.8, 8.2]
 const E24_TABLE = [

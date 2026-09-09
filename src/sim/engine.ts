@@ -12,7 +12,7 @@ import { eng } from '@/parts/kernel/units'
  *
  * Owns the compiled circuit, advances it in real time, and publishes a single
  * flattened snapshot to the store each display frame. Trace history lives here
- * in ring buffers rather than in React state — the scope reads it directly.
+ * in ring buffers rather than in React state, the scope reads it directly.
  */
 
 const TRACE_LEN = 4096
@@ -63,8 +63,8 @@ class SimEngine {
 
   /**
    * The solver runs on its own timer rather than inside requestAnimationFrame.
-   * Tying it to the render loop meant a heavy scene starved the simulation —
-   * a circuit would run slow simply because the viewport was busy, which is
+   * Tying it to the render loop meant a heavy scene starved the simulation.
+   * A circuit would run slow simply because the viewport was busy, which is
    * exactly backwards.
    */
   start(): void {
@@ -224,7 +224,7 @@ class SimEngine {
         issues.push({
           severity: 'error',
           connectionId: w.connectionId,
-          message: `Wire carries ${eng(Math.abs(i), 'A')} — above the ${eng(w.ampacity, 'A')} rating for this gauge.`,
+          message: `Wire carries ${eng(Math.abs(i), 'A')}, above the ${eng(w.ampacity, 'A')} rating for this gauge.`,
         })
       }
     }
@@ -248,7 +248,7 @@ class SimEngine {
           issues.push({
             severity: 'error',
             instanceId: d.instanceId,
-            message: `LED is drawing ${eng(drive, 'A')} — over its 30 mA maximum. It will fail. Add or increase the series resistor.`,
+            message: `LED is drawing ${eng(drive, 'A')}, over its 30 mA maximum. It will fail. Add or increase the series resistor.`,
           })
         }
       }
@@ -274,7 +274,7 @@ class SimEngine {
           issues.push({
             severity: 'warning',
             instanceId: id,
-            message: `${inst.name} runs at ${Math.round((p / rating) * 100)} % of its power rating — it will get hot.`,
+            message: `${inst.name} runs at ${Math.round((p / rating) * 100)} % of its power rating, it will get hot.`,
           })
         }
       }

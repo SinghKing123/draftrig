@@ -6,7 +6,7 @@ import { parseProject, serializeProject } from '@/io/project'
  * Project storage.
  *
  * One interface, two backends. Signed in, projects live in Postgres and follow
- * you between devices. Signed out — or with no backend configured at all — they
+ * you between devices. Signed out, or with no backend configured at all, they
  * live in this browser. Nothing about the editor changes either way, and work
  * is never lost just because someone has not made an account.
  */
@@ -53,7 +53,7 @@ function writeIndex(entries: LocalIndexEntry[]): void {
   try {
     localStorage.setItem(LOCAL_INDEX, JSON.stringify(entries))
   } catch {
-    /* storage full or unavailable — the in-memory document is still intact */
+    /* storage full or unavailable, the in-memory document is still intact */
   }
 }
 

@@ -43,7 +43,7 @@ export function Ports() {
     const electrical = index.list.filter((p) => p.port.kind === 'electrical')
     if (mode === 'wire' || mode === 'sim') return electrical
     if (!showPorts) return []
-    // In build mode only show the terminals of what is selected — otherwise a
+    // In build mode only show the terminals of what is selected, otherwise a
     // breadboard drowns the scene in dots.
     const sel = new Set(selection)
     return electrical.filter((p) => sel.has(p.instanceId))

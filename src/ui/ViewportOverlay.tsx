@@ -1,23 +1,21 @@
-import { IconEye, IconEyeOff, IconFrame, IconGrid, IconMagnet, IconMove, IconPlus, IconRotate, IconXray, IconZap } from './Icons'
+import { IconEye, IconEyeOff, IconFrame, IconGrid, IconMagnet, IconMove, IconRotate, IconXray, IconZap } from './Icons'
 import { useDoc } from '@/state/doc'
 import { useSim } from '@/state/sim'
-import { STARTERS } from '@/io/starters'
-import { engine } from '@/sim/engine'
 
 const MODE_HINT: Record<string, React.ReactNode> = {
   wire: (
     <>
-      <b>Wire mode</b> — click a terminal, then click another to join them. <kbd>Esc</kbd> cancels.
+      <b>Wire mode</b>, click a terminal, then click another to join them. <kbd>Esc</kbd> cancels.
     </>
   ),
   sim: (
     <>
-      <b>Simulate</b> — <kbd>Space</kbd> runs it. Click any terminal to put it on the scope.
+      <b>Simulate</b>, <kbd>Space</kbd> runs it. Click any terminal to put it on the scope.
     </>
   ),
 }
 
-export function ViewportOverlay() {
+export function ViewportOverlay({ onReplayTour }: { onReplayTour: () => void }) {
   const mode = useDoc((s) => s.mode)
   const view = useDoc((s) => s.view)
   const setView = useDoc((s) => s.setView)
@@ -26,9 +24,7 @@ export function ViewportOverlay() {
   const transformMode = useDoc((s) => s.transformMode)
   const setTransformMode = useDoc((s) => s.setTransformMode)
   const empty = useDoc((s) => s.doc.order.length === 0)
-  const loadDoc = useDoc((s) => s.loadDoc)
   const requestFrame = useDoc((s) => s.requestFrame)
-  const setMode = useDoc((s) => s.setMode)
 
   const running = useSim((s) => s.running)
   const time = useSim((s) => s.time)
@@ -108,32 +104,10 @@ export function ViewportOverlay() {
 
       {empty && (
         <div className="empty-state">
-          <div className="empty-card">
-            <h2>Start building</h2>
-            <p>
-              Pick a part from the library on the left, or open one of these to see how a finished
-              build is put together.
-            </p>
-            <div className="starters">
-              {STARTERS.map((s) => (
-                <button
-                  key={s.id}
-                  className="btn"
-                  style={{ height: 'auto', padding: '8px 12px', justifyContent: 'flex-start', textAlign: 'left' }}
-                  onClick={() => {
-                    loadDoc(s.build())
-                    setMode('build')
-                    engine.reset()
-                  }}
-                >
-                  <IconPlus />
-                  <span>
-                    <span style={{ display: 'block', color: 'var(--tx-0)', fontWeight: 550 }}>{s.title}</span>
-                    <span style={{ display: 'block', color: 'var(--tx-3)', fontSize: 'var(--fs-xs)' }}>{s.blurb}</span>
-                  </span>
-                </button>
-              ))}
-            </div>
+          <div className="empty-hint">
+            <p>Nothing on the bench yet.</p>
+            <p className="sub">Pick a part from the library on the left to get started.</p>
+            <button className="btn" onClick={onReplayTour}>Show me around again</button>
           </div>
         </div>
       )}

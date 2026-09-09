@@ -15,7 +15,7 @@ const ne555: PartDef = {
   id: 'ne555',
   name: '555 timer',
   category: 'ic',
-  blurb: 'The timer — astable, monostable, anything',
+  blurb: 'Astable, monostable, or a one-shot',
   tags: ['555', 'ne555', 'timer', 'oscillator', 'astable', 'monostable', 'ic', 'blink'],
   doc: {
     manufacturer: 'Texas Instruments',
@@ -26,8 +26,8 @@ const ne555: PartDef = {
   },
   params: [
     { key: 'variant', label: 'Variant', type: 'enum', default: 'bipolar', group: 'Electrical', options: [
-      { value: 'bipolar', label: 'NE555 — bipolar' },
-      { value: 'cmos', label: 'TLC555 — CMOS' },
+      { value: 'bipolar', label: 'NE555, bipolar' },
+      { value: 'cmos', label: 'TLC555, CMOS' },
     ] },
   ],
   solids: (p) => dipSolids(8, { bodyColor: str(p, 'variant', 'bipolar') === 'cmos' ? { color: '#22262C', rough: 0.45, density: 1.9 } : 'epoxy-black' }),
@@ -47,7 +47,7 @@ const ne555: PartDef = {
     limits: { vmax: 16, imax: 0.2 },
   },
   readouts: (p) => [
-    { label: 'Supply range', value: str(p, 'variant', 'bipolar') === 'cmos' ? '2 – 15 V' : '4.5 – 16 V' },
+    { label: 'Supply range', value: str(p, 'variant', 'bipolar') === 'cmos' ? '2 to 15 V' : '4.5 to 16 V' },
     { label: 'Output current', value: str(p, 'variant', 'bipolar') === 'cmos' ? '±10 mA' : '±200 mA' },
     { label: 'Astable f', value: 'f = 1.44 / ((R1 + 2·R2)·C)' },
   ],
@@ -66,7 +66,7 @@ const logicGate: PartDef = {
   id: 'logic-gate-dip',
   name: 'Logic gate',
   category: 'ic',
-  blurb: '74HC family — one gate live, DIP-14 footprint',
+  blurb: '74HC logic in a DIP-14 package',
   tags: ['logic', 'gate', 'nand', 'nor', 'and', 'or', 'xor', 'inverter', '74hc', 'ttl', 'cmos'],
   doc: { manufacturer: 'Nexperia', price: 0.28, description: 'High-speed CMOS logic in a DIP-14.' },
   params: [
@@ -100,7 +100,7 @@ const logicGate: PartDef = {
       { label: 'Function', value: g.fn.toUpperCase() },
       { label: 'Inputs', value: String(g.inputs) },
       { label: 'Propagation delay', value: eng(g.tpd, 's') },
-      { label: 'Modelled gate', value: 'A (pins 1–3)' },
+      { label: 'Modelled gate', value: 'A (pins 1 to 3)' },
     ]
   },
 }
@@ -110,9 +110,9 @@ const logicGate: PartDef = {
 /* ================================================================== */
 
 const OPAMPS: Record<string, { label: string; gain: number; rails: string; gbw: number }> = {
-  LM358: { label: 'LM358 — dual, single supply', gain: 1e5, rails: '3 – 32 V', gbw: 1e6 },
-  TL072: { label: 'TL072 — dual JFET, low noise', gain: 2e5, rails: '±3 – ±18 V', gbw: 3e6 },
-  LM741: { label: 'LM741 — the original', gain: 2e5, rails: '±5 – ±18 V', gbw: 1e6 },
+  LM358: { label: 'LM358, dual, single supply', gain: 1e5, rails: '3 to 32 V', gbw: 1e6 },
+  TL072: { label: 'TL072, dual JFET, low noise', gain: 2e5, rails: '±3 to ±18 V', gbw: 3e6 },
+  LM741: { label: 'LM741, the original', gain: 2e5, rails: '±5 to ±18 V', gbw: 1e6 },
 }
 
 const opampDip: PartDef = {
@@ -160,7 +160,7 @@ const shift595: PartDef = {
   id: 'shift-register-595',
   name: 'Shift register',
   category: 'ic',
-  blurb: '74HC595 — three pins in, eight out',
+  blurb: '74HC595, three pins in, eight out',
   tags: ['595', '74hc595', 'shift register', 'serial', 'expander', 'ic'],
   doc: {
     manufacturer: 'Nexperia', mpn: '74HC595N', price: 0.45,
@@ -197,7 +197,7 @@ const dipGeneric: PartDef = {
   id: 'ic-dip',
   name: 'DIP package',
   category: 'ic',
-  blurb: 'Blank chip of any pin count — for layout',
+  blurb: 'Blank chip of any pin count, for checking fit',
   tags: ['dip', 'ic', 'chip', 'package', 'footprint', 'placeholder'],
   doc: { description: 'A generic dual in-line package with no electrical model. Use it to reserve space and check fit while a part is still on order.' },
   params: [

@@ -6,7 +6,7 @@ import { GATE_FAMILY, REGULATORS } from '@/parts/kernel/deviceData'
  *
  * Each one is a small state machine evaluated once per timestep. They read the
  * pins they care about and present a Thevenin source on the pins they drive,
- * so they interact with the analogue solver rather than sitting beside it — a
+ * so they interact with the analogue solver rather than sitting beside it, a
  * 555 driving an LED through a resistor loads down exactly as the real chip
  * does, and a shorted output shows up as a fault, not a magic ideal source.
  */
@@ -43,7 +43,7 @@ registerBehaviour('ne555', (c) => {
     return
   }
 
-  // CTRL is held at 2/3 Vcc by the internal divider — which is a real resistor
+  // CTRL is held at 2/3 Vcc by the internal divider, which is a real resistor
   // chain in the part, so tying a capacitor or a pot to pin 5 shifts it.
   const upper = c.read('ctrl')
   const lower = upper / 2
@@ -260,7 +260,7 @@ const DIGITAL = Array.from({ length: 14 }, (_, i) => `d${i}`)
 
 /**
  * A small microcontroller running one of a set of stock sketches. This is not
- * an instruction-set emulator — it is the behaviour of the program, which is
+ * an instruction-set emulator, it is the behaviour of the program, which is
  * what matters when you are checking whether a circuit works.
  */
 registerBehaviour('mcu', (c) => {

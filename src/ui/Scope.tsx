@@ -5,8 +5,8 @@ import { eng } from '@/parts/kernel/units'
 import { IconX } from './Icons'
 
 /**
- * Rolling oscilloscope. Reads the engine's ring buffers directly each frame —
- * pushing thousands of samples through React state would be pure waste.
+ * Rolling oscilloscope. Reads the engine's ring buffers directly each frame.
+ * Pushing thousands of samples through React state would be pure waste.
  */
 export function Scope() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -153,7 +153,7 @@ export function Scope() {
           <div key={p.id} className="trace-row">
             <span className="swatch" style={{ background: p.color }} />
             <span className="label" title={p.key}>{p.label}</span>
-            <span className="val">{latest[p.id] === undefined ? '—' : eng(latest[p.id], 'V')}</span>
+            <span className="val">{latest[p.id] === undefined ? 'n/a' : eng(latest[p.id], 'V')}</span>
             <button className="x" onClick={() => removeProbe(p.id)} title="Remove probe"><IconX size={10} /></button>
           </div>
         ))}

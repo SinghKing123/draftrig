@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { IconChevron, IconSearch, IconX } from './Icons'
-import { allParts, CATEGORY_META, searchParts } from '@/parts/kernel/registry'
+import { allParts, CATEGORY_META, searchParts, valueTargetFor } from '@/parts/kernel/registry'
 import type { PartCategory, PartDef } from '@/parts/kernel/types'
 import { useDoc } from '@/state/doc'
 
@@ -38,12 +38,19 @@ export function Library() {
     const n = useDoc.getState().doc.order.length
     const a = n * 2.399
     const r = 26 * Math.sqrt(n)
-    addPart(def.id, [Math.round(Math.cos(a) * r), 0, Math.round(Math.sin(a) * r)])
+    // Searching "10k" and clicking Resistor should give you a 10k resistor,
+    // not a default one you then have to edit.
+    const target = valueTargetFor(def, query)
+    addPart(
+      def.id,
+      [Math.round(Math.cos(a) * r), 0, Math.round(Math.sin(a) * r)],
+      target ? { [target.key]: target.value } : undefined,
+    )
     if (useDoc.getState().mode === 'sim') setMode('build')
   }
 
   return (
-    <aside className="panel">
+    <aside className="panel" data-tour="library">
       <div className="panel-head">Parts</div>
 
       <div className="search">

@@ -41,7 +41,7 @@ export function StudioEnvironment() {
 
 /**
  * Key light, fill and rim. The shadow camera is refitted to the model so a
- * 5 mm LED gets the same shadow resolution as a 3 m frame — a fixed frustum
+ * 5 mm LED gets the same shadow resolution as a 3 m frame, a fixed frustum
  * either wastes the whole map on empty ground or clips the build.
  */
 export function Lights() {
@@ -130,7 +130,7 @@ export function PostFx() {
     <>
     <ToneMappingSync composed />
     <EffectComposer multisampling={high ? 4 : 0} enableNormalPass>
-      {/* Contact darkening in the crevices — the single biggest cue that a
+      {/* Contact darkening in the crevices, the single biggest cue that a
           scene is solid rather than a set of floating shapes. */}
       <N8AO
         aoRadius={high ? 26 : 18}

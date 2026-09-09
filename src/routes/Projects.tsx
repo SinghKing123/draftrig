@@ -87,8 +87,7 @@ export function Projects() {
             <LogoMark size={44} />
             <h2 style={{ marginTop: 16 }}>Nothing here yet</h2>
             <p>
-              Start from scratch, or open one of these finished builds and take it apart —
-              usually the fastest way to learn what {BRAND.name} does.
+              Start from scratch, or open one of these finished builds and take it apart, usually the fastest way to learn what {BRAND.name} does.
             </p>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
               <button className="cta primary" onClick={startBlank}>Start a blank build</button>

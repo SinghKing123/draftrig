@@ -64,7 +64,7 @@ export class BehaviourRunner {
 
   /**
    * Pull the latest instance parameters. Called once per display frame rather
-   * than per timestep — reading a store forty thousand times a second to catch
+   * than per timestep, reading a store forty thousand times a second to catch
    * a knob the user might have turned is not a good trade.
    */
   refreshParams(): void {

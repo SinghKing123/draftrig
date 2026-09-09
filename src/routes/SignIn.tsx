@@ -46,15 +46,14 @@ export function SignIn() {
         <LogoMark size={40} />
         <h1>Sign in to {BRAND.name}</h1>
         <p className="lede">
-          Your projects follow you between devices, and nothing you have already built is lost —
-          anything saved in this browser moves into your account.
+          Your projects follow you between devices, and nothing you have already built is lost, anything saved in this browser moves into your account.
         </p>
 
         {!enabled ? (
           <div className="notice">
             <b>Accounts are not switched on for this deployment.</b>
             <br />
-            The editor works fully without one — projects save to this browser. To enable sign-in,
+            The editor works fully without one, projects save to this browser. To enable sign-in,
             add <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code>, then restart.
           </div>
         ) : sent ? (
@@ -89,13 +88,13 @@ export function SignIn() {
             {error && <p className="auth-msg err">{error}</p>}
 
             <p className="auth-fine">
-              No password to forget — we email you a one-time link instead.
+              No password to forget, we email you a one-time link instead.
               <br />
               <button
                 style={{ color: 'var(--tx-2)', textDecoration: 'underline', marginTop: 8 }}
                 onClick={() => navigate('/app')}
               >
-                Skip — just open the editor
+                Skip, just open the editor
               </button>
             </p>
           </>

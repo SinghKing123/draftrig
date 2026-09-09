@@ -3,7 +3,7 @@ import { create } from 'zustand'
 export interface Probe {
   id: string
   label: string
-  /** `instanceId:portId` — the terminal being watched. */
+  /** `instanceId:portId`, the terminal being watched. */
   key: string
   color: string
   kind: 'voltage' | 'current'
@@ -53,7 +53,7 @@ export interface SimState {
   addProbe: (p: Omit<Probe, 'id'>) => void
   removeProbe: (id: string) => void
   clearProbes: () => void
-  /** Bulk update from the engine — one store write per frame. */
+  /** Bulk update from the engine, one store write per frame. */
   publish: (patch: Partial<SimState>) => void
   resetOutputs: () => void
 }

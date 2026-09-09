@@ -17,12 +17,12 @@ export interface GateSpec {
 }
 
 export const GATE_FAMILY: Record<string, GateSpec> = {
-  '7400': { label: '74HC00 — quad 2-input NAND', fn: 'nand', inputs: 2, tpd: 9e-9, pins: 14 },
-  '7402': { label: '74HC02 — quad 2-input NOR', fn: 'nor', inputs: 2, tpd: 9e-9, pins: 14 },
-  '7404': { label: '74HC04 — hex inverter', fn: 'not', inputs: 1, tpd: 8e-9, pins: 14 },
-  '7408': { label: '74HC08 — quad 2-input AND', fn: 'and', inputs: 2, tpd: 9e-9, pins: 14 },
-  '7432': { label: '74HC32 — quad 2-input OR', fn: 'or', inputs: 2, tpd: 9e-9, pins: 14 },
-  '7486': { label: '74HC86 — quad 2-input XOR', fn: 'xor', inputs: 2, tpd: 12e-9, pins: 14 },
+  '7400': { label: '74HC00, quad 2-input NAND', fn: 'nand', inputs: 2, tpd: 9e-9, pins: 14 },
+  '7402': { label: '74HC02, quad 2-input NOR', fn: 'nor', inputs: 2, tpd: 9e-9, pins: 14 },
+  '7404': { label: '74HC04, hex inverter', fn: 'not', inputs: 1, tpd: 8e-9, pins: 14 },
+  '7408': { label: '74HC08, quad 2-input AND', fn: 'and', inputs: 2, tpd: 9e-9, pins: 14 },
+  '7432': { label: '74HC32, quad 2-input OR', fn: 'or', inputs: 2, tpd: 9e-9, pins: 14 },
+  '7486': { label: '74HC86, quad 2-input XOR', fn: 'xor', inputs: 2, tpd: 12e-9, pins: 14 },
 }
 
 export interface RegulatorSpec {
@@ -35,9 +35,9 @@ export interface RegulatorSpec {
 }
 
 export const REGULATORS: Record<string, RegulatorSpec> = {
-  '7805': { label: 'LM7805 — 5 V, 1 A', vout: 5, imax: 1, dropout: 2 },
-  '7809': { label: 'LM7809 — 9 V, 1 A', vout: 9, imax: 1, dropout: 2 },
-  '7812': { label: 'LM7812 — 12 V, 1 A', vout: 12, imax: 1, dropout: 2 },
-  '7833': { label: 'LM1117-3.3 — 3.3 V, 800 mA', vout: 3.3, imax: 0.8, dropout: 1.2 },
-  LM317: { label: 'LM317 — adjustable, 1.5 A', vout: 5, imax: 1.5, dropout: 2, adjustable: true },
+  '7805': { label: 'LM7805, 5 V at 1 A', vout: 5, imax: 1, dropout: 2 },
+  '7809': { label: 'LM7809, 9 V at 1 A', vout: 9, imax: 1, dropout: 2 },
+  '7812': { label: 'LM7812, 12 V at 1 A', vout: 12, imax: 1, dropout: 2 },
+  '7833': { label: 'LM1117, 3.3 V at 800 mA', vout: 3.3, imax: 0.8, dropout: 1.2 },
+  LM317: { label: 'LM317, adjustable, 1.5 A', vout: 5, imax: 1.5, dropout: 2, adjustable: true },
 }

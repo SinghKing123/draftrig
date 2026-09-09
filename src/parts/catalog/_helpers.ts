@@ -1,6 +1,6 @@
 import type { MatRef, Params, Port, Solid, Vec2, Vec3 } from '../kernel/types'
 
-/* Typed param readers — catalog code stays readable without casts. */
+/* Typed param readers, catalog code stays readable without casts. */
 export const num = (p: Params, k: string, d = 0): number => (typeof p[k] === 'number' ? (p[k] as number) : d)
 export const str = (p: Params, k: string, d = ''): string => (typeof p[k] === 'string' ? (p[k] as string) : d)
 export const bool = (p: Params, k: string, d = false): boolean => (typeof p[k] === 'boolean' ? (p[k] as boolean) : d)
@@ -8,7 +8,7 @@ export const bool = (p: Params, k: string, d = false): boolean => (typeof p[k] =
 export const DOWN: Vec3 = [0, -1, 0]
 export const UP: Vec3 = [0, 1, 0]
 
-/** 2.54 mm — the pitch that most of hobby electronics is built on. */
+/** 2.54 mm, the pitch that most of hobby electronics is built on. */
 export const PITCH = 2.54
 
 /**

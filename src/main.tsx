@@ -14,8 +14,8 @@ import { LogoMark } from '@/ui/Logo'
 
 /**
  * The editor is the only route that needs three.js, the solver and the part
- * geometry. Splitting it out keeps the landing page a fraction of the size —
- * nobody should download a 3D engine to read what the product does.
+ * geometry. Splitting it out keeps the landing page a fraction of the size.
+ * Nobody should download a 3D engine to read what the product does.
  */
 const Editor = lazy(() => import('@/app/App').then((m) => ({ default: m.Editor })))
 

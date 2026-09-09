@@ -28,7 +28,7 @@ describe('catalog integrity', () => {
     expect(built.mass).toBeGreaterThanOrEqual(0)
     expect(isFinite(built.mass)).toBe(true)
 
-    // Port ids must be unique — nets are keyed on them.
+    // Port ids must be unique, nets are keyed on them.
     const ids = built.ports.map((p) => p.id)
     expect(new Set(ids).size).toBe(ids.length)
     for (const p of built.ports) {
@@ -125,6 +125,18 @@ describe('engineering units', () => {
     expect(parseEng('4.7k')).toBeCloseTo(4700, 6)
     expect(parseEng('100n')).toBeCloseTo(100e-9, 15)
     expect(parseEng('220')).toBeCloseTo(220, 6)
+  })
+
+  it('keeps mega and milli apart, and accepts u for micro', () => {
+    // Case folding here would turn 10 milliohms into 10 megohms.
+    expect(parseEng('10M')).toBeCloseTo(10e6, 0)
+    expect(parseEng('10m')).toBeCloseTo(0.01, 9)
+    // Nobody types the micro sign, so u and U have to work.
+    expect(parseEng('470u')).toBeCloseTo(470e-6, 12)
+    expect(parseEng('470µ')).toBeCloseTo(470e-6, 12)
+    expect(parseEng('4u7')).toBeCloseTo(4.7e-6, 12)
+    // There is no capital-K prefix, so K is safe to accept as kilo.
+    expect(parseEng('10K')).toBeCloseTo(10000, 6)
   })
 
   it('reads out the standard colour code', () => {

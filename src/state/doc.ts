@@ -69,7 +69,7 @@ export interface DocState {
   removeInstances: (ids: string[]) => void
   moveInstance: (id: string, pos: Vec3, commit?: boolean) => void
   rotateInstance: (id: string, rot: Vec3, commit?: boolean) => void
-  /** Move several parts in one edit — what a gizmo drag actually does. */
+  /** Move several parts in one edit, what a gizmo drag actually does. */
   transformInstances: (updates: { id: string; pos?: Vec3; rot?: Vec3 }[], commit?: boolean) => void
   setParam: (id: string, key: string, value: ParamValue, commit?: boolean) => void
   renameInstance: (id: string, name: string) => void

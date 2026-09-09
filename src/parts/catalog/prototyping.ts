@@ -9,9 +9,9 @@ const P = 2.54
 /* ================================================================== */
 
 const BB_SIZES: Record<string, { cols: number; rails: boolean; label: string }> = {
-  '830': { cols: 63, rails: true, label: 'Full — 830 points' },
-  '400': { cols: 30, rails: true, label: 'Half — 400 points' },
-  '170': { cols: 17, rails: false, label: 'Mini — 170 points' },
+  '830': { cols: 63, rails: true, label: 'Full, 830 points' },
+  '400': { cols: 30, rails: true, label: 'Half, 400 points' },
+  '170': { cols: 17, rails: false, label: 'Mini, 170 points' },
 }
 
 /** Row centres in Z for the two five-hole terminal banks. */
@@ -22,7 +22,7 @@ const breadboard: PartDef = {
   id: 'breadboard',
   name: 'Breadboard',
   category: 'prototyping',
-  blurb: 'Solderless — columns of five are joined under the plastic',
+  blurb: 'Solderless. Columns of five are joined under the plastic',
   tags: ['breadboard', 'protoboard', 'solderless', 'prototype', 'bb830'],
   doc: {
     description:

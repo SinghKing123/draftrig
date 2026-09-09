@@ -83,7 +83,7 @@ const resistorAxial: PartDef = {
     const out: Solid[] = [{ kind: 'lathe', mat, points: profile, rot: [0, 0, 90], at: [0, y, 0] }]
 
     // Bands are printed on the straight barrel, which is what constrains how
-    // many will fit — same as the real part.
+    // many will fit, same as the real part.
     const barrel = L - 2 * taper
     const bw = Math.min(L * 0.085, barrel / 6)
     const gap = bw * 1.85
@@ -168,7 +168,7 @@ const capElectrolytic: PartDef = {
   id: 'capacitor-electrolytic',
   name: 'Electrolytic capacitor',
   category: 'passive',
-  blurb: 'Radial aluminium can — polarised',
+  blurb: 'Radial aluminium can, polarised',
   tags: ['capacitor', 'electrolytic', 'polarised', 'bulk', 'passive'],
   doc: { description: 'Aluminium electrolytic. Polarised: the striped side is the negative terminal.', price: 0.15 },
   params: [
@@ -194,8 +194,7 @@ const capElectrolytic: PartDef = {
       { kind: 'cyl', mat: { color: '#1A1614', rough: 0.9, density: 1.3 }, r: r * 0.9, h: 1.2, at: [0, 0.8, 0] },
       // PVC sleeve over the can.
       { kind: 'cyl', mat: 'elcap-sleeve', r, h: sleeveH, at: [0, cy, 0] },
-      // The negative stripe is a partial sleeve, not a second full cylinder —
-      // coincident surfaces would z-fight and speckle the whole can.
+      // The negative stripe is a partial sleeve, not a second full cylinder, // coincident surfaces would z-fight and speckle the whole can.
       { kind: 'cyl', mat: { color: '#D3D8DF', rough: 0.55, density: 1.4 }, r: r * 1.006, h: sleeveH,
         phi: [200, 44], capped: false, at: [0, cy, 0], tag: 'stripe', noCollide: true },
       // Minus symbols down the stripe.
@@ -248,7 +247,7 @@ const led5mm: PartDef = {
   id: 'led-5mm',
   name: 'LED, 5 mm',
   category: 'display',
-  blurb: 'Through-hole indicator — lights when current flows',
+  blurb: 'Through-hole indicator that lights when current flows',
   tags: ['led', 'light', 'indicator', 'diode', 'through-hole'],
   doc: { description: 'Standard 5 mm through-hole LED. The long lead is the anode. Needs a series resistor.', price: 0.08 },
   params: [
@@ -343,10 +342,10 @@ const diode: PartDef = {
     {
       key: 'model', label: 'Model', type: 'enum', default: '1N4148', group: 'Electrical',
       options: [
-        { value: '1N4148', label: '1N4148 — signal, 100 V / 200 mA' },
-        { value: '1N4001', label: '1N4001 — rectifier, 50 V / 1 A' },
-        { value: '1N4007', label: '1N4007 — rectifier, 1000 V / 1 A' },
-        { value: '1N5819', label: '1N5819 — Schottky, 40 V / 1 A' },
+        { value: '1N4148', label: '1N4148, signal, 100 V / 200 mA' },
+        { value: '1N4001', label: '1N4001, rectifier, 50 V / 1 A' },
+        { value: '1N4007', label: '1N4007, rectifier, 1000 V / 1 A' },
+        { value: '1N5819', label: '1N5819, Schottky, 40 V / 1 A' },
       ],
     },
     { key: 'pitch', label: 'Lead pitch', type: 'number', unit: 'mm', default: 10.16, min: 5, max: 30, step: 2.54, group: 'Body' },
