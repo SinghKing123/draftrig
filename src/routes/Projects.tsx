@@ -7,8 +7,6 @@ import { IconPlus, IconTrash } from '@/ui/Icons'
 import { useAuth } from '@/auth/AuthProvider'
 import { newProjectId, projects, type ProjectSummary } from '@/cloud/projects'
 import { STARTERS } from '@/io/starters'
-// Starters build real documents, so the catalog has to be registered here too.
-import '@/parts/catalog'
 
 function ago(iso: string): string {
   const secs = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000)
@@ -38,6 +36,10 @@ export function Projects() {
   const startFrom = async (starterId: string) => {
     const starter = STARTERS.find((s) => s.id === starterId)
     if (!starter) return
+    // Building a starter needs the part catalog registered. Import it here
+    // rather than at module scope, or a hundred kilobytes of part definitions
+    // end up in the entry bundle for a page that usually never uses them.
+    await import('@/parts/catalog')
     const id = newProjectId()
     await projects.save(id, starter.build())
     navigate(`/app/${id}`)
