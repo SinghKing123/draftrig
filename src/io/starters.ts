@@ -32,7 +32,12 @@ class DocBuilder {
     return id
   }
 
-  wire(a: [string, string], b: [string, string], color = '#E34B4B'): void {
+  /**
+   * @param gauge Conductor cross-section, mm^2. The default is 24 AWG hook-up
+   *              wire; a PSU cable is several heavier conductors in one plug,
+   *              so those pass their own.
+   */
+  wire(a: [string, string], b: [string, string], color = '#E34B4B', gauge = 0.205): void {
     const id = `w${this.n++}`
     this.doc.connections[id] = {
       id,
@@ -40,7 +45,7 @@ class DocBuilder {
       a: { instanceId: a[0], portId: a[1] },
       b: { instanceId: b[0], portId: b[1] },
       color,
-      gauge: 0.205,
+      gauge,
     }
     this.doc.connectionOrder.push(id)
   }
@@ -215,6 +220,102 @@ function lcdText(): Doc {
   return b.doc
 }
 
+/**
+ * A desktop, assembled.
+ *
+ * Every part is seated where it actually goes: the chip in the socket, the
+ * sticks in the slots the manual asks for, the card in the top x16. Pull any of
+ * it out and put something else in, and the checks will tell you whether the
+ * something else fits.
+ *
+ * Positions are worked out from the board's own port coordinates rather than
+ * eyeballed, so this stays assembled if the board's layout ever changes.
+ */
+function desktopPc(): Doc {
+  const b = new DocBuilder('Desktop PC, open build')
+
+  const W = 305
+  const D = 244
+  const T = 1.6
+  const sockX = -W / 2 + 86
+  const sockZ = -D / 2 + 62
+  const dimmX = sockX + 62
+
+  const mb = b.add('motherboard', [0, 0, 0], { form: 'atx', socket: 'AM5' }, [0, 0, 0], 'Motherboard')
+  const cpu = b.add('cpu', [sockX, T + 3.4, sockZ], { socket: 'AM5', cores: 8, tdp: 105 }, [0, 0, 0], 'Processor')
+  const cooler = b.add('cpu-cooler', [sockX, T + 6.9, sockZ], { height: 158, fans: 1, watts: 220 }, [0, 0, 0], 'CPU cooler')
+
+  // Slots A2 and B2, which is the pair every manual asks for first.
+  const ram1 = b.add('ram-dimm', [dimmX, T + 7.4, -D / 2 + 34 + 9.2], { standard: 'DDR5', capacity: '16' }, [0, 0, 0], 'Memory A2')
+  const ram2 = b.add('ram-dimm', [dimmX, T + 7.4, -D / 2 + 34 + 27.6], { standard: 'DDR5', capacity: '16' }, [0, 0, 0], 'Memory B2')
+
+  const gpuLen = 304
+  // Positioned so its edge connector lands in the top x16 slot.
+  const gpu = b.add('graphics-card', [-W / 2 + 92 + gpuLen / 2 - 60, T + 8.4 + 7, D / 2 - 60], { length: gpuLen, slots: 3, tdp: 285 }, [0, 0, 0], 'Graphics card')
+  const ssd = b.add('ssd-m2', [W / 2 - 74 + 2, T + 3, D / 2 - 44], { size: '2280', capacity: '2' }, [0, 0, 0], 'Boot drive')
+  const psu = b.add('power-supply', [-30, 0, 250], { watts: 750, efficiency: 'gold' }, [0, 180, 0], 'Power supply')
+
+  const YELLOW = '#C8A227'
+  const BLACK = '#1C1F24'
+  const RED = '#E34B4B'
+
+  /*
+   * A PSU connector is several conductors in one plug, not one wire, so the
+   * gauges here are the bundle rather than a single strand: three 18 AWG for a
+   * feed, and the card's return is six of them because it has two connectors.
+   * Both of the card's connectors get fed, which is what stops one modelled
+   * wire carrying the whole seventeen amps a 285 W card asks for.
+   */
+  const FEED = 2.5
+  const RETURN = 5
+  b.wire([psu, 'atx24'], [mb, 'atx24'], YELLOW, FEED)
+  b.wire([psu, 'eps'], [mb, 'eps'], YELLOW, FEED)
+  b.wire([psu, 'gnd'], [mb, 'gnd'], BLACK, FEED)
+  b.wire([psu, 'pcie1'], [gpu, 'pwr0'], RED, FEED)
+  b.wire([psu, 'pcie2'], [gpu, 'pwr1'], RED, FEED)
+  b.wire([psu, 'gnd'], [gpu, 'gnd'], BLACK, RETURN)
+
+  void cpu
+  void cooler
+  void ram1
+  void ram2
+  void ssd
+  return b.doc
+}
+
+/**
+ * The same parts in a case that cannot take them, so the checks have something
+ * to say the moment it opens.
+ */
+function smallFormPc(): Doc {
+  const b = new DocBuilder('Small form factor, and what it costs you')
+
+  const W = 170
+  const D = 170
+  const T = 1.6
+  const sockX = -W / 2 + 62
+  const sockZ = -D / 2 + 62
+  const dimmX = sockX + 62
+
+  const mb = b.add('motherboard', [0, 0, 0], { form: 'itx', socket: 'AM5' }, [0, 0, 0], 'Motherboard')
+  b.add('cpu', [sockX, T + 3.4, sockZ], { socket: 'AM5', cores: 8, tdp: 105 }, [0, 0, 0], 'Processor')
+  b.add('cpu-cooler', [sockX, T + 6.9, sockZ], { height: 158, fans: 1, watts: 220 }, [0, 0, 0], 'CPU cooler')
+  b.add('ram-dimm', [dimmX, T + 7.4, -D / 2 + 34], { standard: 'DDR5', capacity: '16' }, [0, 0, 0], 'Memory A1')
+  b.add('ram-dimm', [dimmX, T + 7.4, -D / 2 + 43.2], { standard: 'DDR5', capacity: '16' }, [0, 0, 0], 'Memory A2')
+  const gpu = b.add('graphics-card', [-W / 2 + 92 + 304 / 2 - 60, T + 8.4 + 7, D / 2 - 60], { length: 304, slots: 3, tdp: 285 }, [0, 0, 0], 'Graphics card')
+  const psu = b.add('power-supply', [-30, 0, 220], { form: 'sfx', watts: 450 }, [0, 180, 0], 'Power supply')
+  b.add('pc-case', [320, 0, 0], { size: 'itx' }, [0, 0, 0], 'Case')
+
+  const FEED = 2.5
+  b.wire([psu, 'atx24'], [mb, 'atx24'], '#C8A227', FEED)
+  b.wire([psu, 'gnd'], [mb, 'gnd'], '#1C1F24', FEED)
+  b.wire([psu, 'pcie1'], [gpu, 'pwr0'], '#E34B4B', FEED)
+  b.wire([psu, 'pcie2'], [gpu, 'pwr1'], '#E34B4B', FEED)
+  b.wire([psu, 'gnd'], [gpu, 'gnd'], '#1C1F24', 5)
+
+  return b.doc
+}
+
 export interface Starter {
   id: string
   title: string
@@ -229,4 +330,6 @@ export const STARTERS: Starter[] = [
   { id: 'lcd', title: 'Text on an LCD', blurb: 'A board bit-banging a 16x2 panel over its real bus', build: lcdText },
   { id: 'frame', title: '2020 frame cube', blurb: 'A 300 mm extrusion frame with a plywood deck', build: frameCube },
   { id: 'motor', title: 'Motor test rig', blurb: 'Bench supply through a switch into a DC motor', build: motorRig },
+  { id: 'pc', title: 'Desktop PC', blurb: 'A whole machine, assembled. Take it apart', build: desktopPc },
+  { id: 'pc-sff', title: 'Small form factor PC', blurb: 'The same parts in a case that will not take them', build: smallFormPc },
 ]

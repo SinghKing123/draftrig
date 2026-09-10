@@ -368,6 +368,76 @@ const Servo = (p: Props) => (
   </G>
 )
 
+
+/* ---------------- computers ---------------- */
+
+const Mainboard = (p: Props) => (
+  <G {...p}>
+    <rect x="2.2" y="2.6" width="15.6" height="14.8" rx="1.2" />
+    <rect x="5" y="5" width="5" height="5" rx="0.6" />
+    <path d="M12.2 5h3.4M12.2 7.2h3.4M12.2 9.4h3.4" />
+    <path d="M4.6 13h9.6M4.6 15.2h6.4" />
+  </G>
+)
+
+const Cpu = (p: Props) => (
+  <G {...p}>
+    <rect x="5.4" y="5.4" width="9.2" height="9.2" rx="1" />
+    <rect x="8.2" y="8.2" width="3.6" height="3.6" rx="0.5" />
+    <path d="M8 5.4V2.8M12 5.4V2.8M8 14.6v2.6M12 14.6v2.6M5.4 8H2.8M5.4 12H2.8M14.6 8h2.6M14.6 12h2.6" />
+  </G>
+)
+
+const Ram = (p: Props) => (
+  <G {...p}>
+    <rect x="1.8" y="5.4" width="16.4" height="7.4" rx="0.9" />
+    <path d="M5 8h2.2M9 8h2.2M13 8h2.2" />
+    <path d="M4 12.8v2M6.6 12.8v2M9.2 12.8v2M11.8 12.8v2M14.4 12.8v2M16.4 12.8v2" />
+  </G>
+)
+
+const Gpu = (p: Props) => (
+  <G {...p}>
+    <rect x="1.8" y="4.4" width="16.4" height="8.4" rx="1" />
+    <circle cx="7" cy="8.6" r="2.4" />
+    <circle cx="13.4" cy="8.6" r="2.4" />
+    <path d="M4.6 12.8v2.2M7.4 12.8v2.2M10.2 12.8v2.2" />
+  </G>
+)
+
+const Psu = (p: Props) => (
+  <G {...p}>
+    <rect x="2.2" y="4.4" width="15.6" height="11.2" rx="1.2" />
+    <circle cx="8" cy="10" r="3.4" />
+    <path d="M8 7.6v4.8M6 8.6l4 2.8M10 8.6l-4 2.8" />
+    <path d="M14 7.4h2.4M14 10h2.4M14 12.6h2.4" />
+  </G>
+)
+
+const Drive = (p: Props) => (
+  <G {...p}>
+    <rect x="2.6" y="6" width="14.8" height="8" rx="1" />
+    <circle cx="14" cy="10" r="1" fill="currentColor" stroke="none" />
+    <path d="M5 8.6h5.6M5 11.4h5.6" />
+  </G>
+)
+
+const Chassis = (p: Props) => (
+  <G {...p}>
+    <rect x="4.4" y="2.4" width="11.2" height="15.2" rx="1.2" />
+    <path d="M7 5.4h6M7 7.8h6" />
+    <circle cx="10" cy="12.6" r="2.6" />
+  </G>
+)
+
+const Fan = (p: Props) => (
+  <G {...p}>
+    <rect x="2.6" y="2.6" width="14.8" height="14.8" rx="1.6" />
+    <circle cx="10" cy="10" r="1.6" />
+    <path d="M10 8.4c0-2.6 3.4-2.4 3.4 0M11.6 10c2.6 0 2.4 3.4 0 3.4M8.4 10c-2.6 0-2.4-3.4 0-3.4M10 11.6c0 2.6-3.4 2.4-3.4 0" />
+  </G>
+)
+
 /* ------------------------------------------------------------------ */
 
 type Glyph = (p: Props) => React.ReactElement
@@ -431,6 +501,16 @@ const BY_ID: Record<string, Glyph> = {
   'sensor-soil': Sensor,
   'sensor-ldr-module': Photocell,
   'sensor-ultrasonic': Sensor,
+  motherboard: Mainboard,
+  cpu: Cpu,
+  'ram-dimm': Ram,
+  'graphics-card': Gpu,
+  'power-supply': Psu,
+  'ssd-m2': Drive,
+  'drive-sata': Drive,
+  'cpu-cooler': Fan,
+  'case-fan': Fan,
+  'pc-case': Chassis,
 }
 
 /** Whatever the category is, when a part has no symbol of its own. */
@@ -450,6 +530,9 @@ const BY_CATEGORY: Record<PartCategory, Glyph> = {
   panel: Panel,
   fastener: Screw,
   motion: Motion,
+  mainboard: Mainboard,
+  'pc-component': Cpu,
+  'pc-chassis': Chassis,
 }
 
 export function PartIcon({ def, size = 18 }: { def: PartDef; size?: number }) {

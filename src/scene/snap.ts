@@ -30,6 +30,11 @@ const MATE_ACCEPTS: Record<MateType, MateType[]> = {
   face: ['face'],
   rail: ['rail'],
   peg: ['peg'],
+  socket: ['socket'],
+  dimm: ['dimm'],
+  pcie: ['pcie'],
+  m2: ['m2'],
+  standoff: ['standoff', 'hole'],
 }
 
 /** Sizes have to be in the same family, so an M3 screw skips an M8 hole. */
@@ -53,6 +58,9 @@ export function canSnap(moving: Port, target: Port): boolean {
   const b = target.mate
   if (!a || !b) return false
   if (!MATE_ACCEPTS[a.type]?.includes(b.type)) return false
+  // Where both sides name a standard, they have to name the same one. This is
+  // what stops a DDR4 stick going into a DDR5 slot that is the same length.
+  if (a.key && b.key && a.key !== b.key) return false
   return sizesAgree(a.size, b.size)
 }
 

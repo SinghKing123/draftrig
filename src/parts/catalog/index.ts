@@ -15,5 +15,7 @@ import './modules'
 import './displays'
 import './sensors'
 import './hardware'
+import './pc'
+import './pc_chassis'
 
 export { allParts, getPart, partsByCategory, searchParts, CATEGORY_META } from '../kernel/registry'

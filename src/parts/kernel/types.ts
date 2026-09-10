@@ -179,6 +179,13 @@ export type MateType =
   | 'face' // flat mounting surface
   | 'rail' // DIN rail / drawer slide
   | 'peg' // breadboard / perfboard hole
+  /* Computer hardware. These are keyed rather than sized: what decides
+     whether a part fits is its standard, not a diameter. */
+  | 'socket' // CPU socket, `key` = 'AM5', 'LGA1700'
+  | 'dimm' // memory slot, `key` = 'DDR4', 'DDR5'
+  | 'pcie' // expansion slot, `key` = 'x16', 'x1'
+  | 'm2' // M.2 slot, `key` = 'M'
+  | 'standoff' // case standoff, `key` = the form factor it accepts
 
 export interface Port {
   id: string
@@ -193,7 +200,17 @@ export interface Port {
   /** Maximum continuous current, amps. Used for wire-gauge warnings. */
   imax?: number
   /* mechanical */
-  mate?: { type: MateType; size?: number; depth?: number }
+  mate?: {
+    type: MateType
+    size?: number
+    depth?: number
+    /**
+     * Keyed compatibility, where the standard rather than a dimension decides
+     * whether two things go together. An AM5 chip does not drop into an LGA
+     * socket however well the sizes happen to line up.
+     */
+    key?: string
+  }
   /** Ports with the same groupId are interchangeable (e.g. a breadboard column). */
   groupId?: string
   /**
@@ -274,6 +291,9 @@ export type PartCategory =
   | 'fastener'
   | 'panel'
   | 'motion'
+  | 'mainboard'
+  | 'pc-component'
+  | 'pc-chassis'
 
 export interface PartDoc {
   manufacturer?: string

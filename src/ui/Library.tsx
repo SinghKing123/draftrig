@@ -5,7 +5,7 @@ import { allParts, CATEGORY_META, searchParts, valueTargetFor } from '@/parts/ke
 import type { PartCategory, PartDef } from '@/parts/kernel/types'
 import { useDoc } from '@/state/doc'
 
-const SECTION_ORDER: ('Electronics' | 'Build')[] = ['Electronics', 'Build']
+const SECTION_ORDER: ('Electronics' | 'Build' | 'Computers')[] = ['Electronics', 'Computers', 'Build']
 
 export function Library() {
   const [query, setQuery] = useState('')
