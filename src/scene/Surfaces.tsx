@@ -54,14 +54,17 @@ function Screen({ surface, instanceId }: { surface: BuiltSurface; instanceId: st
 
   const mat = useMemo(() => {
     if (!live) return null
+    // A display emits its picture rather than reflecting it, so the texture
+    // goes on the emissive channel and the diffuse colour is black. Carrying
+    // the same map on both channels lit the panel twice and washed it out.
+    // Roughness still gives it a specular highlight, which is what stops it
+    // looking like a sticker.
     return new THREE.MeshStandardMaterial({
-      map: live.texture,
+      color: new THREE.Color('#000000'),
       emissive: new THREE.Color('#FFFFFF'),
       emissiveMap: live.texture,
-      // A panel that is off should still be visible as glass, so the emissive
-      // contribution is modest and the diffuse map carries the rest.
-      emissiveIntensity: 0.55,
-      roughness: 0.28,
+      emissiveIntensity: 0.95,
+      roughness: 0.22,
       metalness: 0,
     })
   }, [live])

@@ -234,6 +234,15 @@ export type DeviceModel =
 export interface ElectricalSpec {
   /** Devices this part contributes. Node names are port ids, or `#internal`. */
   devices: (p: Params) => DeviceModel[]
+  /**
+   * Pins this part can source a rail from, if any.
+   *
+   * A board's 5 V pin is a behavioural output rather than a voltage source, so
+   * there is no way to tell from the device list alone that the part can power
+   * anything. Without this, a board driving a display looked to the rule
+   * checker like a circuit with no supply in it.
+   */
+  supplies?: string[]
   /** Absolute maximums, for the rule checker. */
   limits?: { vmax?: number; imax?: number; pmax?: number; tmax?: number }
 }

@@ -183,6 +183,39 @@ function mcuBlink(): Doc {
   return b.doc
 }
 
+/**
+ * A board driving a character LCD over its real four-bit bus.
+ *
+ * Eleven wires, which is what this actually takes: power and ground, the
+ * backlight pair, R/W tied low because the sketch only ever writes, RS and E,
+ * and four data lines. Pull any one of them out and the panel tells you.
+ */
+function lcdText(): Doc {
+  const b = new DocBuilder('Text on a character LCD')
+  const mcu = b.add('mcu-board', [0, 0, 40], { program: 'lcd-clock', text1: 'DRAFTRIG' }, [0, 0, 0], 'Controller')
+  const lcd = b.add('display-lcd-character', [4, 0, -46], { format: '1602' }, [0, 0, 0], 'Character LCD')
+
+  const RED = '#E34B4B'
+  const BLACK = '#1C1F24'
+  const BLUE = '#4C8DFF'
+  const GREEN = '#3DD68C'
+
+  b.wire([mcu, 'v5'], [lcd, 'vdd'], RED)
+  b.wire([mcu, 'gnd'], [lcd, 'vss'], BLACK)
+  b.wire([mcu, 'v5'], [lcd, 'a'], RED)
+  b.wire([mcu, 'gnd2'], [lcd, 'k'], BLACK)
+  // R/W low: this sketch writes and never reads back.
+  b.wire([mcu, 'gnd3'], [lcd, 'rw'], BLACK)
+  b.wire([mcu, 'd12'], [lcd, 'rs'], GREEN)
+  b.wire([mcu, 'd11'], [lcd, 'e'], GREEN)
+  b.wire([mcu, 'd5'], [lcd, 'd4'], BLUE)
+  b.wire([mcu, 'd4'], [lcd, 'd5'], BLUE)
+  b.wire([mcu, 'd3'], [lcd, 'd6'], BLUE)
+  b.wire([mcu, 'd2'], [lcd, 'd7'], BLUE)
+
+  return b.doc
+}
+
 export interface Starter {
   id: string
   title: string
@@ -194,6 +227,7 @@ export const STARTERS: Starter[] = [
   { id: 'led', title: 'LED on a breadboard', blurb: 'Supply, resistor and LED, see the current arrive', build: ledCircuit },
   { id: 'blink555', title: '555 blinker', blurb: 'The classic astable, flashing at one hertz', build: blinker555 },
   { id: 'mcu', title: 'Microcontroller blink', blurb: 'A board running a sketch, driving a real LED', build: mcuBlink },
+  { id: 'lcd', title: 'Text on an LCD', blurb: 'A board bit-banging a 16x2 panel over its real bus', build: lcdText },
   { id: 'frame', title: '2020 frame cube', blurb: 'A 300 mm extrusion frame with a plywood deck', build: frameCube },
   { id: 'motor', title: 'Motor test rig', blurb: 'Bench supply through a switch into a DC motor', build: motorRig },
 ]

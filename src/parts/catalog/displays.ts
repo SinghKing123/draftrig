@@ -126,7 +126,7 @@ const lcdCharacter: PartDef = {
     const g = LCD_FORMATS[str(p, 'format', '1602')] ?? LCD_FORMATS['1602']
     const mask = str(p, 'mask', 'fr4-green')
     const T = 1.6
-    const bezelH = 7.2
+    const bezelH = 4.6
     const holes = [
       circle(1.5, -g.holeX / 2, -g.holeZ / 2, 10),
       circle(1.5, g.holeX / 2, -g.holeZ / 2, 10),
@@ -148,20 +148,23 @@ const lcdCharacter: PartDef = {
         kind: 'silk', size: [g.w, g.d], items: lcdSilk(g, str(p, 'format', '1602')),
         mat: 'silkscreen', rot: [-90, 0, 0], at: [0, T + 0.02, 0], px: 18, noCollide: true,
       },
-      // Glass sits behind the bezel window.
+      // The panel stack under the window. Not clear glass: a real LCD is a
+      // dark polarised sandwich, and modelling it as transmissive left a
+      // translucent slab hanging in front of the picture.
       {
-        kind: 'box', mat: 'lcd-glass', size: [g.vw + 3, 2.4, g.vd + 3],
-        at: [0, T + 1.2, -1.2], noCollide: true,
+        kind: 'box', mat: { color: '#5A6B33', rough: 0.35, clearcoat: 0.4, density: 2.5 },
+        size: [g.vw + 1.2, 2.8, g.vd + 1.2],
+        at: [0, T + 1.4, -1.2], noCollide: true,
       },
       {
-        kind: 'extrude', mat: { color: '#B9BEC6', metal: 1, rough: 0.42, density: 7.85 },
+        kind: 'extrude', mat: { color: '#7E858F', metal: 1, rough: 0.38, density: 7.85 },
         profile: { outline: bezelOuter, holes: [bezelWindow] },
         depth: bezelH, rot: [-90, 0, 0], at: [0, T + bezelH / 2, -1.2],
       },
-      // The live picture, a hair proud of the glass.
+      // The live picture, just under the lip of the frame as the glass is.
       {
         kind: 'screen', size: [g.vw, g.vd], screen: 'main',
-        mat: 'lcd-glass', rot: [-90, 0, 0], at: [0, T + 2.45, -1.2], noCollide: true,
+        mat: 'lcd-glass', rot: [-90, 0, 0], at: [0, T + bezelH - 0.5, -1.2], noCollide: true,
       },
       ...malePins(LCD_PIN_X0, -g.d / 2 + 2.5, 16, T),
       // Controller blob and the ribbon bond, visible under the glass edge.

@@ -169,8 +169,8 @@ function drawChars(ctx: CanvasRenderingContext2D, fb: CharBuffer, w: number, h: 
   const contrast = Math.max(0, Math.min(1, fb.contrast))
   // Dots that are off still darken the glass very slightly, which is why an
   // unlit panel shows its character grid.
-  const offAlpha = 0.055 + contrast * 0.05
-  const onAlpha = on ? 0.35 + contrast * 0.6 : 0
+  const offAlpha = 0.05 + contrast * 0.045
+  const onAlpha = on ? 0.55 + contrast * 0.42 : 0
 
   const gap = dot * 0.11
   const d = Math.max(1, dot - gap)

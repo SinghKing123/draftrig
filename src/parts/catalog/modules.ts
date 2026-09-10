@@ -1,7 +1,8 @@
-import type { PartDef, Port, Solid, Vec2, Vec3 } from '../kernel/types'
+import type { PartDef, Port, Solid, Vec3 } from '../kernel/types'
 import { registerParts } from '../kernel/registry'
 import { eng } from '../kernel/units'
-import { circle, num, roundRect, str } from './_helpers'
+import { num, roundRect, str } from './_helpers'
+import { UNO_HOLES, unoFurniture, unoHoleProfiles, unoOutline, unoSilk } from './board_uno'
 
 const P = 2.54
 
@@ -77,13 +78,6 @@ const W = 68.6
 const D = 53.4
 const T = 1.6
 
-/** The Uno outline: a rounded rectangle with the familiar notch. */
-function unoOutline(): Vec2[] {
-  const pts = roundRect(W, D, 3, 0, 0, 4)
-  // Cut the notch out of one long edge, as on the real board.
-  return pts.filter((pt) => !(pt[0] > W / 2 - 12 && pt[1] > D / 2 - 3.4))
-}
-
 const mcuBoard: PartDef = {
   id: 'mcu-board',
   name: 'Microcontroller board',
@@ -112,47 +106,23 @@ const mcuBoard: PartDef = {
   ],
   solids: (p) => {
     const mask = str(p, 'mask', 'fr4-blue')
-    const holes = [
-      circle(1.6, -W / 2 + 14, -D / 2 + 2.6, 10),
-      circle(1.6, W / 2 - 2.6, -D / 2 + 15.3, 10),
-      circle(1.6, W / 2 - 2.6, D / 2 - 20, 10),
-      circle(1.6, -W / 2 + 15.3, D / 2 - 2.6, 10),
-    ]
-    const out: Solid[] = [
-      { kind: 'extrude', mat: mask, profile: { outline: unoOutline(), holes }, depth: T, rot: [-90, 0, 0], at: [0, T / 2, 0] },
-      // USB-B socket.
-      { kind: 'box', mat: { color: '#B8BDC4', metal: 1, rough: 0.36, density: 7.8 }, size: [16, 11, 12.5], at: [-W / 2 + 3, T + 5.5, -D / 2 + 13], bevel: 0.4 },
-      { kind: 'box', mat: { color: '#0E1013', rough: 0.85, density: 1.2 }, size: [1, 7, 9], at: [-W / 2 - 5.4, T + 5.5, -D / 2 + 13], noCollide: true },
-      // Barrel jack.
-      { kind: 'box', mat: 'abs-black', size: [13.5, 11, 9], at: [-W / 2 + 4, T + 5.5, D / 2 - 10], bevel: 0.5 },
-      { kind: 'cyl', mat: 'abs-black', r: 4.4, h: 3, rot: [0, 0, 90], at: [-W / 2 - 3.6, T + 5.5, D / 2 - 10] },
-      // The microcontroller itself.
-      { kind: 'box', mat: 'epoxy-black', size: [35, 3.4, 10], at: [6, T + 1.7, D / 2 - 16], bevel: 0.3 },
-      { kind: 'cyl', mat: { color: '#0A0B0D', rough: 0.9, density: 0.01 }, r: 1.1, h: 0.4, at: [-10, T + 3.4, D / 2 - 16], noCollide: true },
-      // Crystal, regulator and electrolytics.
-      { kind: 'box', mat: { color: '#9AA1A9', metal: 1, rough: 0.35, density: 6 }, size: [11, 4, 4.4], at: [22, T + 2, D / 2 - 22], bevel: 0.8 },
-      { kind: 'box', mat: 'epoxy-black', size: [6.5, 2.4, 6], at: [-14, T + 1.2, D / 2 - 26] },
-      { kind: 'cyl', mat: 'elcap-sleeve', r: 3.2, h: 6, at: [-24, T + 3, D / 2 - 24] },
-      { kind: 'cyl', mat: 'elcap-sleeve', r: 3.2, h: 6, at: [-24, T + 3, D / 2 - 33] },
-      // Reset button.
-      { kind: 'box', mat: 'abs-black', size: [6, 3.5, 6], at: [-W / 2 + 12, T + 1.75, -D / 2 + 5], bevel: 0.3 },
-      { kind: 'cyl', mat: { color: '#C0272D', rough: 0.4, density: 1.1 }, r: 1.75, h: 1.6, at: [-W / 2 + 12, T + 4.3, -D / 2 + 5] },
-      // Status LEDs.
-      ...[0, 1, 2, 3].map((i) => ({
-        kind: 'box' as const,
-        mat: { color: i === 0 ? '#1E9B4B' : '#C9791E', rough: 0.35, emissive: i === 0 ? '#3DFF88' : '#FFB020', emissiveIntensity: i === 0 ? 0.5 : 0.12, density: 2 },
-        size: [1.6, 0.9, 0.9] as Vec3,
-        at: [10 + i * 3, T + 0.45, -D / 2 + 7] as Vec3,
-        tag: i === 3 ? 'lens' : undefined,
-        noCollide: true,
-      })),
-      // Headers.
+    return [
+      {
+        kind: 'extrude', mat: mask,
+        profile: { outline: unoOutline(), holes: unoHoleProfiles() },
+        depth: T, rot: [-90, 0, 0], at: [0, T / 2, 0],
+      },
+      // The printed layer: pin numbers, header names, designators, the lot.
+      {
+        kind: 'silk', size: [W, D], items: unoSilk(),
+        mat: 'silkscreen', rot: [-90, 0, 0], at: [0, T + 0.02, 0], px: 20, noCollide: true,
+      },
+      ...unoFurniture(T),
       ...femaleHeader(-19, -D / 2 + 3.2, 10),
       ...femaleHeader(11, -D / 2 + 3.2, 8),
       ...femaleHeader(-24, D / 2 - 3.2, 8),
       ...femaleHeader(6, D / 2 - 3.2, 6),
     ]
-    return out
   },
   ports: () => {
     const zFar = -D / 2 + 3.2
@@ -178,7 +148,11 @@ const mcuBoard: PartDef = {
       ),
       // Analogue in.
       ...headerPorts(['a0', 'a1', 'a2', 'a3', 'a4', 'a5'], ['A0', 'A1', 'A2', 'A3', 'A4', 'A5'], 6, zNear, 8.5, 'analog'),
-      ...mountHoles(W, D, 4, T),
+      ...UNO_HOLES.map(([x, y], i) => ({
+        id: `mount${i}`, label: 'M3 mount', kind: 'mechanical' as const,
+        pos: [x, T, -y] as Vec3, dir: [0, 1, 0] as Vec3,
+        mate: { type: 'hole' as const, size: 3.2 }, groupId: 'mounts',
+      })),
       { id: 'base', label: 'Underside', kind: 'mechanical', pos: [0, 0, 0], dir: [0, -1, 0], mate: { type: 'face' } },
     ]
   },
@@ -197,6 +171,7 @@ const mcuBoard: PartDef = {
       { type: 'short', a: 'gnd', b: 'gnd2' },
       { type: 'short', a: 'gnd2', b: 'gnd3' },
     ],
+    supplies: ['v5', 'v33'],
     limits: { imax: 0.2, vmax: 12 },
   },
   readouts: (p) => [

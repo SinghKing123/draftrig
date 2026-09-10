@@ -349,7 +349,10 @@ export function buildNetlist(doc: Doc): Netlist {
   if (!groundKey && solved.length) {
     errors.push('This circuit has no 0 V reference. Add a Ground part or connect a supply’s negative terminal.')
   }
-  if (!pending.some((p) => p.model.type === 'vsource') && solved.length) {
+  const hasSupply =
+    pending.some((p) => p.model.type === 'vsource') ||
+    instances.some((inst) => (getPart(inst.defId)?.electrical?.supplies?.length ?? 0) > 0)
+  if (!hasSupply && solved.length) {
     warnings.push('No power source in the circuit, every node will read 0 V.')
   }
 
