@@ -5,6 +5,7 @@ import { buildPart } from '@/parts/kernel/build'
 import { getPart } from '@/parts/kernel/registry'
 import type { Instance } from '@/parts/kernel/types'
 import { threeMaterial } from './materials'
+import { Surfaces } from './Surfaces'
 import { useDoc } from '@/state/doc'
 import { useSim } from '@/state/sim'
 
@@ -93,6 +94,7 @@ function PartObjectImpl({ inst, selected, hovered, onPointerDown }: Props) {
       {built.meshes.map((m, i) => (
         <mesh key={m.key} geometry={m.geometry} material={materials[i]} castShadow receiveShadow />
       ))}
+      {built.surfaces.length > 0 && <Surfaces surfaces={built.surfaces} instanceId={inst.id} />}
       {emitter && (
         <pointLight
           position={emitter.at}

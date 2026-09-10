@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import '@/parts'
+import { BehaviourRunner } from '@/sim/behaviour/runner'
+import '@/sim/behaviour/library'
+import '@/sim/behaviour/displays'
 import { buildNetlist, portKey } from './netlist'
 import { STARTERS } from '@/io/starters'
 import type { Doc } from '@/state/doc'
@@ -219,5 +222,54 @@ describe('reference node', () => {
     nl.circuit.step(0)
     expect(nl.nodeOf.get(portKey(gnd, 'gnd'))).toBe(-1)
     expect(nl.warnings.some((w) => /not connected/i.test(w))).toBe(false)
+  })
+
+  it('anchors a board-powered circuit to its ground pins with no Ground part', () => {
+    // A board and a display is the most ordinary thing a beginner builds, and
+    // it contains no voltage source at all: the 5 V pin is a behavioural
+    // output. Without a reference the whole circuit floats and the solver can
+    // only settle it to within an arbitrary constant.
+    const d = doc()
+    const mcu = d.put('mcu-board', { program: 'lcd-text' })
+    const lcd = d.put('display-lcd-character')
+    for (const [a, b] of [['v5', 'vdd'], ['gnd', 'vss'], ['v5', 'a'], ['gnd', 'k'], ['gnd', 'rw'],
+      ['d12', 'rs'], ['d11', 'e'], ['d5', 'd4'], ['d4', 'd5'], ['d3', 'd6'], ['d2', 'd7']] as const) {
+      d.join([mcu, a], [lcd, b])
+    }
+
+    const nl = buildNetlist(d)
+    // The two ground pins are joined by a wire, which is a resistor rather than
+    // a merge, so exactly one of them ends up as the reference itself.
+    const refs = [portKey(mcu, 'gnd'), portKey(lcd, 'vss')].map((k) => nl.nodeOf.get(k))
+    expect(refs).toContain(-1)
+
+    // With a reference in place the rail reads as a rail rather than drifting.
+    nl.circuit.step(0)
+    const v5 = nl.nodeOf.get(portKey(mcu, 'v5'))!
+    expect(Math.abs(nl.circuit.voltage(v5))).toBeLessThan(6)
+  })
+
+  it('converges in a couple of iterations on a board driving a display', () => {
+    const d = doc()
+    const mcu = d.put('mcu-board', { program: 'lcd-text' })
+    const lcd = d.put('display-lcd-character')
+    for (const [a, b] of [['v5', 'vdd'], ['gnd', 'vss'], ['v5', 'a'], ['gnd', 'k'], ['gnd', 'rw'],
+      ['d12', 'rs'], ['d11', 'e'], ['d5', 'd4'], ['d4', 'd5'], ['d3', 'd6'], ['d2', 'd7']] as const) {
+      d.join([mcu, a], [lcd, b])
+    }
+
+    const nl = buildNetlist(d)
+    const runner = new BehaviourRunner(nl)
+    nl.circuit.reset()
+    let worst = 0
+    for (let i = 0; i < 200; i++) {
+      runner.run(nl.circuit.time, 25e-6)
+      const r = nl.circuit.step(25e-6)
+      expect(r.converged).toBe(true)
+      if (i > 20) worst = Math.max(worst, r.iterations)
+    }
+    // This ran the full 120-iteration budget on every step and still failed to
+    // converge, which cost about forty times the solver time it should.
+    expect(worst).toBeLessThan(12)
   })
 })

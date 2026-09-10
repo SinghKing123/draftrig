@@ -83,6 +83,8 @@ export class Circuit {
   private luB: Float64Array
   private luX: Float64Array
   private prev: Float64Array
+  /** Last accepted junction voltage, per device slot. */
+  private vjPrev: Float64Array
 
   time = 0
 
@@ -107,6 +109,8 @@ export class Circuit {
     this.luB = new Float64Array(this.size)
     this.luX = new Float64Array(this.size)
     this.prev = new Float64Array(this.size)
+    // Two junctions per device is enough: a diode uses one, a BJT both.
+    this.vjPrev = new Float64Array(this.devices.length * 2)
   }
 
   /**
@@ -194,6 +198,17 @@ export class Circuit {
     this.addRhs(b, i)
   }
 
+  /**
+   * Where a junction is allowed to linearise this iteration, remembering where
+   * it linearised last so the limiter can switch itself off near the solution.
+   */
+  private limitJunction(slot: number, v: number, is: number, n: number): number {
+    const nvt = n * VT
+    const limited = pnjlim(v, this.vjPrev[slot], nvt, junctionVcrit(is, nvt))
+    this.vjPrev[slot] = limited
+    return limited
+  }
+
   private nodeV(n: number): number {
     return n === GROUND ? 0 : this.x[n]
   }
@@ -277,14 +292,15 @@ export class Circuit {
           break
         }
         case 'd': {
-          const v = this.nodeV(d.a) - this.nodeV(d.b)
+          const raw = this.nodeV(d.a) - this.nodeV(d.b)
+          const v = this.limitJunction(i * 2, raw, d.is, d.n)
           const { g, ieq } = diodeLinearise(v, d.is, d.n, d.bv)
           this.conductance(d.a, d.b, g)
           this.current(d.a, d.b, ieq)
           break
         }
         case 'bjt': {
-          this.stampBjt(d)
+          this.stampBjt(d, i * 2)
           break
         }
         case 'mos': {
@@ -317,7 +333,7 @@ export class Circuit {
    * Ebers-Moll transport model. Both junctions are linearised as diodes and the
    * transport current is stamped as two voltage-controlled current sources.
    */
-  private stampBjt(d: Extract<SolvedDevice, { k: 'bjt' }>): void {
+  private stampBjt(d: Extract<SolvedDevice, { k: 'bjt' }>, slot: number): void {
     const sgn = d.pnp ? -1 : 1
     const B = d.b
     const C = d.c
@@ -328,8 +344,10 @@ export class Circuit {
     const vbe = sgn * (this.nodeV(B) - this.nodeV(E))
     const vbc = sgn * (this.nodeV(B) - this.nodeV(C))
 
-    const be = diodeLinearise(vbe, d.is / bf, 1)
-    const bc = diodeLinearise(vbc, d.is / br, 1)
+    const vbeLin = this.limitJunction(slot, vbe, d.is / bf, 1)
+    const vbcLin = this.limitJunction(slot + 1, vbc, d.is / br, 1)
+    const be = diodeLinearise(vbeLin, d.is / bf, 1)
+    const bc = diodeLinearise(vbcLin, d.is / br, 1)
 
     // Junction conductances plus their Newton residual currents.
     this.conductance(B, E, be.g)
@@ -353,7 +371,7 @@ export class Circuit {
     this.addA(E, B, gmr)
     this.addA(E, C, -gmr)
 
-    const ieq = ict - gmf * vbe + gmr * vbc
+    const ieq = ict - gmf * vbeLin + gmr * vbcLin
     this.current(C, E, sgn * ieq)
   }
 
@@ -470,6 +488,7 @@ export class Circuit {
     this.x.fill(0)
     this.capV.fill(0)
     this.indI.fill(0)
+    this.vjPrev.fill(0)
     this.time = 0
     return this.step(0)
   }
@@ -480,13 +499,18 @@ export class Circuit {
 
   /**
    * Retune a device between timesteps. Behavioural parts drive their pins by
-   * adjusting the Thevenin source and series resistance the netlist gave them;
-   * the matrix is reassembled from `devices` on every iteration, so a plain
-   * field update is all that is needed.
+   * adjusting the Norton current and conductance the netlist gave them; the
+   * matrix is reassembled from `devices` on every iteration, so a plain field
+   * update is all that is needed.
    */
   setSourceValue(index: number, v: number): void {
     const d = this.devices[index]
     if (d?.k === 'v') d.v = v
+  }
+
+  setSourceCurrent(index: number, i: number): void {
+    const d = this.devices[index]
+    if (d?.k === 'i') d.i = i
   }
 
   setResistance(index: number, r: number): void {
@@ -536,14 +560,46 @@ export class Circuit {
 /* Device linearisation                                                */
 /* ------------------------------------------------------------------ */
 
-/** One exponential junction, with the limiting that keeps Newton stable. */
-function junction(v: number, is: number, nvt: number): { g: number; i: number } {
-  const VCRIT = nvt * Math.log(nvt / (Math.SQRT2 * is))
-  let vd = v
-  if (vd > VCRIT) vd = VCRIT + nvt * Math.log(1 + (v - VCRIT) / nvt)
-  else if (vd < -5 * nvt) vd = -5 * nvt
-  const e = Math.exp(vd / nvt)
-  return { i: is * (e - 1), g: Math.max((is / nvt) * e, GMIN) }
+/**
+ * One exponential junction, evaluated exactly at `vd`.
+ *
+ * The only clamp here is on the deep reverse region, where the exponential has
+ * long since underflowed and evaluating it further buys nothing. `vd` comes
+ * back so the caller can build its companion model about the same point.
+ */
+function evalJunction(vd: number, is: number, nvt: number): { g: number; i: number; vd: number } {
+  const v = vd < -5 * nvt ? -5 * nvt : vd
+  const e = Math.exp(Math.min(v / nvt, 80))
+  return { i: is * (e - 1), g: Math.max((is / nvt) * e, GMIN), vd: v }
+}
+
+/**
+ * The junction voltage a Newton step is allowed to move to.
+ *
+ * A raw Newton step across an exponential overshoots by orders of magnitude,
+ * so large forward steps are compressed logarithmically. What matters as much
+ * as the compression is that it stops: the rule only applies to steps larger
+ * than 2 kT/q, so once the iteration is close the limiter is inert and Newton
+ * converges properly. A limiter without that condition never lets go, and the
+ * iteration sits in a small cycle around the answer forever.
+ *
+ * This is SPICE's pnjlim, and it is the reason the backlight of a display
+ * settles in a couple of iterations instead of burning the whole budget.
+ */
+export function pnjlim(vnew: number, vold: number, vt: number, vcrit: number): number {
+  if (vnew > vcrit && Math.abs(vnew - vold) > 2 * vt) {
+    if (vold > 0) {
+      const arg = 1 + (vnew - vold) / vt
+      return arg > 0 ? vold + vt * Math.log(arg) : vcrit
+    }
+    return vt * Math.log(Math.max(vnew / vt, 1e-9))
+  }
+  return vnew
+}
+
+/** Forward voltage above which a junction needs limiting at all. */
+export function junctionVcrit(is: number, nvt: number): number {
+  return nvt * Math.log(nvt / (Math.SQRT2 * Math.max(is, 1e-40)))
 }
 
 /** Saturation current of the reverse breakdown knee. */
@@ -560,18 +616,22 @@ export function diodeLinearise(
   bv?: number,
 ): { g: number; i: number; ieq: number } {
   const nvt = n * VT
-  const fwd = junction(v, is, nvt)
+  const fwd = evalJunction(v, is, nvt)
   let i = fwd.i
   let g = fwd.g
+  let ieq = fwd.i - fwd.g * fwd.vd
 
   if (bv !== undefined && bv > 0) {
     // A second junction facing the other way, offset by the breakdown voltage.
-    const rev = junction(-(v + bv), IS_BV, VT)
+    const rev = evalJunction(-(v + bv), IS_BV, VT)
     i -= rev.i
     g += rev.g
+    // Seen from `v` this branch carries -i_r with slope +g_r, and its own
+    // evaluation point maps back to this terminal voltage.
+    ieq += -rev.i - rev.g * (-rev.vd - bv)
   }
 
-  return { g, i, ieq: i - g * v }
+  return { g, i, ieq }
 }
 
 /** Saturation current that puts `vf` volts across the junction at `iref`. */

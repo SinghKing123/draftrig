@@ -63,8 +63,15 @@ const MCU_PROGRAMS = [
   { value: 'pwm', label: 'PWM, fixed duty on D5' },
   { value: 'button', label: 'Button, D2 toggles D13' },
   { value: 'chase', label: 'Chase, sequence D2 to D7' },
+  { value: 'lcd-text', label: 'LCD, show two lines of text' },
+  { value: 'lcd-count', label: 'LCD, counter' },
+  { value: 'lcd-clock', label: 'LCD, running clock' },
   { value: 'off', label: 'No program, all pins input' },
 ]
+
+/** The sketches that bit-bang a character LCD on D12, D11 and D5 to D2. */
+const LCD_SKETCH = (p: { program?: unknown }): boolean =>
+  typeof p.program === 'string' && p.program.startsWith('lcd-')
 
 const W = 68.6
 const D = 53.4
@@ -94,6 +101,8 @@ const mcuBoard: PartDef = {
     { key: 'program', label: 'Sketch', type: 'enum', default: 'blink', group: 'Control', options: MCU_PROGRAMS },
     { key: 'interval', label: 'Interval', type: 'number', unit: 's', default: 0.5, min: 0.001, max: 10, step: 0.05, group: 'Control' },
     { key: 'duty', label: 'PWM duty', type: 'number', unit: '%', default: 50, min: 0, max: 100, step: 1, group: 'Control', showIf: (p) => p.program === 'pwm' },
+    { key: 'text1', label: 'LCD line 1', type: 'text', default: 'Draftrig', group: 'Control', showIf: LCD_SKETCH },
+    { key: 'text2', label: 'LCD line 2', type: 'text', default: 'LCD ready', group: 'Control', showIf: (p) => p.program === 'lcd-text' },
     { key: 'power', label: 'Powered from', type: 'enum', default: 'usb', group: 'Control', options: [
       { value: 'usb', label: 'USB' }, { value: 'vin', label: 'Barrel jack / VIN' },
     ] },

@@ -1,5 +1,6 @@
 import { isHigh, registerBehaviour, slot, type BehaviourContext } from './index'
 import { GATE_FAMILY, REGULATORS } from '@/parts/kernel/deviceData'
+import { LCD_WIRING, newLcdDriver, runLcdDriver, type LcdDriverState } from './lcddriver'
 
 /**
  * Built-in behavioural models.
@@ -254,6 +255,10 @@ interface McuState {
   on: boolean
   lastButton: boolean
   latched: boolean
+  /** Present only while an LCD sketch is selected. */
+  lcd?: LcdDriverState
+  count: number
+  countAt: number
 }
 
 const DIGITAL = Array.from({ length: 14 }, (_, i) => `d${i}`)
@@ -266,6 +271,7 @@ const DIGITAL = Array.from({ length: 14 }, (_, i) => `d${i}`)
 registerBehaviour('mcu', (c) => {
   const s = slot<McuState>(c.state, 'mcu', () => ({
     out: {}, step: 0, nextStep: 0, toggleAt: 0, on: false, lastButton: false, latched: false,
+    count: 0, countAt: 0,
   }))
 
   const usb = str(c.params, 'power', 'usb') === 'usb'
@@ -356,6 +362,36 @@ registerBehaviour('mcu', (c) => {
         s.nextStep = c.t + interval
       }
       pins.forEach((p, i) => write(p, i === s.step))
+      break
+    }
+
+    case 'lcd-text':
+    case 'lcd-count':
+    case 'lcd-clock': {
+      // Six pins go to the panel, on the wiring the LiquidCrystal example uses.
+      const used = new Set(Object.values(LCD_WIRING))
+      for (const d of DIGITAL) if (!used.has(d)) c.hiZ(d)
+
+      if (!s.lcd) s.lcd = newLcdDriver()
+
+      let rows: string[]
+      if (program === 'lcd-clock') {
+        const total = Math.floor(c.t)
+        const mm = String(Math.floor(total / 60)).padStart(2, '0')
+        const ss = String(total % 60).padStart(2, '0')
+        const tenths = Math.floor((c.t % 1) * 10)
+        rows = [str(c.params, 'text1', 'Draftrig'), `Up  ${mm}:${ss}.${tenths}`]
+      } else if (program === 'lcd-count') {
+        if (c.t >= s.countAt) {
+          s.count++
+          s.countAt = c.t + interval
+        }
+        rows = [str(c.params, 'text1', 'Draftrig'), `Count ${s.count}`]
+      } else {
+        rows = [str(c.params, 'text1', 'Draftrig'), str(c.params, 'text2', 'LCD ready')]
+      }
+
+      runLcdDriver(s.lcd, c.t, rows, 16, { write })
       break
     }
 

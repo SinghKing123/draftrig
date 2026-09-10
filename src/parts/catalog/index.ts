@@ -12,5 +12,6 @@ import './prototyping'
 import './power_io'
 import './ics'
 import './modules'
+import './displays'
 
 export { allParts, getPart, partsByCategory, searchParts, CATEGORY_META } from '../kernel/registry'

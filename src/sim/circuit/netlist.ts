@@ -67,10 +67,10 @@ export interface BehaviourBinding {
   pins: {
     id: string
     node: number
-    /** Index of the Thevenin source in `circuit.devices`. */
-    vIndex: number
-    /** Index of its series resistance. */
+    /** Index of the pin's conductance to the part's reference. */
     rIndex: number
+    /** Index of the current source across it. */
+    iIndex: number
   }[]
 }
 
@@ -233,6 +233,48 @@ export function buildNetlist(doc: Doc): Netlist {
     }
   }
 
+  if (!groundKey) {
+    /*
+     * Still nothing, which happens whenever the only supply is a board rather
+     * than a bench source: a microcontroller's 5 V pin is a behavioural output,
+     * not a voltage source, so there is no negative terminal to find.
+     *
+     * Take the net that the most ground pins agree on. That is what makes a
+     * board's GND the reference on a real bench, and without it a perfectly
+     * sensible build (a board, a display, no ground symbol anywhere) is a
+     * circuit whose absolute level nothing pins down. The solver can only
+     * settle such a thing to within an arbitrary constant, so every node drifts
+     * by the same amount on every iteration and Newton never converges.
+     */
+    const gndVotes = new Map<string, { key: string; votes: number }>()
+    for (const inst of instances) {
+      for (const port of portCache.get(inst.id) ?? []) {
+        if (port.kind !== 'electrical' || port.role !== 'gnd') continue
+        const key = portKey(inst.id, port.id)
+        const root = uf.find(key)
+        const entry = gndVotes.get(root)
+        if (entry) entry.votes++
+        else gndVotes.set(root, { key, votes: 1 })
+      }
+    }
+    let best: { key: string; votes: number } | null = null
+    for (const entry of gndVotes.values()) {
+      if (!best || entry.votes > best.votes) best = entry
+    }
+    if (best) groundKey = best.key
+  }
+
+  if (!groundKey && pending.length) {
+    // A circuit with no ground pin anywhere at all. Anchor it to something so
+    // the numbers mean something, and say so rather than silently guessing.
+    const anyBehaviour = pending.find((p) => p.behaviour?.ref)
+    if (anyBehaviour?.behaviour?.ref) {
+      groundKey = portKey(anyBehaviour.instanceId, anyBehaviour.behaviour.ref)
+      warnings.push('Nothing in this circuit is marked as ground, so voltages are measured against ' +
+        `${anyBehaviour.instanceId === '' ? 'a part' : 'the first part'}'s reference pin. Add a Ground part to choose the reference yourself.`)
+    }
+  }
+
   // 5. Assign node indices.
   const nodeOf = new Map<string, number>()
   let nextNode = 0
@@ -276,8 +318,8 @@ export function buildNetlist(doc: Doc): Netlist {
       solved.push(d)
     }
     if (p.behaviour) {
-      // build() emitted, per pin and in order: the Thevenin source then its
-      // series resistance.
+      // build() emitted, per pin and in order: the conductance to the part's
+      // reference, then the current source across it.
       behaviours.push({
         instanceId: p.instanceId,
         evalId: p.behaviour.evalId,
@@ -286,8 +328,8 @@ export function buildNetlist(doc: Doc): Netlist {
         pins: p.behaviour.pins.map((id, i) => ({
           id,
           node: nodeFor(portKey(p.instanceId, id)),
-          vIndex: base + i * 2,
-          rIndex: base + i * 2 + 1,
+          rIndex: base + i * 2,
+          iIndex: base + i * 2 + 1,
         })),
       })
     }
@@ -424,14 +466,25 @@ function compileDevice(inst: Instance, model: DeviceModel): PendingDevice {
         }
 
         case 'behavioral': {
-          // One Thevenin source per pin, all referenced to the part's own
-          // ground. They start released; the behaviour drives them each step.
+          /*
+           * One Norton source per pin: a conductance to the part's own ground
+           * and a current source across it. This is the same device as a
+           * voltage behind a series resistance, but stamping it this way costs
+           * no extra node and no extra branch row.
+           *
+           * That matters for more than size. As a Thevenin pair, a released
+           * pin put a 1e-11 conductance and a unit branch coupling in the same
+           * matrix row, and a board with thirty-odd pins on it was then badly
+           * enough conditioned that Newton could not meet its tolerance at all
+           * and burned the full iteration cap on every timestep. As a Norton
+           * pair, releasing a pin simply means no current and a conductance
+           * down at the level of GMIN, which is unremarkable.
+           */
           const ref = model.ref ? n(model.ref) : -1
           const out: SolvedDevice[] = []
           for (const pin of model.pins) {
-            const mid = addNode(`${iid}#bh_${pin}`)
-            out.push({ k: 'v', a: mid, b: ref, v: 0 })
-            out.push({ k: 'r', a: n(pin), b: mid, r: HI_Z })
+            out.push({ k: 'r', a: n(pin), b: ref, r: HI_Z })
+            out.push({ k: 'i', a: ref, b: n(pin), i: 0 })
           }
           return out
         }

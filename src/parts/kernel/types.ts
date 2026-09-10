@@ -119,8 +119,45 @@ export type Solid =
   | (SolidBase & { kind: 'tube'; path: Vec3[]; r: number; seg?: number })
   /** A flat quad used for silkscreen / labels / decals. */
   | (SolidBase & { kind: 'plane'; size: Vec2 })
+  /**
+   * A whole silkscreen layer baked into one texture.
+   *
+   * Real silkscreen is one printing pass, and modelling it that way is also
+   * the only affordable way to draw it: an Uno has about sixty legends on it,
+   * and sixty textured quads would be sixty draw calls for something that is
+   * physically a single layer of white ink. Coordinates are millimetres in the
+   * plane, origin at the centre, +x right and +y up.
+   */
+  | (SolidBase & {
+      kind: 'silk'
+      size: Vec2
+      items: SilkItem[]
+      /** Ink colour. Defaults to silkscreen white. */
+      ink?: string
+      /** Texture resolution, pixels per mm. */
+      px?: number
+    })
+  /**
+   * A live display surface. The pixels come from the simulation, not from the
+   * part definition, so the geometry compiler only records where the surface
+   * is and how big it is. `screen` names the framebuffer the owning part's
+   * behaviour writes into.
+   */
+  | (SolidBase & { kind: 'screen'; size: Vec2; screen: string })
   /** Nested group so generators can compose sub-assemblies. */
   | (SolidBase & { kind: 'group'; children: Solid[] })
+
+/* ------------------------------------------------------------------ */
+/* Silkscreen                                                          */
+/* ------------------------------------------------------------------ */
+
+export type SilkItem =
+  | { t: 'text'; at: Vec2; text: string; size: number; align?: 'left' | 'center' | 'right'; rot?: number; bold?: boolean; mono?: boolean }
+  | { t: 'rect'; at: Vec2; size: Vec2; fill?: boolean; w?: number; r?: number }
+  | { t: 'circle'; at: Vec2; r: number; fill?: boolean; w?: number }
+  | { t: 'line'; from: Vec2; to: Vec2; w?: number }
+  /** A run of pad outlines, the dotted look of a header footprint. */
+  | { t: 'pads'; at: Vec2; n: number; pitch: number; r: number; vertical?: boolean }
 
 /* ------------------------------------------------------------------ */
 /* Ports, where parts connect to the world                            */

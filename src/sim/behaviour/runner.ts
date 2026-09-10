@@ -1,6 +1,7 @@
 import { getBehaviour, HI_Z, type BehaviourContext } from './index'
 import type { BehaviourBinding, Netlist } from '../circuit/netlist'
 import type { Params } from '@/parts/kernel/types'
+import { fbKey, getFramebuffer } from '@/sim/display/framebuffer'
 
 /**
  * Evaluates a netlist's behavioural parts against the solver.
@@ -46,13 +47,18 @@ export class BehaviourRunner {
           drive: (pin, v, r = 25) => {
             const p = byPin.get(pin)
             if (!p) return
-            nl.circuit.setSourceValue(p.vIndex, v)
-            nl.circuit.setResistance(p.rIndex, r)
+            const rr = Math.max(r, 1e-3)
+            nl.circuit.setResistance(p.rIndex, rr)
+            nl.circuit.setSourceCurrent(p.iIndex, v / rr)
           },
           hiZ: (pin) => {
             const p = byPin.get(pin)
-            if (p) nl.circuit.setResistance(p.rIndex, HI_Z)
+            if (!p) return
+            nl.circuit.setResistance(p.rIndex, HI_Z)
+            // A released pin must stop injecting, not merely stop being stiff.
+            nl.circuit.setSourceCurrent(p.iIndex, 0)
           },
+          display: (screen, init) => getFramebuffer(fbKey(binding.instanceId, screen), init),
         },
       })
     }

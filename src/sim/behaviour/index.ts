@@ -1,4 +1,5 @@
 import type { Params } from '@/parts/kernel/types'
+import type { Framebuffer } from '@/sim/display/framebuffer'
 
 /**
  * Behavioural devices.
@@ -16,8 +17,19 @@ import type { Params } from '@/parts/kernel/types'
  *   analogue input     hiZ(pin) and read it
  */
 
-/** Series resistance that means "not driving". */
-export const HI_Z = 1e11
+/**
+ * Impedance that means "not driving", ohms.
+ *
+ * 100 MΩ, not something enormous like 1e11. A released pin has to be weak
+ * enough to be irrelevant next to anything else on the net, and no weaker: the
+ * solver works in double precision, and putting a 1e-11 conductance in the same
+ * matrix as a 5 S regulator output leaves it badly enough conditioned that the
+ * round-off on a node voltage exceeds the Newton tolerance. The result was a
+ * solver that never converged and silently burned its whole iteration budget on
+ * every timestep. 100 MΩ leaks 50 nA at 5 V, which is about what a real CMOS
+ * input pin does anyway.
+ */
+export const HI_Z = 1e8
 
 export interface BehaviourContext {
   /** Simulated time, seconds. */
@@ -34,6 +46,12 @@ export interface BehaviourContext {
   state: Record<string, unknown>
   /** The owning part's parameters. */
   params: Params
+  /**
+   * The framebuffer behind one of this part's display surfaces, created on
+   * first use. A controller writes what it is showing here; the renderer reads
+   * it. Bump `version` after any change or the picture will not be repainted.
+   */
+  display: (screen: string, init: () => Framebuffer) => Framebuffer
 }
 
 export type Behaviour = (ctx: BehaviourContext) => void

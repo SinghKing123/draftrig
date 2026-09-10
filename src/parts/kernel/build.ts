@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
-import type { Material, Params, PartDef, Port, Profile, Solid, Vec2, Vec3 } from './types'
+import type { Material, Params, PartDef, Port, Profile, SilkItem, Solid, Vec2, Vec3 } from './types'
 import { materialKey, resolveMaterial } from './materials'
 
 /**
@@ -19,8 +19,32 @@ export interface BuiltMesh {
   tags: string[]
 }
 
+/**
+ * A textured quad the geometry compiler locates but does not paint.
+ *
+ * Painting needs a canvas, and the kernel has to stay runnable in Node so the
+ * catalog can be swept by tests without a DOM. So the compiler records where
+ * the surface is and what belongs on it, and the renderer turns that into a
+ * texture the first time it is actually shown.
+ */
+export interface BuiltSurface {
+  kind: 'silk' | 'screen'
+  /** Placement within the part. */
+  matrix: THREE.Matrix4
+  size: Vec2
+  /** Stable identity, used to cache the baked texture. */
+  key: string
+  /* silk */
+  items?: SilkItem[]
+  ink?: string
+  px?: number
+  /* screen */
+  screen?: string
+}
+
 export interface BuiltPart {
   meshes: BuiltMesh[]
+  surfaces: BuiltSurface[]
   bbox: THREE.Box3
   /** cm^3 */
   volume: number
@@ -198,6 +222,11 @@ function primitive(s: Solid): THREE.BufferGeometry | null {
       return tubeGeometry(s.path, s.r, s.seg ?? autoSeg(s.r, 8, 20))
     case 'plane':
       return new THREE.PlaneGeometry(s.size[0], s.size[1])
+    case 'silk':
+    case 'screen':
+      // Collected as surfaces instead: they each need their own texture and
+      // so cannot be merged into a shared material bucket.
+      return null
     case 'group':
       return null
   }
@@ -241,6 +270,8 @@ function primitiveVolume(s: Solid): number {
       return Math.PI * s.r * s.r * len
     }
     case 'plane':
+    case 'silk':
+    case 'screen':
       return 0
     case 'group':
       return 0
@@ -272,12 +303,36 @@ function walk(
   parent: THREE.Matrix4,
   buckets: Map<string, Bucket>,
   acc: { volume: number; moment: THREE.Vector3; mass: number },
+  surfaces: BuiltSurface[],
 ): void {
   for (const s of solids) {
     const world = new THREE.Matrix4().multiplyMatrices(parent, localMatrix(s))
 
     if (s.kind === 'group') {
-      walk(s.children, world, buckets, acc)
+      walk(s.children, world, buckets, acc, surfaces)
+      continue
+    }
+
+    if (s.kind === 'silk') {
+      surfaces.push({
+        kind: 'silk',
+        matrix: world,
+        size: s.size,
+        items: s.items,
+        ink: s.ink,
+        px: s.px,
+        key: `silk|${s.ink ?? ''}|${s.px ?? ''}|${s.size.join(',')}|${JSON.stringify(s.items)}`,
+      })
+      continue
+    }
+    if (s.kind === 'screen') {
+      surfaces.push({
+        kind: 'screen',
+        matrix: world,
+        size: s.size,
+        screen: s.screen,
+        key: `screen|${s.screen}|${s.size.join(',')}`,
+      })
       continue
     }
 
@@ -321,7 +376,8 @@ function normaliseIndexing(geos: THREE.BufferGeometry[]): THREE.BufferGeometry[]
 export function buildSolids(solids: Solid[]): BuiltPart {
   const buckets = new Map<string, Bucket>()
   const acc = { volume: 0, moment: new THREE.Vector3(), mass: 0 }
-  walk(solids, new THREE.Matrix4(), buckets, acc)
+  const surfaces: BuiltSurface[] = []
+  walk(solids, new THREE.Matrix4(), buckets, acc, surfaces)
 
   const meshes: BuiltMesh[] = []
   const bbox = new THREE.Box3()
@@ -339,8 +395,18 @@ export function buildSolids(solids: Solid[]): BuiltPart {
     meshes.push({ key: b.key, material: b.material, geometry: merged, tags: [...b.tags] })
   }
 
+  // A part that is only a display surface still has an extent worth knowing.
+  for (const s of surfaces) {
+    const half = new THREE.Vector3(s.size[0] / 2, s.size[1] / 2, 0)
+    for (const sx of [-1, 1]) {
+      for (const sy of [-1, 1]) {
+        bbox.expandByPoint(new THREE.Vector3(half.x * sx, half.y * sy, 0).applyMatrix4(s.matrix))
+      }
+    }
+  }
+
   const com = acc.mass > 0 ? acc.moment.clone().divideScalar(acc.mass) : new THREE.Vector3()
-  return { meshes, bbox, volume: acc.volume / 1000, mass: acc.mass, com }
+  return { meshes, surfaces, bbox, volume: acc.volume / 1000, mass: acc.mass, com }
 }
 
 /* ------------------------------------------------------------------ */

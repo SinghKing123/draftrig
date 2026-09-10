@@ -1,7 +1,9 @@
 import { buildNetlist, portKey, type Netlist } from './circuit/netlist'
 import { BehaviourRunner } from './behaviour/runner'
 import '@/sim/behaviour/library'
+import '@/sim/behaviour/displays'
 import { GROUND } from './circuit/mna'
+import { clearFramebuffers } from './display/framebuffer'
 import { useDoc, type Doc } from '@/state/doc'
 import { useSim, type SimIssue } from '@/state/sim'
 import { getPart } from '@/parts/kernel/registry'
@@ -87,6 +89,7 @@ class SimEngine {
     this.dirty = true
     this.traces.clear()
     this.behaviourState.clear()
+    clearFramebuffers()
     this.debt = 0
     useSim.getState().resetOutputs()
     this.rebuild(useDoc.getState().doc)
