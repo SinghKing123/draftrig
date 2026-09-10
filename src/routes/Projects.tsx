@@ -3,9 +3,10 @@ import { Link, useNavigate } from 'react-router-dom'
 import { BRAND, pageTitle } from '@/brand'
 import { Wordmark, LogoMark } from '@/ui/Logo'
 import { AccountMenu } from '@/ui/AccountMenu'
-import { IconPlus, IconTrash } from '@/ui/Icons'
+import { IconCopy, IconPencil, IconPlus, IconTrash } from '@/ui/Icons'
 import { useAuth } from '@/auth/AuthProvider'
 import { newProjectId, projects, type ProjectSummary } from '@/cloud/projects'
+import { getThumb, removeThumb, setThumb } from '@/cloud/thumbs'
 import { STARTERS } from '@/io/starters'
 
 function ago(iso: string): string {
@@ -50,15 +51,43 @@ export function Projects() {
     e.stopPropagation()
     if (!window.confirm(`Delete “${name}”? This cannot be undone.`)) return
     await projects.remove(id)
+    removeThumb(id)
+    refresh()
+  }
+
+  const rename = async (e: React.MouseEvent, id: string, name: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const next = window.prompt('Name this build', name)?.trim()
+    if (!next || next === name) return
+    const rec = await projects.load(id)
+    if (!rec) return
+    await projects.save(id, { ...rec.doc, name: next })
+    refresh()
+  }
+
+  /**
+   * Copy a build. This is how anyone tries a change they are not sure about:
+   * duplicate, then break the copy.
+   */
+  const duplicate = async (e: React.MouseEvent, id: string, name: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const rec = await projects.load(id)
+    if (!rec) return
+    const copyId = newProjectId()
+    await projects.save(copyId, { ...rec.doc, name: `${name} copy` })
+    const shot = getThumb(id)
+    if (shot) setThumb(copyId, shot)
     refresh()
   }
 
   return (
     <div className="lib-page site">
-      <nav className="site-nav">
-        <div className="wrap">
-          <Link to="/" style={{ textDecoration: 'none' }}><Wordmark size={24} /></Link>
-          <div className="spacer" />
+      <nav className="site-nav" data-stuck="true">
+        <div className="wrap row">
+          <Link to="/" aria-label={BRAND.name}><Wordmark size={26} /></Link>
+          <div className="grow" />
           <AccountMenu compact />
           <Link className="cta primary small" to="/app">New build</Link>
         </div>
@@ -100,28 +129,37 @@ export function Projects() {
           </div>
         ) : (
           <div className="proj-grid">
-            {items.map((p) => (
-              <Link className="proj" key={p.id} to={`/app/${p.id}`}>
-                <div className="thumb"><LogoMark size={26} /></div>
-                <h3 className="truncate">{p.name}</h3>
-                <div className="meta">
-                  <span>{p.parts} part{p.parts === 1 ? '' : 's'}</span>
-                  <span>·</span>
-                  <span>{ago(p.updatedAt)}</span>
-                  <div style={{ flex: 1 }} />
-                  <span className={`badge ${p.remote ? 'cloud' : 'local'}`}>
-                    {p.remote ? 'Synced' : 'This browser'}
-                  </span>
-                  <button
-                    title="Delete"
-                    style={{ color: 'var(--tx-3)', padding: 2 }}
-                    onClick={(e) => remove(e, p.id, p.name)}
-                  >
-                    <IconTrash size={12} />
-                  </button>
-                </div>
-              </Link>
-            ))}
+            {items.map((p) => {
+              const shot = getThumb(p.id)
+              return (
+                <Link className="proj" key={p.id} to={`/app/${p.id}`}>
+                  <div className="thumb">
+                    {shot ? <img src={shot} alt="" loading="lazy" /> : <LogoMark size={26} />}
+                  </div>
+                  <h3 className="truncate">{p.name}</h3>
+                  <div className="meta">
+                    <span>{p.parts} part{p.parts === 1 ? '' : 's'}</span>
+                    <span>·</span>
+                    <span>{ago(p.updatedAt)}</span>
+                    <div style={{ flex: 1 }} />
+                    <span className={`badge ${p.remote ? 'cloud' : 'local'}`}>
+                      {p.remote ? 'Synced' : 'This browser'}
+                    </span>
+                  </div>
+                  <div className="proj-actions">
+                    <button title="Rename" onClick={(e) => rename(e, p.id, p.name)}>
+                      <IconPencil size={12} />
+                    </button>
+                    <button title="Duplicate" onClick={(e) => duplicate(e, p.id, p.name)}>
+                      <IconCopy size={12} />
+                    </button>
+                    <button title="Delete" onClick={(e) => remove(e, p.id, p.name)}>
+                      <IconTrash size={12} />
+                    </button>
+                  </div>
+                </Link>
+              )
+            })}
           </div>
         )}
       </div>

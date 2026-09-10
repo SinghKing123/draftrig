@@ -16,6 +16,8 @@ import { engine } from '@/sim/engine'
 import { registerSeating, useDoc } from '@/state/doc'
 import { buildPart } from '@/parts/kernel/build'
 import { newProjectId, projects } from '@/cloud/projects'
+import { setThumb } from '@/cloud/thumbs'
+import { captureThumbnail } from '@/scene/capture'
 import { pageTitle } from '@/brand'
 // Registers the part catalog. The editor is the entry point that needs it;
 // the marketing routes deliberately do not import this.
@@ -116,6 +118,10 @@ export function Editor() {
       setSaveState('saving')
       try {
         await projects.save(id, doc)
+        // Photograph the bench alongside the save, so the project list shows
+        // the build rather than a row of identical logos.
+        const shot = captureThumbnail()
+        if (shot) setThumb(id, shot)
         setSaveState('saved')
         // Update the address bar so a reload reopens the same project.
         if (!projectId) window.history.replaceState(null, '', `/app/${id}`)

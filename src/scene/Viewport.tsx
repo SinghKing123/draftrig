@@ -12,6 +12,7 @@ import { CameraRig } from './CameraRig'
 import { Lights, PostFx, StudioEnvironment } from './Render'
 import { useDoc, useInstanceList } from '@/state/doc'
 import { installPointerTracker, wasClick } from './pointer'
+import { registerCanvas } from './capture'
 import { SnapSession, type SnapHit } from './snap'
 import { SnapIndicator, snapStore } from './SnapIndicator'
 import type { Vec3 } from '@/parts/kernel/types'
@@ -331,12 +332,19 @@ export function Viewport() {
     <Canvas
       shadows
       dpr={[1, 2]}
-      gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
+      /*
+       * preserveDrawingBuffer is what lets the project list photograph the
+       * viewport. Without it the buffer may be cleared as soon as the frame is
+       * presented, and reading it back gives a blank image on some drivers and
+       * not others.
+       */
+      gl={{ antialias: true, alpha: false, powerPreference: 'high-performance', preserveDrawingBuffer: true }}
       // A near-to-far ratio of fifty thousand spends most of the depth buffer
       // on space nothing occupies. The camera cannot get closer than 8 mm or
       // further than 4 m, so this covers it with room to spare.
       camera={{ position: [300, 230, 340], fov: 36, near: 1, far: 12000 }}
       onCreated={({ gl }) => {
+        registerCanvas(gl.domElement)
         gl.toneMapping = THREE.NoToneMapping
         gl.shadowMap.type = THREE.PCFSoftShadowMap
       }}

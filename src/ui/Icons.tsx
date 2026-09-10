@@ -125,3 +125,11 @@ export const IconSpark = (p: IconProps) => (
     <path d="M13 2.2 13.5 3.7 15 4.2 13.5 4.7 13 6.2 12.5 4.7 11 4.2 12.5 3.7Z" />
   </S>
 )
+
+/** Rename. */
+export const IconPencil = (p: IconProps) => (
+  <S {...p}>
+    <path d="M11.4 2.6a1.7 1.7 0 0 1 2.4 2.4L5.6 13.2 2.4 14l.8-3.2Z" />
+    <path d="M10.2 3.8 12.6 6.2" />
+  </S>
+)

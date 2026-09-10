@@ -670,14 +670,59 @@
   transition: border-color 140ms ease, transform 140ms ease;
 }
 .proj:hover { border-color: #cfdcea; transform: translateY(-2px); }
+.proj { position: relative; }
 .proj .thumb {
   display: grid;
   place-items: center;
-  height: 92px;
+  height: 116px;
   margin-bottom: 14px;
   border-radius: 9px;
-  background: var(--paper-3);
+  background: #10141a;
+  overflow: hidden;
 }
+.proj .thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Card actions, out of the way until the card is under the pointer. */
+.proj-actions {
+  position: absolute;
+  top: 26px;
+  right: 26px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 130ms ease;
+}
+.proj:hover .proj-actions,
+.proj:focus-within .proj-actions { opacity: 1; }
+.proj-actions button {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--ink-2);
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+}
+.proj-actions button:hover { color: var(--ink); border-color: #cdd6e0; }
+.proj-actions button:last-child:hover { color: #b3261e; border-color: #f0c6c2; }
+
+.proj .badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--paper-3);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+.proj .badge.cloud { background: var(--blue-wash); color: var(--blue-deep); }
 .proj .meta { display: flex; gap: 10px; font-size: 12.5px; color: #9aa6b4; margin-top: 4px; }
 .proj .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
 .empty-lib { padding: 60px 20px; text-align: center; color: var(--ink-3); }
