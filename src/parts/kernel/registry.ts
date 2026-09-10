@@ -1,4 +1,4 @@
-import type { PartCategory, PartDef } from './types'
+import type { Params, PartCategory, PartDef } from './types'
 import { parseEng } from './units'
 
 const registry = new Map<string, PartDef>()
@@ -24,6 +24,19 @@ export function requirePart(id: string): PartDef {
   const d = registry.get(id)
   if (!d) throw new Error(`[parts] unknown part id "${id}"`)
   return d
+}
+
+/**
+ * Resolve a part's declared defaults into a full parameter object.
+ *
+ * Lives here rather than beside the geometry compiler because a document is
+ * data: creating one should not require three.js. It did, and the whole 3D
+ * engine was being downloaded by the marketing page as a result.
+ */
+export function defaultParams(def: PartDef): Params {
+  const p: Params = {}
+  for (const spec of def.params) p[spec.key] = spec.default
+  return p
 }
 
 export function allParts(): PartDef[] {

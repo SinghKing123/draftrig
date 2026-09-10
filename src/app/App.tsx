@@ -9,9 +9,12 @@ import { StatusBar } from '@/ui/StatusBar'
 import { ViewportOverlay } from '@/ui/ViewportOverlay'
 import { useShortcuts } from './shortcuts'
 import { Tour, hasSeenTour, markTourSeen } from '@/ui/Tour'
+import { Assistant } from '@/ui/Assistant'
+import { IconSpark } from '@/ui/Icons'
 import { Welcome } from '@/ui/Welcome'
 import { engine } from '@/sim/engine'
-import { useDoc } from '@/state/doc'
+import { registerSeating, useDoc } from '@/state/doc'
+import { buildPart } from '@/parts/kernel/build'
 import { newProjectId, projects } from '@/cloud/projects'
 import { pageTitle } from '@/brand'
 // Registers the part catalog. The editor is the entry point that needs it;
@@ -36,6 +39,16 @@ declare global {
 }
 window.draftrig = { doc: useDoc, sim: useSim, engine, starters: STARTERS }
 
+/**
+ * Lend the store a way to seat a part on the ground plane. Only the editor has
+ * the geometry compiler, and only the editor needs parts to land on their lead
+ * tips rather than at y = 0.
+ */
+registerSeating((def, params) => {
+  const bbox = buildPart(def, params).bbox
+  return bbox.isEmpty() ? 0 : -bbox.min.y
+})
+
 /** Debounce for autosave: long enough not to thrash, short enough to trust. */
 const AUTOSAVE_MS = 1500
 
@@ -50,6 +63,7 @@ export function Editor() {
   const [saveState, setSaveState] = useState<SaveState>('idle')
   const [ready, setReady] = useState(false)
   // Someone opening a saved project already knows what this is.
+  const [assistantOpen, setAssistantOpen] = useState(false)
   const [onboarding, setOnboarding] = useState<Onboarding>(() =>
     projectId || hasSeenTour() ? 'done' : 'intro',
   )
@@ -129,6 +143,16 @@ export function Editor() {
         </div>
         <Inspector />
       </div>
+      {assistantOpen && <Assistant onClose={() => setAssistantOpen(false)} />}
+      <button
+        className="ai-fab"
+        data-open={assistantOpen}
+        onClick={() => setAssistantOpen((v) => !v)}
+        title="Describe a build and have it laid out for you"
+      >
+        <IconSpark size={16} />
+        Assistant
+      </button>
       <StatusBar />
 
       {(onboarding === 'intro' || onboarding === 'starters') && (

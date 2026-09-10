@@ -2,6 +2,8 @@ import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import type { Material, Params, PartDef, Port, Profile, SilkItem, Solid, Vec2, Vec3 } from './types'
 import { materialKey, resolveMaterial } from './materials'
+// Re-exported so the editor can keep importing both from one place.
+export { defaultParams } from './registry'
 
 /**
  * Geometry compiler: declarative solid tree -> renderable meshes + mass props.
@@ -449,13 +451,6 @@ export function buildPart(def: PartDef, params: Params): BuiltInstance {
     }
   }
   return result
-}
-
-/** Resolve a part's defaults into a full param object. */
-export function defaultParams(def: PartDef): Params {
-  const p: Params = {}
-  for (const spec of def.params) p[spec.key] = spec.default
-  return p
 }
 
 /** World-space transform for an instance. */

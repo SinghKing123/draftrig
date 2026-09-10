@@ -1,8 +1,7 @@
 import type { Doc } from '@/state/doc'
 import { emptyDoc } from '@/state/doc'
 import type { Instance, Params, Vec3 } from '@/parts/kernel/types'
-import { defaultParams } from '@/parts/kernel/build'
-import { requirePart } from '@/parts/kernel/registry'
+import { defaultParams, requirePart } from '@/parts/kernel/registry'
 
 /**
  * Starter builds. These are ordinary documents constructed in code, which

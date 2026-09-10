@@ -164,8 +164,8 @@ describe('seven-segment display', () => {
     b.join([supply, 'n'], [gnd, 'gnd'])
 
     // Digit 1 common to ground through a resistor, segments A and B to +5 V.
-    const r1 = b.put('resistor-axial', { ohms: 220 })
-    const r2 = b.put('resistor-axial', { ohms: 220 })
+    const r1 = b.put('resistor-axial', { value: 220 })
+    const r2 = b.put('resistor-axial', { value: 220 })
     b.join([seg, 'd1'], [supply, 'n'])
     b.join([supply, 'p'], [r1, '1'])
     b.join([r1, '2'], [seg, 'a'])

@@ -18,3 +18,8 @@ cerr.txt
 *free.txt
 *err.txt
 pairs.txt
+
+# Screenshots from the verification scripts in tools/
+*-shot.png
+close-*.png
+ai-*.png

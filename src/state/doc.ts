@@ -1,8 +1,7 @@
 import { useMemo } from 'react'
 import { create } from 'zustand'
 import type { Connection, Instance, Params, ParamValue, PartDef, PortRef, Vec3 } from '@/parts/kernel/types'
-import { buildPart, defaultParams } from '@/parts/kernel/build'
-import { getPart } from '@/parts/kernel/registry'
+import { defaultParams, getPart } from '@/parts/kernel/registry'
 
 /* ------------------------------------------------------------------ */
 /* Document                                                            */
@@ -136,6 +135,18 @@ function nextName(doc: Doc, def: PartDef): string {
 /* Store                                                               */
 /* ------------------------------------------------------------------ */
 
+/**
+ * How far a part sits above the ground plane, supplied by the editor once its
+ * geometry compiler has loaded. Without it, parts seat at y = 0, which is what
+ * anything outside the viewport wants anyway.
+ */
+type SeatFn = (def: PartDef, params: Params) => number
+let seatHeight: SeatFn | null = null
+
+export function registerSeating(fn: SeatFn): void {
+  seatHeight = fn
+}
+
 export const useDoc = create<DocState>()((set, get) => {
   /** Run a mutation, optionally recording an undo entry first. */
   const edit = (fn: (d: Doc) => void, record = true) => {
@@ -176,12 +187,12 @@ export const useDoc = create<DocState>()((set, get) => {
       const id = uid('i')
       const resolved = { ...defaultParams(def), ...params }
       // Drop the part onto the ground plane. Through-hole parts stand on their
-      // lead tips, which is exactly what they do on a real bench.
+      // lead tips, which is exactly what they do on a real bench. Working out
+      // where the tips are needs the geometry compiler, so the editor lends it
+      // to the store rather than the store importing it: a document has to be
+      // creatable without pulling a 3D engine in behind it.
       const seat: Vec3 = [...at] as Vec3
-      if (at[1] === 0) {
-        const bbox = buildPart(def, resolved).bbox
-        if (!bbox.isEmpty()) seat[1] = -bbox.min.y
-      }
+      if (at[1] === 0 && seatHeight) seat[1] = seatHeight(def, resolved)
       edit((d) => {
         d.instances[id] = {
           id,
