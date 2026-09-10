@@ -418,3 +418,96 @@ registerBehaviour('analog-sensor', (c: BehaviourContext) => {
   // A ratiometric output, exactly like a real 3-wire analogue sensor.
   c.drive('out', vcc * frac, 900)
 })
+
+/* ================================================================== */
+/* Ultrasonic range finder                                             */
+/* ================================================================== */
+
+interface Sonar {
+  /** Trigger level last timestep, for edge detection. */
+  lastTrig: boolean
+  /** Simulated time the echo pulse ends, or -1 when idle. */
+  echoUntil: number
+  /** When the trigger went high, so a runt pulse is ignored. */
+  trigSince: number
+}
+
+/**
+ * HC-SR04 timing.
+ *
+ * A trigger pulse of at least ten microseconds starts a ping, and the echo pin
+ * then goes high for the round trip: about 58 microseconds per centimetre at
+ * room temperature. Reproducing the timing rather than the number is what lets
+ * a sketch that measures the pulse work here at all.
+ */
+registerBehaviour('ultrasonic', (c: BehaviourContext) => {
+  const s = slot<Sonar>(c.state, 'sonar', () => ({ lastTrig: false, echoUntil: -1, trigSince: -1 }))
+  c.hiZ('vcc')
+  c.hiZ('trig')
+
+  const vcc = c.read('vcc')
+  if (vcc < 3) {
+    c.hiZ('echo')
+    s.echoUntil = -1
+    return
+  }
+
+  const trig = c.read('trig') > vcc * 0.5
+  if (trig && !s.lastTrig) s.trigSince = c.t
+  if (!trig && s.lastTrig && s.trigSince >= 0 && c.t - s.trigSince >= 9e-6 && s.echoUntil < 0) {
+    const cm = Math.min(Math.max(num(c.params, 'distance', 30), 2), 400)
+    s.echoUntil = c.t + cm * 58e-6
+  }
+  s.lastTrig = trig
+
+  if (s.echoUntil > 0 && c.t < s.echoUntil) {
+    c.drive('echo', vcc, 40)
+  } else {
+    if (s.echoUntil > 0 && c.t >= s.echoUntil) s.echoUntil = -1
+    c.drive('echo', 0, 40)
+  }
+})
+
+/* ================================================================== */
+/* Hobby servo                                                         */
+/* ================================================================== */
+
+interface ServoState {
+  lastHigh: boolean
+  roseAt: number
+  /** Most recent pulse width, seconds. */
+  width: number
+}
+
+/**
+ * Reads the signal line the way a servo does: it measures how long the pulse
+ * stays high and holds the angle that width asks for, between one and two
+ * milliseconds for nought to a hundred and eighty degrees.
+ *
+ * The horn in the viewport is posed by its parameter rather than by this,
+ * because geometry is a pure function of parameters and the simulation is not
+ * allowed to write into the document. What this does model is the electrical
+ * side, which is the part that matters to the rest of the circuit: a servo
+ * pulls real current from the rail, and a small board trying to feed one from
+ * its 5 V pin browns out here the same way it does on a bench.
+ */
+registerBehaviour('servo', (c: BehaviourContext) => {
+  const s = slot<ServoState>(c.state, 'servo', () => ({ lastHigh: false, roseAt: -1, width: 0 }))
+  c.hiZ('sig')
+
+  const vcc = c.read('vcc')
+  if (vcc < 3.5) {
+    c.hiZ('vcc')
+    return
+  }
+
+  const high = c.read('sig') > vcc * 0.5
+  if (high && !s.lastHigh) s.roseAt = c.t
+  if (!high && s.lastHigh && s.roseAt >= 0) s.width = c.t - s.roseAt
+  s.lastHigh = high
+
+  // Idle holding current, or stall current when the user says it is loaded.
+  const stall = c.params.stall === true
+  const amps = stall ? (str(c.params, 'size', 'sg90') === 'mg996' ? 2.5 : 0.65) : 0.02
+  c.drive('vcc', 0, Math.max(vcc / amps, 0.5))
+})

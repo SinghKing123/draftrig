@@ -13,5 +13,7 @@ import './power_io'
 import './ics'
 import './modules'
 import './displays'
+import './sensors'
+import './hardware'
 
 export { allParts, getPart, partsByCategory, searchParts, CATEGORY_META } from '../kernel/registry'

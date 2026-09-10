@@ -10,6 +10,9 @@ describe('part search', () => {
     expect(searchParts('2020')[0].id).toBe('extrusion-tslot')
     expect(searchParts('breadboard')[0].id).toBe('breadboard')
     expect(searchParts('motor')[0].id).toBe('motor-dc')
+    expect(searchParts('servo')[0].id).toBe('servo-hobby')
+    expect(searchParts('bearing')[0].id).toBe('bearing-ball')
+    expect(searchParts('washer')[0].id).toBe('washer-flat')
     expect(searchParts('plywood')[0].id).toBe('panel-sheet')
     expect(searchParts('arduino')[0].id).toBe('mcu-board')
     expect(searchParts('mosfet')[0].id).toBe('mosfet')
@@ -18,6 +21,9 @@ describe('part search', () => {
   it('prefers the part a word describes over one that merely starts with it', () => {
     // "Motor driver" starts with the word, but the DC motor is tagged as one.
     expect(searchParts('motor')[0].id).toBe('motor-dc')
+    expect(searchParts('servo')[0].id).toBe('servo-hobby')
+    expect(searchParts('bearing')[0].id).toBe('bearing-ball')
+    expect(searchParts('washer')[0].id).toBe('washer-flat')
     expect(searchParts('motor driver')[0].id).toBe('motor-driver')
   })
 

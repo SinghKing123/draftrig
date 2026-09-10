@@ -314,6 +314,60 @@ const Motion = (p: Props) => (
   </G>
 )
 
+
+const Washer = (p: Props) => (
+  <G {...p}>
+    <circle cx="10" cy="10" r="7.2" />
+    <circle cx="10" cy="10" r="3" />
+  </G>
+)
+
+const Bearing = (p: Props) => (
+  <G {...p}>
+    <circle cx="10" cy="10" r="7.4" />
+    <circle cx="10" cy="10" r="5.2" />
+    <circle cx="10" cy="10" r="2.6" />
+    {[0, 1, 2, 3, 4, 5].map((i) => {
+      const a = (i / 6) * Math.PI * 2
+      return <circle key={i} cx={10 + Math.cos(a) * 6.3} cy={10 + Math.sin(a) * 6.3} r="0.85" fill="currentColor" stroke="none" />
+    })}
+  </G>
+)
+
+const Rail = (p: Props) => (
+  <G {...p}>
+    <rect x="1.6" y="11.4" width="16.8" height="4.2" rx="0.8" />
+    <rect x="5.8" y="5.4" width="8.4" height="6" rx="1" />
+    <path d="M4.6 13.5h.01M8 13.5h.01M12 13.5h.01M15.4 13.5h.01" strokeWidth="1.9" />
+  </G>
+)
+
+const LeadScrew = (p: Props) => (
+  <G {...p}>
+    <path d="M2 10h16" />
+    {[0, 1, 2, 3, 4].map((i) => (
+      <path key={i} d={`M${3.4 + i * 3.3} 6.6 L${5.4 + i * 3.3} 13.4`} />
+    ))}
+  </G>
+)
+
+const Photocell = (p: Props) => (
+  <G {...p}>
+    <circle cx="10" cy="11" r="5" />
+    <path d="M7.6 11.8 9 9.4l1.4 2.4L11.8 9.4l1 2.4" />
+    <path d="M14.6 4 12.8 5.8M16.6 6.6l-2.2 1.1" />
+  </G>
+)
+
+const Servo = (p: Props) => (
+  <G {...p}>
+    <rect x="4.6" y="6.8" width="10.8" height="9.6" rx="1.2" />
+    <path d="M2 8.6h2.6M15.4 8.6H18" />
+    <circle cx="10" cy="5.4" r="2" />
+    <path d="M10 5.4h5.6" />
+  </G>
+)
+
 /* ------------------------------------------------------------------ */
 
 type Glyph = (p: Props) => React.ReactElement
@@ -360,6 +414,23 @@ const BY_ID: Record<string, Glyph> = {
   'bracket-corner-2020': Bracket,
   'tnut-2020': Nut,
   'screw-bhcs': Screw,
+  'nut-hex': Nut,
+  'washer-flat': Washer,
+  'insert-heatset': Screw,
+  'bearing-ball': Bearing,
+  'pulley-gt2': Motion,
+  'rail-linear': Rail,
+  'leadscrew-t8': LeadScrew,
+  'angle-stock': Bracket,
+  'terminal-block': Header,
+  'switch-rocker': Switch,
+  'switch-micro': Switch,
+  'servo-hobby': Servo,
+  ldr: Photocell,
+  'thermistor-ntc': Sensor,
+  'sensor-soil': Sensor,
+  'sensor-ldr-module': Photocell,
+  'sensor-ultrasonic': Sensor,
 }
 
 /** Whatever the category is, when a part has no symbol of its own. */

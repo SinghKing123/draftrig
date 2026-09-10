@@ -165,14 +165,20 @@ export function searchParts(query: string): PartDef[] {
         }
       }
 
+      // A term that is also in the part's own name is a stronger match than one
+      // that only appears in its tags. A servo tags itself "motor" because it
+      // contains one; a DC motor is called one. Without this the tie fell to
+      // whichever category happened to sort first, which is meaningless here.
+      const inName = word.test(name)
+
       if (name === t) score += 400
       // An exact tag outranks a name prefix: tags are curated statements that
       // a part *is* the thing, whereas "Motor driver" merely starts with the
       // word someone typed when they were looking for a motor.
-      else if (tags.includes(t)) score += 260
+      else if (tags.includes(t)) score += 260 + (inName ? 40 : 0)
       else if (name.startsWith(t)) score += 220
-      else if (mpn.includes(t)) score += 180
-      else if (word.test(name)) score += 140
+      else if (mpn.includes(t)) score += 180 + (inName ? 40 : 0)
+      else if (inName) score += 140
       else if (tags.some((tag) => word.test(tag))) score += 90
       else if (word.test(rest)) score += 40
       else if (name.includes(t)) score += 25
