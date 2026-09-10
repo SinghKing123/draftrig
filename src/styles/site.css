@@ -787,3 +787,144 @@
 .acct .who { padding: 8px 10px 10px; border-bottom: 1px solid var(--line-2); margin-bottom: 4px; }
 .acct .who .truncate { display: block; font-size: 13px; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; }
 .acct .small { font-size: 12px; color: #9aa6b4; }
+
+/* ============================================================
+   Landing page, second pass
+   ------------------------------------------------------------
+   The first version was a hero and then eight bordered boxes.
+   These are the pieces that give the page a shape: a plain
+   headline, alternating rows with real product imagery, and a
+   footer with something in it.
+   ============================================================ */
+
+/* A headline in ink, not a gradient. Gradient type reads as a
+   template; the accent is doing enough work as the logo. */
+.hero h1 {
+  font-size: clamp(38px, 5.6vw, 60px);
+  letter-spacing: -0.035em;
+  line-height: 1.06;
+}
+.hero .lede { margin-top: 22px; font-size: 18.5px; max-width: 580px; }
+.hero .micro {
+  margin-top: 20px;
+  font-size: 13.5px;
+  color: var(--ink-3);
+}
+.hero .actions { margin-top: 28px; }
+
+/* Product shots sit on the page rather than floating over a glow. */
+.shot { margin: 60px auto 0; }
+.shot.flat {
+  background: transparent;
+  border-radius: var(--r);
+  box-shadow: var(--shadow-1);
+  margin: 0;
+  max-width: none;
+}
+.shot.flat img { border-radius: var(--r); }
+figure.shot { margin-left: auto; margin-right: auto; }
+
+/* ---------------- alternating feature rows ---------------- */
+
+.frow {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 64px;
+  align-items: center;
+  padding: 46px 0;
+}
+.frow + .frow { border-top: 1px solid var(--line-2); }
+.frow[data-flip='true'] .frow-img { order: 2; }
+/* Reversing the order alone left the picture in the narrow column, so the
+   flipped row was visibly smaller than its neighbours. Swap the tracks too. */
+.frow[data-flip='true'] { grid-template-columns: 1fr 1.15fr; }
+@media (max-width: 900px) {
+  .frow { grid-template-columns: 1fr; gap: 28px; padding: 34px 0; }
+  .frow[data-flip='true'] .frow-img { order: 0; }
+}
+
+.frow-img {
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  overflow: hidden;
+  background: #0c0e12;
+  box-shadow: var(--shadow-1);
+}
+.frow-img img { display: block; width: 100%; height: auto; }
+
+.frow-text h3 {
+  font-size: clamp(22px, 2.6vw, 29px);
+  letter-spacing: -0.024em;
+  margin-top: 4px;
+}
+.frow-text p {
+  margin-top: 14px;
+  font-size: 16.5px;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+/* ---------------- shared typography ---------------- */
+
+.sec-title { font-size: clamp(26px, 3.2vw, 36px); letter-spacing: -0.026em; }
+.sub-title { font-size: clamp(21px, 2.4vw, 27px); letter-spacing: -0.022em; }
+.body { margin-top: 14px; font-size: 16.5px; line-height: 1.62; color: var(--ink-2); }
+
+.split.wide { grid-template-columns: 0.9fr 1.1fr; gap: 56px; align-items: center; }
+@media (max-width: 900px) { .split.wide { grid-template-columns: 1fr; } }
+
+/* Stats read as a line of figures next to prose, not four more cards. */
+.stats.inline {
+  display: flex;
+  gap: 36px;
+  margin-top: 28px;
+}
+.stats.inline .stat {
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+}
+.stats.inline .stat b { font-size: 30px; }
+.stats.inline .stat span { margin-top: 2px; }
+
+/* ---------------- footer ---------------- */
+
+.foot { padding: 64px 0 44px; }
+.foot-grid {
+  display: grid;
+  grid-template-columns: 1.6fr repeat(3, 1fr);
+  gap: 40px;
+  padding-bottom: 40px;
+  border-bottom: 1px solid var(--line-2);
+}
+@media (max-width: 820px) {
+  .foot-grid { grid-template-columns: 1fr 1fr; gap: 32px; }
+}
+.foot-brand p {
+  margin-top: 16px;
+  max-width: 300px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-3);
+}
+.foot-col { display: flex; flex-direction: column; gap: 10px; }
+.foot-col h4 {
+  margin-bottom: 2px;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.foot-col a { font-size: 14.5px; color: var(--ink-2); transition: color 130ms ease; }
+.foot-col a:hover { color: var(--ink); }
+.foot-base {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding-top: 24px;
+  font-size: 13px;
+  color: var(--ink-3);
+}

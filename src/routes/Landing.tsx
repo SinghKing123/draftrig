@@ -5,7 +5,7 @@ import { Wordmark } from '@/ui/Logo'
 import { AccountMenu } from '@/ui/AccountMenu'
 import { Reveal } from '@/ui/Reveal'
 import { LedDemo, PartSearch } from './demos'
-import { IconBox, IconChip, IconList, IconScope, IconSpark, IconZap } from '@/ui/Icons'
+import { IconBox, IconList, IconScope, IconSpark, IconWire, IconZap } from '@/ui/Icons'
 
 const BUILD_CATEGORIES = ['structural', 'panel', 'fastener', 'motion']
 
@@ -47,37 +47,14 @@ function useStuck(): boolean {
   return stuck
 }
 
-const FEATURES = [
-  {
-    icon: <IconChip />,
-    title: 'A real solver',
-    body: 'Modified nodal analysis, the method SPICE uses. Non-linear parts solved by Newton at every timestep.',
-  },
-  {
-    icon: <IconZap />,
-    title: 'Parts that snap',
-    body: 'Leads find breadboard holes. Screws find tapped ends. T-nuts find slots. Drag it close and it lands.',
-  },
-  {
-    icon: <IconList />,
-    title: 'Working displays',
-    body: 'A 16x2 LCD driven over its actual HD44780 bus. Seven-segment digits with real multiplexing.',
-  },
-  {
-    icon: <IconBox />,
-    title: 'Structure as well',
-    body: 'T-slot extrusion with a true profile, plywood, sheet metal and lumber, cut to any size.',
-  },
-  {
-    icon: <IconScope />,
-    title: 'Scope on any pin',
-    body: 'Click a terminal to watch it. See a capacitor charge, or a rail sag when a motor starts.',
-  },
-  {
-    icon: <IconSpark />,
-    title: 'Assistant built in',
-    body: 'Describe a build and get one, using only parts that exist. Every wire is checked before it is placed.',
-  },
+/** Small features, under the three that get a picture of their own. */
+const SECONDARY = [
+  { icon: <IconWire />, title: 'Wires with resistance', body: 'Length and gauge decide the drop, so a long thin run gets flagged.' },
+  { icon: <IconScope />, title: 'Scope on any pin', body: 'Click a terminal to watch it charge, switch or sag.' },
+  { icon: <IconList />, title: 'Costs that add up', body: 'Weight and price total while you work, per part and per build.' },
+  { icon: <IconSpark />, title: 'An assistant', body: 'Describe a build and get one, using only parts that exist.' },
+  { icon: <IconZap />, title: 'Runs in real time', body: 'Press space. Current flows, LEDs light, displays come up.' },
+  { icon: <IconBox />, title: 'Yours to keep', body: 'Saved as you go, in your browser. No account needed.' },
 ]
 
 const PROOF: [string, string][] = [
@@ -102,10 +79,10 @@ export function Landing() {
         <div className="wrap row">
           <Link to="/" aria-label={BRAND.name}><Wordmark size={26} /></Link>
           <div className="links">
-            <a href="#features">Features</a>
+            <a href="#build">What it does</a>
             <a href="#check">Checks</a>
             <a href="#parts">Parts</a>
-            <a href="#start">Getting started</a>
+            <a href="#solver">Solver</a>
           </div>
           <div className="grow" />
           <AccountMenu compact />
@@ -117,50 +94,118 @@ export function Landing() {
       <header className="hero">
         <div className="wrap">
           <div className="inner">
-            <span className="eyebrow">
-              <em>Free</em>
-              Runs in the browser. Nothing to install.
-            </span>
-
             <h1>
-              Design it, wire it,<br />
-              <span className="accent">then switch it on.</span>
+              Build it on screen<br />before you build it for real.
             </h1>
-
             <p className="lede">
-              A 3D bench for electronics and framing. Put the whole build together, run it, and find
-              out what it does before you order anything.
+              A 3D bench for electronics and framing. Lay the whole thing out, wire it up, switch it
+              on, and find out what it does before you order a single part.
             </p>
-
             <div className="actions">
-              <Link className="cta primary" to="/app">Start building</Link>
-              <a className="cta ghost" href="#check">See a check</a>
+              <Link className="cta primary" to="/app">Open the editor</Link>
+              <a className="cta ghost" href="#build">See what it does</a>
             </div>
-
-            <div className="facts">
-              <span><i />No account needed</span>
-              <span><i />Saves as you go</span>
-              <span><i />Works offline</span>
-            </div>
+            <p className="micro">Free. Runs in the browser. No account, nothing to install.</p>
           </div>
 
           <ProductShot />
         </div>
       </header>
 
-      {/* ---------------- features ---------------- */}
-      <section className="band" id="features">
+      {/* ---------------- what it does ---------------- */}
+      <section className="band" id="build">
+        <div className="wrap">
+          <Reveal>
+            <div className="sec-head">
+              <span className="kicker">What it does</span>
+              <h2>Three things at once.</h2>
+              <p>Circuit, structure and the machine they go in, all in the same scene.</p>
+            </div>
+          </Reveal>
+
+          <Reveal delay={60}>
+            <Row
+              img="/feature-display.jpg"
+              alt="A character LCD showing text, driven by a microcontroller"
+              kicker="Electronics"
+              title="Parts that behave like parts"
+            >
+              A character LCD driven over its actual HD44780 bus, not told what to show. Transistors,
+              MOSFETs, 555s, logic, op-amps, regulators and motor drivers, each loading the ones
+              around it the way it would on a bench.
+            </Row>
+          </Reveal>
+
+          <Reveal delay={60}>
+            <Row
+              img="/feature-frame.jpg"
+              alt="A 2020 aluminium extrusion frame with a plywood deck"
+              kicker="Structure"
+              title="The frame, not just the board"
+              flip
+            >
+              T-slot extrusion with a true profile, plywood that shows its laminations on the cut
+              edge, sheet metal and lumber. Cut to any length, with real weight. Screws find tapped
+              ends and T-nuts find slots.
+            </Row>
+          </Reveal>
+
+          <Reveal delay={60}>
+            <Row
+              img="/feature-pc.jpg"
+              alt="A gaming PC laid out with motherboard, graphics card and power supply"
+              kicker="Computers"
+              title="Whole machines, part by part"
+            >
+              Motherboards, processors, memory, graphics cards and supplies, with the sockets and
+              slots keyed the way they are in life. DDR4 will not go in a DDR5 board, and the power
+              budget is a number rather than a hope.
+            </Row>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ---------------- checks ---------------- */}
+      <section className="band tint" id="check">
         <div className="wrap">
           <Reveal>
             <div className="sec-head mid">
-              <span className="kicker">What it does</span>
-              <h2>Everything on one bench.</h2>
-              <p>Circuit and structure in the same scene, running against the same physics.</p>
+              <span className="kicker">Checks</span>
+              <h2>It tells you what is wrong.</h2>
+              <p>
+                In the words you would use. This is a small form factor build being told four
+                separate things, before anything was ordered.
+              </p>
             </div>
           </Reveal>
-          <Reveal delay={70}>
+          <Reveal delay={60}>
+            <figure className="shot flat">
+              <img src="/feature-checks.jpg" alt="The checks panel listing four problems with a build" />
+            </figure>
+          </Reveal>
+
+          <Reveal delay={110}>
+            <div className="sec-head" style={{ marginTop: 72, marginBottom: 32 }}>
+              <h3 className="sub-title">Try one yourself.</h3>
+              <p>An LED with and without a resistor. The numbers come from the solver.</p>
+            </div>
+          </Reveal>
+          <Reveal delay={140}><LedDemo /></Reveal>
+        </div>
+      </section>
+
+      {/* ---------------- secondary features ---------------- */}
+      <section className="band">
+        <div className="wrap">
+          <Reveal>
+            <div className="sec-head mid">
+              <span className="kicker">And the rest</span>
+              <h2 className="sec-title">The parts of it you notice later.</h2>
+            </div>
+          </Reveal>
+          <Reveal delay={60}>
             <div className="features">
-              {FEATURES.map((f) => (
+              {SECONDARY.map((f) => (
                 <div className="feature" key={f.title}>
                   <div className="ico">{f.icon}</div>
                   <h3>{f.title}</h3>
@@ -172,36 +217,49 @@ export function Landing() {
         </div>
       </section>
 
-      {/* ---------------- interactive check ---------------- */}
-      <section className="band tint" id="check">
+      {/* ---------------- parts ---------------- */}
+      <section className="band tint" id="parts">
         <div className="wrap">
-          <Reveal>
-            <div className="sec-head">
-              <span className="kicker">Try it here</span>
-              <h2>An LED, with and without a resistor.</h2>
-              <p>Switch between the two and watch the numbers. They come from the solver, not from a mock-up.</p>
-            </div>
-          </Reveal>
-          <Reveal delay={70}><LedDemo /></Reveal>
+          <div className="split wide">
+            <Reveal>
+              <div>
+                <span className="kicker">The library</span>
+                <h2 className="sec-title">Search it right now.</h2>
+                <p className="body">
+                  The real catalog, running the real search. Parts are generated from parameters
+                  rather than fixed models, so one resistor definition covers every value, tolerance
+                  and package.
+                </p>
+                <div className="stats inline">
+                  <div className="stat"><b>{stats ? stats.parts : '00'}</b><span>parts</span></div>
+                  <div className="stat"><b>{stats ? stats.electronics : '00'}</b><span>electronic</span></div>
+                  <div className="stat"><b>{stats ? stats.build : '00'}</b><span>structural</span></div>
+                </div>
+              </div>
+            </Reveal>
+            <Reveal delay={80}><PartSearch /></Reveal>
+          </div>
         </div>
       </section>
 
       {/* ---------------- solver ---------------- */}
-      <section className="band">
+      <section className="band" id="solver">
         <div className="wrap split">
           <Reveal>
             <div>
               <span className="kicker">Under the hood</span>
-              <h2 style={{ fontSize: 'clamp(26px, 3.2vw, 36px)' }}>Checked against theory.</h2>
-              <p style={{ marginTop: 14, fontSize: 17, color: 'var(--ink-2)' }}>
-                Capacitors and inductors use backward-Euler companion models. A battery sags under
-                load because its internal resistance is modelled rather than assumed away.
+              <h2 className="sec-title">A real solver.</h2>
+              <p className="body">
+                Modified nodal analysis, the method SPICE uses. Non-linear parts are solved by
+                Newton at every timestep, and capacitors and inductors use backward-Euler companion
+                models. A battery sags under load because its internal resistance is modelled rather
+                than assumed away.
               </p>
             </div>
           </Reveal>
           <Reveal delay={90}>
             <div className="spec">
-              <div className="head">Solver results</div>
+              <div className="head">Checked against theory</div>
               {PROOF.map(([k, v]) => (
                 <div className="line" key={k}>
                   <span>{k}</span>
@@ -213,102 +271,44 @@ export function Landing() {
         </div>
       </section>
 
-      {/* ---------------- parts ---------------- */}
-      <section className="band tint" id="parts">
-        <div className="wrap">
-          <Reveal>
-            <div className="sec-head mid">
-              <span className="kicker">The library</span>
-              <h2>Search it right now.</h2>
-              <p>
-                The real catalog running the real search. Parts are generated from parameters, so one
-                resistor covers every value, tolerance and package.
-              </p>
-            </div>
-          </Reveal>
-          <Reveal delay={70}>
-            <div style={{ maxWidth: 720, margin: '0 auto' }}><PartSearch /></div>
-          </Reveal>
-
-          <Reveal delay={130}>
-            <div className="stats" style={{ marginTop: 44 }}>
-              <div className="stat"><b>{stats ? stats.parts : '00'}</b><span>parts in the library</span></div>
-              <div className="stat"><b>{stats ? stats.electronics : '00'}</b><span>electronic</span></div>
-              <div className="stat"><b>{stats ? stats.build : '00'}</b><span>structural</span></div>
-              <div className="stat"><b>∞</b><span>variants, all parametric</span></div>
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ---------------- getting started ---------------- */}
-      <section className="band" id="start">
-        <div className="wrap split">
-          <Reveal>
-            <div>
-              <span className="kicker">Getting started</span>
-              <h2 style={{ fontSize: 'clamp(26px, 3.2vw, 36px)' }}>Three steps.</h2>
-              <p style={{ marginTop: 14, fontSize: 17, color: 'var(--ink-2)' }}>
-                The editor shows you round the first time you open it, then offers finished builds you
-                can take apart.
-              </p>
-            </div>
-          </Reveal>
-          <Reveal delay={90}>
-            <div className="steps">
-              <Step n="1" title="Place the parts">
-                Search and click. Parts snap to a 2.54 mm grid, or straight into a breadboard hole.
-              </Step>
-              <Step n="2" title="Wire it up">
-                Click two terminals. Breadboard columns behave like breadboard columns.
-              </Step>
-              <Step n="3" title="Switch it on">
-                Press space. Current flows, LEDs light, and anything about to fail says so.
-              </Step>
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
       {/* ---------------- closing ---------------- */}
       <section className="band" style={{ paddingTop: 0 }}>
         <div className="wrap">
           <Reveal>
             <div className="closer">
-              <h2>Build it twice.<br />The first time is free.</h2>
+              <h2>Find out now, not after it arrives.</h2>
               <p>Open the editor and put something together. Nothing to install, nothing to sign up for.</p>
-              <Link className="cta primary" to="/app">Start building</Link>
+              <Link className="cta primary" to="/app">Open the editor</Link>
             </div>
           </Reveal>
         </div>
       </section>
 
-      <footer className="foot">
-        <div className="wrap">
-          <div className="row">
-            <Wordmark size={22} />
-            <div className="grow" />
-            <Link to="/app">Editor</Link>
-            <Link to="/projects">Projects</Link>
-            <a href="#features">Features</a>
-            <a href="#parts">Parts</a>
-          </div>
-          <p className="fine">
-            {BRAND.name} © {new Date().getFullYear()}
-          </p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   )
 }
 
 /* ------------------------------------------------------------------ */
 
-function Step({ n, title, children }: { n: string; title: string; children: React.ReactNode }) {
+/** An alternating image and text row: the page's main unit. */
+function Row({
+  img, alt, kicker, title, children, flip,
+}: {
+  img: string
+  alt: string
+  kicker: string
+  title: string
+  children: React.ReactNode
+  flip?: boolean
+}) {
   return (
-    <div className="step">
-      <div className="n">{n}</div>
-      <div>
+    <div className="frow" data-flip={!!flip}>
+      <figure className="frow-img">
+        <img src={img} alt={alt} loading="lazy" />
+      </figure>
+      <div className="frow-text">
+        <span className="kicker">{kicker}</span>
         <h3>{title}</h3>
         <p>{children}</p>
       </div>
@@ -316,11 +316,48 @@ function Step({ n, title, children }: { n: string; title: string; children: Reac
   )
 }
 
+function Footer() {
+  return (
+    <footer className="foot">
+      <div className="wrap">
+        <div className="foot-grid">
+          <div className="foot-brand">
+            <Wordmark size={24} />
+            <p>{BRAND.description}</p>
+          </div>
+          <div className="foot-col">
+            <h4>Product</h4>
+            <Link to="/app">Editor</Link>
+            <Link to="/projects">Projects</Link>
+            <a href="#parts">Parts library</a>
+            <a href="#solver">Solver</a>
+          </div>
+          <div className="foot-col">
+            <h4>Start here</h4>
+            <a href="#build">What it does</a>
+            <a href="#check">Checks</a>
+            <Link to="/app">Open a build</Link>
+          </div>
+          <div className="foot-col">
+            <h4>Account</h4>
+            <Link to="/signin">Sign in</Link>
+            <a href={`mailto:${BRAND.support}`}>Contact</a>
+          </div>
+        </div>
+        <div className="foot-base">
+          <span>{BRAND.name} © {new Date().getFullYear()}</span>
+          <span>{BRAND.domain}</span>
+        </div>
+      </div>
+    </footer>
+  )
+}
+
 /** Falls back to an empty frame if the screenshot has not been generated. */
 function ProductShot() {
   const [failed, setFailed] = useState(false)
   return (
-    <div className="shot">
+    <figure className="shot">
       <div className="bar">
         <i /><i /><i />
         <span className="addr">{BRAND.domain}/app</span>
@@ -328,8 +365,8 @@ function ProductShot() {
       {failed ? (
         <div className="fallback">The editor</div>
       ) : (
-        <img src="/hero.png" alt={`The ${BRAND.name} editor with a circuit running`} onError={() => setFailed(true)} />
+        <img src="/hero.jpg" alt={`The ${BRAND.name} editor with a circuit running`} onError={() => setFailed(true)} />
       )}
-    </div>
+    </figure>
   )
 }

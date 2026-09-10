@@ -546,7 +546,15 @@ kbd {
 .issue.error .dot { background: var(--err); box-shadow: 0 0 6px rgba(255, 107, 107, 0.6); }
 .issue.warning .dot { background: var(--warn); }
 .issue .msg { color: var(--tx-1); }
-.issue .who { color: var(--tx-3); font-size: var(--fs-xs); margin-top: 2px; }
+/* The part a message is about, on its own line under the message. It was
+   inline with no separator, so it read as part of the sentence. */
+.issue .who {
+  display: block;
+  color: var(--tx-3);
+  font-size: var(--fs-xs);
+  margin-top: 3px;
+}
+.issue .msg { display: block; }
 
 .console-empty {
   display: grid; place-items: center; height: 100%;

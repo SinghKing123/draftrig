@@ -30,9 +30,18 @@ await page.evaluate(() => {
   window.draftrig.doc.getState().select([])
   window.draftrig.doc.getState().requestFrame('all')
 })
-await page.waitForTimeout(1600)
+await page.waitForTimeout(1400)
+// Fitting the whole document leaves the build small in a large viewport, so
+// close in a little. The hero wants the thing, not the empty bench around it.
+const box = await page.locator('canvas').first().boundingBox()
+await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+for (let i = 0; i < 4; i++) {
+  await page.mouse.wheel(0, -220)
+  await page.waitForTimeout(140)
+}
+await page.waitForTimeout(700)
 
 console.log('errors:', errors.length ? errors : 'none')
-await page.screenshot({ path: 'public/hero.png' })
-console.log('wrote public/hero.png')
+await page.screenshot({ path: 'public/hero-raw.png' })
+console.log('wrote public/hero-raw.png')
 await b.close()
