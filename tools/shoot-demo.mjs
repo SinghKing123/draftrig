@@ -1,16 +1,24 @@
 import { chromium } from 'playwright'
-const browser = await chromium.launch({ channel: 'msedge', args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] })
-const page = await browser.newPage({ viewport: { width: 1440, height: 950 } })
-await page.goto('http://localhost:4173/', { waitUntil: 'networkidle' })
-await page.waitForTimeout(1000)
-await page.evaluate(() => document.querySelector('#check')?.scrollIntoView({ block: 'center' }))
+const base = process.env.BASE ?? 'http://localhost:4173'
+const b = await chromium.launch({ channel: 'msedge' })
+const page = await b.newPage({ viewport: { width: 1300, height: 900 }, deviceScaleFactor: 2 })
+await page.goto(base + '/', { waitUntil: 'networkidle' })
 await page.waitForTimeout(900)
-await page.locator('.demo').screenshot({ path: 'shots/demo-good.png' })
-await page.getByRole('tab', { name: /Straight to 5/ }).click()
-await page.waitForTimeout(600)
-await page.locator('.demo').screenshot({ path: 'shots/demo-bad.png' })
-await page.evaluate(() => document.querySelector('#parts')?.scrollIntoView({ block: 'center' }))
-await page.waitForTimeout(1200)
-await page.locator('.searchdemo').screenshot({ path: 'shots/demo-search.png' })
-console.log('done')
-await browser.close()
+// Scroll it into view so the reveal fires, otherwise the shot is a blank box.
+await page.locator('.demo').scrollIntoViewIfNeeded()
+await page.waitForTimeout(1100)
+const info = await page.evaluate(() => {
+  const r = document.querySelector('.demo .figures')
+  const l = document.querySelector('.demo .figures .line')
+  const cs = (el) => el ? getComputedStyle(el) : null
+  return {
+    figuresDisplay: cs(r)?.display,
+    lineDisplay: cs(l)?.display,
+    lineWidth: l?.getBoundingClientRect().width,
+    stageCols: cs(document.querySelector('.demo .stage'))?.gridTemplateColumns,
+  }
+})
+console.log(JSON.stringify(info, null, 2))
+await page.locator('.demo').screenshot({ path: 'demo.png' })
+console.log('wrote demo.png')
+await b.close()

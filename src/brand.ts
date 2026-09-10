@@ -5,29 +5,44 @@
  * or domain is duplicated into a component, a page title or a meta tag. The one
  * exception is index.html, which is served before any JavaScript runs and so
  * carries its own copy of the title and description for crawlers.
- *
- * When the logo arrives, set `logoSrc` to its path and the mark in
- * src/ui/Logo.tsx will use it instead of the placeholder drawn in code.
  */
 
 export const BRAND = {
-  /** Displayed everywhere. The two halves are styled differently in the mark. */
   name: 'Draftrig',
   nameParts: { strong: 'Draft', light: 'rig' },
 
   domain: 'draftrig.com',
 
-  /** Path to a logo image. Null uses the placeholder mark drawn in code. */
-  logoSrc: null as string | null,
+  /**
+   * The supplied logo, cut into the pieces the interface needs.
+   *
+   * The wordmark is a near-black navy, so it disappears against the editor's
+   * dark chrome. The OnDark variants are the same artwork with that ink lifted
+   * and the blue left exactly as it is, which is what a brand kit would ship
+   * rather than a different logo.
+   */
+  logo: {
+    lockup: '/logo.png',
+    lockupOnDark: '/logo-dark-bg.png',
+    mark: '/mark.png',
+    markOnDark: '/mark-dark-bg.png',
+    /** Width over height, so space can be reserved before the image loads. */
+    lockupRatio: 473 / 96,
+    markRatio: 145 / 128,
+  },
 
-  /** One line. Used on the landing hero and as the meta description lead. */
+  /** Sampled from the logo itself, so the site cannot drift away from it. */
+  colors: {
+    ink: '#0A141E',
+    blue: '#1E8CFA',
+    blueDeep: '#0050DC',
+  },
+
   tagline: 'Build it twice. The first time is free.',
 
-  /** Two sentences, for meta descriptions and link previews. */
   description:
     'Design, wire and simulate the whole build, circuit and structure, in your browser. Find out what works before you spend anything on parts.',
 
-  /** Short form for the app chrome. */
   short: 'Design and simulate real builds in 3D.',
 
   support: 'hello@draftrig.com',

@@ -61,7 +61,7 @@ export function TopBar({ saveState = 'idle' }: { saveState?: SaveState }) {
   return (
     <header className="topbar">
       <Link to="/" title="Back to the site" style={{ textDecoration: 'none' }}>
-        <Wordmark />
+        <Wordmark onDark />
       </Link>
       <div className="sep-v" />
 

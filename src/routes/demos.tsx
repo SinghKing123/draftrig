@@ -1,27 +1,26 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { PartDef } from '@/parts/kernel/types'
-import { IconSearch, IconWarning, IconZap } from '@/ui/Icons'
+import { IconSearch } from '@/ui/Icons'
+import { PartIcon } from '@/ui/PartIcons'
 
 /* ================================================================== */
-/* The resistor demo                                                   */
+/* LED with and without a series resistor                              */
 /* ================================================================== */
 
 /**
- * Two ways to wire an LED to 5 V, and what the checker says about each.
- *
- * The numbers are the ones the real solver produces for this circuit, not
- * invented for the page: a red LED sits near 1.9 V forward drop, so a 220 ohm
- * series resistor passes about 14 mA, and no resistor at all leaves only the
- * LED's own bulk resistance to limit the current.
+ * The numbers here are the ones the solver produces for this circuit, not
+ * invented for the page. A red LED sits near 1.9 V forward, so 220 ohms passes
+ * about 14 mA; with no resistor only the LED's own bulk resistance is left to
+ * limit anything.
  */
 const CASES = {
   withR: {
-    label: 'With a 220 Ω resistor',
+    label: '220 Ω in series',
     current: '14.1 mA',
     vled: '1.90 V',
     power: '27 mW',
     ok: true,
-    verdict: 'Right in the middle of the safe range. This one lasts for years.',
+    verdict: 'Inside the 20 mA rating.',
   },
   without: {
     label: 'Straight to 5 V',
@@ -29,7 +28,7 @@ const CASES = {
     vled: '1.94 V',
     power: '753 mW',
     ok: false,
-    verdict: 'Thirteen times the 30 mA maximum. In hardware this LED dies in under a second.',
+    verdict: 'Thirteen times the 30 mA maximum. The checker flags it before you run.',
   },
 } as const
 
@@ -41,104 +40,91 @@ export function LedDemo() {
 
   return (
     <div className="demo">
-      <div className="demo-head">
-        <IconZap size={12} /> Live check
+      <div className="switcher" role="tablist">
+        {(Object.keys(CASES) as CaseKey[]).map((k) => (
+          <button key={k} role="tab" aria-selected={k === key} data-on={k === key} onClick={() => setKey(k)}>
+            {CASES[k].label}
+          </button>
+        ))}
       </div>
-      <div className="demo-body">
-        <div className="seg" role="tablist">
-          {(Object.keys(CASES) as CaseKey[]).map((k) => (
-            <button key={k} role="tab" aria-selected={k === key} data-on={k === key} onClick={() => setKey(k)}>
-              {CASES[k].label}
-            </button>
-          ))}
+
+      <div className="stage">
+        <div className="art">
+          <CircuitDrawing withResistor={key === 'withR'} ok={c.ok} />
         </div>
 
-        <div className="demo-stage">
-          <CircuitDrawing withResistor={key === 'withR'} ok={c.ok} />
-
-          <div>
-            <div className="demo-readout">
-              <div className={`readline ${c.ok ? '' : 'bad'}`}>
-                <span>Current through the LED</span>
-                <span>{c.current}</span>
-              </div>
-              <div className="readline">
-                <span>Forward voltage</span>
-                <span>{c.vled}</span>
-              </div>
-              <div className={`readline ${c.ok ? '' : 'bad'}`}>
-                <span>Power in the LED</span>
-                <span>{c.power}</span>
-              </div>
-            </div>
-
-            <div className={`verdict ${c.ok ? 'good' : 'bad'}`}>
-              {c.ok ? <span>✓</span> : <IconWarning size={14} />}
-              <span>{c.verdict}</span>
-            </div>
+        <div className="figures">
+          <div className="line">
+            <span>Current through the LED</span>
+            <b style={{ color: c.ok ? 'inherit' : '#b3261e' }}>{c.current}</b>
           </div>
+          <div className="line">
+            <span>Forward voltage</span>
+            <b>{c.vled}</b>
+          </div>
+          <div className="line">
+            <span>Power in the LED</span>
+            <b style={{ color: c.ok ? 'inherit' : '#b3261e' }}>{c.power}</b>
+          </div>
+          <div className="verdict" data-ok={c.ok}>{c.verdict}</div>
         </div>
       </div>
     </div>
   )
 }
 
-/** A small schematic with current animating along the wire. */
+/** A small schematic, drawn in the site palette rather than the editor's. */
 function CircuitDrawing({ withResistor, ok }: { withResistor: boolean; ok: boolean }) {
-  const wire = ok ? 'var(--volt)' : 'var(--err)'
+  const wire = ok ? '#1e8cfa' : '#e0402f'
+  const ink = '#0a141e'
+  const mute = '#6b7889'
+  const line = '#cfd8e3'
+  const mono = "ui-monospace, 'SF Mono', Menlo, monospace"
+
   return (
-    <svg className="circuit" viewBox="0 0 300 180" role="img" aria-label="LED circuit">
-      {/* battery */}
-      <rect x="16" y="66" width="26" height="48" rx="4" fill="var(--bg-3)" stroke="var(--line-3)" strokeWidth="1.5" />
-      <line x1="22" y1="78" x2="36" y2="78" stroke="var(--err)" strokeWidth="2.5" strokeLinecap="round" />
-      <line x1="22" y1="102" x2="36" y2="102" stroke="var(--tx-3)" strokeWidth="2.5" strokeLinecap="round" />
-      <text x="29" y="132" textAnchor="middle" fill="var(--tx-3)" fontSize="11" fontFamily="var(--mono)">5 V</text>
+    <svg viewBox="0 0 300 180" role="img" aria-label="LED circuit">
+      {/* supply */}
+      <rect x="16" y="66" width="26" height="48" rx="5" fill="#fff" stroke={line} strokeWidth="1.5" />
+      <line x1="22" y1="78" x2="36" y2="78" stroke="#e0402f" strokeWidth="2.5" strokeLinecap="round" />
+      <line x1="22" y1="102" x2="36" y2="102" stroke={mute} strokeWidth="2.5" strokeLinecap="round" />
+      <text x="29" y="132" textAnchor="middle" fill={mute} fontSize="11" fontFamily={mono}>5 V</text>
 
-      {/* top wire out of the battery */}
-      <path d="M29 66 L29 34 L110 34" fill="none" stroke={wire} strokeWidth="2.5" strokeLinecap="round" className="flow" />
+      <path d="M29 66 L29 34 L110 34" fill="none" stroke={wire} strokeWidth="2.5" strokeLinecap="round" />
 
-      {/* resistor, or a plain wire when it has been left out */}
       {withResistor ? (
         <>
-          <rect x="110" y="22" width="52" height="24" rx="4" fill="var(--bg-3)" stroke="var(--line-3)" strokeWidth="1.5" />
-          <rect x="120" y="22" width="4" height="24" fill="#E8CF2E" />
-          <rect x="129" y="22" width="4" height="24" fill="#C0272D" />
-          <rect x="138" y="22" width="4" height="24" fill="#6B3F1D" />
-          <text x="136" y="14" textAnchor="middle" fill="var(--tx-2)" fontSize="11" fontFamily="var(--mono)">220 Ω</text>
-          <path d="M162 34 L206 34" fill="none" stroke={wire} strokeWidth="2.5" strokeLinecap="round" className="flow" />
+          <rect x="110" y="22" width="52" height="24" rx="5" fill="#fff" stroke={line} strokeWidth="1.5" />
+          <rect x="120" y="23" width="4" height="22" fill="#E8CF2E" />
+          <rect x="129" y="23" width="4" height="22" fill="#C0272D" />
+          <rect x="138" y="23" width="4" height="22" fill="#6B3F1D" />
+          <text x="136" y="14" textAnchor="middle" fill={ink} fontSize="11" fontFamily={mono}>220 Ω</text>
+          <path d="M162 34 L206 34" fill="none" stroke={wire} strokeWidth="2.5" strokeLinecap="round" />
         </>
       ) : (
         <>
-          <path d="M110 34 L206 34" fill="none" stroke={wire} strokeWidth="2.5" strokeLinecap="round" className="flow" />
-          <text x="158" y="18" textAnchor="middle" fill="var(--err)" fontSize="11" fontFamily="var(--mono)">
-            nothing limiting it
+          <path d="M110 34 L206 34" fill="none" stroke={wire} strokeWidth="2.5" strokeLinecap="round" />
+          <text x="158" y="16" textAnchor="middle" fill="#e0402f" fontSize="11" fontFamily={mono}>
+            no resistor
           </text>
         </>
       )}
 
-      {/* LED */}
-      <path d="M206 34 L206 62" fill="none" stroke={wire} strokeWidth="2.5" strokeLinecap="round" className="flow" />
-      <path d="M192 64 L220 64 L206 88 Z" fill={ok ? 'rgba(255,58,32,.9)' : 'rgba(255,107,107,.95)'} stroke="var(--line-3)" strokeWidth="1.2" />
-      <line x1="190" y1="90" x2="222" y2="90" stroke="var(--tx-1)" strokeWidth="2.4" strokeLinecap="round" />
-      {ok && (
-        <>
-          <circle cx="206" cy="70" r="26" fill="rgba(255,58,32,0.16)" />
-          <circle cx="206" cy="70" r="15" fill="rgba(255,90,50,0.22)" />
-        </>
-      )}
-      <text x="240" y="74" fill="var(--tx-3)" fontSize="11" fontFamily="var(--mono)">LED</text>
+      <path d="M206 34 L206 62" fill="none" stroke={wire} strokeWidth="2.5" strokeLinecap="round" />
+      {ok && <circle cx="206" cy="70" r="25" fill="rgba(255,86,48,0.14)" />}
+      <path d="M192 64 L220 64 L206 88 Z" fill={ok ? '#ff5630' : '#e0402f'} stroke={line} strokeWidth="1.2" />
+      <line x1="190" y1="90" x2="222" y2="90" stroke={ink} strokeWidth="2.4" strokeLinecap="round" />
+      <text x="238" y="74" fill={mute} fontSize="11" fontFamily={mono}>LED</text>
 
-      {/* return path */}
-      <path d="M206 90 L206 146 L29 146 L29 114" fill="none" stroke={wire} strokeWidth="2.5" strokeLinecap="round" className="flow" />
+      <path d="M206 90 L206 146 L29 146 L29 114" fill="none" stroke={wire} strokeWidth="2.5" strokeLinecap="round" />
     </svg>
   )
 }
 
 /* ================================================================== */
-/* The part search demo                                                */
+/* Part search                                                         */
 /* ================================================================== */
 
-const EXAMPLES = ['10k', '555', '2020', 'mosfet', 'plywood', 'breadboard']
+const EXAMPLES = ['10k', '555', '2020', 'lcd', 'mosfet', 'plywood']
 
 const CAT_LABEL: Record<string, string> = {
   passive: 'Passive', semiconductor: 'Semiconductor', ic: 'IC', module: 'Module',
@@ -147,14 +133,9 @@ const CAT_LABEL: Record<string, string> = {
   structural: 'Framing', panel: 'Panel', fastener: 'Fastener', motion: 'Motion',
 }
 
-function initials(name: string): string {
-  const w = name.split(/[\s,-]+/).filter(Boolean)
-  return ((w[0]?.[0] ?? '') + (w[1]?.[0] ?? '')).toUpperCase() || name.slice(0, 2).toUpperCase()
-}
-
 /**
  * The real catalog, searched with the real ranking function. Loaded on demand
- * so the marketing page does not carry it until someone scrolls this far.
+ * so the page does not carry it until someone scrolls this far.
  */
 export function PartSearch() {
   const [query, setQuery] = useState('10k')
@@ -174,8 +155,8 @@ export function PartSearch() {
 
   return (
     <div className="searchdemo">
-      <div className="field">
-        <IconSearch size={14} />
+      <div className="searchbar">
+        <IconSearch size={15} />
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -187,26 +168,24 @@ export function PartSearch() {
 
       <div className="chips">
         {EXAMPLES.map((e) => (
-          <button key={e} className="chip" data-on={e === query} onClick={() => setQuery(e)}>
-            {e}
-          </button>
+          <button key={e} onClick={() => setQuery(e)}>{e}</button>
         ))}
       </div>
 
-      <div className="results">
+      <div className="hits">
         {!search ? (
-          <div className="results-empty">Loading the catalog</div>
+          <div className="none">Loading the catalog</div>
         ) : results.length === 0 ? (
-          <div className="results-empty">Nothing matches that. Try 10k, or 555.</div>
+          <div className="none">Nothing matches that. Try 10k, or 555.</div>
         ) : (
           results.map((p) => (
-            <div className="result" key={p.id}>
-              <span className="badge">{initials(p.name)}</span>
-              <span style={{ minWidth: 0 }}>
-                <b>{p.name}</b>
-                <i>{p.blurb}</i>
+            <div className="hit" key={p.id}>
+              <span style={{ color: '#0050dc', flex: '0 0 auto', alignSelf: 'center' }}>
+                <PartIcon def={p} size={20} />
               </span>
-              <span className="cat">{CAT_LABEL[p.category] ?? p.category}</span>
+              <b>{p.name}</b>
+              <span>{p.blurb}</span>
+              <span className="catlabel">{CAT_LABEL[p.category] ?? p.category}</span>
             </div>
           ))
         )}

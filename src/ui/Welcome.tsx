@@ -40,7 +40,7 @@ export function Welcome({
     return (
       <div className="welcome-scrim">
         <div className="welcome intro">
-          <LogoMark size={44} />
+          <LogoMark size={44} onDark />
           <h2>Welcome to {BRAND.name}</h2>
           <p>
             This is a workbench. You put a build together in 3D, wire it up, and switch it on.

@@ -1,6 +1,6 @@
-import React, { Suspense, lazy } from 'react'
+import React, { Suspense, lazy, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import '@/styles/tokens.css'
 import '@/styles/base.css'
 import '@/styles/app.css'
@@ -41,6 +41,20 @@ function EditorRoute() {
   )
 }
 
+/**
+ * The public pages are light and the editor is dark, so the document itself has
+ * to say which it is. Without this the body keeps whichever background it was
+ * given at build time and shows through when a short page is overscrolled.
+ */
+function ThemeByRoute() {
+  const { pathname } = useLocation()
+  useEffect(() => {
+    const dark = pathname.startsWith('/app')
+    document.documentElement.dataset.surface = dark ? 'dark' : 'light'
+  }, [pathname])
+  return null
+}
+
 const el = document.getElementById('root')
 if (!el) throw new Error('#root is missing from index.html')
 
@@ -48,6 +62,7 @@ createRoot(el).render(
   <React.StrictMode>
     <BrowserRouter>
       <AuthProvider>
+        <ThemeByRoute />
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/app" element={<EditorRoute />} />

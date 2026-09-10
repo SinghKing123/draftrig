@@ -6,7 +6,7 @@ html, body, #root { min-height: 100%; width: 100%; }
 html { scroll-behavior: smooth; }
 
 body {
-  background: var(--bg-0);
+  background: #ffffff;
   color: var(--tx-0);
   font-family: var(--font);
   font-size: var(--fs-md);
@@ -16,6 +16,9 @@ body {
   user-select: none;
   cursor: default;
 }
+
+/* Set by the router: the editor is dark, everything public is light. */
+html[data-surface='dark'] body { background: var(--bg-0); color: var(--tx-0); }
 
 ::selection { background: var(--brand-glow); color: #fff; }
 
