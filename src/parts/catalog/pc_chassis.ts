@@ -105,6 +105,13 @@ const psu: PartDef = {
     supplies: ['atx24', 'eps', 'pcie1', 'pcie2', 'sata'],
     limits: { imax: 60 },
   },
+  // A supply is a shell, a transformer and some board, not a solid steel brick.
+  mass: (p) => 1100 + num(p, 'watts', 750) * 0.9,
+  price: (p) => {
+    const watts = num(p, 'watts', 750)
+    const tier = { bronze: 0.11, gold: 0.15, titanium: 0.22 }[str(p, 'efficiency', 'gold')] ?? 0.15
+    return Math.round(watts * tier)
+  },
   readouts: (p) => {
     const watts = num(p, 'watts', 750)
     const eff = { bronze: 0.85, gold: 0.9, titanium: 0.94 }[str(p, 'efficiency', 'gold')] ?? 0.9
@@ -315,7 +322,7 @@ const caseFan: PartDef = {
       })),
       ...(p.rgb === true
         ? [{
-            kind: 'torus' as const, mat: { color: '#E8ECF2', rough: 0.3, emissive: '#4C8DFF', emissiveIntensity: 1.4, density: 1.2 },
+            kind: 'torus' as const, mat: { color: '#C6D4EA', rough: 0.3, emissive: '#3C7BDC', emissiveIntensity: 0.55, density: 1.2 },
             r: s * 0.44, tube: 2, rot: [90, 0, 0] as Vec3, at: [0, t - 1, 0] as Vec3, seg: 40, noCollide: true,
           }]
         : []),
@@ -357,10 +364,13 @@ const caseFan: PartDef = {
 const CASE_SPEC: Record<string, {
   w: number; h: number; d: number; label: string
   takes: string[]; gpuMax: number; coolerMax: number
+  /** Longest radiator any wall of this case will take, mm. */
+  radMax: number
 }> = {
-  mid: { w: 220, h: 470, d: 450, label: 'Mid tower', takes: ['atx', 'matx', 'itx'], gpuMax: 360, coolerMax: 170 },
-  micro: { w: 205, h: 400, d: 400, label: 'Micro tower', takes: ['matx', 'itx'], gpuMax: 320, coolerMax: 158 },
-  itx: { w: 165, h: 250, d: 320, label: 'Mini ITX', takes: ['itx'], gpuMax: 265, coolerMax: 70 },
+  full: { w: 240, h: 560, d: 500, label: 'Full tower', takes: ['atx', 'matx', 'itx'], gpuMax: 420, coolerMax: 190, radMax: 457 },
+  mid: { w: 220, h: 470, d: 450, label: 'Mid tower', takes: ['atx', 'matx', 'itx'], gpuMax: 360, coolerMax: 170, radMax: 397 },
+  micro: { w: 205, h: 400, d: 400, label: 'Micro tower', takes: ['matx', 'itx'], gpuMax: 320, coolerMax: 158, radMax: 277 },
+  itx: { w: 165, h: 250, d: 320, label: 'Mini ITX', takes: ['itx'], gpuMax: 265, coolerMax: 70, radMax: 277 },
 }
 
 const pcCase: PartDef = {
@@ -376,9 +386,10 @@ const pcCase: PartDef = {
   },
   params: [
     { key: 'size', label: 'Size', type: 'enum', default: 'mid', group: 'Case', options: [
-      { value: 'mid', label: 'Mid tower' }, { value: 'micro', label: 'Micro tower' }, { value: 'itx', label: 'Mini ITX' },
+      { value: 'full', label: 'Full tower' }, { value: 'mid', label: 'Mid tower' },
+      { value: 'micro', label: 'Micro tower' }, { value: 'itx', label: 'Mini ITX' },
     ] },
-    { key: 'sidePanel', label: 'Side panel on', type: 'bool', default: false, group: 'Case', help: 'Take it off to see inside, as you would.' },
+    { key: 'sidePanel', label: 'Glass panel on', type: 'bool', default: false, group: 'Case', help: 'Take it off to see inside, as you would while building.' },
     { key: 'colour', label: 'Finish', type: 'enum', default: 'black', group: 'Case', options: [
       { value: 'black', label: 'Black' }, { value: 'white', label: 'White' },
     ] },
@@ -398,10 +409,15 @@ const pcCase: PartDef = {
       // Motherboard tray, standing off the far side.
       { kind: 'box', mat: shell, size: [t, c.h - 90, c.d - 60], at: [-c.w / 2 + 26, c.h / 2 - 20, 10] },
       // Front panel with a mesh intake.
-      { kind: 'box', mat: shell, size: [c.w, c.h, 6], at: [0, c.h / 2, c.d / 2 - 3], bevel: 1 },
-      { kind: 'box', mat: MESH, size: [c.w - 30, c.h - 60, 2], at: [0, c.h / 2, c.d / 2 - 6.5], noCollide: true },
-      // PSU shroud along the floor.
-      { kind: 'box', mat: shell, size: [c.w - 4, 90, c.d - 120], at: [0, 45, -20], bevel: 0.6 },
+      { kind: 'box', mat: shell, size: [c.w, c.h, 2], at: [0, c.h / 2, c.d / 2 - 1], bevel: 1 },
+      { kind: 'box', mat: MESH, size: [c.w - 30, c.h - 60, 2], at: [0, c.h / 2, c.d / 2 - 3.5], noCollide: true },
+      /*
+       * PSU shroud, as the two panels it actually is. Modelled as a solid block
+       * it was six litres of steel, which put fifty kilograms on the bill of
+       * materials and made a mid tower weigh more than the bench.
+       */
+      { kind: 'box', mat: shell, size: [c.w - 4, t, c.d - 120], at: [0, 90, -20], bevel: 0.4 },
+      { kind: 'box', mat: shell, size: [c.w - 4, 90, t], at: [0, 45, -20 + (c.d - 120) / 2], bevel: 0.4 },
       // Feet.
       ...[-1, 1].flatMap((sx) => [-1, 1].map((sz): Solid => ({
         kind: 'cyl', mat: { color: '#0E1013', rough: 0.9, density: 1.2 }, r: 9, h: 12,
@@ -445,6 +461,12 @@ const pcCase: PartDef = {
     )
     return out
   },
+  mass: (p) => {
+    const c = CASE_SPEC[str(p, 'size', 'mid')] ?? CASE_SPEC.mid
+    // Panels, frame and glass. The solid tree overstates a sheet-metal shell.
+    return (c.w * c.h * c.d) / 4200 + (p.sidePanel === true ? 2200 : 0)
+  },
+  price: (p) => ({ full: 160, mid: 95, micro: 75, itx: 110 })[str(p, 'size', 'mid')] ?? 95,
   readouts: (p) => {
     const c = CASE_SPEC[str(p, 'size', 'mid')] ?? CASE_SPEC.mid
     return [
@@ -452,6 +474,7 @@ const pcCase: PartDef = {
       { label: 'Boards it takes', value: c.takes.map((t) => (t === 'matx' ? 'micro ATX' : t.toUpperCase())).join(', ') },
       { label: 'Longest card', value: `${c.gpuMax} mm` },
       { label: 'Tallest cooler', value: `${c.coolerMax} mm` },
+      { label: 'Longest radiator', value: `${c.radMax} mm` },
     ]
   },
 }

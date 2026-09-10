@@ -17,5 +17,6 @@ import './sensors'
 import './hardware'
 import './pc'
 import './pc_chassis'
+import './pc_cooling'
 
 export { allParts, getPart, partsByCategory, searchParts, CATEGORY_META } from '../kernel/registry'

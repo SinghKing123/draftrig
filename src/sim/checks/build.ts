@@ -2,6 +2,8 @@ import type { Doc } from '@/state/doc'
 import type { Params } from '@/parts/kernel/types'
 import type { SimIssue } from '@/state/sim'
 import { CASE_SPEC } from '@/parts/catalog/pc_chassis'
+import { cpuSpec, gpuSpec } from '@/parts/catalog/pc_models'
+import { AIO_RAD } from '@/parts/catalog/pc_cooling'
 
 /**
  * Design rules that have nothing to do with the solver.
@@ -25,9 +27,9 @@ interface Found {
 function draw(part: Found): number {
   switch (part.defId) {
     case 'cpu':
-      return num(part.params, 'tdp', 105)
+      return cpuSpec(part.params).tdp
     case 'graphics-card':
-      return num(part.params, 'tdp', 285)
+      return gpuSpec(part.params).tdp
     case 'motherboard':
       return 30
     case 'ram-dimm':
@@ -40,6 +42,10 @@ function draw(part: Found): number {
       return 2.4
     case 'cpu-cooler':
       return Math.round(num(part.params, 'fans', 1)) * 2.4
+    case 'cooler-aio': {
+      const rad = AIO_RAD[str(part.params, 'size', '360')] ?? AIO_RAD['360']
+      return 6 + rad.fans * 2.4
+    }
     default:
       return 0
   }
@@ -60,6 +66,7 @@ export function checkBuild(doc: Doc): SimIssue[] {
   const psus = of('power-supply')
   const cases = of('pc-case')
   const coolers = of('cpu-cooler')
+  const aios = of('cooler-aio')
 
   // Nothing here is a computer, so none of this applies.
   if (!boards.length && !cpus.length && !psus.length && !cases.length) return []
@@ -70,7 +77,7 @@ export function checkBuild(doc: Doc): SimIssue[] {
   /* --- socket and memory --- */
   if (board) {
     for (const cpu of cpus) {
-      const want = str(cpu.params, 'socket', 'AM5')
+      const want = cpuSpec(cpu.params).socket
       const has = str(board.params, 'socket', 'AM5')
       if (want !== has) {
         issues.push({
@@ -116,12 +123,22 @@ export function checkBuild(doc: Doc): SimIssue[] {
       }
     }
     for (const gpu of gpus) {
-      const len = num(gpu.params, 'length', 304)
+      const len = gpuSpec(gpu.params).length
       if (len > spec.gpuMax) {
         issues.push({
           severity: 'error',
           instanceId: gpu.id,
           message: `${gpu.name} is ${Math.round(len)} mm and this case takes ${spec.gpuMax} mm. It is ${Math.round(len - spec.gpuMax)} mm too long.`,
+        })
+      }
+    }
+    for (const unit of aios) {
+      const rad = AIO_RAD[str(unit.params, 'size', '360')] ?? AIO_RAD['360']
+      if (rad.len > spec.radMax) {
+        issues.push({
+          severity: 'error',
+          instanceId: unit.id,
+          message: `${unit.name} needs a ${rad.len} mm wall and the longest this case has is ${spec.radMax} mm.`,
         })
       }
     }
@@ -139,17 +156,20 @@ export function checkBuild(doc: Doc): SimIssue[] {
 
   /* --- cooling --- */
   const cpu = cpus[0]
-  if (cpu && coolers.length) {
-    const tdp = num(cpu.params, 'tdp', 105)
-    const rated = num(coolers[0].params, 'watts', 220)
+  const cooling = coolers[0] ?? aios[0]
+  if (cpu && cooling) {
+    const tdp = cpuSpec(cpu.params).tdp
+    const rated = aios.includes(cooling)
+      ? (AIO_RAD[str(cooling.params, 'size', '360')] ?? AIO_RAD['360']).watts
+      : num(cooling.params, 'watts', 220)
     if (rated < tdp) {
       issues.push({
         severity: 'warning',
-        instanceId: coolers[0].id,
-        message: `${coolers[0].name} is rated for ${Math.round(rated)} W and the processor makes ${Math.round(tdp)} W. It will throttle.`,
+        instanceId: cooling.id,
+        message: `${cooling.name} handles about ${Math.round(rated)} W and the processor makes ${Math.round(tdp)} W. It will throttle.`,
       })
     }
-  } else if (cpu && !coolers.length) {
+  } else if (cpu) {
     issues.push({ severity: 'warning', instanceId: cpu.id, message: 'No cooler on the processor.' })
   }
 

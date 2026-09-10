@@ -1,6 +1,7 @@
 import type { PartDef, Port, SilkItem, Solid, Vec2 } from '../kernel/types'
 import { registerParts } from '../kernel/registry'
 import { circle, num, roundRect, str } from './_helpers'
+import { CPU_OPTIONS, GPU_OPTIONS, cpuSpec, gpuSpec, recommendedPsu } from './pc_models'
 
 /**
  * Computer hardware.
@@ -288,6 +289,12 @@ const motherboard: PartDef = {
     ],
     limits: { vmax: 13 },
   },
+  // A populated board is about a kilo; the solid tree here is a simplification.
+  mass: (p) => {
+    const f = FORM[str(p, 'form', 'atx')] ?? FORM.atx
+    return 380 + (f.w * f.d) / 90
+  },
+  price: (p) => ({ atx: 200, matx: 150, itx: 190 })[str(p, 'form', 'atx')] ?? 180,
   readouts: (p) => {
     const f = FORM[str(p, 'form', 'atx')] ?? FORM.atx
     const socket = str(p, 'socket', 'AM5')
@@ -317,13 +324,14 @@ const cpu: PartDef = {
       'A desktop processor. It only goes in a socket of the same name, and it loads the supply by its power draw, so the power budget for a build is a real number rather than a guess.',
   },
   params: [
-    { key: 'socket', label: 'Socket', type: 'enum', default: 'AM5', group: 'Chip', options: SOCKETS },
-    { key: 'cores', label: 'Cores', type: 'number', default: 8, min: 2, max: 64, step: 2, group: 'Chip' },
-    { key: 'tdp', label: 'Power draw', type: 'number', unit: 'W', default: 105, min: 15, max: 300, step: 5, group: 'Chip' },
+    { key: 'model', label: 'Model', type: 'enum', default: 'r7-7800x3d', group: 'Chip', options: CPU_OPTIONS },
+    { key: 'socket', label: 'Socket', type: 'enum', default: 'AM5', group: 'Chip', options: SOCKETS, showIf: (q) => q.model === 'custom' },
+    { key: 'cores', label: 'Cores', type: 'number', default: 8, min: 2, max: 64, step: 2, group: 'Chip', showIf: (q) => q.model === 'custom' },
+    { key: 'tdp', label: 'Power draw', type: 'number', unit: 'W', default: 105, min: 15, max: 300, step: 5, group: 'Chip', showIf: (q) => q.model === 'custom' },
     { key: 'lid', label: 'Heat spreader', type: 'bool', default: true, group: 'Body' },
   ],
   solids: (p) => {
-    const socket = str(p, 'socket', 'AM5')
+    const socket = cpuSpec(p).socket
     const amd = socket.startsWith('AM')
     const w = amd ? 40 : 37.5
     const d = amd ? 40 : 45
@@ -354,19 +362,28 @@ const cpu: PartDef = {
     out.push({ kind: 'cyl', mat: GOLD, r: 1.2, h: 0.3, at: [-w / 2 + 3, 1.75, -d / 2 + 3], seg: 3, noCollide: true })
     return out
   },
-  ports: (p) => [
-    {
-      id: 'pins', label: `${str(p, 'socket', 'AM5')} pins`, kind: 'mechanical',
-      pos: [0, 0, 0], dir: [0, -1, 0], mate: { type: 'socket', key: str(p, 'socket', 'AM5') },
-    },
-    { id: 'lid', label: 'Heat spreader', kind: 'mechanical', pos: [0, 3.5, 0], dir: [0, 1, 0], mate: { type: 'face' } },
-  ],
-  readouts: (p) => [
-    { label: 'Socket', value: str(p, 'socket', 'AM5') },
-    { label: 'Cores', value: String(Math.round(num(p, 'cores', 8))) },
-    { label: 'Power draw', value: `${Math.round(num(p, 'tdp', 105))} W` },
-    { label: 'Memory', value: SOCKET_MEMORY[str(p, 'socket', 'AM5')] ?? 'DDR5' },
-  ],
+  ports: (p) => {
+    const spec = cpuSpec(p)
+    return [
+      {
+        id: 'pins', label: `${spec.socket} pins`, kind: 'mechanical',
+        pos: [0, 0, 0], dir: [0, -1, 0], mate: { type: 'socket', key: spec.socket },
+      },
+      { id: 'lid', label: 'Heat spreader', kind: 'mechanical', pos: [0, 3.5, 0], dir: [0, 1, 0], mate: { type: 'face' } },
+    ]
+  },
+  price: (p) => cpuSpec(p).price,
+  mass: () => 75,
+  readouts: (p) => {
+    const spec = cpuSpec(p)
+    return [
+      { label: 'Socket', value: spec.socket },
+      { label: 'Cores and threads', value: `${spec.cores} / ${spec.threads}` },
+      { label: 'Power draw', value: `${Math.round(spec.tdp)} W` },
+      { label: 'Memory', value: SOCKET_MEMORY[spec.socket] ?? 'DDR5' },
+      { label: 'Class', value: spec.tier },
+    ]
+  },
 }
 
 /* ================================================================== */
@@ -434,6 +451,8 @@ const ram: PartDef = {
       pos: [0, 0, 0], dir: [0, -1, 0], mate: { type: 'dimm', key: str(p, 'standard', 'DDR5') },
     },
   ],
+  mass: () => 45,
+  price: (p) => ({ '8': 30, '16': 55, '32': 100, '48': 160 })[str(p, 'capacity', '16')] ?? 55,
   readouts: (p) => [
     { label: 'Standard', value: str(p, 'standard', 'DDR5') },
     { label: 'Capacity', value: `${str(p, 'capacity', '16')} GB` },
@@ -458,16 +477,19 @@ const gpu: PartDef = {
       'A PCIe graphics card. Length and slot height are what decide whether it fits a case, and its power draw is usually what decides the supply, so both are parameters here.',
   },
   params: [
-    { key: 'length', label: 'Length', type: 'number', unit: 'mm', default: 304, min: 170, max: 360, step: 2, group: 'Card' },
-    { key: 'slots', label: 'Slots', type: 'number', default: 3, min: 1, max: 4, step: 1, group: 'Card' },
-    { key: 'tdp', label: 'Power draw', type: 'number', unit: 'W', default: 285, min: 30, max: 600, step: 5, group: 'Card' },
-    { key: 'connector', label: 'Power connector', type: 'enum', default: '2x8', group: 'Card', options: [
+    { key: 'model', label: 'Model', type: 'enum', default: 'rtx-4070s', group: 'Card', options: GPU_OPTIONS },
+    { key: 'lit', label: 'Lit edge', type: 'bool', default: true, group: 'Card' },
+    { key: 'length', label: 'Length', type: 'number', unit: 'mm', default: 304, min: 170, max: 400, step: 2, group: 'Card', showIf: (q) => q.model === 'custom' },
+    { key: 'slots', label: 'Slots', type: 'number', default: 3, min: 1, max: 4, step: 1, group: 'Card', showIf: (q) => q.model === 'custom' },
+    { key: 'tdp', label: 'Power draw', type: 'number', unit: 'W', default: 285, min: 30, max: 600, step: 5, group: 'Card', showIf: (q) => q.model === 'custom' },
+    { key: 'connector', label: 'Power connector', type: 'enum', default: '2x8', group: 'Card', showIf: (q) => q.model === 'custom', options: [
       { value: 'none', label: 'Slot power only' }, { value: '1x8', label: 'One 8-pin' }, { value: '2x8', label: 'Two 8-pin' }, { value: '12vhpwr', label: '12VHPWR' },
     ] },
   ],
   solids: (p) => {
-    const len = num(p, 'length', 304)
-    const slots = Math.round(num(p, 'slots', 3))
+    const spec = gpuSpec(p)
+    const len = spec.length
+    const slots = spec.slots
     const thick = slots * 20.32 - 6
     // The card lies in the board's plane: length along x, the 112 mm dimension
     // across in z, and the slot thickness standing up in y. Built the other way
@@ -498,7 +520,7 @@ const gpu: PartDef = {
         size: [3, 7, 17], at: [-len / 2 + 3, thick / 2, -across / 2 + 22 + i * 24], noCollide: true,
       })),
     ]
-    const conn = str(p, 'connector', '2x8')
+    const conn = spec.connector
     if (conn !== 'none') {
       const n = conn === '2x8' ? 2 : 1
       const w = conn === '12vhpwr' ? 22 : 20
@@ -509,14 +531,23 @@ const gpu: PartDef = {
         })
       }
     }
+    if (p.lit !== false) {
+      // The lit strip along the top edge, which is most of what a gaming card
+      // is doing when it is not rendering anything.
+      out.push({
+        kind: 'box',
+        mat: { color: '#C6D4EA', rough: 0.25, emissive: '#3C7BDC', emissiveIntensity: 0.6, density: 1.2 },
+        size: [len * 0.44, 2.4, 3], at: [len * 0.06, thick + 0.6, across / 2 - 6], noCollide: true,
+      })
+    }
     return out
   },
   ports: (p) => {
-    const len = num(p, 'length', 304)
-    const slots = Math.round(num(p, 'slots', 3))
-    const thick = slots * 20.32 - 6
+    const spec = gpuSpec(p)
+    const len = spec.length
+    const thick = spec.slots * 20.32 - 6
     const across = 112
-    const conn = str(p, 'connector', '2x8')
+    const conn = spec.connector
     const out: Port[] = [
       { id: 'edge', label: 'PCIe x16 edge', kind: 'mechanical', pos: [-len / 2 + 60, -7, 0], dir: [0, -1, 0], mate: { type: 'pcie', key: 'x16' } },
       { id: 'bracket', label: 'Slot bracket', kind: 'mechanical', pos: [-len / 2 + 4, thick + 4, 0], dir: [0, 1, 0], mate: { type: 'face' } },
@@ -536,22 +567,29 @@ const gpu: PartDef = {
   },
   electrical: {
     devices: (p) => {
-      const conn = str(p, 'connector', '2x8')
-      if (conn === 'none') return []
+      const spec = gpuSpec(p)
+      if (spec.connector === 'none') return []
       // Load the 12 V rail by the card's draw. 75 W of it comes from the slot
       // on a real board, so only the rest is asked of the cables.
-      const watts = Math.max(0, num(p, 'tdp', 285) - 75)
+      const watts = Math.max(0, spec.tdp - 75)
       const r = watts > 0 ? (12 * 12) / watts : 1e6
       return [{ type: 'resistor', r, a: 'pwr0', b: 'gnd' }]
     },
     limits: { vmax: 13 },
   },
-  readouts: (p) => [
-    { label: 'Length', value: `${Math.round(num(p, 'length', 304))} mm` },
-    { label: 'Slots', value: String(Math.round(num(p, 'slots', 3))) },
-    { label: 'Power draw', value: `${Math.round(num(p, 'tdp', 285))} W` },
-    { label: 'Recommended supply', value: `${Math.ceil((num(p, 'tdp', 285) + 200) / 50) * 50} W` },
-  ],
+  price: (p) => gpuSpec(p).price,
+  // A card is mostly heatsink and air, not the solid slab the shroud implies.
+  mass: (p) => 700 + gpuSpec(p).slots * 320,
+  readouts: (p) => {
+    const spec = gpuSpec(p)
+    return [
+      { label: 'Memory', value: `${spec.vram} GB` },
+      { label: 'Good for', value: spec.target },
+      { label: 'Length', value: `${Math.round(spec.length)} mm, ${spec.slots} slots` },
+      { label: 'Power draw', value: `${Math.round(spec.tdp)} W` },
+      { label: 'Recommended supply', value: `${recommendedPsu(spec.tdp, 120)} W` },
+    ]
+  },
 }
 
 registerParts([motherboard, cpu, ram, gpu])

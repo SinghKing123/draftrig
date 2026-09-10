@@ -24,6 +24,23 @@ function put(doc: Doc, defId: string, params: Params = {}): string {
 const messages = (doc: Doc): string => checkBuild(doc).map((i) => i.message).join(' | ')
 
 describe('PC build rules', () => {
+  it('takes its numbers from the model that is chosen, not from stale fields', () => {
+    const d = emptyDoc()
+    put(d, 'motherboard', { socket: 'AM5' })
+    // A named card, with the length field left at a value that would fit.
+    put(d, 'graphics-card', { model: 'rtx-4090', length: 200 })
+    put(d, 'pc-case', { size: 'micro' })
+    // The 4090 is 336 mm, so the 320 mm case is the thing that has to lose.
+    expect(messages(d)).toContain('336 mm')
+  })
+
+  it('refuses a named chip whose socket does not match the board', () => {
+    const d = emptyDoc()
+    put(d, 'motherboard', { socket: 'AM5' })
+    put(d, 'cpu', { model: 'i7-14700k' })
+    expect(messages(d)).toContain('LGA1700 and the board is AM5')
+  })
+
   it('says nothing about a circuit that is not a computer', () => {
     const d = emptyDoc()
     put(d, 'resistor-axial')
@@ -34,14 +51,14 @@ describe('PC build rules', () => {
   it('rejects a processor that does not match the socket', () => {
     const d = emptyDoc()
     put(d, 'motherboard', { socket: 'AM5' })
-    put(d, 'cpu', { socket: 'LGA1700' })
+    put(d, 'cpu', { model: 'custom', socket: 'LGA1700' })
     expect(messages(d)).toContain('LGA1700 and the board is AM5')
   })
 
   it('rejects memory of the wrong standard', () => {
     const d = emptyDoc()
     put(d, 'motherboard', { socket: 'AM4' })
-    put(d, 'cpu', { socket: 'AM4' })
+    put(d, 'cpu', { model: 'custom', socket: 'AM4' })
     put(d, 'ram-dimm', { standard: 'DDR5' })
     expect(messages(d)).toContain('DDR5 and this board takes DDR4')
   })
@@ -49,7 +66,7 @@ describe('PC build rules', () => {
   it('accepts a matched set without complaint about compatibility', () => {
     const d = emptyDoc()
     put(d, 'motherboard', { form: 'atx', socket: 'AM5' })
-    put(d, 'cpu', { socket: 'AM5', tdp: 105 })
+    put(d, 'cpu', { model: 'custom', socket: 'AM5', tdp: 105 })
     put(d, 'ram-dimm', { standard: 'DDR5' })
     put(d, 'cpu-cooler', { height: 158, watts: 220 })
     put(d, 'pc-case', { size: 'mid' })
@@ -70,7 +87,7 @@ describe('PC build rules', () => {
   it('catches a card that is too long and a cooler that is too tall', () => {
     const d = emptyDoc()
     put(d, 'pc-case', { size: 'itx' })
-    put(d, 'graphics-card', { length: 340 })
+    put(d, 'graphics-card', { model: 'custom', length: 340 })
     put(d, 'cpu-cooler', { height: 158 })
     const text = messages(d)
     expect(text).toContain('too long')
@@ -80,8 +97,8 @@ describe('PC build rules', () => {
   it('adds up the power budget and says when the supply is short', () => {
     const d = emptyDoc()
     put(d, 'motherboard')
-    put(d, 'cpu', { tdp: 170 })
-    put(d, 'graphics-card', { tdp: 450 })
+    put(d, 'cpu', { model: 'custom', tdp: 170 })
+    put(d, 'graphics-card', { model: 'custom', tdp: 450 })
     put(d, 'ram-dimm')
     put(d, 'ram-dimm')
     put(d, 'power-supply', { watts: 550 })
@@ -92,8 +109,8 @@ describe('PC build rules', () => {
   it('warns when the supply is technically enough but has no headroom', () => {
     const d = emptyDoc()
     put(d, 'motherboard')
-    put(d, 'cpu', { tdp: 105 })
-    put(d, 'graphics-card', { tdp: 285 })
+    put(d, 'cpu', { model: 'custom', tdp: 105 })
+    put(d, 'graphics-card', { model: 'custom', tdp: 285 })
     put(d, 'power-supply', { watts: 450 })
     expect(messages(d)).toContain('headroom')
   })
@@ -109,7 +126,7 @@ describe('PC build rules', () => {
   it('notices a cooler that cannot keep up', () => {
     const d = emptyDoc()
     put(d, 'motherboard')
-    put(d, 'cpu', { tdp: 250 })
+    put(d, 'cpu', { model: 'custom', tdp: 250 })
     put(d, 'ram-dimm')
     put(d, 'cpu-cooler', { watts: 120 })
     expect(messages(d)).toContain('will throttle')

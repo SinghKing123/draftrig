@@ -3,7 +3,7 @@ import { IconChevron, IconList, IconScope, IconWarning } from './Icons'
 import { Scope } from './Scope'
 import { useDoc } from '@/state/doc'
 import { useSim } from '@/state/sim'
-import { getPart } from '@/parts/kernel/registry'
+import { getPart, unitPrice } from '@/parts/kernel/registry'
 import { buildPart } from '@/parts/kernel/build'
 import { formatMass, formatMoney } from '@/parts/kernel/units'
 import type { Params } from '@/parts/kernel/types'
@@ -48,8 +48,8 @@ function useBom(): { rows: BomRow[]; mass: number; cost: number } {
 
       // Length-priced stock (extrusion, lumber) is quoted per millimetre.
       const lengthish = typeof inst.params.length === 'number' ? (inst.params.length as number) : 1
-      const perUnit = def.doc?.price ?? 0
-      const unitPrice = def.category === 'structural' ? perUnit * lengthish : perUnit
+      const perUnit = unitPrice(def, inst.params)
+      const linePrice = def.category === 'structural' ? perUnit * lengthish : perUnit
 
       const existing = map.get(key)
       if (existing) existing.qty++
@@ -61,11 +61,11 @@ function useBom(): { rows: BomRow[]; mass: number; cost: number } {
           detail: detail ? `${detail.label}: ${detail.value}` : def.blurb,
           qty: 1,
           unitMass: built.mass,
-          unitPrice,
+          unitPrice: linePrice,
         })
       }
       mass += built.mass
-      cost += unitPrice
+      cost += linePrice
     }
 
     return { rows: [...map.values()].sort((a, b) => a.name.localeCompare(b.name)), mass, cost }

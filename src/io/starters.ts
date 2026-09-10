@@ -2,6 +2,7 @@ import type { Doc } from '@/state/doc'
 import { emptyDoc } from '@/state/doc'
 import type { Instance, Params, Vec3 } from '@/parts/kernel/types'
 import { defaultParams, requirePart } from '@/parts/kernel/registry'
+import { GPU_MODELS } from '@/parts/catalog/pc_models'
 
 /**
  * Starter builds. These are ordinary documents constructed in code, which
@@ -242,7 +243,7 @@ function desktopPc(): Doc {
   const dimmX = sockX + 62
 
   const mb = b.add('motherboard', [0, 0, 0], { form: 'atx', socket: 'AM5' }, [0, 0, 0], 'Motherboard')
-  const cpu = b.add('cpu', [sockX, T + 3.4, sockZ], { socket: 'AM5', cores: 8, tdp: 105 }, [0, 0, 0], 'Processor')
+  const cpu = b.add('cpu', [sockX, T + 3.4, sockZ], { model: 'r7-7800x3d' }, [0, 0, 0], 'Processor')
   const cooler = b.add('cpu-cooler', [sockX, T + 6.9, sockZ], { height: 158, fans: 1, watts: 220 }, [0, 0, 0], 'CPU cooler')
 
   // Slots A2 and B2, which is the pair every manual asks for first.
@@ -251,7 +252,7 @@ function desktopPc(): Doc {
 
   const gpuLen = 304
   // Positioned so its edge connector lands in the top x16 slot.
-  const gpu = b.add('graphics-card', [-W / 2 + 92 + gpuLen / 2 - 60, T + 8.4 + 7, D / 2 - 60], { length: gpuLen, slots: 3, tdp: 285 }, [0, 0, 0], 'Graphics card')
+  const gpu = b.add('graphics-card', [-W / 2 + 92 + gpuLen / 2 - 60, T + 8.4 + 7, D / 2 - 60], { model: 'rtx-4070s' }, [0, 0, 0], 'Graphics card')
   const ssd = b.add('ssd-m2', [W / 2 - 74 + 2, T + 3, D / 2 - 44], { size: '2280', capacity: '2' }, [0, 0, 0], 'Boot drive')
   const psu = b.add('power-supply', [-30, 0, 250], { watts: 750, efficiency: 'gold' }, [0, 180, 0], 'Power supply')
 
@@ -298,11 +299,12 @@ function smallFormPc(): Doc {
   const dimmX = sockX + 62
 
   const mb = b.add('motherboard', [0, 0, 0], { form: 'itx', socket: 'AM5' }, [0, 0, 0], 'Motherboard')
-  b.add('cpu', [sockX, T + 3.4, sockZ], { socket: 'AM5', cores: 8, tdp: 105 }, [0, 0, 0], 'Processor')
+  b.add('cpu', [sockX, T + 3.4, sockZ], { model: 'r7-7800x3d' }, [0, 0, 0], 'Processor')
   b.add('cpu-cooler', [sockX, T + 6.9, sockZ], { height: 158, fans: 1, watts: 220 }, [0, 0, 0], 'CPU cooler')
   b.add('ram-dimm', [dimmX, T + 7.4, -D / 2 + 34], { standard: 'DDR5', capacity: '16' }, [0, 0, 0], 'Memory A1')
   b.add('ram-dimm', [dimmX, T + 7.4, -D / 2 + 43.2], { standard: 'DDR5', capacity: '16' }, [0, 0, 0], 'Memory A2')
-  const gpu = b.add('graphics-card', [-W / 2 + 92 + 304 / 2 - 60, T + 8.4 + 7, D / 2 - 60], { length: 304, slots: 3, tdp: 285 }, [0, 0, 0], 'Graphics card')
+  // A card that is genuinely too long for this case, so the point lands.
+  const gpu = b.add('graphics-card', [-W / 2 + 92 + 90, T + 8.4 + 7, D / 2 - 60], { model: 'rtx-4090' }, [0, 0, 0], 'Graphics card')
   const psu = b.add('power-supply', [-30, 0, 220], { form: 'sfx', watts: 450 }, [0, 180, 0], 'Power supply')
   b.add('pc-case', [320, 0, 0], { size: 'itx' }, [0, 0, 0], 'Case')
 
@@ -312,6 +314,102 @@ function smallFormPc(): Doc {
   b.wire([psu, 'pcie1'], [gpu, 'pwr0'], '#E34B4B', FEED)
   b.wire([psu, 'pcie2'], [gpu, 'pwr1'], '#E34B4B', FEED)
   b.wire([psu, 'gnd'], [gpu, 'gnd'], '#1C1F24', 5)
+
+  return b.doc
+}
+
+/**
+ * A gaming machine, assembled.
+ *
+ * Three of these exist at different money, and they are the same function with
+ * different parts, because that is genuinely the only thing that separates
+ * them. Every component is seated where it goes, so pulling one out and
+ * dropping another in is the point: the checks will tell you whether the
+ * other one fits, whether the supply still covers it, and whether the cooler
+ * can keep up.
+ */
+function gamingPc(opts: {
+  name: string
+  board: 'atx' | 'matx' | 'itx'
+  socket: string
+  cpu: string
+  gpu: string
+  ram: { standard: string; capacity: string; count: number }
+  psu: number
+  chassis: string
+  cooler: { kind: 'air'; height: number; watts: number } | { kind: 'aio'; size: string }
+  fans: number
+}): Doc {
+  const b = new DocBuilder(opts.name)
+
+  const dim = { atx: [305, 244], matx: [244, 244], itx: [170, 170] }[opts.board]
+  const W = dim[0]
+  const D = dim[1]
+  const T = 1.6
+  const sockX = -W / 2 + (W > 200 ? 86 : 62)
+  const sockZ = -D / 2 + 62
+  const dimmX = sockX + 62
+
+  const mb = b.add('motherboard', [0, 0, 0], { form: opts.board, socket: opts.socket }, [0, 0, 0], 'Motherboard')
+  b.add('cpu', [sockX, T + 3.4, sockZ], { model: opts.cpu }, [0, 0, 0], 'Processor')
+
+  if (opts.cooler.kind === 'aio') {
+    // The pump head sits on the chip; the radiator hangs off its tubes.
+    b.add('cooler-aio', [sockX, T + 6.9, sockZ - 200], { size: opts.cooler.size }, [0, 0, 0], 'Liquid cooler')
+  } else {
+    b.add('cpu-cooler', [sockX, T + 6.9, sockZ], { height: opts.cooler.height, fans: 1, watts: opts.cooler.watts }, [0, 0, 0], 'CPU cooler')
+  }
+
+  // Slots A2 and B2 first, which is what every manual asks for.
+  const slotOrder = [1, 3, 0, 2]
+  for (let i = 0; i < opts.ram.count; i++) {
+    const slot = slotOrder[i] ?? i
+    b.add(
+      'ram-dimm',
+      [dimmX, T + 7.4, -D / 2 + 34 + slot * 9.2],
+      { standard: opts.ram.standard, capacity: opts.ram.capacity },
+      [0, 0, 0],
+      `Memory ${String.fromCharCode(65 + Math.floor(slot / 2))}${(slot % 2) + 1}`,
+    )
+  }
+
+  const gpu = b.add('graphics-card', [-W / 2 + 92 + 90, T + 8.4 + 7, D / 2 - 60], { model: opts.gpu }, [0, 0, 0], 'Graphics card')
+  b.add('ssd-m2', [W / 2 - 74 + 2, T + 3, D / 2 - 44], { size: '2280', capacity: '2' }, [0, 0, 0], 'Boot drive')
+
+  const psu = b.add('power-supply', [-30, 0, 260], { watts: opts.psu, efficiency: 'gold' }, [0, 180, 0], 'Power supply')
+  b.add('pc-case', [W / 2 + 280, 0, 0], { size: opts.chassis }, [0, 0, 0], 'Case')
+
+  for (let i = 0; i < opts.fans; i++) {
+    b.add('case-fan', [W / 2 + 480 + i * 135, 0, -60], { size: '120', rgb: true }, [0, 0, 0], `Case fan ${i + 1}`)
+  }
+
+  const YELLOW = '#C8A227'
+  const BLACK = '#1C1F24'
+  const RED = '#E34B4B'
+
+  /*
+   * Cable gauges are the bundle, not a single strand, and the bundle depends
+   * on the connector. An eight-pin PCIe plug is three 18 AWG conductors and
+   * three returns; a 12VHPWR plug is six 16 AWG and six returns, which is how
+   * it carries six hundred watts down one cable. Getting this wrong is what
+   * made a 4090 look like it was melting its own lead.
+   */
+  const connector = GPU_MODELS[opts.gpu]?.connector ?? '2x8'
+  const EIGHT_PIN = 2.5
+  const TWELVE_VHPWR = 7.9
+  const feed = connector === '12vhpwr' ? TWELVE_VHPWR : EIGHT_PIN
+  const gpuReturn = connector === '12vhpwr' ? TWELVE_VHPWR : EIGHT_PIN * 2
+
+  b.wire([psu, 'atx24'], [mb, 'atx24'], YELLOW, EIGHT_PIN)
+  b.wire([psu, 'eps'], [mb, 'eps'], YELLOW, EIGHT_PIN)
+  b.wire([psu, 'gnd'], [mb, 'gnd'], BLACK, EIGHT_PIN)
+  b.wire([psu, 'pcie1'], [gpu, 'pwr0'], RED, feed)
+  // Read the connector off the card rather than keeping a list of which cards
+  // have two: a 4090 takes one 12VHPWR plug, not two eight-pins.
+  if (connector === '2x8') {
+    b.wire([psu, 'pcie2'], [gpu, 'pwr1'], RED, feed)
+  }
+  b.wire([psu, 'gnd'], [gpu, 'gnd'], BLACK, gpuReturn)
 
   return b.doc
 }
@@ -331,5 +429,47 @@ export const STARTERS: Starter[] = [
   { id: 'frame', title: '2020 frame cube', blurb: 'A 300 mm extrusion frame with a plywood deck', build: frameCube },
   { id: 'motor', title: 'Motor test rig', blurb: 'Bench supply through a switch into a DC motor', build: motorRig },
   { id: 'pc', title: 'Desktop PC', blurb: 'A whole machine, assembled. Take it apart', build: desktopPc },
+  {
+    id: 'gaming-1080',
+    title: 'Gaming PC, 1080p',
+    blurb: 'Six cores and an RTX 4060. The sensible one',
+    build: () =>
+      gamingPc({
+        name: 'Gaming PC, 1080p',
+        board: 'matx', socket: 'AM5', cpu: 'r5-7600', gpu: 'rtx-4060',
+        ram: { standard: 'DDR5', capacity: '16', count: 2 },
+        psu: 550, chassis: 'micro',
+        cooler: { kind: 'air', height: 158, watts: 220 },
+        fans: 2,
+      }),
+  },
+  {
+    id: 'gaming-1440',
+    title: 'Gaming PC, 1440p',
+    blurb: 'An X3D chip, a 4070 Super and a 240 mm radiator',
+    build: () =>
+      gamingPc({
+        name: 'Gaming PC, 1440p',
+        board: 'atx', socket: 'AM5', cpu: 'r7-7800x3d', gpu: 'rtx-4070s',
+        ram: { standard: 'DDR5', capacity: '16', count: 2 },
+        psu: 750, chassis: 'mid',
+        cooler: { kind: 'aio', size: '240' },
+        fans: 3,
+      }),
+  },
+  {
+    id: 'gaming-4k',
+    title: 'Gaming PC, 4K',
+    blurb: 'A 4090 and everything that has to be true for it',
+    build: () =>
+      gamingPc({
+        name: 'Gaming PC, 4K',
+        board: 'atx', socket: 'LGA1700', cpu: 'i9-14900k', gpu: 'rtx-4090',
+        ram: { standard: 'DDR5', capacity: '32', count: 2 },
+        psu: 1000, chassis: 'full',
+        cooler: { kind: 'aio', size: '360' },
+        fans: 3,
+      }),
+  },
   { id: 'pc-sff', title: 'Small form factor PC', blurb: 'The same parts in a case that will not take them', build: smallFormPc },
 ]

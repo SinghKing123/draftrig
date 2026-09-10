@@ -322,6 +322,14 @@ export interface PartDef {
   electrical?: ElectricalSpec
   /** Override the computed mass (grams) when the solid tree is a simplification. */
   mass?: (p: Params) => number
+  /**
+   * Unit price in dollars, when it depends on the parameters.
+   *
+   * `doc.price` is one number for the whole part, which is right for a resistor
+   * and useless for a graphics card: the model is the price. Falls back to
+   * `doc.price` when this is absent.
+   */
+  price?: (p: Params) => number
   /** Extra derived readouts shown in the inspector. */
   readouts?: (p: Params) => { label: string; value: string }[]
 }

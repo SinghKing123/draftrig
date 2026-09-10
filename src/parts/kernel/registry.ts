@@ -39,6 +39,15 @@ export function defaultParams(def: PartDef): Params {
   return p
 }
 
+/** What one of these costs, given how it is configured. */
+export function unitPrice(def: PartDef, params: Params): number {
+  if (def.price) {
+    const v = def.price(params)
+    if (isFinite(v) && v >= 0) return v
+  }
+  return def.doc?.price ?? 0
+}
+
 export function allParts(): PartDef[] {
   return [...registry.values()]
 }

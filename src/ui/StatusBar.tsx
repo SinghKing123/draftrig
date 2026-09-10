@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useDoc } from '@/state/doc'
 import { useSim } from '@/state/sim'
-import { getPart } from '@/parts/kernel/registry'
+import { getPart, unitPrice } from '@/parts/kernel/registry'
 import { buildPart } from '@/parts/kernel/build'
 import { formatMass, formatMoney } from '@/parts/kernel/units'
 
@@ -27,7 +27,7 @@ export function StatusBar() {
       const def = getPart(inst.defId)
       if (!def) continue
       m += buildPart(def, inst.params).mass
-      const per = def.doc?.price ?? 0
+      const per = unitPrice(def, inst.params)
       const len = typeof inst.params.length === 'number' ? (inst.params.length as number) : 1
       c += def.category === 'structural' ? per * len : per
     }
