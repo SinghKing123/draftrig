@@ -308,11 +308,12 @@ function smallFormPc(): Doc {
   const psu = b.add('power-supply', [-30, 0, 220], { form: 'sfx', watts: 450 }, [0, 180, 0], 'Power supply')
   b.add('pc-case', [320, 0, 0], { size: 'itx' }, [0, 0, 0], 'Case')
 
+  // A 4090 takes one 12VHPWR plug rather than two eight-pins, so the second
+  // feed only exists when the card actually has a second connector.
   const FEED = 2.5
   b.wire([psu, 'atx24'], [mb, 'atx24'], '#C8A227', FEED)
   b.wire([psu, 'gnd'], [mb, 'gnd'], '#1C1F24', FEED)
   b.wire([psu, 'pcie1'], [gpu, 'pwr0'], '#E34B4B', FEED)
-  b.wire([psu, 'pcie2'], [gpu, 'pwr1'], '#E34B4B', FEED)
   b.wire([psu, 'gnd'], [gpu, 'gnd'], '#1C1F24', 5)
 
   return b.doc
