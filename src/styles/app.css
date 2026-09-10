@@ -248,6 +248,8 @@
 .lib-group .chev { color: var(--tx-3); transition: transform var(--dur) var(--ease); }
 .lib-group[data-open='true'] .chev { transform: rotate(90deg); }
 .lib-group .count { margin-left: auto; color: var(--tx-3); font-size: var(--fs-xs); }
+.lib-group .lib-glyph { display: inline-grid; place-items: center; color: var(--tx-3); }
+.lib-group:hover .lib-glyph { color: var(--tx-2); }
 
 .part-item {
   display: flex;
@@ -262,14 +264,15 @@
 .part-item:hover { background: var(--bg-2); border-left-color: var(--brand); }
 .part-item .swatch {
   flex: 0 0 auto;
-  width: 22px; height: 22px;
+  width: 26px; height: 26px;
   border-radius: var(--r-xs);
   background: var(--bg-3);
   border: 1px solid var(--line-2);
   display: grid; place-items: center;
   color: var(--tx-2);
-  font-size: 10px; font-weight: 700;
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
 }
+.part-item:hover .swatch { color: var(--brand); border-color: var(--line-3, var(--line-2)); }
 .part-item .pi-text { display: block; min-width: 0; }
 .part-item .pi-name { display: block; color: var(--tx-0); font-size: var(--fs-md); font-weight: 500; line-height: 1.3; }
 .part-item .pi-blurb { display: block; color: var(--tx-3); font-size: var(--fs-xs); line-height: 1.35; margin-top: 1px; }
@@ -886,3 +889,19 @@ kbd {
   .ai-fab, .assistant { right: 16px; }
   .assistant { width: min(372px, calc(100vw - 32px)); }
 }
+
+/* Snap indicator label, drawn in the 3D scene by drei's Html. */
+.snap-tag {
+  transform: translateY(-24px);
+  padding: 3px 9px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: rgba(12, 14, 18, 0.94);
+  color: var(--fg-2);
+  font: 500 11px/1.4 var(--font-ui, inherit);
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+}
+.snap-tag b { color: var(--fg-1); font-weight: 600; }
+.snap-tag[data-kind='mechanical'] { border-color: rgba(255, 176, 32, 0.5); }
+.snap-tag[data-kind='electrical'] { border-color: rgba(76, 141, 255, 0.5); }

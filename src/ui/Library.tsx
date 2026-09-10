@@ -1,15 +1,9 @@
 import { useMemo, useState } from 'react'
 import { IconChevron, IconSearch, IconX } from './Icons'
+import { CategoryIcon, PartIcon } from './PartIcons'
 import { allParts, CATEGORY_META, searchParts, valueTargetFor } from '@/parts/kernel/registry'
 import type { PartCategory, PartDef } from '@/parts/kernel/types'
 import { useDoc } from '@/state/doc'
-
-/** Two-letter glyph used as a part's swatch in the list. */
-function initials(def: PartDef): string {
-  const words = def.name.split(/[\s-]+/)
-  if (words.length > 1) return (words[0][0] + words[1][0]).toUpperCase()
-  return def.name.slice(0, 2).toUpperCase()
-}
 
 const SECTION_ORDER: ('Electronics' | 'Build')[] = ['Electronics', 'Build']
 
@@ -76,7 +70,7 @@ export function Library() {
             <div className="lib-section">{results.length} result{results.length === 1 ? '' : 's'}</div>
             {results.map((def) => (
               <button key={def.id} className="part-item" onClick={() => place(def)} title={def.doc?.description ?? def.blurb}>
-                <span className="swatch">{initials(def)}</span>
+                <span className="swatch"><PartIcon def={def} /></span>
                 <span className="pi-text">
                   <span className="pi-name">{def.name}</span>
                   <span className="pi-blurb">{def.blurb}</span>
@@ -113,13 +107,14 @@ export function Library() {
                       onClick={() => setOpen((o) => ({ ...o, [cat]: !o[cat] }))}
                     >
                       <IconChevron size={11} className="chev" />
+                      <span className="lib-glyph"><CategoryIcon category={cat} /></span>
                       {CATEGORY_META[cat].label}
                       <span className="count">{parts.length}</span>
                     </button>
                     {isOpen &&
                       parts.map((def) => (
                         <button key={def.id} className="part-item" onClick={() => place(def)} title={def.doc?.description ?? def.blurb}>
-                          <span className="swatch">{initials(def)}</span>
+                          <span className="swatch"><PartIcon def={def} /></span>
                           <span className="pi-text">
                             <span className="pi-name">{def.name}</span>
                             <span className="pi-blurb">{def.blurb}</span>

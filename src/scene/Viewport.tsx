@@ -6,11 +6,13 @@ import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import { PartObject } from './PartObject'
 import { Ports, PendingWire } from './Ports'
 import { Wires } from './Wires'
-import { PortIndexProvider, usePortIndex } from './portIndex'
+import { PortIndexProvider } from './portIndex'
 import { CameraRig } from './CameraRig'
 import { Lights, PostFx, StudioEnvironment } from './Render'
 import { useDoc, useInstanceList } from '@/state/doc'
 import { installPointerTracker, wasClick } from './pointer'
+import { SnapSession, type SnapHit } from './snap'
+import { SnapIndicator, snapStore } from './SnapIndicator'
 import type { Vec3 } from '@/parts/kernel/types'
 
 /* ------------------------------------------------------------------ */
@@ -91,12 +93,14 @@ function SelectionTransform({ controls }: { controls: React.MutableRefObject<Orb
   const snap = useDoc((s) => s.snap)
   const transformInstances = useDoc((s) => s.transformInstances)
   const beginEdit = useDoc((s) => s.beginEdit)
-  const index = usePortIndex()
 
   // The gizmo needs a real object to attach to, and it must exist on the same
   // render that mounts TransformControls, a ref is populated too late.
   const [anchor, setAnchor] = useState<THREE.Group | null>(null)
   const start = useRef<{ pos: THREE.Vector3; rot: THREE.Euler; instances: { id: string; pos: Vec3; rot: Vec3 }[] } | null>(null)
+  /** Built once per drag, so the per-frame cost is a hash lookup. */
+  const session = useRef<SnapSession | null>(null)
+  const lastHit = useRef<SnapHit | null>(null)
 
   const active = mode === 'build' && selection.length > 0
 
@@ -122,6 +126,11 @@ function SelectionTransform({ controls }: { controls: React.MutableRefObject<Orb
     if (controls.current) controls.current.enabled = false
     dragging.active = true
     beginEdit()
+    session.current =
+      snap.enabled && snap.ports && transformMode === 'move'
+        ? new SnapSession(useDoc.getState().doc, selection)
+        : null
+    lastHit.current = null
     start.current = {
       pos: anchor.position.clone(),
       rot: anchor.rotation.clone(),
@@ -145,6 +154,15 @@ function SelectionTransform({ controls }: { controls: React.MutableRefObject<Orb
           Math.round(delta.z / snap.grid) * snap.grid,
         )
       }
+
+      // Terminals win over the grid. A lead landing in the hole it is aimed at
+      // matters more than it landing on a round number, and seeing the part
+      // jump the last millimetre is how you know it took.
+      const hit = session.current?.solve(delta) ?? null
+      lastHit.current = hit
+      snapStore.set(hit)
+      if (hit) delta.add(hit.offset)
+
       transformInstances(
         s.instances.map((it) => ({ id: it.id, pos: [it.pos[0] + delta.x, it.pos[1] + delta.y, it.pos[2] + delta.z] as Vec3 })),
         false,
@@ -169,34 +187,28 @@ function SelectionTransform({ controls }: { controls: React.MutableRefObject<Orb
 
   const onMouseUp = useCallback(() => {
     if (controls.current) controls.current.enabled = true
-    // Port snapping: pull a single dragged part onto the nearest matching
-    // terminal, so parts seat into breadboards and slots instead of near them.
-    if (snap.enabled && snap.ports && selection.length === 1 && transformMode === 'move') {
-      const id = selection[0]
-      const mine = index.ofInstance(id)
-      let best: { d: number; offset: THREE.Vector3 } | null = null
-      for (const p of mine) {
-        const target = index.nearest(p.pos, 7, (q) => q.instanceId !== id && q.port.kind === p.port.kind)
-        if (!target) continue
-        const d = target.pos.distanceTo(p.pos)
-        if (!best || d < best.d) best = { d, offset: target.pos.clone().sub(p.pos) }
-      }
-      if (best && best.d > 1e-4) {
-        const inst = useDoc.getState().doc.instances[id]
-        if (inst) {
-          transformInstances(
-            [{ id, pos: [inst.pos[0] + best.offset.x, inst.pos[1] + best.offset.y, inst.pos[2] + best.offset.z] }],
-            false,
-          )
-        }
-      }
+
+    // A mechanical snap is a joint, so record it. Two extrusions held by a
+    // bracket stay held: the mate survives the drag rather than being a
+    // coincidence of position that the next nudge undoes.
+    const hit = lastHit.current
+    if (hit && hit.kind === 'mechanical') {
+      useDoc.getState().connect(
+        { instanceId: hit.movingInstance, portId: hit.movingPort },
+        { instanceId: hit.targetInstance, portId: hit.targetPort },
+        { kind: 'mate' },
+      )
     }
+
+    session.current = null
+    lastHit.current = null
+    snapStore.set(null)
     start.current = null
     // Let the click-vs-drag guard settle before re-enabling deselection.
     requestAnimationFrame(() => {
       dragging.active = false
     })
-  }, [controls, snap.enabled, snap.ports, selection, transformMode, index, transformInstances])
+  }, [controls])
 
   return (
     <>
@@ -276,6 +288,7 @@ function SceneContents() {
       <PendingWire cursor={cursor} />
 
       <SelectionTransform controls={controls} />
+      <SnapIndicator />
       <CameraRig controls={controls} />
 
       <OrbitControls
