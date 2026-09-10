@@ -209,6 +209,7 @@ const perfboard: PartDef = {
           id: `p${c}_${r}`, label: `${c + 1}:${r + 1}`, kind: 'electrical',
           pos: [x0 + c * P, 1.6, z0 + r * P], dir: [0, 1, 0], role: 'passive',
           groupId: strips ? `strip-${r}` : undefined,
+          solderable: true,
         })
       }
     }

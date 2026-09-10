@@ -6,6 +6,7 @@ import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import { PartObject } from './PartObject'
 import { Ports, PendingWire } from './Ports'
 import { Wires } from './Wires'
+import { Solder } from './Solder'
 import { PortIndexProvider } from './portIndex'
 import { CameraRig } from './CameraRig'
 import { Lights, PostFx, StudioEnvironment } from './Render'
@@ -284,6 +285,7 @@ function SceneContents() {
       </group>
 
       <Wires />
+      <Solder />
       <Ports />
       <PendingWire cursor={cursor} />
 

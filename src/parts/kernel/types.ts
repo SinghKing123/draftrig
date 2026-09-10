@@ -196,6 +196,13 @@ export interface Port {
   mate?: { type: MateType; size?: number; depth?: number }
   /** Ports with the same groupId are interchangeable (e.g. a breadboard column). */
   groupId?: string
+  /**
+   * A plated hole that a joint is made in, rather than a contact that grips.
+   *
+   * The distinction is real and worth keeping: a perfboard hole gets a fillet
+   * of solder around whatever is in it, and a breadboard hole never does.
+   */
+  solderable?: boolean
 }
 
 /* ------------------------------------------------------------------ */
