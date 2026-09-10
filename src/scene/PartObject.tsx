@@ -84,6 +84,15 @@ function PartObjectImpl({ inst, selected, hovered, onPointerDown }: Props) {
         (inst.rot[2] * Math.PI) / 180,
       ]}
       onPointerDown={(e) => onPointerDown(e, inst.id)}
+      /*
+       * Selection is taken on pointer down, but the release has to be claimed
+       * too. Events in three are raycast per event type, not per gesture: the
+       * ray that hits this part on the way down also reaches the ground plane
+       * behind it on the way up, and the ground clears the selection. So
+       * pressing a part selected it and letting go deselected it, which read as
+       * having to hold the mouse button to keep anything selected.
+       */
+      onPointerUp={(e) => e.stopPropagation()}
       onPointerOver={(e) => {
         e.stopPropagation()
         setHovered(inst.id)

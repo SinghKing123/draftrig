@@ -21,6 +21,19 @@ import type { Vec3 } from '@/parts/kernel/types'
 /* Ground / grid                                                       */
 /* ------------------------------------------------------------------ */
 
+/**
+ * Extent of the ground plane and the grid, mm. Six metres is far larger than
+ * anything anyone builds here, and the fade hides the edge long before it.
+ *
+ * Deliberately finite. The infinite mode of drei's grid scales the plane by
+ * one plus the fade distance, which at a 2.6 metre fade made two triangles
+ * fifteen million units across. Depth interpolation over a triangle that size
+ * is meaningless, so the grid won and lost the depth test at random from pixel
+ * to pixel: it speckled every solid in the scene and drew its own lines across
+ * them, and the pattern crawled as the camera moved.
+ */
+const GROUND = 6000
+
 function Ground({ onPointerUp }: { onPointerUp: (e: ThreeEvent<PointerEvent>) => void }) {
   const showGrid = useDoc((s) => s.view.grid)
   return (
@@ -32,23 +45,31 @@ function Ground({ onPointerUp }: { onPointerUp: (e: ThreeEvent<PointerEvent>) =>
         onPointerUp={onPointerUp}
         name="ground"
       >
-        <planeGeometry args={[6000, 6000]} />
-        <meshStandardMaterial color="#0E1116" roughness={0.96} metalness={0} />
+        <planeGeometry args={[GROUND, GROUND]} />
+        {/* Pushed back in depth so the grid sitting a fraction above it always
+            wins, without needing a gap big enough to see. */}
+        <meshStandardMaterial
+          color="#0E1116"
+          roughness={0.96}
+          metalness={0}
+          polygonOffset
+          polygonOffsetFactor={2}
+          polygonOffsetUnits={2}
+        />
       </mesh>
       {showGrid && (
         <Grid
-          args={[6000, 6000]}
+          args={[GROUND, GROUND]}
           position={[0, 0.02, 0]}
           cellSize={10}
           cellThickness={0.6}
-          cellColor="#1E2530"
+          cellColor="#232C38"
           sectionSize={100}
           sectionThickness={1.1}
-          sectionColor="#2C3A4D"
-          fadeDistance={2600}
+          sectionColor="#3A4C64"
+          fadeDistance={GROUND * 0.42}
           fadeStrength={1.2}
           followCamera={false}
-          infiniteGrid
         />
       )}
     </>
@@ -296,7 +317,10 @@ export function Viewport() {
       shadows
       dpr={[1, 2]}
       gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
-      camera={{ position: [300, 230, 340], fov: 36, near: 0.4, far: 20000 }}
+      // A near-to-far ratio of fifty thousand spends most of the depth buffer
+      // on space nothing occupies. The camera cannot get closer than 8 mm or
+      // further than 4 m, so this covers it with room to spare.
+      camera={{ position: [300, 230, 340], fov: 36, near: 1, far: 12000 }}
       onCreated={({ gl }) => {
         gl.toneMapping = THREE.NoToneMapping
         gl.shadowMap.type = THREE.PCFSoftShadowMap
