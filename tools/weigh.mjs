@@ -7,7 +7,7 @@ for (const route of ['/', '/app']) {
   const seen = []
   page.on('response', async (r) => {
     const u = new URL(r.url())
-    if (!/\.(js|css|jpg|png|svg)$/.test(u.pathname)) return
+    if (!/\.(js|css|jpg|png|svg|webm)$/.test(u.pathname)) return
     const buf = await r.body().catch(() => null)
     seen.push({ name: u.pathname.split('/').pop(), bytes: buf ? buf.length : 0 })
   })

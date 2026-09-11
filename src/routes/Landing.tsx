@@ -353,20 +353,52 @@ function Footer() {
   )
 }
 
-/** Falls back to an empty frame if the screenshot has not been generated. */
+/**
+ * The hero: a frame and the electronics on it assembling themselves.
+ *
+ * A recording of the real editor rather than a live scene. A live one would
+ * mean three.js, the part kernel and the catalog on a page most people scroll
+ * past, which is most of a megabyte to show what a three hundred kilobyte
+ * video shows at higher quality.
+ *
+ * Anyone who has asked for less motion gets the finished frame and no video at
+ * all, and there is a button under it for people who would rather go and turn
+ * the thing themselves.
+ */
 function ProductShot() {
   const [failed, setFailed] = useState(false)
+  const [reduced, setReduced] = useState(false)
+
+  useEffect(() => {
+    const q = window.matchMedia('(prefers-reduced-motion: reduce)')
+    setReduced(q.matches)
+    const onChange = () => setReduced(q.matches)
+    q.addEventListener('change', onChange)
+    return () => q.removeEventListener('change', onChange)
+  }, [])
+
   return (
-    <figure className="shot">
-      <div className="bar">
-        <i /><i /><i />
-        <span className="addr">{BRAND.domain}/app</span>
-      </div>
-      {failed ? (
-        <div className="fallback">The editor</div>
+    <figure className="shot stage">
+      <div className="media">
+      {failed || reduced ? (
+        <img src="/assembly-poster.jpg" alt={`A frame built in ${BRAND.name} with a board and a display on it`} />
       ) : (
-        <img src="/hero.jpg" alt={`The ${BRAND.name} editor with a circuit running`} onError={() => setFailed(true)} />
+        <video
+          src="/assembly.webm"
+          poster="/assembly-poster.jpg"
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          aria-label={`A frame and its electronics being assembled in ${BRAND.name}`}
+          onError={() => setFailed(true)}
+        />
       )}
+      </div>
+      <figcaption>
+        Aluminium extrusion, a board and a character display. Rendered in the editor, not a mock-up.
+      </figcaption>
     </figure>
   )
 }
