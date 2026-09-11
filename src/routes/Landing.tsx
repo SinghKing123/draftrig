@@ -95,7 +95,7 @@ export function Landing() {
         <div className="wrap">
           <div className="inner">
             <h1>
-              Build it on screen<br />before you build it for real.
+              Build it twice.<br />The first time is free.
             </h1>
             <p className="lede">
               A 3D bench for electronics and framing. Lay the whole thing out, wire it up, switch it
@@ -118,7 +118,7 @@ export function Landing() {
           <Reveal>
             <div className="sec-head">
               <span className="kicker">What it does</span>
-              <h2>Three things at once.</h2>
+              <h2>Most of a build is not the circuit.</h2>
               <p>Circuit, structure and the machine they go in, all in the same scene.</p>
             </div>
           </Reveal>
@@ -141,7 +141,7 @@ export function Landing() {
               img="/feature-frame.jpg"
               alt="A 2020 aluminium extrusion frame with a plywood deck"
               kicker="Structure"
-              title="The frame, not just the board"
+              title="The half that holds it up"
               flip
             >
               T-slot extrusion with a true profile, plywood that shows its laminations on the cut
@@ -155,7 +155,7 @@ export function Landing() {
               img="/feature-pc.jpg"
               alt="A gaming PC laid out with motherboard, graphics card and power supply"
               kicker="Computers"
-              title="Whole machines, part by part"
+              title="It fits here, or it does not fit"
             >
               Motherboards, processors, memory, graphics cards and supplies, with the sockets and
               slots keyed the way they are in life. DDR4 will not go in a DDR5 board, and the power
@@ -171,7 +171,7 @@ export function Landing() {
           <Reveal>
             <div className="sec-head mid">
               <span className="kicker">Checks</span>
-              <h2>It tells you what is wrong.</h2>
+              <h2>Mistakes are free here.</h2>
               <p>
                 In the words you would use. This is a small form factor build being told four
                 separate things, before anything was ordered.
@@ -200,7 +200,7 @@ export function Landing() {
           <Reveal>
             <div className="sec-head mid">
               <span className="kicker">And the rest</span>
-              <h2 className="sec-title">The parts of it you notice later.</h2>
+              <h2 className="sec-title">The parts you notice later.</h2>
             </div>
           </Reveal>
           <Reveal delay={60}>
@@ -224,7 +224,7 @@ export function Landing() {
             <Reveal>
               <div>
                 <span className="kicker">The library</span>
-                <h2 className="sec-title">Search it right now.</h2>
+                <h2 className="sec-title">One resistor. Every value.</h2>
                 <p className="body">
                   The real catalog, running the real search. Parts are generated from parameters
                   rather than fixed models, so one resistor definition covers every value, tolerance
@@ -248,7 +248,7 @@ export function Landing() {
           <Reveal>
             <div>
               <span className="kicker">Under the hood</span>
-              <h2 className="sec-title">A real solver.</h2>
+              <h2 className="sec-title">Nothing here is an animation.</h2>
               <p className="body">
                 Modified nodal analysis, the method SPICE uses. Non-linear parts are solved by
                 Newton at every timestep, and capacitors and inductors use backward-Euler companion
@@ -276,7 +276,7 @@ export function Landing() {
         <div className="wrap">
           <Reveal>
             <div className="closer">
-              <h2>Find out now, not after it arrives.</h2>
+              <h2>Find out now, not when the box arrives.</h2>
               <p>Open the editor and put something together. Nothing to install, nothing to sign up for.</p>
               <Link className="cta primary" to="/app">Open the editor</Link>
             </div>

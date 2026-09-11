@@ -70,6 +70,7 @@ export function Ports() {
   const pending = useDoc((s) => s.pendingWire)
   const setPendingWire = useDoc((s) => s.setPendingWire)
   const connect = useDoc((s) => s.connect)
+  const wireColor = useDoc((s) => s.wireColor)
   const addProbe = useSim((s) => s.addProbe)
   const { size } = useThree()
 
@@ -227,7 +228,7 @@ export function Ports() {
       // Clicking the terminal you started from is how you back out.
       setPendingWire(null)
     } else {
-      connect(pending, { instanceId: p.instanceId, portId: p.portId })
+      connect(pending, { instanceId: p.instanceId, portId: p.portId }, { color: wireColor })
       setPendingWire(null)
     }
   }
@@ -272,6 +273,9 @@ export function Ports() {
 /** The rubber-band wire that follows the cursor while a connection is pending. */
 export function PendingWire({ cursor }: { cursor: THREE.Vector3 | null }) {
   const pending = useDoc((s) => s.pendingWire)
+  // Draw the band in the colour the wire will be, so the choice is visible
+  // before it is committed rather than after.
+  const wireColor = useDoc((s) => s.wireColor)
   const index = usePortIndex()
   const ref = useRef<THREE.Line>(null)
 
@@ -301,7 +305,7 @@ export function PendingWire({ cursor }: { cursor: THREE.Vector3 | null }) {
   return (
     // @ts-expect-error - three's Line is available as a JSX intrinsic via r3f
     <line ref={ref} geometry={geometry} renderOrder={6}>
-      <lineDashedMaterial color="#4C8DFF" dashSize={3} gapSize={2} toneMapped={false} depthTest={false} />
+      <lineDashedMaterial color={wireColor} dashSize={3} gapSize={2} toneMapped={false} depthTest={false} />
     </line>
   )
 }

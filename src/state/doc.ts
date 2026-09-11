@@ -50,6 +50,8 @@ export interface DocState {
   /** Wire-mode: the port we started dragging from. */
   pendingWire: PortRef | null
   snap: Snap
+  /** Colour the next wire is drawn in. */
+  wireColor: string
   view: ViewFlags
   /** Instance ids that failed a design rule, with messages. */
   issues: Record<string, string[]>
@@ -78,6 +80,7 @@ export interface DocState {
   connect: (a: PortRef, b: PortRef, opts?: Partial<Connection>) => string | null
   disconnect: (ids: string[]) => void
   setConnectionColor: (id: string, color: string) => void
+  setWireColor: (color: string) => void
   setPendingWire: (p: PortRef | null) => void
 
   select: (ids: string[], additive?: boolean) => void
@@ -147,6 +150,24 @@ export function registerSeating(fn: SeatFn): void {
   seatHeight = fn
 }
 
+/**
+ * The wire colours on offer.
+ *
+ * Named rather than just listed, because on a real bench the colour is how you
+ * read a harness at a glance: red is the positive rail, black is the return,
+ * and the rest are whatever you decided they meant.
+ */
+export const WIRE_COLORS: { value: string; label: string }[] = [
+  { value: '#E34B4B', label: 'Red, positive' },
+  { value: '#1C1F24', label: 'Black, ground' },
+  { value: '#C8A227', label: 'Yellow' },
+  { value: '#3DD68C', label: 'Green' },
+  { value: '#4C8DFF', label: 'Blue' },
+  { value: '#B06CD8', label: 'Violet' },
+  { value: '#E88A3C', label: 'Orange' },
+  { value: '#D8DCE2', label: 'White' },
+]
+
 export const useDoc = create<DocState>()((set, get) => {
   /** Run a mutation, optionally recording an undo entry first. */
   const edit = (fn: (d: Doc) => void, record = true) => {
@@ -168,6 +189,7 @@ export const useDoc = create<DocState>()((set, get) => {
     hovered: null,
     pendingWire: null,
     snap: { enabled: true, grid: 2.54, angle: 15, ports: true },
+    wireColor: WIRE_COLORS[0].value,
     view: { grid: true, ports: true, wires: true, labels: false, shadows: true, xray: false, quality: 'high' },
     issues: {},
     frameToken: 0,
@@ -348,6 +370,7 @@ export const useDoc = create<DocState>()((set, get) => {
     requestFrame: (target = 'all') => set((s) => ({ frameToken: s.frameToken + 1, frameTarget: target })),
 
     setSnap: (s) => set((st) => ({ snap: { ...st.snap, ...s } })),
+    setWireColor: (wireColor) => set({ wireColor }),
     setView: (v) => set((st) => ({ view: { ...st.view, ...v } })),
     setIssues: (issues) => set({ issues }),
 

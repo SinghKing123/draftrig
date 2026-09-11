@@ -1,5 +1,5 @@
 import { IconEye, IconEyeOff, IconFrame, IconGrid, IconMagnet, IconMove, IconRotate, IconXray, IconZap } from './Icons'
-import { useDoc } from '@/state/doc'
+import { useDoc, WIRE_COLORS } from '@/state/doc'
 import { useSim } from '@/state/sim'
 
 const MODE_HINT: Record<string, React.ReactNode> = {
@@ -33,6 +33,7 @@ export function ViewportOverlay({ onReplayTour }: { onReplayTour: () => void }) 
 
   return (
     <>
+      {mode === 'wire' && <WirePalette />}
       <div className="vp-toolbar">
         <button
           className="btn ghost icon"
@@ -112,5 +113,35 @@ export function ViewportOverlay({ onReplayTour }: { onReplayTour: () => void }) 
         </div>
       )}
     </>
+  )
+}
+
+/**
+ * Colour for the next wire.
+ *
+ * Sits in the viewport rather than the inspector because it is a choice you
+ * make while wiring, not one you come back and fix afterwards. Picking the
+ * colour first is how anyone wires a harness: red for the rail, black for the
+ * return, and then whatever you decided the rest mean.
+ */
+function WirePalette() {
+  const wireColor = useDoc((s) => s.wireColor)
+  const setWireColor = useDoc((s) => s.setWireColor)
+  return (
+    <div className="wire-palette" role="radiogroup" aria-label="Wire colour">
+      <span className="wp-label">Wire</span>
+      {WIRE_COLORS.map((c) => (
+        <button
+          key={c.value}
+          className="wp-dot"
+          role="radio"
+          aria-checked={c.value === wireColor}
+          data-on={c.value === wireColor}
+          title={c.label}
+          style={{ background: c.value }}
+          onClick={() => setWireColor(c.value)}
+        />
+      ))}
+    </div>
   )
 }
