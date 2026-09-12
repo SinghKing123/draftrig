@@ -162,7 +162,10 @@ export const UNO_HOLES: Vec2[] = [
 /* Physical detail                                                     */
 /* ------------------------------------------------------------------ */
 
-const STEEL = { color: '#C2C7CE', metal: 1, rough: 0.3, density: 7.85 }
+// Drawn and nickel-plated, not polished. At roughness 0.3 the flat top of
+// the USB shell caught the key light square on, went past the bloom
+// threshold and read as a white lamp sitting on the board.
+const STEEL = { color: '#AEB4BC', metal: 1, rough: 0.46, density: 7.85 }
 const TIN = { color: '#A9AEB6', metal: 1, rough: 0.42, density: 7.31 }
 
 /** USB-B socket: a drawn steel shell with the tongue visible inside it. */

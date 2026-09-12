@@ -2,13 +2,17 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import '@/parts'
 import '@/sim/behaviour/library'
 import '@/sim/behaviour/displays'
+import '@/sim/behaviour/oled'
 import { buildNetlist, portKey } from '@/sim/circuit/netlist'
 import { BehaviourRunner } from '@/sim/behaviour/runner'
 import { emptyDoc, type Doc } from '@/state/doc'
 import { defaultParams } from '@/parts/kernel/build'
 import { requirePart } from '@/parts/kernel/registry'
 import type { Params } from '@/parts/kernel/types'
-import { clearFramebuffers, fbKey, peekFramebuffer, type CharBuffer, type SegBuffer } from './framebuffer'
+import {
+  clearFramebuffers, fbKey, peekFramebuffer,
+  type CharBuffer, type PixelBuffer, type SegBuffer,
+} from './framebuffer'
 
 /**
  * These drive the panels the way a build would: through wires, from a sketch,
@@ -179,5 +183,83 @@ describe('seven-segment display', () => {
     // Bits 0 and 1 are segments A and B.
     expect(fb.digits[0] & 0b11).toBe(0b11)
     expect(fb.digits[1]).toBe(0)
+  })
+})
+
+describe('OLED over I2C', () => {
+  /** Board and panel on the two wires, plus power. */
+  function wired(params: Params = {}, omit: string[] = [], swap = false): { b: Bench; oled: string } {
+    const b = new Bench()
+    const mcu = b.put('mcu-board', { program: 'oled-text', text1: 'HELLO', text2: 'OLED', ...params })
+    const oled = b.put('display-oled')
+    const links: [string, string][] = [
+      ['v5', 'vcc'],
+      ['gnd', 'gnd'],
+      [swap ? 'a5' : 'a4', 'sda'],
+      [swap ? 'a4' : 'a5', 'scl'],
+    ]
+    for (const [a, c] of links) {
+      if (omit.includes(c)) continue
+      b.join([mcu, a], [oled, c])
+    }
+    return { b, oled }
+  }
+
+  /** How many pixels are lit. */
+  const lit = (fb: PixelBuffer): number => fb.bits.reduce((n, v) => n + (v ? 1 : 0), 0)
+
+  it('lights up once the driver has initialised it, and draws the text', () => {
+    const { b, oled } = wired()
+    // Init plus a whole-frame push is about a second at this bus rate.
+    b.build().advance(2)
+
+    const fb = peekFramebuffer(fbKey(oled, 'main')) as PixelBuffer
+    expect(fb).toBeDefined()
+    expect(fb.kind).toBe('pixels')
+    expect(fb.w).toBe(128)
+    expect(fb.h).toBe(64)
+    expect(fb.displayOn).toBe(true)
+    // Two short lines of 5x7 text. Enough dots to be text, nowhere near a fill.
+    expect(lit(fb)).toBeGreaterThan(40)
+    expect(lit(fb)).toBeLessThan(600)
+  })
+
+  it('stays dark when SDA and SCL are swapped', () => {
+    const { b, oled } = wired({}, [], true)
+    b.build().advance(2)
+    const fb = peekFramebuffer(fbKey(oled, 'main')) as PixelBuffer
+    expect(fb.displayOn).toBe(false)
+    expect(lit(fb)).toBe(0)
+  })
+
+  it('ignores a bus addressed to the other strap', () => {
+    const { b, oled } = wired({}, [])
+    b.doc.instances[oled].params.address = '0x3D'
+    b.build().advance(2)
+    const fb = peekFramebuffer(fbKey(oled, 'main')) as PixelBuffer
+    expect(fb.displayOn).toBe(false)
+  })
+
+  it('does nothing with no supply', () => {
+    const { b, oled } = wired({}, ['vcc'])
+    b.build().advance(0.5)
+    const fb = peekFramebuffer(fbKey(oled, 'main')) as PixelBuffer
+    expect(fb.displayOn).toBe(false)
+  })
+
+  it('follows a change of text without a reset', () => {
+    const { b, oled } = wired({ text1: 'FIRST' })
+    const run = b.build()
+    run.advance(2)
+    const fb = peekFramebuffer(fbKey(oled, 'main')) as PixelBuffer
+    const before = fb.bits.slice(0, 128)
+    expect(lit(fb)).toBeGreaterThan(20)
+
+    b.doc.instances[oled].params.address = '0x3C'
+    b.doc.instances[b.doc.order[0]].params.text1 = 'SECOND'
+    run.advance(1)
+    // Only the top band is redrawn, so that is where the change has to show.
+    const after = (peekFramebuffer(fbKey(oled, 'main')) as PixelBuffer).bits.slice(0, 128)
+    expect(Array.from(after)).not.toEqual(Array.from(before))
   })
 })

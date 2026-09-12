@@ -222,6 +222,26 @@ function lcdText(): Doc {
 }
 
 /**
+ * The same idea on four wires instead of eleven.
+ *
+ * Two of them are power and two are the bus. Nothing about the picture is
+ * faked: the sketch clocks bytes out on A4 and A5 and the panel decodes them,
+ * which is why it takes a moment to fill the first time.
+ */
+function oledText(): Doc {
+  const b = new DocBuilder('Text on an OLED')
+  const mcu = b.add('mcu-board', [0, 0, 40], { program: 'oled-clock', text1: 'DRAFTRIG' }, [0, 0, 0], 'Controller')
+  const oled = b.add('display-oled', [6, 0, -34], { size: '128x64' }, [0, 0, 0], 'OLED')
+
+  b.wire([mcu, 'v5'], [oled, 'vcc'], '#E34B4B')
+  b.wire([mcu, 'gnd'], [oled, 'gnd'], '#1C1F24')
+  b.wire([mcu, 'a4'], [oled, 'sda'], '#4C8DFF')
+  b.wire([mcu, 'a5'], [oled, 'scl'], '#F2C14E')
+
+  return b.doc
+}
+
+/**
  * A desktop, assembled.
  *
  * Every part is seated where it actually goes: the chip in the socket, the
@@ -427,6 +447,7 @@ export const STARTERS: Starter[] = [
   { id: 'blink555', title: '555 blinker', blurb: 'The classic astable, flashing at one hertz', build: blinker555 },
   { id: 'mcu', title: 'Microcontroller blink', blurb: 'A board running a sketch, driving a real LED', build: mcuBlink },
   { id: 'lcd', title: 'Text on an LCD', blurb: 'A board bit-banging a 16x2 panel over its real bus', build: lcdText },
+  { id: 'oled', title: 'OLED over I2C', blurb: 'Four wires, a decoded bus and a panel that fills in', build: oledText },
   { id: 'frame', title: '2020 frame cube', blurb: 'A 300 mm extrusion frame with a plywood deck', build: frameCube },
   { id: 'motor', title: 'Motor test rig', blurb: 'Bench supply through a switch into a DC motor', build: motorRig },
   { id: 'pc', title: 'Desktop PC', blurb: 'A whole machine, assembled. Take it apart', build: desktopPc },

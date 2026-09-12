@@ -1,6 +1,9 @@
 import { isHigh, registerBehaviour, slot, type BehaviourContext } from './index'
 import { GATE_FAMILY, REGULATORS } from '@/parts/kernel/deviceData'
 import { LCD_WIRING, newLcdDriver, runLcdDriver, type LcdDriverState } from './lcddriver'
+import {
+  newOledDriver, oledBar, oledClear, oledText, runOledDriver, OLED_CHARS, type OledDriverState,
+} from './oleddriver'
 
 /**
  * Built-in behavioural models.
@@ -257,6 +260,10 @@ interface McuState {
   latched: boolean
   /** Present only while an LCD sketch is selected. */
   lcd?: LcdDriverState
+  /** Present only while an OLED sketch is selected. */
+  oled?: OledDriverState
+  /** What was last drawn on the OLED, so a static screen is not redrawn. */
+  oledSent: string
   count: number
   countAt: number
 }
@@ -271,7 +278,7 @@ const DIGITAL = Array.from({ length: 14 }, (_, i) => `d${i}`)
 registerBehaviour('mcu', (c) => {
   const s = slot<McuState>(c.state, 'mcu', () => ({
     out: {}, step: 0, nextStep: 0, toggleAt: 0, on: false, lastButton: false, latched: false,
-    count: 0, countAt: 0,
+    oledSent: '', count: 0, countAt: 0,
   }))
 
   const usb = str(c.params, 'power', 'usb') === 'usb'
@@ -392,6 +399,43 @@ registerBehaviour('mcu', (c) => {
       }
 
       runLcdDriver(s.lcd, c.t, rows, 16, { write })
+      break
+    }
+
+    case 'oled-text':
+    case 'oled-clock': {
+      // I2C lives on A4 and A5. Nothing else is driven.
+      for (const d of DIGITAL) c.hiZ(d)
+      if (!s.oled) s.oled = newOledDriver()
+
+      const title = str(c.params, 'text1', 'Draftrig').slice(0, OLED_CHARS)
+      let body: string
+      if (program === 'oled-clock') {
+        const total = Math.floor(c.t)
+        const mm = String(Math.floor(total / 60)).padStart(2, '0')
+        const ss = String(total % 60).padStart(2, '0')
+        body = `Up  ${mm}:${ss}`
+      } else {
+        body = str(c.params, 'text2', 'OLED ready').slice(0, OLED_CHARS)
+      }
+
+      // Rebuilding the frame costs a kilobyte of work, so only do it when the
+      // text has actually changed rather than forty thousand times a second.
+      const wanted = `${title}
+${body}`
+      if (wanted !== s.oledSent) {
+        s.oledSent = wanted
+        oledClear(s.oled)
+        oledText(s.oled, 0, title)
+        oledText(s.oled, 2, body)
+        if (program === 'oled-clock') oledBar(s.oled, 5, (c.t % 4) / 4)
+      }
+
+      runOledDriver(
+        s.oled, c.t, 0x3c,
+        { pull: (pin) => c.drive(pin, 0, 30), release: (pin) => c.hiZ(pin) },
+        { sda: 'a4', scl: 'a5' },
+      )
       break
     }
 

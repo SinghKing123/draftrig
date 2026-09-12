@@ -101,8 +101,13 @@ export interface ValueTerm {
 
 export function parseValueTerm(term: string): ValueTerm | null {
   if (!/\d/.test(term)) return null
-  // Reject part numbers like 2N3904 or 74HC00, which are words, not values.
+  // Reject part numbers like 74HC00, which are words, not values.
   if (/^[a-z]{2,}/i.test(term)) return null
+  // And ones shaped like 1N4148 or 2N3904. A digit, a letter and then three
+  // or more digits is a part number every time; as a value it would have to
+  // be read as "1 nano" with four stray digits after it, which is what used
+  // to put a 100 nF capacitor at the top of a search for a diode.
+  if (/\d[a-z]\d{3,}/i.test(term)) return null
   const v = parseEng(term)
   if (!isFinite(v) || v <= 0) return null
 
@@ -183,11 +188,21 @@ export function searchParts(query: string): PartDef[] {
       // whichever category happened to sort first, which is meaningless here.
       const inName = word.test(name)
 
-      if (name === t) score += 400
+      // Where in the tag list the term sits. The first tag is what a part
+      // primarily is; later ones are things it merely involves. An LED, a
+      // matrix display and a bar graph all tag themselves "led", and this is
+      // what makes searching "led" hand back the LED rather than one of the
+      // things made out of them.
+      const tagRank = tags.indexOf(t)
+
+      // An exact part number is an identifier, not a description. Nothing
+      // else in the catalog can legitimately outrank it.
+      if (mpn === t) score += 460
+      else if (name === t) score += 400
       // An exact tag outranks a name prefix: tags are curated statements that
       // a part *is* the thing, whereas "Motor driver" merely starts with the
       // word someone typed when they were looking for a motor.
-      else if (tags.includes(t)) score += 260 + (inName ? 40 : 0)
+      else if (tagRank >= 0) score += 260 + (inName ? 40 : 0) - Math.min(tagRank, 5) * 12
       else if (name.startsWith(t)) score += 220
       else if (mpn.includes(t)) score += 180 + (inName ? 40 : 0)
       else if (inName) score += 140

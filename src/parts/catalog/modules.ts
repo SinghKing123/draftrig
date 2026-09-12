@@ -67,12 +67,21 @@ const MCU_PROGRAMS = [
   { value: 'lcd-text', label: 'LCD, show two lines of text' },
   { value: 'lcd-count', label: 'LCD, counter' },
   { value: 'lcd-clock', label: 'LCD, running clock' },
+  { value: 'oled-text', label: 'OLED, show two lines over I2C' },
+  { value: 'oled-clock', label: 'OLED, running clock over I2C' },
   { value: 'off', label: 'No program, all pins input' },
 ]
 
 /** The sketches that bit-bang a character LCD on D12, D11 and D5 to D2. */
 const LCD_SKETCH = (p: { program?: unknown }): boolean =>
   typeof p.program === 'string' && p.program.startsWith('lcd-')
+
+/** The sketches that drive a panel over I2C on A4 and A5. */
+const OLED_SKETCH = (p: { program?: unknown }): boolean =>
+  typeof p.program === 'string' && p.program.startsWith('oled-')
+
+/** Either kind of panel sketch: both take a first line of text. */
+const PANEL_SKETCH = (p: { program?: unknown }): boolean => LCD_SKETCH(p) || OLED_SKETCH(p)
 
 const W = 68.6
 const D = 53.4
@@ -95,8 +104,8 @@ const mcuBoard: PartDef = {
     { key: 'program', label: 'Sketch', type: 'enum', default: 'blink', group: 'Control', options: MCU_PROGRAMS },
     { key: 'interval', label: 'Interval', type: 'number', unit: 's', default: 0.5, min: 0.001, max: 10, step: 0.05, group: 'Control' },
     { key: 'duty', label: 'PWM duty', type: 'number', unit: '%', default: 50, min: 0, max: 100, step: 1, group: 'Control', showIf: (p) => p.program === 'pwm' },
-    { key: 'text1', label: 'LCD line 1', type: 'text', default: 'Draftrig', group: 'Control', showIf: LCD_SKETCH },
-    { key: 'text2', label: 'LCD line 2', type: 'text', default: 'LCD ready', group: 'Control', showIf: (p) => p.program === 'lcd-text' },
+    { key: 'text1', label: 'Display line 1', type: 'text', default: 'Draftrig', group: 'Control', showIf: PANEL_SKETCH },
+    { key: 'text2', label: 'Display line 2', type: 'text', default: 'LCD ready', group: 'Control', showIf: (p) => p.program === 'lcd-text' || p.program === 'oled-text' },
     { key: 'power', label: 'Powered from', type: 'enum', default: 'usb', group: 'Control', options: [
       { value: 'usb', label: 'USB' }, { value: 'vin', label: 'Barrel jack / VIN' },
     ] },
@@ -170,6 +179,11 @@ const mcuBoard: PartDef = {
       // The three GND pins are one net, as they are on the board.
       { type: 'short', a: 'gnd', b: 'gnd2' },
       { type: 'short', a: 'gnd2', b: 'gnd3' },
+      // On an R3 the SDA and SCL pins beside AREF are the same two pads as A4
+      // and A5, not extra ones. Wiring a display to either pair works, and
+      // using both at once is a short, exactly as on the board.
+      { type: 'short', a: 'sda', b: 'a4' },
+      { type: 'short', a: 'scl', b: 'a5' },
     ],
     supplies: ['v5', 'v33'],
     limits: { imax: 0.2, vmax: 12 },

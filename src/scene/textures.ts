@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import type { BuiltSurface } from '@/parts/kernel/build'
 import type { SilkItem, Vec2 } from '@/parts/kernel/types'
 import type { CharBuffer, Framebuffer, PixelBuffer } from '@/sim/display/framebuffer'
-import { glyph } from './font5x7'
+import { glyph } from '@/sim/display/font5x7'
 
 /**
  * Canvas-backed textures for the two kinds of flat surface a part can carry:
