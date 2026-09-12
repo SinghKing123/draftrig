@@ -118,7 +118,7 @@ export function Landing() {
         <div className="wrap">
           <Reveal>
             <div className="sec-head mid">
-              <span className="kicker">Have a look</span>
+              <span className="kicker">CNC router</span>
               <h2>Spin it.</h2>
             </div>
           </Reveal>
@@ -145,7 +145,7 @@ export function Landing() {
           <Reveal>
             <div className="sec-head mid">
               <span className="kicker">Checks</span>
-              <h2>And it tells you.</h2>
+              <h2>It checks.</h2>
             </div>
           </Reveal>
           <Reveal delay={60}>

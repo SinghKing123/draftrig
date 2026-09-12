@@ -28,7 +28,7 @@ const CASES = {
     vled: '1.94 V',
     power: '753 mW',
     ok: false,
-    verdict: 'Thirteen times the 30 mA maximum. The checker flags it before you run.',
+    verdict: 'Thirteen times the 30 mA maximum.',
   },
 } as const
 
