@@ -1,7 +1,7 @@
-import type { PartDef, Solid } from '../kernel/types'
+import type { PartDef, Solid, Vec3 } from '../kernel/types'
 import { registerParts } from '../kernel/registry'
 import { eng, engCompact, resistorBands } from '../kernel/units'
-import { axialLeads, num, pinPort, radialLeads, str } from './_helpers'
+import { axialLeads, bool, num, pinPort, radialLeads, roundRect, str } from './_helpers'
 
 /* ------------------------------------------------------------------ */
 /* Resistor, axial through-hole                                        */
@@ -415,4 +415,379 @@ const inductor: PartDef = {
   readouts: (p) => [{ label: 'Value', value: eng(num(p, 'value', 100e-6), 'H') }],
 }
 
-registerParts([resistorAxial, capCeramic, capElectrolytic, led5mm, diode, inductor])
+/* ------------------------------------------------------------------ */
+/* Film capacitor                                                      */
+/* ------------------------------------------------------------------ */
+
+const capFilm: PartDef = {
+  id: 'capacitor-film',
+  name: 'Film capacitor',
+  category: 'passive',
+  blurb: 'Boxed polyester, stable where a ceramic is not',
+  tags: ['capacitor', 'film', 'polyester', 'mkt', 'wima', 'mylar', 'audio', 'timing', 'box'],
+  doc: {
+    manufacturer: 'WIMA',
+    mpn: 'MKS2',
+    price: 0.35,
+    description:
+      'A boxed film capacitor. It holds its value across temperature and voltage where a class 2 ceramic loses half of itself, which is why timing and audio stages use these and decoupling does not.',
+  },
+  params: [
+    { key: 'value', label: 'Capacitance', type: 'number', unit: 'F', default: 100e-9, min: 1e-9, max: 10e-6, eng: true, group: 'Electrical' },
+    { key: 'vmax', label: 'Voltage rating', type: 'enum', default: '63', group: 'Electrical', options: [
+      { value: '63', label: '63 V' }, { value: '100', label: '100 V' }, { value: '250', label: '250 V' }, { value: '400', label: '400 V' },
+    ] },
+    { key: 'pitch', label: 'Lead pitch', type: 'enum', default: '5', group: 'Body', options: [
+      { value: '5', label: '5 mm' }, { value: '7.5', label: '7.5 mm' }, { value: '10', label: '10 mm' },
+    ] },
+  ],
+  solids: (p) => {
+    const pitch = parseFloat(str(p, 'pitch', '5')) || 5
+    // Bigger capacitance and higher voltage both mean more film to roll up.
+    const scale = Math.cbrt(num(p, 'value', 100e-9) / 100e-9) * Math.cbrt(parseFloat(str(p, 'vmax', '63')) / 63)
+    const w = pitch + 2.2
+    const h = Math.min(Math.max(7 * scale, 5), 24)
+    const t = Math.min(Math.max(3.2 * scale, 2.5), 11)
+    return [
+      {
+        kind: 'box', mat: { color: '#D8562A', rough: 0.5, clearcoat: 0.25, density: 1.4, name: 'Polyester film' },
+        size: [w, h, t], at: [0, 3 + h / 2, 0], bevel: 0.5,
+      },
+      ...radialLeads({ pitch, fromY: 3, leadR: 0.3 }),
+    ]
+  },
+  ports: (p) => {
+    const pitch = parseFloat(str(p, 'pitch', '5')) || 5
+    return [
+      { id: '1', label: 'A', kind: 'electrical', pos: [-pitch / 2, -3.4, 0], dir: [0, -1, 0], role: 'passive', solderable: true },
+      { id: '2', label: 'B', kind: 'electrical', pos: [pitch / 2, -3.4, 0], dir: [0, -1, 0], role: 'passive', solderable: true },
+    ]
+  },
+  electrical: {
+    devices: (p) => [
+      // Film capacitors have very little series resistance, which is half of
+      // why they are used where a pulse of current has to come out quickly.
+      { type: 'capacitor', c: num(p, 'value', 100e-9), a: '1', b: '2', esr: 0.02, vmax: parseFloat(str(p, 'vmax', '63')) },
+    ],
+    // The rating is a parameter, and limits here are one fixed object, so
+    // state the highest option; the readout carries the configured number.
+    limits: { vmax: 400 },
+  },
+  readouts: (p) => {
+    const c = num(p, 'value', 100e-9)
+    const v = parseFloat(str(p, 'vmax', '63'))
+    return [
+      { label: 'Capacitance', value: eng(c, 'F') },
+      { label: 'Tolerance', value: '±5 %, and it stays there' },
+      { label: 'Rating', value: `${v} V` },
+      { label: 'Energy at rating', value: eng(0.5 * c * v * v, 'J') },
+    ]
+  },
+}
+
+/* ------------------------------------------------------------------ */
+/* Trimmer potentiometer                                               */
+/* ------------------------------------------------------------------ */
+
+const trimpot: PartDef = {
+  id: 'trimpot',
+  name: 'Trimmer',
+  category: 'passive',
+  blurb: 'Set once with a screwdriver and left alone',
+  tags: ['trimpot', 'trimmer', 'preset', 'potentiometer', 'adjust', '3296', 'calibration'],
+  doc: {
+    mpn: '3296W',
+    price: 0.45,
+    description:
+      'A small preset. The multiturn type takes twenty five turns end to end, which is what makes setting a reference to three decimal places possible with a screwdriver.',
+  },
+  params: [
+    { key: 'value', label: 'Resistance', type: 'number', unit: 'Ω', default: 10000, min: 100, max: 1e6, eng: true, group: 'Electrical' },
+    { key: 'position', label: 'Wiper', type: 'number', unit: '%', default: 50, min: 0, max: 100, step: 1, group: 'Control' },
+    {
+      key: 'style', label: 'Style', type: 'enum', default: 'multiturn', group: 'Body',
+      options: [{ value: 'multiturn', label: 'Multiturn, 25 turns' }, { value: 'single', label: 'Single turn' }],
+    },
+  ],
+  solids: (p) => {
+    const multi = str(p, 'style', 'multiturn') === 'multiturn'
+    if (multi) {
+      // The rectangular 3296 body with the adjuster screw at one end.
+      return [
+        { kind: 'box', mat: { color: '#1F4FA8', rough: 0.5, density: 1.6 }, size: [9.5, 5, 4.8], at: [0, 3.5, 0], bevel: 0.3 },
+        { kind: 'box', mat: { color: '#E6E8EC', rough: 0.6, density: 1.4 }, size: [9.5, 0.6, 4.8], at: [0, 6.1, 0], noCollide: true },
+        { kind: 'cyl', mat: { color: '#B8BCC2', rough: 0.35, metal: 1, density: 7.8 }, r: 1.5, h: 1.2, at: [3.4, 6.3, 0], seg: 14 },
+        { kind: 'box', mat: { color: '#2A2E34', rough: 0.7, density: 0.01 }, size: [2.2, 0.4, 0.5], at: [3.4, 6.8, 0], noCollide: true },
+        ...[-2.54, 0, 2.54].map((x): Solid => ({ kind: 'box', mat: 'tin', size: [0.45, 4.4, 0.35], at: [x, 0.8, 2.54] })),
+      ]
+    }
+    return [
+      { kind: 'cyl', mat: { color: '#1F4FA8', rough: 0.5, density: 1.6 }, r: 3.4, h: 3.6, at: [0, 1.8, 0], seg: 20 },
+      { kind: 'cyl', mat: { color: '#E6E8EC', rough: 0.6, density: 1.4 }, r: 3.4, h: 0.5, at: [0, 3.85, 0], seg: 20, noCollide: true },
+      { kind: 'box', mat: { color: '#2A2E34', rough: 0.7, density: 0.01 }, size: [3.6, 0.4, 0.8], at: [0, 4.1, 0], noCollide: true },
+      ...[-2.54, 0, 2.54].map((x): Solid => ({ kind: 'box', mat: 'tin', size: [0.45, 4.4, 0.35], at: [x, -1.2, x === 0 ? -2.2 : 2.2] })),
+    ]
+  },
+  ports: (p) => {
+    const multi = str(p, 'style', 'multiturn') === 'multiturn'
+    const z = (x: number): number => (multi ? 2.54 : x === 0 ? -2.2 : 2.2)
+    return [
+      { id: 'a', label: 'End A', kind: 'electrical', pos: [-2.54, multi ? -1.4 : -3.4, z(-2.54)], dir: [0, -1, 0], role: 'passive', solderable: true },
+      { id: 'w', label: 'Wiper', kind: 'electrical', pos: [0, multi ? -1.4 : -3.4, z(0)], dir: [0, -1, 0], role: 'passive', solderable: true },
+      { id: 'b', label: 'End B', kind: 'electrical', pos: [2.54, multi ? -1.4 : -3.4, z(2.54)], dir: [0, -1, 0], role: 'passive', solderable: true },
+    ]
+  },
+  electrical: {
+    devices: (p) => {
+      const total = Math.max(num(p, 'value', 10000), 1)
+      const frac = Math.min(Math.max(num(p, 'position', 50) / 100, 0), 1)
+      // A wiper never quite reaches an end; leaving a little track either side
+      // keeps the matrix out of trouble as well as being true.
+      const lo = Math.max(total * frac, 0.5)
+      return [
+        { type: 'resistor', r: lo, a: 'a', b: 'w' },
+        { type: 'resistor', r: Math.max(total - lo, 0.5), a: 'w', b: 'b' },
+      ]
+    },
+  },
+  readouts: (p) => {
+    const total = num(p, 'value', 10000)
+    const frac = num(p, 'position', 50) / 100
+    return [
+      { label: 'Track', value: eng(total, 'Ω') },
+      { label: 'A to wiper', value: eng(total * frac, 'Ω') },
+      { label: 'Wiper to B', value: eng(total * (1 - frac), 'Ω') },
+      { label: 'Adjustment', value: str(p, 'style', 'multiturn') === 'multiturn' ? '25 turns end to end' : '270 degrees' },
+    ]
+  },
+}
+
+/* ------------------------------------------------------------------ */
+/* Quartz crystal                                                      */
+/* ------------------------------------------------------------------ */
+
+const crystal: PartDef = {
+  id: 'crystal-hc49',
+  name: 'Quartz crystal',
+  category: 'passive',
+  blurb: 'A slice of quartz that decides how fast everything runs',
+  tags: ['crystal', 'quartz', 'oscillator', 'hc-49', 'clock', 'timing', 'mhz', 'resonator'],
+  doc: {
+    mpn: 'HC-49/S',
+    price: 0.25,
+    description:
+      'A resonator in a metal can. It is a very high Q tuned circuit rather than a component with a value, and it needs two small capacitors to ground to run at the frequency written on it.',
+  },
+  params: [
+    {
+      key: 'freq', label: 'Frequency', type: 'enum', default: '16', group: 'Electrical',
+      options: ['4', '8', '11.0592', '12', '16', '20', '25'].map((f) => ({ value: f, label: `${f} MHz` })),
+    },
+    {
+      key: 'package', label: 'Package', type: 'enum', default: 'hc49s', group: 'Body',
+      options: [{ value: 'hc49s', label: 'HC-49/S, low profile' }, { value: 'hc49', label: 'HC-49, full height' }],
+    },
+    { key: 'loadCap', label: 'Load capacitance', type: 'number', unit: 'F', default: 18e-12, min: 6e-12, max: 33e-12, eng: true, group: 'Electrical' },
+  ],
+  solids: (p) => {
+    const tall = str(p, 'package', 'hc49s') === 'hc49'
+    const H = tall ? 13.5 : 3.7
+    const W = 11.05
+    const T = 4.65
+    return [
+      // The can is a flattened oval, so a stadium profile rather than a box.
+      {
+        kind: 'extrude', mat: { color: '#B8BEC6', rough: 0.34, metal: 1, density: 7.8 },
+        profile: { outline: roundRect(W, H, Math.min(H, T) / 2 - 0.2, 0, 0, 5) },
+        depth: T, rot: [0, 0, 0], at: [0, 2.5 + H / 2, 0],
+      },
+      // The crimped base the leads come out of.
+      { kind: 'box', mat: { color: '#8A8F98', rough: 0.5, metal: 1, density: 7.8 }, size: [W, 0.8, T], at: [0, 2.5, 0] },
+      ...radialLeads({ pitch: 4.88, fromY: 2.5, leadR: 0.25 }),
+    ]
+  },
+  ports: () => [
+    { id: '1', label: 'Pin 1', kind: 'electrical', pos: [-2.44, -3.4, 0], dir: [0, -1, 0], role: 'passive', solderable: true },
+    { id: '2', label: 'Pin 2', kind: 'electrical', pos: [2.44, -3.4, 0], dir: [0, -1, 0], role: 'passive', solderable: true },
+  ],
+  electrical: {
+    devices: (p) => {
+      // The Butterworth-Van Dyke model: a very high Q series arm in parallel
+      // with the holder capacitance. The numbers follow from the frequency,
+      // a motional capacitance of a few femtofarads and a Q of eighty thousand.
+      const f = (parseFloat(str(p, 'freq', '16')) || 16) * 1e6
+      const c1 = 5e-15
+      const l1 = 1 / (c1 * Math.pow(2 * Math.PI * f, 2))
+      const r1 = (2 * Math.PI * f * l1) / 80000
+      return [
+        { type: 'capacitor', c: c1, a: '1', b: '#m1' },
+        { type: 'inductor', l: l1, a: '#m1', b: '#m2', dcr: 0 },
+        { type: 'resistor', r: r1, a: '#m2', b: '2' },
+        { type: 'capacitor', c: 7e-12, a: '1', b: '2' },
+      ]
+    },
+  },
+  readouts: (p) => {
+    const f = parseFloat(str(p, 'freq', '16')) || 16
+    return [
+      { label: 'Frequency', value: `${f} MHz` },
+      { label: 'Tolerance', value: '±30 ppm, about ±' + (f * 30).toFixed(0) + ' Hz' },
+      { label: 'Load capacitance', value: eng(num(p, 'loadCap', 18e-12), 'F') },
+      { label: 'Needs', value: `Two ${eng(2 * (num(p, 'loadCap', 18e-12) - 5e-12), 'F')} caps to ground` },
+    ]
+  },
+}
+
+/* ------------------------------------------------------------------ */
+/* Fuse                                                                */
+/* ------------------------------------------------------------------ */
+
+const fuse: PartDef = {
+  id: 'fuse-glass',
+  name: 'Fuse',
+  category: 'passive',
+  blurb: 'The cheapest thing in the circuit, there to be the first to fail',
+  tags: ['fuse', 'protection', 'glass', '5x20', 'cartridge', 'overcurrent', 'safety'],
+  doc: {
+    mpn: '5x20 cartridge',
+    price: 0.2,
+    description:
+      'A 5 by 20 mm cartridge fuse in clips. A fast one protects semiconductors; a slow one survives the inrush of a motor or a transformer. Choosing wrongly means either nuisance blowing or no protection at all.',
+  },
+  params: [
+    {
+      key: 'rating', label: 'Rating', type: 'enum', default: '1', group: 'Electrical',
+      options: ['0.25', '0.5', '1', '2', '3', '5', '10'].map((a) => ({ value: a, label: `${a} A` })),
+    },
+    {
+      key: 'speed', label: 'Speed', type: 'enum', default: 'fast', group: 'Electrical',
+      options: [{ value: 'fast', label: 'Fast, F' }, { value: 'slow', label: 'Time delay, T' }],
+    },
+    { key: 'blown', label: 'Blown', type: 'bool', default: false, group: 'Control' },
+  ],
+  solids: (p) => {
+    const blown = bool(p, 'blown', false)
+    const L = 20
+    const R = 2.5
+    const out: Solid[] = [
+      // Glass body between two end caps.
+      {
+        kind: 'cyl', mat: { color: blown ? '#8A7A6E' : '#E8F4F8', rough: 0.06, opacity: blown ? 0.55 : 0.3, transmission: blown ? 0.4 : 0.9, density: 2.5 },
+        r: R, h: L - 8, rot: [0, 0, 90], at: [0, 4.5, 0], seg: 20,
+      },
+      ...([-1, 1] as const).map((s): Solid => ({
+        kind: 'cyl', mat: { color: '#C8CCD2', rough: 0.3, metal: 1, density: 7.8 }, r: R, h: 4,
+        rot: [0, 0, 90], at: [s * (L / 2 - 2), 4.5, 0] as Vec3, chamfer: 0.3,
+      })),
+      // The clips it sits in.
+      ...([-1, 1] as const).map((s): Solid => ({
+        kind: 'group', mat: 'tin', at: [s * (L / 2 - 2), 0, 0] as Vec3, children: [
+          { kind: 'cyl', mat: 'tin', r: R + 0.5, h: 3, rot: [0, 0, 90], at: [0, 4.5, 0], phi: [200, 140] },
+          { kind: 'box', mat: 'tin', size: [3, 5.5, 0.5], at: [0, 1.2, 0] },
+          { kind: 'box', mat: 'tin', size: [0.6, 4, 0.6], at: [0, -2.5, 0] },
+        ],
+      })),
+    ]
+    // The element: a straight wire, or two stubs and a gap.
+    if (blown) {
+      out.push({ kind: 'cyl', mat: 'tin', r: 0.2, h: 4, rot: [0, 0, 90], at: [-5, 4.5, 0], noCollide: true })
+      out.push({ kind: 'cyl', mat: { color: '#2A2018', rough: 0.9, density: 0.01 }, r: 0.35, h: 3, rot: [0, 0, 90], at: [5.5, 4.5, 0], noCollide: true })
+    } else {
+      out.push({ kind: 'cyl', mat: 'tin', r: 0.2, h: L - 8, rot: [0, 0, 90], at: [0, 4.5, 0], noCollide: true })
+    }
+    return out
+  },
+  ports: () => [
+    { id: 'a', label: 'A', kind: 'electrical', pos: [-8, -4.5, 0], dir: [0, -1, 0], role: 'passive', imax: 10, solderable: true },
+    { id: 'b', label: 'B', kind: 'electrical', pos: [8, -4.5, 0], dir: [0, -1, 0], role: 'passive', imax: 10, solderable: true },
+  ],
+  electrical: {
+    devices: (p) => {
+      const amps = parseFloat(str(p, 'rating', '1')) || 1
+      if (bool(p, 'blown', false)) return [{ type: 'resistor', r: 1e9, a: 'a', b: 'b' }]
+      // Cold resistance falls as the rating rises: a 1 A element is about
+      // 60 milliohms, a 10 A one a few.
+      return [{ type: 'resistor', r: Math.max(0.06 / amps, 0.002), a: 'a', b: 'b' }]
+    },
+    limits: { imax: 10 },
+  },
+  readouts: (p) => {
+    const amps = parseFloat(str(p, 'rating', '1')) || 1
+    const slow = str(p, 'speed', 'fast') === 'slow'
+    return [
+      { label: 'Rating', value: `${amps} A, ${slow ? 'time delay' : 'fast'}` },
+      { label: 'State', value: bool(p, 'blown', false) ? 'Blown, open circuit' : 'Intact' },
+      { label: 'Holds', value: `${(amps * 1.1).toFixed(2)} A indefinitely` },
+      { label: 'Clears', value: slow ? `${(amps * 2).toFixed(1)} A in about a second` : `${(amps * 2).toFixed(1)} A in a few milliseconds` },
+    ]
+  },
+}
+
+/* ------------------------------------------------------------------ */
+/* Ferrite bead                                                        */
+/* ------------------------------------------------------------------ */
+
+const ferriteBead: PartDef = {
+  id: 'ferrite-bead',
+  name: 'Ferrite bead',
+  category: 'passive',
+  blurb: 'A wire at DC and a resistor at radio frequency',
+  tags: ['ferrite', 'bead', 'emi', 'filter', 'noise', 'choke', 'rf', 'decoupling'],
+  doc: {
+    price: 0.1,
+    description:
+      'A lossy ferrite sleeve over a wire. It does almost nothing below a megahertz and turns into tens of ohms above it, which is how it takes noise off a supply without dropping any voltage.',
+  },
+  params: [
+    {
+      key: 'impedance', label: 'Impedance at 100 MHz', type: 'enum', default: '600', group: 'Electrical',
+      options: ['60', '120', '220', '600', '1000'].map((z) => ({ value: z, label: `${z} Ω` })),
+    },
+    { key: 'imax', label: 'Rated current', type: 'number', unit: 'A', default: 1, min: 0.1, max: 6, step: 0.1, group: 'Electrical' },
+    { key: 'pitch', label: 'Lead pitch', type: 'number', unit: 'mm', default: 10.16, min: 5, max: 20, step: 2.54, group: 'Body' },
+  ],
+  solids: (p) => {
+    const pitch = num(p, 'pitch', 10.16)
+    return [
+      {
+        kind: 'cyl', mat: { color: '#2E3238', rough: 0.78, density: 4.8, name: 'Ferrite' },
+        r: 1.7, h: 4.5, rot: [0, 0, 90], at: [0, 3.4, 0], seg: 16, chamfer: 0.3,
+      },
+      ...axialLeads({ pitch, bodyLen: 4.5, bodyY: 3.4, leadR: 0.3 }),
+    ]
+  },
+  ports: (p) => {
+    const pitch = num(p, 'pitch', 10.16)
+    return [
+      { id: '1', label: 'A', kind: 'electrical', pos: [-pitch / 2, -3.4, 0], dir: [0, -1, 0], role: 'passive', imax: num(p, 'imax', 1), solderable: true },
+      { id: '2', label: 'B', kind: 'electrical', pos: [pitch / 2, -3.4, 0], dir: [0, -1, 0], role: 'passive', imax: num(p, 'imax', 1), solderable: true },
+    ]
+  },
+  electrical: {
+    devices: (p) => {
+      const z = parseFloat(str(p, 'impedance', '600')) || 600
+      // Above resonance a bead is mostly loss, so the useful model is a small
+      // inductance in series with the DC resistance of the wire through it.
+      // L chosen so the reactance reaches the rated impedance near 100 MHz.
+      const l = z / (2 * Math.PI * 100e6)
+      return [
+        { type: 'resistor', r: 0.05, a: '1', b: '#m' },
+        { type: 'inductor', l, a: '#m', b: '2', dcr: 0 },
+      ]
+    },
+  },
+  readouts: (p) => {
+    const z = parseFloat(str(p, 'impedance', '600')) || 600
+    return [
+      { label: 'At 100 MHz', value: `${z} Ω` },
+      { label: 'At DC', value: '50 mΩ, a piece of wire' },
+      { label: 'Rated current', value: `${num(p, 'imax', 1)} A` },
+      { label: 'Equivalent', value: eng(z / (2 * Math.PI * 100e6), 'H') },
+    ]
+  },
+}
+
+registerParts([
+  resistorAxial, capCeramic, capElectrolytic, capFilm, led5mm, diode, inductor,
+  trimpot, crystal, fuse, ferriteBead,
+])

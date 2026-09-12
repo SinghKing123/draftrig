@@ -511,6 +511,30 @@ const BY_ID: Record<string, Glyph> = {
   'cpu-cooler': Fan,
   'case-fan': Fan,
   'pc-case': Chassis,
+
+  // Parts whose category glyph would be misleading. An RGB LED is in the
+  // display category beside the panels, and a trimmer is a passive beside the
+  // resistors; both read better as what they actually are.
+  'led-rgb': Led,
+  'led-bargraph': Led,
+  'led-strip-ws2812': Led,
+  'diode-schottky': Diode,
+  'transistor-darlington': Transistor,
+  optocoupler: Chip,
+  'crystal-hc49': Chip,
+  'capacitor-film': Capacitor,
+  trimpot: Pot,
+  'ferrite-bead': Inductor,
+  'encoder-rotary': Pot,
+  'keypad-matrix': Button,
+  'speaker-cone': Buzzer,
+  'motor-stepper': Motor,
+  'solenoid-linear': Motor,
+  'boost-converter': Regulator,
+  'header-female': Header,
+  'header-idc': Header,
+  'connector-jst-xh': Header,
+  'usb-c-breakout': Board,
 }
 
 /** Whatever the category is, when a part has no symbol of its own. */

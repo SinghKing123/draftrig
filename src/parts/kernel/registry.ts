@@ -173,11 +173,16 @@ export function searchParts(query: string): PartDef[] {
 
       // A value term is answered by the parameters a part accepts, not by its
       // prose. Rank by how well the magnitude suits the unit.
+      //
+      // Scored just below an exact tag, because a part that names a number in
+      // its tags is claiming to be that thing, where a resistor merely has a
+      // parameter the number could go in. "2020" is a profile and a plausible
+      // resistance, and the extrusion is what anyone typing it wants.
       const asValue = parseValueTerm(t)
       if (asValue && units.length) {
         const rank = asValue.units.findIndex((u) => units.some((p) => p.unit === u))
         if (rank >= 0) {
-          score += 240 - rank * 45
+          score += 225 - rank * 45
           continue
         }
       }
@@ -202,7 +207,11 @@ export function searchParts(query: string): PartDef[] {
       // An exact tag outranks a name prefix: tags are curated statements that
       // a part *is* the thing, whereas "Motor driver" merely starts with the
       // word someone typed when they were looking for a motor.
-      else if (tagRank >= 0) score += 260 + (inName ? 40 : 0) - Math.min(tagRank, 5) * 12
+      // Tag position dominates the name bonus, because it is the stronger
+      // statement. "Arduino Nano" has the word in its name and tags itself a
+      // nano first; the Uno-style board tags itself an arduino first. Asked
+      // for "arduino", the one that says it is one should come back.
+      else if (tagRank >= 0) score += 260 - Math.min(tagRank, 4) * 30 + (inName ? 10 : 0)
       else if (name.startsWith(t)) score += 220
       else if (mpn.includes(t)) score += 180 + (inName ? 40 : 0)
       else if (inName) score += 140

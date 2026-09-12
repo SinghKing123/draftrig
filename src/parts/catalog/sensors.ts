@@ -1,6 +1,6 @@
-import type { PartDef, Port, SilkItem, Solid, Vec3 } from '../kernel/types'
+import type { DeviceModel, PartDef, Port, SilkItem, Solid, Vec3 } from '../kernel/types'
 import { registerParts } from '../kernel/registry'
-import { num, PITCH as P, radialLeads, roundRect, str } from './_helpers'
+import { bool, circle, num, PITCH as P, radialLeads, roundRect, str } from './_helpers'
 
 /**
  * Sensors.
@@ -348,6 +348,510 @@ const ultrasonic: PartDef = {
   },
 }
 
-registerParts([ldr, thermistor, soilSensor, gasSensor, ultrasonic])
+/* ================================================================== */
+/* Passive infrared motion sensor                                      */
+/* ================================================================== */
 
-export const SENSOR_PARTS = [ldr, thermistor, soilSensor, gasSensor, ultrasonic]
+const pir: PartDef = {
+  id: 'sensor-pir',
+  name: 'PIR motion sensor',
+  category: 'sensor',
+  blurb: 'Fresnel dome over a pyroelectric element, one digital pin',
+  tags: ['pir', 'motion', 'sensor', 'hc-sr501', 'infrared', 'presence', 'alarm', 'occupancy'],
+  doc: {
+    mpn: 'HC-SR501',
+    price: 1.4,
+    description:
+      'The white dome module. It watches for a change in infrared across its field of view, so it sees someone walking past and not someone sitting still. The output is a plain digital level, held for as long as the on-board timer pot is set to.',
+  },
+  params: [
+    { key: 'motion', label: 'Motion detected', type: 'bool', default: false, group: 'Reading' },
+    { key: 'holdTime', label: 'Hold time', type: 'number', unit: 's', default: 5, min: 0.5, max: 300, step: 0.5, group: 'Module' },
+    {
+      key: 'trigger', label: 'Trigger mode', type: 'enum', default: 'repeat', group: 'Module',
+      help: 'Repeatable restarts the timer on every movement. Single fires once and then waits out the whole hold.',
+      options: [{ value: 'repeat', label: 'Repeatable (H)' }, { value: 'single', label: 'Single (L)' }],
+    },
+  ],
+  solids: () => {
+    const W = 32
+    const D = 24
+    const T = 1.6
+    return [
+      {
+        kind: 'extrude', mat: 'fr4-green',
+        profile: { outline: roundRect(W, D, 1.6, 0, 0, 4) },
+        depth: T, rot: [-90, 0, 0], at: [0, T / 2, 0],
+      },
+      // The Fresnel lens: a faceted white dome, which is the whole look of it.
+      {
+        kind: 'lathe', mat: { color: '#F4F5F7', rough: 0.42, opacity: 0.95, density: 1.05 }, seg: 24,
+        points: [[11.5, 0], [11.5, 2], [11.2, 6], [10, 10], [7.6, 13], [4, 15.2], [0, 15.8]],
+        at: [0, T, 0],
+      },
+      // The segment lines moulded into it.
+      ...Array.from({ length: 8 }, (_, i): Solid => ({
+        kind: 'box', mat: { color: '#D7D9DD', rough: 0.5, density: 0.01 },
+        size: [0.4, 0.4, 22], at: [0, T + 4, 0], rot: [0, (i * 180) / 8, 0], noCollide: true,
+      })),
+      // Two adjustment pots. They are on the back in life, and on top here so
+      // that they can be seen at all.
+      ...([-1, 1] as const).map((s): Solid => ({
+        kind: 'cyl', mat: { color: '#E8A33D', rough: 0.5, density: 1.6 }, r: 3.2, h: 2.4,
+        at: [s * 11, T + 1.2, -D / 2 + 4] as Vec3, seg: 14,
+      })),
+      ...modulePins(3, D / 2 - 3, 0, -P),
+    ]
+  },
+  ports: () =>
+    modulePorts([['gnd', 'GND', 'gnd'], ['out', 'OUT', 'io'], ['vcc', 'VCC (5 V)', 'power']], 24 / 2 - 3, -4, -P),
+  electrical: {
+    devices: () => [
+      { type: 'behavioral', evalId: 'digital-sensor', ref: 'gnd', pins: ['vcc', 'out'] },
+      // The on-board regulator idles at a couple of hundred microamps.
+      { type: 'resistor', r: 22000, a: 'vcc', b: 'gnd' },
+    ],
+    limits: { vmax: 20 },
+  },
+  readouts: (p) => [
+    { label: 'Output', value: bool(p, 'motion', false) ? 'High, 3.3 V' : 'Low' },
+    { label: 'Hold time', value: `${num(p, 'holdTime', 5)} s after the last movement` },
+    { label: 'Supply', value: '5 to 12 V, regulator on board' },
+    { label: 'Coverage', value: 'About 7 m, 110 degrees' },
+  ],
+}
+
+/* ================================================================== */
+/* Temperature and humidity                                            */
+/* ================================================================== */
+
+const DHT_MODELS: Record<string, { label: string; tMin: number; tMax: number; tAcc: number; hAcc: number; period: number; body: string }> = {
+  dht11: { label: 'DHT11, blue', tMin: 0, tMax: 50, tAcc: 2, hAcc: 5, period: 1, body: '#2E63C8' },
+  dht22: { label: 'DHT22, white', tMin: -40, tMax: 80, tAcc: 0.5, hAcc: 2, period: 2, body: '#E6E8EB' },
+}
+
+const dht: PartDef = {
+  id: 'sensor-dht',
+  name: 'Temperature and humidity sensor',
+  category: 'sensor',
+  blurb: 'DHT11 or DHT22 on a single open-drain data line',
+  tags: ['dht11', 'dht22', 'am2302', 'temperature', 'humidity', 'sensor', 'weather', 'climate'],
+  doc: {
+    mpn: 'DHT22',
+    price: 3,
+    description:
+      'The plastic-grilled humidity sensor. One wire carries both readings in a timed bit stream, with a pull-up holding it high between frames. The pin, the pull-up and the supply behave correctly here; the bit stream itself is not decoded, so the readings below are parameters rather than something a sketch reads off the line.',
+  },
+  params: [
+    { key: 'model', label: 'Model', type: 'enum', default: 'dht22', group: 'Sensor', options: Object.entries(DHT_MODELS).map(([value, v]) => ({ value, label: v.label })) },
+    { key: 'tempC', label: 'Temperature', type: 'number', unit: '°C', default: 21, min: -40, max: 80, step: 0.5, group: 'Reading' },
+    { key: 'humidity', label: 'Relative humidity', type: 'number', unit: '%', default: 45, min: 0, max: 100, step: 1, group: 'Reading' },
+    { key: 'pullup', label: 'Pull-up fitted', type: 'bool', default: true, group: 'Electrical', help: '10 k on the data line. Without one the line never returns high and no reading ever completes.' },
+  ],
+  solids: (p) => {
+    const m = DHT_MODELS[str(p, 'model', 'dht22')] ?? DHT_MODELS.dht22
+    const W = 15.1
+    const H = 25
+    const T = 7.7
+    const out: Solid[] = [
+      { kind: 'box', mat: { color: m.body, rough: 0.62, density: 1.3 }, size: [W, H, T], at: [0, H / 2, 0], bevel: 0.5 },
+    ]
+    // The grille: a run of slots across the front face.
+    for (let i = 0; i < 7; i++) {
+      out.push({
+        kind: 'box', mat: { color: '#0C0E11', rough: 0.9, density: 0.01 },
+        size: [W - 3, 1.2, 0.8], at: [0, H - 4 - i * 2.4, T / 2 - 0.2], noCollide: true,
+      })
+    }
+    const pins = str(p, 'model', 'dht22') === 'dht11' ? 3 : 4
+    for (let i = 0; i < pins; i++) {
+      out.push({ kind: 'box', mat: 'tin', size: [0.5, 8, 0.4], at: [(i - (pins - 1) / 2) * P, -4, 0] })
+    }
+    return out
+  },
+  ports: (p) => {
+    const pins = str(p, 'model', 'dht22') === 'dht11' ? 3 : 4
+    const names: [string, string, Port['role']][] =
+      pins === 3
+        ? [['vcc', 'VCC', 'power'], ['data', 'DATA', 'io'], ['gnd', 'GND', 'gnd']]
+        : [['vcc', 'VCC', 'power'], ['data', 'DATA', 'io'], ['nc', 'NC', 'passive'], ['gnd', 'GND', 'gnd']]
+    return names.map(([id, label, role], i) => ({
+      id, label, kind: 'electrical' as const,
+      pos: [(i - (pins - 1) / 2) * P, -8, 0] as Vec3, dir: [0, -1, 0] as Vec3,
+      role, imax: 0.01, solderable: true,
+    }))
+  },
+  electrical: {
+    devices: (p) => {
+      const out: DeviceModel[] = [{ type: 'resistor', r: 47000, a: 'vcc', b: 'gnd' }]
+      // The data line idles high through its pull-up. That resistor is the
+      // single most common omission with these, and without it the line sits
+      // wherever it was last left.
+      if (p.pullup !== false) out.push({ type: 'resistor', r: 10000, a: 'vcc', b: 'data' })
+      return out
+    },
+    limits: { vmax: 5.5 },
+  },
+  readouts: (p) => {
+    const m = DHT_MODELS[str(p, 'model', 'dht22')] ?? DHT_MODELS.dht22
+    return [
+      { label: 'Temperature', value: `${num(p, 'tempC', 21).toFixed(1)} °C, ±${m.tAcc}` },
+      { label: 'Humidity', value: `${Math.round(num(p, 'humidity', 45))} %, ±${m.hAcc}` },
+      { label: 'Range', value: `${m.tMin} to ${m.tMax} °C` },
+      { label: 'Reading rate', value: `One every ${m.period} s` },
+    ]
+  },
+}
+
+/* ================================================================== */
+/* Hall effect switch                                                  */
+/* ================================================================== */
+
+const hall: PartDef = {
+  id: 'sensor-hall',
+  name: 'Hall effect switch',
+  category: 'sensor',
+  blurb: 'Open-drain output that a magnet pulls low',
+  tags: ['hall', 'magnet', 'sensor', 'a3144', 'proximity', 'rpm', 'position'],
+  doc: {
+    mpn: 'A3144',
+    price: 0.35,
+    description:
+      'A hall switch in TO-92. The output is open drain, so it can only pull down and reads as nothing without a pull-up. A south pole against the marked face turns it on, and it stays on until the field falls well below the level that tripped it.',
+  },
+  params: [
+    { key: 'magnet', label: 'Magnet present', type: 'bool', default: false, group: 'Reading' },
+    { key: 'pullup', label: 'Pull-up fitted', type: 'bool', default: true, group: 'Electrical', help: '10 k to VCC. Open-drain outputs read as nothing at all without one.' },
+  ],
+  solids: () => {
+    const H = 4.2
+    const out: Solid[] = [
+      // TO-92 flat pack: a slab with a domed back.
+      { kind: 'box', mat: 'epoxy-black', size: [4.1, H, 1.6], at: [0, 3 + H / 2, 0], bevel: 0.2 },
+      { kind: 'cyl', mat: 'epoxy-black', r: 2.05, h: 1.6, rot: [90, 0, 0], at: [0, 3 + H, 0], phi: [0, 180] },
+    ]
+    for (const x of [-1.27, 0, 1.27]) {
+      out.push({ kind: 'box', mat: 'tin', size: [0.45, 6.4, 0.35], at: [x, -0.2, 0] })
+    }
+    return out
+  },
+  ports: () => [
+    { id: 'vcc', label: 'VCC', kind: 'electrical', pos: [-1.27, -3.4, 0], dir: [0, -1, 0], role: 'power', imax: 0.02, solderable: true },
+    { id: 'gnd', label: 'GND', kind: 'electrical', pos: [0, -3.4, 0], dir: [0, -1, 0], role: 'gnd', imax: 0.02, solderable: true },
+    { id: 'out', label: 'OUT (open drain)', kind: 'electrical', pos: [1.27, -3.4, 0], dir: [0, -1, 0], role: 'io', imax: 0.025, solderable: true },
+  ],
+  electrical: {
+    devices: (p) => {
+      const out: DeviceModel[] = [
+        { type: 'behavioral', evalId: 'digital-sensor', ref: 'gnd', pins: ['vcc', 'out'] },
+        { type: 'resistor', r: 470000, a: 'vcc', b: 'gnd' },
+      ]
+      if (p.pullup !== false) out.push({ type: 'resistor', r: 10000, a: 'vcc', b: 'out' })
+      return out
+    },
+    limits: { vmax: 24 },
+  },
+  readouts: (p) => [
+    { label: 'Output', value: bool(p, 'magnet', false) ? 'Pulled low' : 'Released' },
+    { label: 'Drive', value: 'Open drain, sinks 25 mA' },
+    { label: 'Pull-up', value: p.pullup !== false ? '10 k fitted' : 'None, the pin floats' },
+    { label: 'Supply', value: '4.5 to 24 V' },
+  ],
+}
+
+/* ================================================================== */
+/* Infrared obstacle sensor                                            */
+/* ================================================================== */
+
+const irObstacle: PartDef = {
+  id: 'sensor-ir-obstacle',
+  name: 'IR obstacle sensor',
+  category: 'sensor',
+  blurb: 'Emitter and detector pair with a comparator between them',
+  tags: ['ir', 'infrared', 'obstacle', 'sensor', 'proximity', 'line', 'follower', 'reflective', 'robot'],
+  doc: {
+    mpn: 'FC-51',
+    price: 0.8,
+    description:
+      'An infrared LED beside a detector. It reads reflected light rather than distance, so a black surface at two centimetres and a white one at ten can look the same to it, which is what the trimmer is for.',
+  },
+  params: [
+    { key: 'detected', label: 'Obstacle detected', type: 'bool', default: false, group: 'Reading' },
+    { key: 'range', label: 'Trip distance', type: 'number', unit: 'cm', default: 8, min: 2, max: 30, step: 1, group: 'Module' },
+  ],
+  solids: () => {
+    const W = 31
+    const D = 14
+    const T = 1.6
+    return [
+      {
+        kind: 'extrude', mat: 'fr4-blue',
+        profile: { outline: roundRect(W, D, 1.4, 0, 0, 3) },
+        depth: T, rot: [-90, 0, 0], at: [0, T / 2, 0],
+      },
+      {
+        kind: 'silk', size: [W, D], mat: 'silkscreen', rot: [-90, 0, 0], at: [0, T + 0.02, 0], px: 24, noCollide: true,
+        items: [
+          { t: 'text', at: [4, 3.4], text: 'IR', size: 2, bold: true },
+          { t: 'pads', at: [W / 2 - 6.5, -D / 2 + 3], n: 3, pitch: P, r: 1 },
+        ],
+      },
+      // The emitter is clear and the detector is dark. That is how you tell
+      // them apart on a real board too.
+      { kind: 'cyl', mat: { color: '#DCEAF0', rough: 0.1, opacity: 0.6, transmission: 0.7, density: 1.2 }, r: 2.5, h: 5, rot: [90, 0, 0], at: [-W / 2 + 6, T + 2.6, D / 2 + 2] },
+      { kind: 'cyl', mat: { color: '#1A1D22', rough: 0.35, density: 1.2 }, r: 2.5, h: 5, rot: [90, 0, 0], at: [-W / 2 + 12, T + 2.6, D / 2 + 2] },
+      { kind: 'box', mat: { color: '#1D4FD8', rough: 0.5, density: 1.6 }, size: [6.4, 4.8, 6.4], at: [1, T + 2.4, -1], bevel: 0.3 },
+      { kind: 'box', mat: 'epoxy-black', size: [5, 1.2, 4], at: [9, T + 0.6, 2], noCollide: true },
+      ...modulePins(3, -D / 2 + 3, 0, W / 2 - 6.5 - P),
+    ]
+  },
+  ports: () =>
+    modulePorts([['vcc', 'VCC', 'power'], ['gnd', 'GND', 'gnd'], ['out', 'OUT', 'io']], -14 / 2 + 3, -4, 31 / 2 - 6.5 - P),
+  electrical: {
+    devices: () => [
+      { type: 'behavioral', evalId: 'digital-sensor', ref: 'gnd', pins: ['vcc', 'out'] },
+      // The emitter LED is most of the 20 mA these draw.
+      { type: 'resistor', r: 250, a: 'vcc', b: 'gnd' },
+    ],
+    limits: { vmax: 5.5 },
+  },
+  readouts: (p) => [
+    { label: 'Output', value: bool(p, 'detected', false) ? 'Low, obstacle seen' : 'High, clear' },
+    { label: 'Logic', value: 'Active low, as the comparator sits' },
+    { label: 'Trip distance', value: `${Math.round(num(p, 'range', 8))} cm, set by the trimmer` },
+    { label: 'Current', value: 'About 20 mA, mostly the emitter' },
+  ],
+}
+
+/* ================================================================== */
+/* Tilt switch                                                         */
+/* ================================================================== */
+
+const tilt: PartDef = {
+  id: 'sensor-tilt',
+  name: 'Tilt switch',
+  category: 'sensor',
+  blurb: 'A ball in a can, closed one way up and open the other',
+  tags: ['tilt', 'vibration', 'sensor', 'sw-520d', 'orientation', 'shake', 'ball'],
+  doc: {
+    mpn: 'SW-520D',
+    price: 0.15,
+    description:
+      'Two contacts and a rolling ball. Upright it shorts them; past about thirty degrees it does not. It rattles on the way, so anything reading one wants debouncing.',
+  },
+  params: [
+    { key: 'tilted', label: 'Tilted past the angle', type: 'bool', default: false, group: 'Reading' },
+    { key: 'angle', label: 'Switching angle', type: 'number', unit: '°', default: 30, min: 10, max: 80, step: 5, group: 'Sensor' },
+  ],
+  solids: (p) => {
+    const H = 10.5
+    const lean = bool(p, 'tilted', false) ? num(p, 'angle', 30) : 0
+    return [
+      {
+        kind: 'group', mat: 'nickel', at: [0, 0, 0], rot: [0, 0, lean], children: [
+          { kind: 'cyl', mat: 'nickel', r: 2.15, h: H, at: [0, 3 + H / 2, 0], chamfer: 0.4 },
+          { kind: 'cyl', mat: { color: '#1A1C1E', rough: 0.6, density: 1.4 }, r: 2.3, h: 1.4, at: [0, 3.7, 0] },
+          ...[-1.27, 1.27].map((x): Solid => ({ kind: 'box', mat: 'tin', size: [0.45, 6, 0.35], at: [x, 0, 0] })),
+        ],
+      },
+    ]
+  },
+  ports: () => [
+    { id: 'a', label: 'Contact A', kind: 'electrical', pos: [-1.27, -3, 0], dir: [0, -1, 0], role: 'passive', imax: 0.02, solderable: true },
+    { id: 'b', label: 'Contact B', kind: 'electrical', pos: [1.27, -3, 0], dir: [0, -1, 0], role: 'passive', imax: 0.02, solderable: true },
+  ],
+  electrical: {
+    devices: (p) => [{ type: 'switch', a: 'a', b: 'b', closed: !bool(p, 'tilted', false), ron: 5, roff: 1e9 }],
+    limits: { imax: 0.02, vmax: 12 },
+  },
+  readouts: (p) => [
+    { label: 'Contacts', value: bool(p, 'tilted', false) ? 'Open' : 'Closed' },
+    { label: 'Switching angle', value: `About ${Math.round(num(p, 'angle', 30))}°` },
+    { label: 'Rating', value: '20 mA, 12 V' },
+  ],
+}
+
+/* ================================================================== */
+/* Current sensor                                                      */
+/* ================================================================== */
+
+const ACS_RANGES: Record<string, { label: string; amps: number; sens: number }> = {
+  '5': { label: 'ACS712, ±5 A', amps: 5, sens: 0.185 },
+  '20': { label: 'ACS712, ±20 A', amps: 20, sens: 0.1 },
+  '30': { label: 'ACS712, ±30 A', amps: 30, sens: 0.066 },
+}
+
+/** Conduction path through the package, ohms. 1.2 milliohms per the datasheet. */
+const ACS_SHUNT = 1.2e-3
+
+const currentSensor: PartDef = {
+  id: 'sensor-current',
+  name: 'Current sensor',
+  category: 'sensor',
+  blurb: 'Current goes through the chip, output sits at half the supply',
+  tags: ['current', 'sensor', 'acs712', 'hall', 'ammeter', 'measure', 'shunt'],
+  doc: {
+    mpn: 'ACS712',
+    price: 2.6,
+    description:
+      'The load current passes through the chip and a hall element reads the field around it. The output rests at half the supply with nothing flowing and moves either side of it with direction, which is why this reads alternating current where a plain shunt cannot.',
+  },
+  params: [
+    { key: 'range', label: 'Range', type: 'enum', default: '5', group: 'Sensor', options: Object.entries(ACS_RANGES).map(([value, v]) => ({ value, label: v.label })) },
+  ],
+  solids: () => {
+    const W = 31
+    const D = 13
+    const T = 1.6
+    return [
+      {
+        kind: 'extrude', mat: 'fr4-black',
+        profile: { outline: roundRect(W, D, 1.4, 0, 0, 3) },
+        depth: T, rot: [-90, 0, 0], at: [0, T / 2, 0],
+      },
+      {
+        kind: 'silk', size: [W, D], mat: 'silkscreen', rot: [-90, 0, 0], at: [0, T + 0.02, 0], px: 24, noCollide: true,
+        items: [
+          { t: 'text', at: [-6, -D / 2 + 2], text: 'ACS712', size: 1.8, bold: true },
+          { t: 'pads', at: [W / 2 - 6.5, D / 2 - 3], n: 3, pitch: P, r: 1 },
+        ],
+      },
+      { kind: 'box', mat: 'epoxy-black', size: [7, 1.2, 7], at: [-4, T + 0.6, 1], noCollide: true },
+      { kind: 'box', mat: { color: '#1E7A3C', rough: 0.55, density: 1.4 }, size: [10.2, 9.6, 9.4], at: [-W / 2 + 7, T + 4.8, 0], bevel: 0.4 },
+      ...([-1, 1] as const).map((s): Solid => ({
+        kind: 'cyl', mat: { color: '#B8BCC2', rough: 0.35, metal: 1, density: 7.8 }, r: 1.4, h: 1.2,
+        at: [-W / 2 + 7 + s * 2.54, T + 9.4, 0] as Vec3, chamfer: 0.15,
+      })),
+      ...modulePins(3, D / 2 - 3, 0, W / 2 - 6.5 - P),
+    ]
+  },
+  ports: () => {
+    const W = 31
+    const D = 13
+    const out: Port[] = modulePorts(
+      [['vcc', 'VCC (5 V)', 'power'], ['out', 'OUT', 'analog'], ['gnd', 'GND', 'gnd']],
+      D / 2 - 3, -4, W / 2 - 6.5 - P,
+    )
+    out.push(
+      { id: 'ip1', label: 'IP+', kind: 'electrical', pos: [-W / 2 + 7 - 2.54, 12, -5], dir: [0, 0, -1], role: 'passive', imax: 30 },
+      { id: 'ip2', label: 'IP−', kind: 'electrical', pos: [-W / 2 + 7 + 2.54, 12, -5], dir: [0, 0, -1], role: 'passive', imax: 30 },
+    )
+    return out
+  },
+  electrical: {
+    devices: () => [
+      // The conduction path really is a couple of milliohms of copper through
+      // the package, and the behaviour reads the drop across it to work out
+      // the current. Nothing is told to it.
+      { type: 'resistor', r: ACS_SHUNT, a: 'ip1', b: 'ip2' },
+      { type: 'behavioral', evalId: 'current-sensor', ref: 'gnd', pins: ['vcc', 'out', 'ip1', 'ip2'] },
+      { type: 'resistor', r: 500, a: 'vcc', b: 'gnd' },
+    ],
+    limits: { vmax: 5.5, imax: 30 },
+  },
+  readouts: (p) => {
+    const r = ACS_RANGES[str(p, 'range', '5')] ?? ACS_RANGES['5']
+    return [
+      { label: 'Range', value: `±${r.amps} A` },
+      { label: 'Sensitivity', value: `${(r.sens * 1000).toFixed(0)} mV per amp` },
+      { label: 'Zero current', value: 'Half the supply, 2.5 V at 5 V' },
+      { label: 'Insertion loss', value: `${(ACS_SHUNT * r.amps * r.amps).toFixed(2)} W at full scale` },
+    ]
+  },
+}
+
+/* ================================================================== */
+/* Inertial measurement unit                                           */
+/* ================================================================== */
+
+const imu: PartDef = {
+  id: 'sensor-imu',
+  name: 'Accelerometer and gyro',
+  category: 'sensor',
+  blurb: 'Six axes on an I2C breakout',
+  tags: ['imu', 'mpu6050', 'accelerometer', 'gyro', 'gyroscope', 'i2c', 'tilt', 'balance'],
+  doc: {
+    mpn: 'MPU-6050',
+    price: 2.1,
+    description:
+      'Three axes of acceleration and three of rotation on one chip, read over I2C. The address pin picks between 0x68 and 0x69, which is how two of them share one bus.',
+  },
+  params: [
+    {
+      key: 'address', label: 'I2C address', type: 'enum', default: '0x68', group: 'Electrical',
+      options: [{ value: '0x68', label: '0x68 (AD0 low)' }, { value: '0x69', label: '0x69 (AD0 high)' }],
+    },
+    { key: 'pitch', label: 'Pitch', type: 'number', unit: '°', default: 0, min: -90, max: 90, step: 1, group: 'Reading' },
+    { key: 'roll', label: 'Roll', type: 'number', unit: '°', default: 0, min: -90, max: 90, step: 1, group: 'Reading' },
+    {
+      key: 'accelRange', label: 'Accelerometer range', type: 'enum', default: '2', group: 'Sensor',
+      options: ['2', '4', '8', '16'].map((g) => ({ value: g, label: `±${g} g` })),
+    },
+  ],
+  solids: () => {
+    const W = 21.2
+    const D = 15.6
+    const T = 1.2
+    return [
+      {
+        kind: 'extrude', mat: 'fr4-blue',
+        profile: {
+          outline: roundRect(W, D, 1.2, 0, 0, 3),
+          holes: [circle(1.6, -W / 2 + 2.6, 0, 10), circle(1.6, W / 2 - 2.6, 0, 10)],
+        },
+        depth: T, rot: [-90, 0, 0], at: [0, T / 2, 0],
+      },
+      {
+        kind: 'silk', size: [W, D], mat: 'silkscreen', rot: [-90, 0, 0], at: [0, T + 0.02, 0], px: 28, noCollide: true,
+        items: [
+          { t: 'text', at: [0, -D / 2 + 2], text: 'GY-521', size: 1.6, bold: true },
+          { t: 'pads', at: [-3 * P, D / 2 - 2.2], n: 8, pitch: P, r: 0.85 },
+        ],
+      },
+      { kind: 'box', mat: 'epoxy-black', size: [4, 0.9, 4], at: [0, T + 0.45, 1.4], noCollide: true },
+      { kind: 'box', mat: { color: '#23262B', rough: 0.6, density: 3 }, size: [1.6, 0.5, 0.8], at: [5, T + 0.25, -3], noCollide: true },
+      ...modulePins(8, D / 2 - 2.2, 0, -3 * P),
+    ]
+  },
+  ports: () => {
+    const W = 21.2
+    const D = 15.6
+    const names: [string, string, Port['role']][] = [
+      ['vcc', 'VCC', 'power'], ['gnd', 'GND', 'gnd'], ['scl', 'SCL', 'io'], ['sda', 'SDA', 'io'],
+      ['xda', 'XDA', 'io'], ['xcl', 'XCL', 'io'], ['ad0', 'AD0', 'io'], ['int', 'INT', 'io'],
+    ]
+    const out: Port[] = modulePorts(names, D / 2 - 2.2, -4, -3 * P)
+    out.push(
+      { id: 'mount0', label: 'M3 mount', kind: 'mechanical', pos: [-W / 2 + 2.6, 1.2, 0], dir: [0, 1, 0], mate: { type: 'hole', size: 3.2 }, groupId: 'mounts' },
+      { id: 'mount1', label: 'M3 mount', kind: 'mechanical', pos: [W / 2 - 2.6, 1.2, 0], dir: [0, 1, 0], mate: { type: 'hole', size: 3.2 }, groupId: 'mounts' },
+    )
+    return out
+  },
+  electrical: {
+    devices: () => [
+      // The module carries its own regulator and the two bus pull-ups, which
+      // is why one of these works straight off a 5 V pin.
+      { type: 'resistor', r: 1500, a: 'vcc', b: 'gnd' },
+      { type: 'resistor', r: 4700, a: 'vcc', b: 'sda' },
+      { type: 'resistor', r: 4700, a: 'vcc', b: 'scl' },
+      { type: 'resistor', r: 100000, a: 'ad0', b: 'gnd' },
+    ],
+    limits: { vmax: 5.5 },
+  },
+  readouts: (p) => [
+    { label: 'Axes', value: '3 acceleration, 3 rotation' },
+    { label: 'Address', value: `${str(p, 'address', '0x68')}, set by AD0` },
+    { label: 'Accelerometer', value: `±${str(p, 'accelRange', '2')} g` },
+    { label: 'Attitude', value: `${num(p, 'pitch', 0).toFixed(0)}° pitch, ${num(p, 'roll', 0).toFixed(0)}° roll` },
+  ],
+}
+
+registerParts([
+  ldr, thermistor, soilSensor, gasSensor, ultrasonic,
+  pir, dht, hall, irObstacle, tilt, currentSensor, imu,
+])
+
+export const SENSOR_PARTS = [
+  ldr, thermistor, soilSensor, gasSensor, ultrasonic,
+  pir, dht, hall, irObstacle, tilt, currentSensor, imu,
+]

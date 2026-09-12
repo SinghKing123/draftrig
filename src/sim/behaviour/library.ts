@@ -463,6 +463,66 @@ registerBehaviour('analog-sensor', (c: BehaviourContext) => {
   c.drive('out', vcc * frac, 900)
 })
 
+/**
+ * A sensor whose output is a level rather than a reading.
+ *
+ * PIR modules, hall switches and obstacle detectors all come down to the same
+ * thing: a comparator with a pin on the end of it. What differs is which way
+ * round the idle state is and whether the output can pull up as well as down.
+ * An open-drain part with no pull-up fitted reads as nothing at all, which is
+ * the single most common reason one of these appears not to work.
+ */
+registerBehaviour('digital-sensor', (c: BehaviourContext) => {
+  c.hiZ('vcc')
+  c.hiZ('gnd')
+  const vcc = c.read('vcc')
+  if (vcc < 2) {
+    c.hiZ('out')
+    return
+  }
+
+  // Each part names its own trigger, because "motion" and "magnet present"
+  // are not the same word even though they end at the same pin.
+  const p = c.params
+  const active =
+    p.motion === true || p.magnet === true || p.detected === true || p.triggered === true
+
+  // A hall switch and an obstacle detector both idle high and pull down; a
+  // PIR idles low and drives high.
+  const openDrain = p.magnet !== undefined || p.detected !== undefined
+  if (openDrain) {
+    if (active) c.drive('out', 0, 12)
+    else c.hiZ('out')
+  } else {
+    c.drive('out', active ? Math.min(vcc, 3.3) : 0, 300)
+  }
+})
+
+/**
+ * A hall current sensor.
+ *
+ * The load passes through a couple of milliohms of copper inside the package,
+ * declared as an ordinary resistor by the part. This reads the drop across it
+ * and works the current out, so what comes off the output pin is a measurement
+ * of the circuit rather than a number handed over from a parameter.
+ */
+registerBehaviour('current-sensor', (c: BehaviourContext) => {
+  c.hiZ('vcc')
+  c.hiZ('gnd')
+  c.hiZ('ip1')
+  c.hiZ('ip2')
+  const vcc = c.read('vcc')
+  if (vcc < 3) {
+    c.hiZ('out')
+    return
+  }
+  const sens = { '5': 0.185, '20': 0.1, '30': 0.066 }[str(c.params, 'range', '5')] ?? 0.185
+  const amps = (c.read('ip1') - c.read('ip2')) / 1.2e-3
+  // Rails at both ends, as the real amplifier does.
+  const v = Math.min(Math.max(vcc / 2 + sens * amps, 0.05), vcc - 0.05)
+  c.drive('out', v, 1000)
+})
+
 /* ================================================================== */
 /* Ultrasonic range finder                                             */
 /* ================================================================== */

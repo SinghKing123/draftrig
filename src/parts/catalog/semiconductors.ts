@@ -1,8 +1,8 @@
-import type { PartDef, Solid, Vec2 } from '../kernel/types'
+import type { DeviceModel, PartDef, Port, Solid, Vec2, Vec3 } from '../kernel/types'
 import { registerParts } from '../kernel/registry'
 import { eng } from '../kernel/units'
 import { REGULATORS } from '../kernel/deviceData'
-import { axialLeads, circle, num, pinPort, str } from './_helpers'
+import { axialLeads, circle, dipPorts, dipSolids, num, pinPort, str } from './_helpers'
 
 /* ------------------------------------------------------------------ */
 /* Package builders                                                    */
@@ -350,4 +350,325 @@ const bridge: PartDef = {
   ],
 }
 
-registerParts([transistor, mosfet, regulator, zener, bridge])
+/* ================================================================== */
+/* Schottky diode                                                      */
+/* ================================================================== */
+
+const SCHOTTKYS: Record<string, { label: string; vf: number; imax: number; vr: number; leak: number }> = {
+  '1N5817': { label: '1N5817, 1 A, 20 V', vf: 0.32, imax: 1, vr: 20, leak: 1e-5 },
+  '1N5819': { label: '1N5819, 1 A, 40 V', vf: 0.38, imax: 1, vr: 40, leak: 1e-5 },
+  '1N5822': { label: '1N5822, 3 A, 40 V', vf: 0.42, imax: 3, vr: 40, leak: 2e-5 },
+  SB560: { label: 'SB560, 5 A, 60 V', vf: 0.55, imax: 5, vr: 60, leak: 3e-5 },
+  BAT85: { label: 'BAT85, 200 mA, 30 V', vf: 0.28, imax: 0.2, vr: 30, leak: 2e-7 },
+}
+
+const schottky: PartDef = {
+  id: 'diode-schottky',
+  name: 'Schottky diode',
+  category: 'semiconductor',
+  blurb: 'Drops a third of a volt and recovers instantly',
+  tags: ['schottky', 'diode', '1n5819', 'rectifier', 'reverse polarity', 'boost', 'freewheel', 'low drop'],
+  doc: {
+    manufacturer: 'ON Semiconductor',
+    mpn: '1N5819',
+    price: 0.12,
+    description:
+      'A metal to silicon junction rather than a PN one. That buys a forward drop of about a third of a volt and no reverse recovery time at all, which is why every switching converter has one, and costs leakage that a plain diode does not have.',
+  },
+  params: [
+    { key: 'model', label: 'Device', type: 'enum', default: '1N5819', group: 'Electrical', options: Object.entries(SCHOTTKYS).map(([value, v]) => ({ value, label: v.label })) },
+    { key: 'pitch', label: 'Lead pitch', type: 'number', unit: 'mm', default: 12.7, min: 7.62, max: 30, step: 2.54, group: 'Body' },
+  ],
+  solids: (p) => {
+    const s = SCHOTTKYS[str(p, 'model', '1N5819')] ?? SCHOTTKYS['1N5819']
+    // Bigger current means a bigger package: DO-35 up to DO-201.
+    const big = s.imax >= 3
+    const small = s.imax <= 0.2
+    const len = small ? 4 : big ? 9.5 : 5.2
+    const r = small ? 1 : big ? 2.7 : 1.35
+    const body = small
+      ? { color: '#DCE4E8', rough: 0.1, opacity: 0.5, transmission: 0.7, density: 2.5 }
+      : { color: '#1A1D21', rough: 0.42, clearcoat: 0.3, density: 2.2 }
+    return [
+      { kind: 'cyl', mat: body, r, h: len, rot: [0, 0, 90], at: [0, r + 1.6, 0], seg: 18, chamfer: 0.2 },
+      // Cathode band, at the negative end.
+      {
+        kind: 'cyl', mat: { color: '#E8EAEC', rough: 0.55, density: 0.01 }, r: r + 0.03, h: len * 0.18,
+        rot: [0, 0, 90], at: [len * 0.32, r + 1.6, 0], seg: 18, noCollide: true,
+      },
+      ...axialLeads({ pitch: num(p, 'pitch', 12.7), bodyLen: len, bodyY: r + 1.6, leadR: big ? 0.5 : 0.28 }),
+    ]
+  },
+  ports: (p) => {
+    const pitch = num(p, 'pitch', 12.7)
+    return [
+      { id: 'a', label: 'Anode', kind: 'electrical', pos: [-pitch / 2, -3.4, 0], dir: [0, -1, 0], role: 'passive', solderable: true },
+      { id: 'c', label: 'Cathode (band)', kind: 'electrical', pos: [pitch / 2, -3.4, 0], dir: [0, -1, 0], role: 'passive', solderable: true },
+    ]
+  },
+  electrical: {
+    devices: (p) => {
+      const s = SCHOTTKYS[str(p, 'model', '1N5819')] ?? SCHOTTKYS['1N5819']
+      // A Schottky has a much larger saturation current and a lower ideality
+      // factor than a PN diode, which is what produces the low forward drop.
+      return [{ type: 'diode', a: 'a', c: 'c', is: s.leak, n: 1.05, vf: s.vf, rs: 0.05 / s.imax }]
+    },
+    limits: { vmax: 60, imax: 5 },
+  },
+  readouts: (p) => {
+    const s = SCHOTTKYS[str(p, 'model', '1N5819')] ?? SCHOTTKYS['1N5819']
+    return [
+      { label: 'Forward drop', value: `${s.vf.toFixed(2)} V at ${s.imax} A` },
+      { label: 'Reverse voltage', value: `${s.vr} V` },
+      { label: 'Loss at rating', value: `${(s.vf * s.imax).toFixed(2)} W` },
+      { label: 'Reverse recovery', value: 'None, this is a majority carrier device' },
+    ]
+  },
+}
+
+/* ================================================================== */
+/* RGB LED                                                             */
+/* ================================================================== */
+
+const rgbLed: PartDef = {
+  id: 'led-rgb',
+  name: 'RGB LED',
+  category: 'display',
+  blurb: 'Three dice in one lens, sharing a pin',
+  tags: ['rgb', 'led', 'colour', 'color', 'tricolour', 'common anode', 'common cathode', 'indicator'],
+  doc: {
+    price: 0.2,
+    description:
+      'Three LEDs behind one lens. They share one pin, so the common type decides which way the drive has to go, and the three need different resistors because red runs at about two volts where green and blue need three.',
+  },
+  params: [
+    {
+      key: 'common', label: 'Common pin', type: 'enum', default: 'cathode', group: 'Electrical',
+      options: [{ value: 'cathode', label: 'Common cathode' }, { value: 'anode', label: 'Common anode' }],
+    },
+    { key: 'diffused', label: 'Diffused lens', type: 'bool', default: true, group: 'Optical', help: 'A clear lens shows three separate dice. A diffused one mixes them.' },
+    { key: 'lead', label: 'Lead length', type: 'number', unit: 'mm', default: 5, min: 2, max: 30, step: 0.5, group: 'Body' },
+  ],
+  solids: (p) => {
+    const diffused = p.diffused !== false
+    const lens = {
+      color: diffused ? '#E4E9EC' : '#DCEAF0',
+      rough: diffused ? 0.45 : 0.06,
+      opacity: diffused ? 0.92 : 0.5,
+      transmission: diffused ? 0.2 : 0.8,
+      clearcoat: 1,
+      density: 1.2,
+    }
+    const R = 2.5
+    const pts: [number, number][] = [[0, 1.0], [R, 1.0], [R, 5.6]]
+    for (let i = 1; i <= 10; i++) {
+      const a = (i / 10) * (Math.PI / 2)
+      pts.push([R * Math.cos(a), 5.6 + R * Math.sin(a)])
+    }
+    const leadLen = num(p, 'lead', 5)
+    const out: Solid[] = [
+      { kind: 'cyl', mat: lens, r: 2.9, h: 1.0, at: [0, 0.5, 0], seg: 22 },
+      { kind: 'lathe', mat: lens, points: pts, tag: 'lens' },
+    ]
+    // Three dice on their own cups, visible through the epoxy.
+    const tint = ['#B31217', '#0E7A34', '#14357A']
+    tint.forEach((c, i) => {
+      const x = (i - 1) * 1.1
+      out.push({ kind: 'cyl', mat: { color: c, rough: 0.4, density: 5 }, r: 0.6, h: 0.35, at: [x, 3.2, 0], seg: 10, noCollide: true })
+    })
+    out.push({ kind: 'cyl', mat: 'steel', r: 1.5, h: 0.9, r2: 1.2, at: [0, 3.0, 0], tag: 'cup', noCollide: true })
+    // Four leads. The common one is the long one, second from an end.
+    for (let i = 0; i < 4; i++) {
+      const x = (i - 1.5) * 1.27
+      const long = i === 1
+      out.push({
+        kind: 'box', mat: 'tin', size: [0.5, leadLen + (long ? 1.2 : 0), 0.5],
+        at: [x, -(leadLen + (long ? 1.2 : 0)) / 2 + 0.4, 0],
+      })
+    }
+    return out
+  },
+  ports: (p) => {
+    const anode = str(p, 'common', 'cathode') === 'anode'
+    const names: [string, string][] = [
+      ['r', 'Red'],
+      ['com', anode ? 'Common anode (+)' : 'Common cathode (−)'],
+      ['g', 'Green'],
+      ['b', 'Blue'],
+    ]
+    return names.map(([id, label], i) => ({
+      id, label, kind: 'electrical' as const,
+      pos: [(i - 1.5) * 1.27, -2.4, 0] as Vec3, dir: [0, -1, 0] as Vec3,
+      role: 'passive' as const, imax: 0.02, solderable: true,
+    }))
+  },
+  electrical: {
+    devices: (p) => {
+      const anode = str(p, 'common', 'cathode') === 'anode'
+      const dice: [string, number][] = [['r', 1.95], ['g', 3.1], ['b', 3.2]]
+      return dice.map(([pin, vf]) =>
+        anode
+          ? { type: 'diode' as const, a: 'com', c: pin, vf, n: 2.2, rs: 12, luminous: true }
+          : { type: 'diode' as const, a: pin, c: 'com', vf, n: 2.2, rs: 12, luminous: true },
+      )
+    },
+    limits: { imax: 0.02 },
+  },
+  readouts: (p) => [
+    { label: 'Common', value: str(p, 'common', 'cathode') === 'anode' ? 'Anode, drive the colours low' : 'Cathode, drive the colours high' },
+    { label: 'Forward voltage', value: '1.95 V red, 3.1 V green, 3.2 V blue' },
+    { label: 'R for 5 V', value: '150 Ω red, 100 Ω green and blue' },
+    { label: 'Peak current', value: '20 mA per die, 60 mA total' },
+  ],
+}
+
+/* ================================================================== */
+/* Optocoupler                                                         */
+/* ================================================================== */
+
+const OPTOS: Record<string, { label: string; pins: number; ctr: number; viso: number; vf: number }> = {
+  PC817: { label: 'PC817, transistor, DIP-4', pins: 4, ctr: 1.0, viso: 5000, vf: 1.2 },
+  '4N35': { label: '4N35, transistor, DIP-6', pins: 6, ctr: 1.0, viso: 5300, vf: 1.25 },
+  '6N137': { label: '6N137, logic output, DIP-8', pins: 8, ctr: 3.0, viso: 3750, vf: 1.4 },
+}
+
+const optocoupler: PartDef = {
+  id: 'optocoupler',
+  name: 'Optocoupler',
+  category: 'semiconductor',
+  blurb: 'An LED shining at a transistor, with nothing else between them',
+  tags: ['optocoupler', 'optoisolator', 'pc817', '4n35', 'isolation', 'isolator', 'mains', 'level shift'],
+  doc: {
+    manufacturer: 'Sharp',
+    mpn: 'PC817',
+    price: 0.25,
+    description:
+      'An LED facing a phototransistor inside one package. The only thing crossing between the two sides is light, so several thousand volts can sit between them. The output is a transistor, so it needs a load resistor to do anything.',
+  },
+  params: [
+    { key: 'model', label: 'Device', type: 'enum', default: 'PC817', group: 'Electrical', options: Object.entries(OPTOS).map(([value, v]) => ({ value, label: v.label })) },
+    { key: 'ctr', label: 'Current transfer ratio', type: 'number', unit: '%', default: 100, min: 20, max: 400, step: 10, group: 'Electrical', help: 'How much collector current one milliamp through the LED produces. It varies enormously part to part and falls with age.' },
+  ],
+  solids: (p) => {
+    const o = OPTOS[str(p, 'model', 'PC817')] ?? OPTOS.PC817
+    return dipSolids(o.pins, { rowSpacing: 7.62, bodyColor: { color: '#1A1C20', rough: 0.55, clearcoat: 0.15, density: 1.9 } })
+  },
+  ports: (p) => {
+    const o = OPTOS[str(p, 'model', 'PC817')] ?? OPTOS.PC817
+    // Pin 1 is the LED anode on every one of these.
+    const names =
+      o.pins === 4 ? ['a', 'c', 'e', 'col']
+      : o.pins === 6 ? ['a', 'c', 'nc', 'e', 'col', 'base']
+      : ['nc', 'a', 'c', 'nc2', 'gnd', 'col', 'e', 'vcc']
+    return dipPorts(o.pins, names, { rowSpacing: 7.62 })
+  },
+  electrical: {
+    devices: (p) => {
+      const o = OPTOS[str(p, 'model', 'PC817')] ?? OPTOS.PC817
+      const ctr = Math.max(num(p, 'ctr', 100), 1) / 100
+      const out: DeviceModel[] = [
+        { type: 'diode', a: 'a', c: 'c', vf: o.vf, n: 1.9, rs: 4 },
+      ]
+      // The output side is a transistor whose base current is the light. A
+      // gain of ctr times the LED current is exactly what the datasheet's
+      // current transfer ratio means, so the base is driven from the LED path.
+      out.push({ type: 'bjt', c: 'col', b: '#opt', e: 'e', bf: 220 * ctr })
+      // Light coupling: a small current mirror from the LED string into the
+      // base node, modelled as a large resistance so the base sits where the
+      // LED current puts it.
+      out.push({ type: 'resistor', r: 220000, a: 'c', b: '#opt' })
+      out.push({ type: 'resistor', r: 2.2e6, a: '#opt', b: 'e' })
+      return out
+    },
+    limits: { vmax: 70, imax: 0.05 },
+  },
+  readouts: (p) => {
+    const o = OPTOS[str(p, 'model', 'PC817')] ?? OPTOS.PC817
+    const ctr = num(p, 'ctr', 100)
+    return [
+      { label: 'Isolation', value: `${o.viso} V rms` },
+      { label: 'Transfer ratio', value: `${ctr} %` },
+      { label: 'LED', value: `${o.vf.toFixed(2)} V, 10 to 20 mA` },
+      { label: 'Output at 10 mA in', value: `${((ctr / 100) * 10).toFixed(0)} mA available` },
+    ]
+  },
+}
+
+/* ================================================================== */
+/* Darlington transistor                                               */
+/* ================================================================== */
+
+const darlington: PartDef = {
+  id: 'transistor-darlington',
+  name: 'Darlington transistor',
+  category: 'semiconductor',
+  blurb: 'Two transistors in one package, enormous gain, a volt of drop',
+  tags: ['darlington', 'tip120', 'transistor', 'power', 'to-220', 'relay', 'solenoid', 'motor', 'driver'],
+  doc: {
+    manufacturer: 'ON Semiconductor',
+    mpn: 'TIP120',
+    price: 0.6,
+    description:
+      'Two transistors stacked so the first drives the second. Gain of a thousand, so a logic pin can switch five amps, at the cost of about a volt across it when it is on, which at five amps is five watts of heat and the reason these need a heatsink.',
+  },
+  params: [
+    {
+      key: 'model', label: 'Device', type: 'enum', default: 'TIP120', group: 'Electrical',
+      options: [
+        { value: 'TIP120', label: 'TIP120, NPN, 5 A, 60 V' },
+        { value: 'TIP122', label: 'TIP122, NPN, 5 A, 100 V' },
+        { value: 'TIP125', label: 'TIP125, PNP, 5 A, 60 V' },
+        { value: 'BD679', label: 'BD679, NPN, 4 A, 80 V' },
+      ],
+    },
+    { key: 'heatsink', label: 'Heatsink fitted', type: 'bool', default: false, group: 'Thermal' },
+  ],
+  solids: (p) => {
+    const out = to220(3.4, 'epoxy-black')
+    if (p.heatsink === true) {
+      // A small clip-on finned sink, as these are usually given.
+      out.push({ kind: 'box', mat: 'alu-anod-black', size: [12, 20, 2], at: [0, 15, -4] })
+      for (let i = 0; i < 5; i++) {
+        out.push({ kind: 'box', mat: 'alu-anod-black', size: [1.6, 20, 12], at: [-4.8 + i * 2.4, 15, -10] })
+      }
+    }
+    return out
+  },
+  ports: (p) => {
+    const pnp = str(p, 'model', 'TIP120').startsWith('TIP125')
+    const out: Port[] = [
+      { id: 'b', label: 'Base', kind: 'electrical', pos: [-2.54, -3.6, 0.4], dir: [0, -1, 0], role: 'io', imax: 0.12, solderable: true },
+      { id: 'c', label: pnp ? 'Collector (tab)' : 'Collector (tab)', kind: 'electrical', pos: [0, -3.6, 0.4], dir: [0, -1, 0], role: 'passive', imax: 5, solderable: true },
+      { id: 'e', label: 'Emitter', kind: 'electrical', pos: [2.54, -3.6, 0.4], dir: [0, -1, 0], role: 'passive', imax: 5, solderable: true },
+    ]
+    out.push({
+      id: 'tab', label: 'M3 mounting hole', kind: 'mechanical',
+      pos: [0, 3.4 + 9.2 + 3.4, 0], dir: [0, 0, -1], mate: { type: 'hole', size: 3.5 },
+    })
+    return out
+  },
+  electrical: {
+    devices: (p) => {
+      const pnp = str(p, 'model', 'TIP120') === 'TIP125'
+      // A darlington is modelled as one device with the pair's gain and the
+      // two base-emitter drops that give it its unusually high saturation.
+      return [{ type: 'bjt', c: 'c', b: 'b', e: 'e', pnp, bf: 1000, is: 3e-13 }]
+    },
+    limits: { imax: 5, vmax: 100, pmax: 65 },
+  },
+  readouts: (p) => {
+    const model = str(p, 'model', 'TIP120')
+    const sink = p.heatsink === true
+    return [
+      { label: 'Gain', value: '1000 minimum' },
+      { label: 'Saturation', value: 'About 1.0 V at 3 A' },
+      { label: 'Heat at 3 A', value: '3 W' },
+      { label: 'Without a sink', value: sink ? `Sink fitted, ${model} good to about 25 W` : 'Derate to 2 W, the tab is the only path' },
+    ]
+  },
+}
+
+registerParts([
+  transistor, mosfet, regulator, zener, bridge,
+  schottky, rgbLed, optocoupler, darlington,
+])
