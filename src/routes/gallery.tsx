@@ -187,3 +187,118 @@ export function BuildCarousel() {
     </div>
   )
 }
+
+/* ------------------------------------------------------------------ */
+/* Turntable                                                           */
+/* ------------------------------------------------------------------ */
+
+const SPIN_FRAMES = 24
+const spinSrc = (n: number): string => `/spin/spin-cnc-${String(n).padStart(2, '0')}.jpg`
+
+/**
+ * A build you can spin.
+ *
+ * Twenty four photographs taken all the way round, not a live scene. A live
+ * one costs three.js, the part kernel and the whole catalog on a page most
+ * people scroll past; this is a megabyte of frames that nobody downloads
+ * until they are about to see them, and it is sharper.
+ *
+ * It turns on its own until someone touches it, and then it does what they
+ * say. A thing that keeps moving under your hand is annoying.
+ */
+export function Turntable() {
+  const [frame, setFrame] = useState(0)
+  const [near, setNear] = useState(false)
+  const [ready, setReady] = useState(false)
+  const [grabbed, setGrabbed] = useState(false)
+  const [touched, setTouched] = useState(false)
+  const box = useRef<HTMLDivElement | null>(null)
+  const drag = useRef<{ x: number; from: number } | null>(null)
+  const reduced = useReducedMotion()
+
+  // Do not fetch a megabyte of frames for someone who never scrolls this far.
+  useEffect(() => {
+    const el = box.current
+    if (!el || typeof IntersectionObserver === 'undefined') {
+      setNear(true)
+      return
+    }
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (!e.isIntersecting) return
+        setNear(true)
+        io.disconnect()
+      },
+      { rootMargin: '400px' },
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
+
+  useEffect(() => {
+    if (!near) return
+    let live = true
+    let left = SPIN_FRAMES
+    // Held in a local array so the browser keeps them decoded rather than
+    // collecting them between frames and refetching on every swap.
+    const held: HTMLImageElement[] = []
+    for (let i = 0; i < SPIN_FRAMES; i++) {
+      const img = new Image()
+      img.decoding = 'async'
+      img.onload = img.onerror = () => {
+        if (!live) return
+        if (--left === 0) setReady(true)
+      }
+      img.src = spinSrc(i)
+      held.push(img)
+    }
+    return () => {
+      live = false
+      held.length = 0
+    }
+  }, [near])
+
+  useEffect(() => {
+    if (!ready || touched || reduced) return
+    const t = window.setInterval(() => setFrame((f) => (f + 1) % SPIN_FRAMES), 110)
+    return () => window.clearInterval(t)
+  }, [ready, touched, reduced])
+
+  const onDown = (e: React.PointerEvent) => {
+    ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
+    drag.current = { x: e.clientX, from: frame }
+    setGrabbed(true)
+    setTouched(true)
+  }
+  const onMove = (e: React.PointerEvent) => {
+    const d = drag.current
+    if (!d) return
+    const w = box.current?.clientWidth ?? 600
+    // One full turn per drag across the width of the picture.
+    const steps = Math.round(((e.clientX - d.x) / w) * SPIN_FRAMES)
+    setFrame((((d.from - steps) % SPIN_FRAMES) + SPIN_FRAMES) % SPIN_FRAMES)
+  }
+  const onUp = () => {
+    drag.current = null
+    setGrabbed(false)
+  }
+
+  return (
+    <div className="turntable" ref={box} data-grabbed={grabbed}>
+      <div
+        className="spin-media"
+        onPointerDown={onDown}
+        onPointerMove={onMove}
+        onPointerUp={onUp}
+        onPointerCancel={onUp}
+      >
+        {ready ? (
+          <img src={spinSrc(frame)} alt="A CNC router, turning" draggable={false} />
+        ) : (
+          <div className="spin-wait" />
+        )}
+      </div>
+      <p className="spin-hint">{touched ? 'CNC router' : 'Drag to turn it'}</p>
+    </div>
+  )
+}

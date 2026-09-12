@@ -1230,3 +1230,68 @@ figure.shot { margin-left: auto; margin-right: auto; }
   color: #eef2f7;
 }
 .band.dark .carousel .nudge:hover { background: #232c37; }
+
+/* ---------------- turntable ---------------- */
+
+.turntable { max-width: 940px; margin: 0 auto; }
+
+.spin-media {
+  position: relative;
+  aspect-ratio: 973 / 502;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #0b0e13;
+  border: 1px solid #1d2530;
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+}
+.turntable[data-grabbed='true'] .spin-media { cursor: grabbing; }
+.spin-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+}
+
+/* Something to look at while a megabyte of frames arrives. */
+.spin-wait {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, #0b0e13 20%, #161c25 50%, #0b0e13 80%);
+  background-size: 240% 100%;
+  animation: spin-wait 1.5s linear infinite;
+}
+@keyframes spin-wait {
+  from { background-position: 140% 0; }
+  to { background-position: -40% 0; }
+}
+
+.spin-hint {
+  margin: 16px 0 0;
+  text-align: center;
+  font-size: 13.5px;
+  color: #8d9aaa;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spin-wait { animation: none; }
+  .stage .slide { transition: none; }
+}
+
+/* ---------------- narrow screens ---------------- */
+
+@media (max-width: 560px) {
+  /* The bar was running the primary button off the right edge: three items
+     plus a wordmark do not fit in 390 points. The sign-in link is one tap
+     away inside the editor, so it is the one that goes. */
+  .site-nav .acct,
+  .site-nav .cta.ghost.small { display: none; }
+  .site-nav .cta.primary.small { padding: 8px 14px; font-size: 13.5px; }
+  .hero h1 { font-size: clamp(34px, 10vw, 44px); }
+  .hero .lede { font-size: 16.5px; }
+  .stage-tabs { gap: 2px; }
+  .stage-tabs button { padding: 6px 10px; font-size: 12.5px; }
+  .carousel .card { flex-basis: 78vw; }
+}

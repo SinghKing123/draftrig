@@ -56,6 +56,14 @@ await page.addStyleTag({
   `,
 })
 
+// Hiding the side panels makes the canvas wider, and the renderer only finds
+// out on a resize. Without this the frames come out with a black band down
+// the side where the old drawing buffer ended.
+await page.waitForTimeout(300)
+await page.setViewportSize({ width: page.viewportSize().width - 1, height: page.viewportSize().height })
+await page.waitForTimeout(500)
+
+
 for (const [starter, out, zoom, az, pol] of SHOTS) {
   const ok = await page.evaluate((id) => {
     const s = window.draftrig.starters.find((x) => x.id === id)

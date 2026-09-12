@@ -5,7 +5,7 @@ import { Wordmark } from '@/ui/Logo'
 import { AccountMenu } from '@/ui/AccountMenu'
 import { Reveal } from '@/ui/Reveal'
 import { LedDemo, PartSearch } from './demos'
-import { BuildCarousel, BuildStage } from './gallery'
+import { BuildCarousel, BuildStage, Turntable } from './gallery'
 
 const BUILD_CATEGORIES = ['structural', 'panel', 'fastener', 'motion']
 
@@ -111,6 +111,19 @@ export function Landing() {
         <Reveal delay={60}>
           <div className="wrap wide"><BuildCarousel /></div>
         </Reveal>
+      </section>
+
+      {/* ---------------- turntable ---------------- */}
+      <section className="band dark tall">
+        <div className="wrap">
+          <Reveal>
+            <div className="sec-head mid">
+              <span className="kicker">Have a look</span>
+              <h2>Spin it.</h2>
+            </div>
+          </Reveal>
+          <Reveal delay={60}><Turntable /></Reveal>
+        </div>
       </section>
 
       {/* ---------------- it runs ---------------- */}
