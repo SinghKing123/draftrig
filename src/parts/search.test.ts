@@ -81,7 +81,7 @@ describe('the examples we tell people to try', () => {
   // Every value the tour, the landing page chips and the empty library state
   // suggest. If one of these stops returning anything, the product is telling
   // people to do something that does not work.
-  const SUGGESTED = ['10k', '2020', '555', 'mosfet', 'plywood', 'breadboard', 'switch', '100n']
+  const SUGGESTED = ['10k', '2020', '555', 'oled', 'stepper', 'plywood', 'breadboard', 'switch', '100n']
 
   it.each(SUGGESTED)('"%s" returns something', (q) => {
     expect(searchParts(q).length).toBeGreaterThan(0)

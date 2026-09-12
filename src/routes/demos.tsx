@@ -124,7 +124,7 @@ function CircuitDrawing({ withResistor, ok }: { withResistor: boolean; ok: boole
 /* Part search                                                         */
 /* ================================================================== */
 
-const EXAMPLES = ['10k', '555', '2020', 'lcd', 'mosfet', 'plywood']
+const EXAMPLES = ['10k', '555', '2020', 'oled', 'stepper', 'plywood']
 
 const CAT_LABEL: Record<string, string> = {
   passive: 'Passive', semiconductor: 'Semiconductor', ic: 'IC', module: 'Module',
