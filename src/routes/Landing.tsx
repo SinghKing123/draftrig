@@ -92,20 +92,20 @@ export function Landing() {
 
       {/* ---------------- hero ---------------- */}
       <header className="hero">
-        <div className="wrap">
+        <div className="wrap hero-split">
           <div className="inner">
             <h1>
               Build it twice.<br />The first time is free.
             </h1>
             <p className="lede">
-              A 3D bench for electronics and framing. Lay the whole thing out, wire it up, switch it
-              on, and find out what it does before you order a single part.
+              A 3D bench for electronics and framing. Wire it up, switch it on, and see what it does
+              before you order anything.
             </p>
             <div className="actions">
               <Link className="cta primary" to="/app">Open the editor</Link>
               <a className="cta ghost" href="#build">See what it does</a>
             </div>
-            <p className="micro">Free. Runs in the browser. No account, nothing to install.</p>
+            <p className="micro">Free. No account. Nothing to install.</p>
           </div>
 
           <ProductShot />
@@ -119,7 +119,7 @@ export function Landing() {
             <div className="sec-head">
               <span className="kicker">What it does</span>
               <h2>Most of a build is not the circuit.</h2>
-              <p>Circuit, structure and the machine they go in, all in the same scene.</p>
+              <p>Circuit, structure and the machine they go in, in one scene.</p>
             </div>
           </Reveal>
 
@@ -172,10 +172,7 @@ export function Landing() {
             <div className="sec-head mid">
               <span className="kicker">Checks</span>
               <h2>Mistakes are free here.</h2>
-              <p>
-                In the words you would use. This is a small form factor build being told four
-                separate things, before anything was ordered.
-              </p>
+              <p>A small-form-factor build, told four things before anything was ordered.</p>
             </div>
           </Reveal>
           <Reveal delay={60}>
@@ -187,7 +184,7 @@ export function Landing() {
           <Reveal delay={110}>
             <div className="sec-head" style={{ marginTop: 72, marginBottom: 32 }}>
               <h3 className="sub-title">Try one yourself.</h3>
-              <p>An LED with and without a resistor. The numbers come from the solver.</p>
+              <p>An LED with and without a resistor. Real solver output.</p>
             </div>
           </Reveal>
           <Reveal delay={140}><LedDemo /></Reveal>
@@ -396,9 +393,7 @@ function ProductShot() {
         />
       )}
       </div>
-      <figcaption>
-        Aluminium extrusion, a board and a character display. Rendered in the editor, not a mock-up.
-      </figcaption>
+      <figcaption>Extrusion, a board and a display. Assembled in the editor.</figcaption>
     </figure>
   )
 }

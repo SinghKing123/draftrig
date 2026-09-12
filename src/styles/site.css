@@ -960,3 +960,35 @@ figure.shot { margin-left: auto; margin-right: auto; }
   color: #7d8794;
   text-align: center;
 }
+
+/* ---------------- hero, two columns ---------------- */
+
+/*
+ * The animation is the reason to have a hero at all, so on a wide screen it
+ * sits beside the headline rather than a screenful below it. Stacked, the
+ * first thing anyone saw was prose.
+ */
+.hero { padding-top: 54px; }
+.hero-split {
+  display: grid;
+  grid-template-columns: 0.86fr 1.14fr;
+  gap: 54px;
+  align-items: center;
+}
+.hero-split .inner {
+  max-width: none;
+  margin: 0;
+  text-align: left;
+}
+.hero-split .actions,
+.hero-split .facts { justify-content: flex-start; }
+.hero-split .lede { margin-left: 0; margin-right: 0; }
+.hero-split .shot.stage { margin: 0; max-width: none; }
+.hero-split h1 { font-size: clamp(36px, 4vw, 54px); }
+
+@media (max-width: 1000px) {
+  .hero-split { grid-template-columns: 1fr; gap: 34px; }
+  .hero-split .inner { text-align: center; }
+  .hero-split .actions, .hero-split .facts { justify-content: center; }
+  .hero-split .lede { margin-left: auto; margin-right: auto; }
+}
