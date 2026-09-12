@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { Viewport } from '@/scene/Viewport'
 import { TopBar } from '@/ui/TopBar'
 import { Library } from '@/ui/Library'
@@ -61,13 +61,17 @@ type Onboarding = 'intro' | 'tour' | 'starters' | 'done'
 
 export function Editor() {
   const { projectId } = useParams()
+  const [params] = useSearchParams()
+  // /app?start=cnc opens a starter straight away. The front page links to
+  // these, so the picture of a build and the build itself are one click apart.
+  const [startId] = useState(() => params.get('start'))
   const [id] = useState(() => projectId ?? newProjectId())
   const [saveState, setSaveState] = useState<SaveState>('idle')
   const [ready, setReady] = useState(false)
   // Someone opening a saved project already knows what this is.
   const [assistantOpen, setAssistantOpen] = useState(false)
   const [onboarding, setOnboarding] = useState<Onboarding>(() =>
-    projectId || hasSeenTour() ? 'done' : 'intro',
+    projectId || startId || hasSeenTour() ? 'done' : 'intro',
   )
   const loadDoc = useDoc((s) => s.loadDoc)
   const doc = useDoc((s) => s.doc)
@@ -89,13 +93,19 @@ export function Editor() {
           loadDoc(rec.doc)
           engine.reset()
         }
+      } else if (startId) {
+        const starter = STARTERS.find((s) => s.id === startId)
+        if (!cancelled && starter) {
+          loadDoc(starter.build())
+          engine.reset()
+        }
       }
       if (!cancelled) setReady(true)
     })()
     return () => {
       cancelled = true
     }
-  }, [projectId, loadDoc])
+  }, [projectId, startId, loadDoc])
 
   useEffect(() => {
     document.title = pageTitle(doc.name || 'Editor')

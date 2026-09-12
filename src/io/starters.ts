@@ -3,6 +3,7 @@ import { emptyDoc } from '@/state/doc'
 import type { Instance, Params, Vec3 } from '@/parts/kernel/types'
 import { defaultParams, requirePart } from '@/parts/kernel/registry'
 import { GPU_MODELS } from '@/parts/catalog/pc_models'
+import { cncRouter, controlPanel, motionSim, rover } from './builds'
 
 /**
  * Starter builds. These are ordinary documents constructed in code, which
@@ -494,4 +495,8 @@ export const STARTERS: Starter[] = [
       }),
   },
   { id: 'pc-sff', title: 'Small form factor PC', blurb: 'The same parts in a case that will not take them', build: smallFormPc },
+  { id: 'motion-sim', title: 'Motion simulator', blurb: 'Seat, wheel, screen and two screw actuators', build: motionSim },
+  { id: 'cnc', title: 'CNC router', blurb: 'Three axes, a moving gantry and the drivers for it', build: cncRouter },
+  { id: 'rover', title: 'Four-wheel rover', blurb: 'Motors, a driver, a range finder and a display', build: rover },
+  { id: 'panel', title: 'Control panel', blurb: 'Everything a hand touches, on one aluminium face', build: controlPanel },
 ]

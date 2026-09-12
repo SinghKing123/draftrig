@@ -41,9 +41,9 @@ export const BRAND = {
   tagline: 'Build it twice. The first time is free.',
 
   description:
-    'Design, wire and simulate the whole build, circuit and structure, in your browser. Find out what works before you spend anything on parts.',
+    'Electronics and framing in one 3D scene. Wire it up and switch it on before you order anything.',
 
-  short: 'Design and simulate real builds in 3D.',
+  short: 'Build it in 3D before you order the parts.',
 
   support: 'hello@draftrig.com',
 

@@ -9,6 +9,7 @@ import { Wires } from './Wires'
 import { Solder } from './Solder'
 import { PortIndexProvider } from './portIndex'
 import { CameraRig } from './CameraRig'
+import { publishControls } from './debugCamera'
 import { Lights, PostFx, StudioEnvironment } from './Render'
 import { useDoc, useInstanceList } from '@/state/doc'
 import { installPointerTracker, wasClick } from './pointer'
@@ -295,7 +296,13 @@ function SceneContents() {
       <CameraRig controls={controls} />
 
       <OrbitControls
-        ref={controls}
+        ref={(c) => {
+          controls.current = c
+          // The screenshot harness in tools/ needs a way to place the camera
+          // that does not depend on synthesising a drag; a drag has to get
+          // past the picking handlers first, and silently does not.
+          publishControls(c)
+        }}
         makeDefault
         enableDamping
         dampingFactor={0.12}
