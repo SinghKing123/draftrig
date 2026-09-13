@@ -294,6 +294,7 @@ export type PartCategory =
   | 'mainboard'
   | 'pc-component'
   | 'pc-chassis'
+  | 'peripheral'
 
 export interface PartDoc {
   manufacturer?: string

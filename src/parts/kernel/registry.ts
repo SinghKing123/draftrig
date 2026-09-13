@@ -82,6 +82,7 @@ export const CATEGORY_META: Record<PartCategory, CategoryMeta> = {
   mainboard: { label: 'Motherboards', section: 'Computers', order: 300 },
   'pc-component': { label: 'Components', section: 'Computers', order: 310 },
   'pc-chassis': { label: 'Case & power', section: 'Computers', order: 320 },
+  peripheral: { label: 'Rigs & peripherals', section: 'Computers', order: 330 },
 }
 
 const escapeRe = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')

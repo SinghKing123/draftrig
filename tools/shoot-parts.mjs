@@ -64,7 +64,9 @@ const missing = await page.evaluate((list) => {
     const cz = Math.floor(i / cols) - (Math.ceil(list.length / cols) - 1) / 2
     const id = d.addPart(item.defId, [cx * cell, 0, cz * cell], item.params)
     if (!id) bad.push(item.defId)
-    else d.moveInstance(id, [cx * cell, 0, cz * cell], true)
+    // Keep the height the editor seated it at. Forcing y = 0 buried every
+    // part whose origin is not on its underside, screws first.
+    else d.moveInstance(id, [cx * cell, window.draftrig.doc.getState().doc.instances[id].pos[1], cz * cell], true)
   })
   d.select([])
   d.requestFrame('all')

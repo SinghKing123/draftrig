@@ -131,6 +131,7 @@ const CAT_LABEL: Record<string, string> = {
   power: 'Power', connector: 'Connector', electromech: 'Switch', display: 'Display',
   sensor: 'Sensor', prototyping: 'Prototyping', wire: 'Wire',
   structural: 'Framing', panel: 'Panel', fastener: 'Fastener', motion: 'Motion',
+  mainboard: 'Motherboard', 'pc-component': 'PC part', 'pc-chassis': 'PC case', peripheral: 'Peripheral',
 }
 
 /**

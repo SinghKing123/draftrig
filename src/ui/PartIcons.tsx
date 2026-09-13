@@ -443,6 +443,40 @@ const Fan = (p: Props) => (
 type Glyph = (p: Props) => React.ReactElement
 
 /** Exact matches first: a part earns its own symbol where one exists. */
+
+/* ---------------- rigs and peripherals ---------------- */
+
+const Seat = (p: Props) => (
+  <G {...p}>
+    <path d="M7 2.5h4.6l-1.1 8.5h3.4l1.1 5.6H5.4l.9-5.6H8z" />
+  </G>
+)
+const SteeringWheel = (p: Props) => (
+  <G {...p}>
+    <circle cx="10" cy="10" r="7.5" />
+    <circle cx="10" cy="10" r="2" />
+    <path d="M2.5 10H8M12 10h5.5M10 12v5.5" />
+  </G>
+)
+const Monitor = (p: Props) => (
+  <G {...p}>
+    <rect x="2" y="3" width="16" height="10.5" rx="1.2" />
+    <path d="M10 13.5v3M6.5 17h7" />
+  </G>
+)
+const Keyboard = (p: Props) => (
+  <G {...p}>
+    <rect x="1.5" y="6" width="17" height="8.5" rx="1.2" />
+    <path d="M4.5 9h1M8 9h1M11.5 9h1M15 9h.5M5.5 11.8h9" />
+  </G>
+)
+const Gamepad = (p: Props) => (
+  <G {...p}>
+    <path d="M6 6h8c2.6 0 4 3.6 4 7 0 2-1.8 2.6-3 1.4L13 12H7l-2 2.4C3.8 15.6 2 15 2 13c0-3.4 1.4-7 4-7z" />
+    <path d="M6 8.6v2.4M4.8 9.8h2.4M13.5 9.2h.01M15 10.6h.01" />
+  </G>
+)
+
 const BY_ID: Record<string, Glyph> = {
   'resistor-axial': Resistor,
   'capacitor-ceramic': Capacitor,
@@ -535,6 +569,28 @@ const BY_ID: Record<string, Glyph> = {
   'header-idc': Header,
   'connector-jst-xh': Header,
   'usb-c-breakout': Board,
+
+  'racing-seat': Seat,
+  'wheel-base': SteeringWheel,
+  'steering-wheel': SteeringWheel,
+  'pedal-set': Motion,
+  'gear-shifter': Switch,
+  'handbrake': Switch,
+  'button-box': Button,
+  'flight-stick': Gamepad,
+  'gamepad': Gamepad,
+  'monitor': Monitor,
+  'laptop': Monitor,
+  'keyboard': Keyboard,
+  'mouse': Gamepad,
+  'headset': Buzzer,
+  'desk': Panel,
+  'sbc-raspberry-pi': Board,
+  'router-wifi': Board,
+  'webcam': Sensor,
+  'usb-hub': Header,
+  'power-bank': Battery,
+  'power-adapter': Supply,
 }
 
 /** Whatever the category is, when a part has no symbol of its own. */
@@ -557,6 +613,7 @@ const BY_CATEGORY: Record<PartCategory, Glyph> = {
   mainboard: Mainboard,
   'pc-component': Cpu,
   'pc-chassis': Chassis,
+  peripheral: Monitor,
 }
 
 export function PartIcon({ def, size = 18 }: { def: PartDef; size?: number }) {
