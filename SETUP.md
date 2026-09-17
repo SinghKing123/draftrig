@@ -24,23 +24,71 @@ Open <http://localhost:5173>. The landing page is at `/`, the editor at `/app`.
 
 ## 2. Put it on the internet, free
 
-Draftrig is a static site, so hosting is free and takes about five minutes.
+Draftrig is a static site, so hosting is free. Two accounts, both free, and
+about fifteen minutes.
 
-1. Put the code on GitHub (a private repo is fine).
-2. Go to [vercel.com](https://vercel.com), sign in with GitHub, click **Add New
-   → Project**, and pick the repo.
-3. Vercel detects Vite on its own. Press **Deploy**.
+**GitHub** holds the code. **Cloudflare Pages** watches GitHub, and every time
+you push it rebuilds the site and publishes it. You never upload anything by
+hand. Cloudflare also sells domains at cost, so the same account covers step 4.
 
-You get a URL like `draftrig-abc123.vercel.app`. Every push to your main branch
-redeploys automatically.
+### 2a. Put the code on GitHub
 
-`vercel.json` is already in the repo. It does one important thing: tells the
-host to serve the app for *every* path. Without it, refreshing the page on
-`/app/some-project-id` would 404, because that path only exists inside the app,
-not on disk. `netlify.toml` does the same if you prefer Netlify.
+Make an account at [github.com](https://github.com) if you have not. Then, in
+this folder:
 
-**Cost:** free. Vercel's hobby tier covers far more traffic than you will have
-at launch.
+```bash
+gh auth login                      # opens a browser, once
+gh repo create draftrig --private --source=. --remote=origin --push
+```
+
+A **private** repo is the right default. Nothing here is secret — `.env` is
+ignored and never committed — but there is no reason to publish an unfinished
+product, and you can flip it to public later in one click.
+
+Without the `gh` command, do the same thing by hand: create an empty repo on
+github.com (no README, no .gitignore — this folder already has both), then:
+
+```bash
+git remote add origin https://github.com/YOUR-USERNAME/draftrig.git
+git push -u origin main
+```
+
+### 2b. Connect Cloudflare Pages
+
+1. Make an account at [dash.cloudflare.com](https://dash.cloudflare.com).
+2. **Compute (Workers & Pages) → Create → Pages → Connect to Git**, authorise
+   GitHub, and pick the repo.
+3. Cloudflare asks for build settings. They are:
+
+   | Field | Value |
+   |---|---|
+   | Framework preset | `Vite` (or None — the two below are what matter) |
+   | Build command | `npm run build` |
+   | Build output directory | `dist` |
+
+4. **Save and Deploy.**
+
+The first build takes two or three minutes. You get a URL like
+`draftrig-x7y.pages.dev`, and from then on every push to `main` redeploys.
+Pushes to any *other* branch get their own preview URL, which is the safe way
+to try something without touching the live site.
+
+**Cost:** free. Cloudflare Pages has no bandwidth limit on static files, and
+500 builds a month — you will not come close.
+
+### What the repo already does for the host
+
+Four files matter here, all of them already in place:
+
+| File | Why |
+|---|---|
+| `public/_redirects` | Serves the app for *every* path. Without it, refreshing on `/app/some-id` 404s, because that path exists inside the app, not on disk. |
+| `public/_headers` | Caches fingerprinted assets forever and `index.html` never, so a deploy is visible immediately and repeat visits are instant. |
+| `.nvmrc` | Pins Node 20 for the build. Cloudflare's default is older and the build fails on it. |
+| `functions/api/ai.ts` | The assistant's proxy (step 3d). Cloudflare runs `functions/` before static files, so `/api/ai` is not swallowed by the catch-all above. |
+
+`vercel.json` and `netlify.toml` are still there and still correct. They cost
+nothing and mean you are not locked in.
 
 ---
 
@@ -86,14 +134,44 @@ VITE_SUPABASE_URL=https://yourproject.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJ...
 ```
 
-On Vercel, add the same two under **Settings → Environment Variables**, then
-redeploy.
+On Cloudflare: **your Pages project → Settings → Variables and secrets → Add**,
+both under **Production** (and **Preview** too, if you want branch previews to
+have working accounts). Then **Deployments → Retry deployment**, because
+variables starting `VITE_` are baked in at build time — an existing build will
+not pick them up.
 
 The anon key is *meant* to be public. It ships in the browser bundle by design.
 Row-level security is what protects the data. Never put the **service role** key
 anywhere near the front end; that one bypasses every policy.
 
 **Cost:** free. Supabase's free tier covers 50,000 monthly active users.
+
+### 3d. Optional: let the assistant run on your key
+
+By default each visitor pastes their own Anthropic API key, which stays in their
+browser and costs you nothing. That is the right setting for a side project, and
+you can skip this section entirely.
+
+If you would rather the assistant just work for everyone, `functions/api/ai.ts`
+proxies requests so one key can live on the server:
+
+1. Get a key at [console.anthropic.com](https://console.anthropic.com).
+2. On Cloudflare, add two variables to the Pages project:
+   - `ANTHROPIC_API_KEY` — click **Encrypt** so it is stored as a secret. This
+     one is never sent to the browser.
+   - `VITE_AI_ENDPOINT` = `/api/ai`
+3. Redeploy.
+
+**Cost: this one is not free, and it is the only thing here that is not.** You
+are paying per request, for anyone who finds your site. Before turning it on,
+set a monthly spend limit in the Anthropic console — that is the backstop that
+turns a bad day into a broken feature rather than a bill. The proxy pins the
+model, the token cap and the tool on the server precisely so the endpoint cannot
+be repurposed as a general-purpose proxy for someone else's traffic, but it does
+not stop somebody hammering the assistant itself.
+
+Set `VITE_AI_ENDPOINT` and forget the key and nothing breaks: the proxy answers
+501, and the editor falls back to asking the visitor for their own key.
 
 ---
 
@@ -114,14 +192,24 @@ Cloudflare sells at cost and never raises the price at renewal, which is why it
 is the one to use. GoDaddy's first year is the cheapest and its renewal is the
 most expensive, which is the whole business model.
 
-1. Register `draftrig.com` at Cloudflare. Add **WHOIS privacy**, which is free
-   everywhere and keeps your home address off a public database.
-2. In Vercel: **Settings → Domains → Add**, type the domain, and follow the DNS
-   instructions it gives you.
-3. Update Supabase's **Site URL** and Google's **Authorised origins** to the new
-   address, or sign-in will break.
+Because the site is already on Cloudflare, buying the domain there makes this
+step almost nothing:
 
-**Cost:** about $10.44/year, forever. HTTPS is automatic and free.
+1. In the Cloudflare dashboard: **Domain Registration → Register Domain**, and
+   buy `draftrig.com`. Leave **WHOIS privacy** on — it is free and keeps your
+   home address out of a public database.
+2. **Compute (Workers & Pages) → your project → Custom domains → Set up a
+   domain.** Type the domain. Cloudflare owns the DNS already, so it adds the
+   record itself; there is nothing to copy and paste.
+3. If you bought the domain somewhere else, Cloudflare shows you two
+   nameservers to enter at that registrar instead. That takes a few hours to
+   take effect and is the only slow part of any of this.
+4. Update Supabase's **Site URL** and Google's **Authorised origins** to the new
+   address, or sign-in will break the moment you stop using the .pages.dev URL.
+
+HTTPS is issued automatically and renews itself. You never touch a certificate.
+
+**Cost:** about $10.44/year, forever.
 
 ---
 

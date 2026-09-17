@@ -16,8 +16,8 @@ npm run build
 ```
 
 Landing page at `/`, editor at `/app`. It runs with no configuration at all,
-and projects save to the browser. See **[SETUP.md](SETUP.md)** to add accounts,
-cloud sync and a domain.
+and projects save to the browser. See **[SETUP.md](SETUP.md)** to put it online
+(GitHub + Cloudflare Pages, free) and to add accounts, cloud sync and a domain.
 
 ## Shape of the app
 
