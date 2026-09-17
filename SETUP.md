@@ -73,6 +73,10 @@ The first build takes two or three minutes. You get a URL like
 Pushes to any *other* branch get their own preview URL, which is the safe way
 to try something without touching the live site.
 
+The build log will show a run of `EBADENGINE` warnings from the Supabase
+packages, which ask for Node 22. They are warnings, not errors, and the build is
+pinned to the version it is actually tested on. Ignore them.
+
 **Cost:** free. Cloudflare Pages has no bandwidth limit on static files, and
 500 builds a month — you will not come close.
 
@@ -85,6 +89,7 @@ Four files matter here, all of them already in place:
 | `public/_redirects` | Serves the app for *every* path. Without it, refreshing on `/app/some-id` 404s, because that path exists inside the app, not on disk. |
 | `public/_headers` | Caches fingerprinted assets forever and `index.html` never, so a deploy is visible immediately and repeat visits are instant. |
 | `.nvmrc` | Pins Node 20 for the build. Cloudflare's default is older and the build fails on it. |
+| `package-lock.json` | Cloudflare runs `npm ci`, which installs exactly this and fails if it disagrees with `package.json`. Commit it whenever you add a dependency. |
 | `functions/api/ai.ts` | The assistant's proxy (step 3d). Cloudflare runs `functions/` before static files, so `/api/ai` is not swallowed by the catch-all above. |
 
 `vercel.json` and `netlify.toml` are still there and still correct. They cost
