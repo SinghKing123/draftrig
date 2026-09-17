@@ -80,14 +80,40 @@
   min-width: 110px;
   max-width: 240px;
 }
+/*
+ * Save state, spelled out.
+ *
+ * It used to read "Saved" or nothing at all, which left the two states that
+ * matter — never saved, and saved a while ago but changed since — looking
+ * identical to the state where everything is fine.
+ */
 .save-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+  padding: 3px 9px;
+  border-radius: 20px;
+  border: 1px solid transparent;
   font-size: var(--fs-xs);
+  font-weight: 550;
+  white-space: nowrap;
   color: var(--tx-3);
-  min-width: 46px;
-  transition: color var(--dur) var(--ease);
+  transition: color var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+.save-state::before {
+  content: '';
+  width: 5px; height: 5px; border-radius: 50%;
+  background: currentColor;
 }
 .save-state[data-state='saved'] { color: var(--ok); }
-.save-state[data-state='error'] { color: var(--err); }
+.save-state[data-state='dirty'] { color: var(--tx-2); }
+.save-state[data-state='saving'] { color: var(--info); }
+.save-state[data-state='error'] {
+  color: var(--err);
+  background: rgba(255, 107, 107, 0.1);
+  border-color: rgba(255, 107, 107, 0.35);
+}
 
 .doc-name:hover { background: var(--bg-3); }
 .doc-name:focus { background: var(--bg-3); border-color: var(--brand); outline: none; }
@@ -133,8 +159,8 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 28px;
-  padding: 0 10px;
+  height: var(--ctl-h);
+  padding: 0 11px;
   border-radius: var(--r-sm);
   border: 1px solid var(--line-2);
   background: var(--bg-3);
@@ -156,7 +182,7 @@
 .btn.primary:hover { background: var(--brand-hi); }
 .btn.danger { color: var(--err); }
 .btn.danger:hover { background: rgba(255, 107, 107, 0.12); border-color: rgba(255, 107, 107, 0.4); }
-.btn.icon { width: 28px; padding: 0; justify-content: center; }
+.btn.icon { width: var(--ctl-h); padding: 0; justify-content: center; }
 .btn[data-on='true'] { background: var(--brand-dim); border-color: rgba(76,141,255,.45); color: var(--brand-hi); }
 
 .btn.run { min-width: 88px; justify-content: center; }
@@ -204,8 +230,8 @@
 }
 .search input {
   width: 100%;
-  height: 28px;
-  padding: 0 26px 0 28px;
+  height: var(--ctl-h);
+  padding: 0 28px 0 30px;
   background: var(--bg-3);
   border: 1px solid var(--line-2);
   border-radius: var(--r-sm);
@@ -327,11 +353,11 @@
 
 .field {
   display: grid;
-  grid-template-columns: 96px 1fr;
+  grid-template-columns: 104px 1fr;
   align-items: center;
-  gap: 8px;
-  min-height: 26px;
-  margin-bottom: 5px;
+  gap: 9px;
+  min-height: var(--field-h);
+  margin-bottom: 6px;
 }
 .field > label {
   font-size: var(--fs-sm);
@@ -344,8 +370,8 @@
 
 .input, select.input {
   width: 100%;
-  height: 26px;
-  padding: 0 7px;
+  height: var(--field-h);
+  padding: 0 8px;
   background: var(--bg-3);
   border: 1px solid var(--line-2);
   border-radius: var(--r-sm);
@@ -366,8 +392,12 @@ select.input option { background: var(--bg-2); }
 }
 .input-unit .input { padding-right: 26px; }
 
-/* number scrubber */
+/* Number scrubber. The resize cursor is a promise that dragging does
+   something; once the caret is in the field, dragging selects text instead,
+   so the cursor has to go back to saying that. */
 .scrub { cursor: ew-resize; }
+.scrub[data-editing='true'] { cursor: text; }
+.scrub[data-editing='true'] .input { cursor: text; }
 
 .slider { -webkit-appearance: none; appearance: none; width: 100%; height: 18px; background: transparent; cursor: pointer; }
 .slider::-webkit-slider-runnable-track { height: 4px; border-radius: 3px; background: var(--bg-4); }
@@ -444,9 +474,15 @@ select.input option { background: var(--bg-2); }
   color: var(--tx-1);
   box-shadow: var(--sh-2);
   pointer-events: none;
-  display: flex; align-items: center; gap: 8px;
+  /* Block, not flex. As a flex row with a gap, every run of text between two
+     elements became its own flex item, so any hint longer than a few words
+     broke into a column of fragments. */
+  display: block;
+  line-height: 1.5;
+  text-align: center;
   animation: hint-in 220ms var(--ease);
 }
+.vp-hint kbd { margin: 0 3px; }
 /* Same rule as tour-in: no opacity, or a pending animation hides the hint. */
 @keyframes hint-in { from { transform: translate(-50%, -6px); } }
 .vp-hint b { color: var(--brand-hi); font-weight: 600; }
@@ -489,7 +525,7 @@ kbd {
   border: 1px solid var(--line-2);
   border-bottom-width: 2px;
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--tx-1);
   text-align: center;
 }
@@ -960,3 +996,174 @@ kbd {
   border-color: var(--tx-0);
   transform: scale(1.14);
 }
+
+/* ============================================================
+   File menu and dropdowns
+   ============================================================ */
+
+.filemenu { position: relative; flex: 0 0 auto; }
+
+.filemenu-btn {
+  gap: 4px;
+  padding: 0 8px 0 10px;
+  font-weight: 550;
+}
+.filemenu-btn .caret { transform: rotate(90deg); color: var(--tx-3); }
+.filemenu-btn[data-on='true'] { background: var(--bg-3); color: var(--tx-0); }
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 300;
+  min-width: 256px;
+  padding: 5px;
+  background: var(--bg-2);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-md);
+  box-shadow: var(--sh-3);
+  animation: drop-in 120ms var(--ease);
+}
+@keyframes drop-in { from { transform: translateY(-4px); } }
+
+.dropdown button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 7px 9px;
+  border-radius: var(--r-sm);
+  font-size: var(--fs-md);
+  color: var(--tx-1);
+  text-align: left;
+}
+.dropdown button:hover { background: var(--bg-4); color: var(--tx-0); }
+.dropdown button svg { color: var(--tx-3); flex: 0 0 auto; }
+.dropdown button:hover svg { color: var(--brand-hi); }
+.dropdown button kbd { margin-left: auto; background: transparent; border-color: transparent; color: var(--tx-3); }
+
+.dropdown-sep { height: 1px; margin: 5px 6px; background: var(--line); }
+.dropdown-note {
+  padding: 6px 9px 4px;
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+  color: var(--tx-3);
+}
+
+/* A word you can click, where a button would be too loud. */
+.link-btn {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--tx-3);
+  padding: 2px 4px;
+  border-radius: var(--r-xs);
+}
+.link-btn:hover { color: var(--brand-hi); background: var(--bg-3); }
+
+/* ============================================================
+   One-field dialog
+   ============================================================ */
+
+.dialog-scrim {
+  position: fixed; inset: 0; z-index: 400;
+  display: grid; place-items: center;
+  background: rgba(6, 8, 11, 0.62);
+  backdrop-filter: blur(4px);
+}
+
+.dialog {
+  width: min(420px, calc(100vw - 40px));
+  padding: 22px 22px 18px;
+  background: var(--bg-1);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-3);
+  animation: drop-in 140ms var(--ease);
+}
+.dialog h3 {
+  font-size: var(--fs-xl);
+  font-weight: 620;
+  letter-spacing: -0.015em;
+  color: var(--tx-0);
+  margin-bottom: 14px;
+}
+.dialog-label {
+  display: block;
+  font-size: var(--fs-sm);
+  color: var(--tx-2);
+  margin-bottom: 6px;
+}
+.input.lg { height: 36px; font-size: var(--fs-lg); }
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+/* ============================================================
+   Terminal label
+   ============================================================ */
+
+/*
+ * Named terminals. Offset up and to the right of the dot so the label never
+ * covers the thing it is naming, and never takes the pointer: it exists only
+ * while you are aiming at what is underneath it.
+ */
+.port-tip {
+  position: absolute;
+  z-index: 30;
+  transform: translate(14px, -50%);
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 3px 9px;
+  max-width: 260px;
+  border-radius: var(--r-sm);
+  background: rgba(10, 12, 16, 0.92);
+  border: 1px solid var(--line-2);
+  box-shadow: var(--sh-2);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.port-tip b { font-size: var(--fs-md); font-weight: 600; color: var(--tx-0); }
+.port-tip i {
+  font-style: normal;
+  font-size: var(--fs-xs);
+  color: var(--tx-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.port-tip[data-role='power'] { border-color: rgba(255, 107, 107, 0.5); }
+.port-tip[data-role='power'] b { color: #FF9B9B; }
+.port-tip[data-role='gnd'] { border-color: rgba(61, 214, 140, 0.5); }
+.port-tip[data-role='gnd'] b { color: #7BE3B4; }
+
+.vp-hint.pending { border-color: var(--brand-lo); }
+.vp-hint.pending b { color: var(--tx-0); }
+
+/* --- assistant: working state --- */
+
+.ai-working {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 10px;
+  padding: 9px 11px;
+  border-radius: var(--r-sm);
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  font-size: var(--fs-md);
+  color: var(--tx-2);
+}
+.ai-spinner {
+  flex: 0 0 auto;
+  width: 13px; height: 13px;
+  border-radius: 50%;
+  border: 2px solid var(--line-3);
+  border-top-color: var(--brand);
+  animation: ai-spin 700ms linear infinite;
+}
+@keyframes ai-spin { to { transform: rotate(360deg); } }

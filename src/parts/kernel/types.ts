@@ -306,6 +306,54 @@ export interface PartDoc {
   supplierSku?: Record<string, string>
 }
 
+/* ------------------------------------------------------------------ */
+/* External models                                                     */
+/* ------------------------------------------------------------------ */
+
+/**
+ * A mesh file standing in for a part's appearance.
+ *
+ * The rule at the top of this file still holds: a part is data. Ports, mass,
+ * price, bounds and everything the simulator touches keep coming from the
+ * declarative solids, and a part with a model must still define solids that
+ * are the right size and shape to seat, snap and wire correctly. The file
+ * replaces what you see and nothing else.
+ *
+ * That split is what makes external models safe to use at all. A downloaded
+ * mesh has no idea where this project's terminals are, so it is never asked:
+ * it is scaled and centred into the bounding box the part already declared,
+ * and the ports carry on sitting exactly where the part says they do. If the
+ * file is missing, blocked or slow, the procedural solids are simply drawn
+ * instead, and the only thing lost is the nicer silhouette.
+ */
+export interface ModelCredit {
+  /** The work's own title, as its author gave it. */
+  title: string
+  author: string
+  /** SPDX-style short name, e.g. "CC0-1.0", "CC-BY-4.0". */
+  license: string
+  /** Where it came from, so an attribution can be checked. */
+  source: string
+}
+
+export interface ModelSpec {
+  /** Path relative to the site root, e.g. "models/steel-desk/desk.gltf". */
+  url: string
+  /**
+   * How the file is fitted to the part.
+   *
+   * 'bbox' scales uniformly and centres so the model fills the bounding box of
+   * the declared solids, which is what makes a model interchangeable with the
+   * geometry it replaces. 'raw' places it at the part origin untouched, for a
+   * file already authored in millimetres against this project's conventions.
+   */
+  fit?: 'bbox' | 'raw'
+  /** Rotation applied before fitting, degrees. Most exports are Z-up. */
+  rot?: Vec3
+  /** Attribution. Required, including for CC0, so credit is never lost. */
+  credit: ModelCredit
+}
+
 export interface PartDef {
   /** Stable id, kebab-case, e.g. "resistor-axial-thru". */
   id: string
@@ -318,6 +366,12 @@ export interface PartDef {
   params: ParamSpec[]
   /** Geometry generator. Must be pure. */
   solids: (p: Params) => Solid[]
+  /**
+   * An external mesh to draw in place of the solids, where the real object is
+   * a shape nobody wants to write out as boxes and lathes. The solids are
+   * still required, and still define everything but the picture.
+   */
+  model?: ModelSpec
   /** Connection points. Must be pure. */
   ports: (p: Params) => Port[]
   electrical?: ElectricalSpec

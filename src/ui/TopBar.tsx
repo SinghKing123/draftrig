@@ -1,16 +1,14 @@
-import { useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { Wordmark } from './Logo'
 import { AccountMenu } from './AccountMenu'
+import { FileMenu, type FileActions } from './FileMenu'
 import {
-  IconCursor, IconOpen, IconPause, IconPlay, IconRedo, IconReset, IconSave, IconUndo, IconWire, IconZap,
+  IconCursor, IconPause, IconPlay, IconRedo, IconReset, IconSave, IconUndo, IconWire, IconZap,
 } from './Icons'
 import { useDoc, type EditorMode } from '@/state/doc'
 import { useSim } from '@/state/sim'
 import { engine } from '@/sim/engine'
-import { downloadProject, openProject } from '@/io/project'
 import type { SaveState } from '@/app/App'
-import { BRAND, FILE_EXT } from '@/brand'
 
 const MODES: { id: EditorMode; label: string; icon: typeof IconCursor; hint: string }[] = [
   { id: 'build', label: 'Build', icon: IconCursor, hint: 'Place and arrange parts' },
@@ -26,17 +24,17 @@ const SPEEDS = [
 ]
 
 const SAVE_LABEL: Record<SaveState, string> = {
-  idle: '',
+  idle: 'Not saved yet',
+  dirty: 'Unsaved changes',
   saving: 'Saving…',
   saved: 'Saved',
-  error: 'Not saved',
+  error: 'Could not save',
 }
 
-export function TopBar({ saveState = 'idle' }: { saveState?: SaveState }) {
+export function TopBar({ saveState = 'idle', file }: { saveState?: SaveState; file: FileActions }) {
   const mode = useDoc((s) => s.mode)
   const setMode = useDoc((s) => s.setMode)
   const name = useDoc((s) => s.doc.name)
-  const loadDoc = useDoc((s) => s.loadDoc)
   const undo = useDoc((s) => s.undo)
   const redo = useDoc((s) => s.redo)
   const canUndo = useDoc((s) => s.past.length > 0)
@@ -46,8 +44,6 @@ export function TopBar({ saveState = 'idle' }: { saveState?: SaveState }) {
   const setRunning = useSim((s) => s.setRunning)
   const speed = useSim((s) => s.speed)
   const setSpeed = useSim((s) => s.setSpeed)
-
-  const fileInput = useRef<HTMLInputElement>(null)
 
   const rename = (value: string) => {
     useDoc.setState((s) => ({ doc: { ...s.doc, name: value } }))
@@ -65,45 +61,33 @@ export function TopBar({ saveState = 'idle' }: { saveState?: SaveState }) {
       </Link>
       <div className="sep-v" />
 
+      <FileMenu {...file} />
+
       <input
         className="doc-name"
         value={name}
         spellCheck={false}
         onChange={(e) => rename(e.target.value)}
+        title="Rename this build"
         aria-label="Project name"
       />
       <span
         className="save-state"
         data-state={saveState}
-        title={saveState === 'error' ? 'Could not save. Your work is still here, try again shortly.' : undefined}
+        title={
+          saveState === 'error'
+            ? 'Could not save. Your work is still in the window; try Save again in a moment.'
+            : saveState === 'dirty'
+              ? 'Changes not written yet. They save on their own, or press Ctrl+S.'
+              : undefined
+        }
       >
         {SAVE_LABEL[saveState]}
       </span>
 
-      <button className="btn ghost icon" title={`Open a .${FILE_EXT} file`} onClick={() => fileInput.current?.click()}>
-        <IconOpen />
-      </button>
-      <button className="btn ghost icon" title="Download a copy" onClick={() => downloadProject(useDoc.getState().doc)}>
+      <button className="btn ghost icon" title="Save (Ctrl+S)" onClick={file.onSave}>
         <IconSave />
       </button>
-      <input
-        ref={fileInput}
-        type="file"
-        accept={`.${FILE_EXT},.twinbench,.buildsim,.json`}
-        style={{ display: 'none' }}
-        onChange={async (e) => {
-          const file = e.target.files?.[0]
-          if (!file) return
-          try {
-            loadDoc(await openProject(file))
-            engine.reset()
-          } catch (err) {
-            console.error(err)
-            window.alert(`That file could not be read as a ${BRAND.name} project.`)
-          }
-          e.target.value = ''
-        }}
-      />
 
       <div className="sep-v" />
       <button className="btn ghost icon" title="Undo (Ctrl+Z)" disabled={!canUndo} onClick={undo}><IconUndo /></button>
@@ -137,7 +121,7 @@ export function TopBar({ saveState = 'idle' }: { saveState?: SaveState }) {
       {mode === 'sim' && (
         <select
           className="input"
-          style={{ width: 96 }}
+          style={{ width: 110 }}
           value={speed}
           onChange={(e) => setSpeed(Number(e.target.value))}
           title="Simulation speed"

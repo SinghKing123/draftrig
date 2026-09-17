@@ -133,3 +133,8 @@ export const IconPencil = (p: IconProps) => (
     <path d="M10.2 3.8 12.6 6.2" />
   </S>
 )
+
+/** Download to a file, as distinct from saving the project. */
+export const IconDownload = (p: IconProps) => (
+  <S {...p}><path d="M8 2.2v7.6M4.8 7l3.2 2.8L11.2 7" /><path d="M2.6 11.4v1.2a1.2 1.2 0 0 0 1.2 1.2h8.4a1.2 1.2 0 0 0 1.2-1.2v-1.2" /></S>
+)

@@ -1,6 +1,8 @@
 import { IconEye, IconEyeOff, IconFrame, IconGrid, IconMagnet, IconMove, IconRotate, IconXray, IconZap } from './Icons'
 import { useDoc, WIRE_COLORS } from '@/state/doc'
 import { useSim } from '@/state/sim'
+import { usePortHover } from '@/scene/portHover'
+import { getPart } from '@/parts/kernel/registry'
 
 const MODE_HINT: Record<string, React.ReactNode> = {
   wire: (
@@ -15,6 +17,40 @@ const MODE_HINT: Record<string, React.ReactNode> = {
   ),
 }
 
+/**
+ * The name of the terminal under the pointer, pinned to it.
+ *
+ * Wiring without this was aiming at one grey dot among thirty. The label is
+ * drawn as HTML over the canvas rather than in the scene, so it stays crisp
+ * and level however the camera is turned.
+ */
+function PortTip() {
+  const hover = usePortHover((s) => s.hover)
+  if (!hover) return null
+  return (
+    <div className="port-tip" style={{ left: hover.x, top: hover.y }} data-role={hover.role ?? 'io'}>
+      <b>{hover.label}</b>
+      {hover.owner && <i>{hover.owner}</i>}
+    </div>
+  )
+}
+
+/** What a half-drawn wire is currently attached to. */
+function PendingHint() {
+  const pending = useDoc((s) => s.pendingWire)
+  const instances = useDoc((s) => s.doc.instances)
+  if (!pending) return null
+  const inst = instances[pending.instanceId]
+  const def = inst ? getPart(inst.defId) : undefined
+  const port = def?.ports(inst.params).find((p) => p.id === pending.portId)
+  return (
+    <div className="vp-hint pending">
+      Running a wire from <b>{inst?.name ?? 'a part'}</b>
+      {port ? <> · <b>{port.label}</b></> : null}. Click the other end, or <kbd>Esc</kbd> to drop it.
+    </div>
+  )
+}
+
 export function ViewportOverlay({ onReplayTour }: { onReplayTour: () => void }) {
   const mode = useDoc((s) => s.mode)
   const view = useDoc((s) => s.view)
@@ -25,6 +61,7 @@ export function ViewportOverlay({ onReplayTour }: { onReplayTour: () => void }) 
   const setTransformMode = useDoc((s) => s.setTransformMode)
   const empty = useDoc((s) => s.doc.order.length === 0)
   const requestFrame = useDoc((s) => s.requestFrame)
+  const pendingWire = useDoc((s) => s.pendingWire)
 
   const running = useSim((s) => s.running)
   const time = useSim((s) => s.time)
@@ -64,7 +101,9 @@ export function ViewportOverlay({ onReplayTour }: { onReplayTour: () => void }) 
         </button>
         <select
           className="input"
-          style={{ width: 74, height: 28 }}
+          /* Wide enough for "2.54 mm" plus the arrow. At 74px the longest
+             option read "2.54 m", which is a different number. */
+          style={{ width: 92, height: 'var(--ctl-h)' }}
           value={snap.grid}
           onChange={(e) => setSnap({ grid: Number(e.target.value) })}
           title="Grid step"
@@ -93,7 +132,8 @@ export function ViewportOverlay({ onReplayTour }: { onReplayTour: () => void }) 
         </button>
       </div>
 
-      {hint && <div className="vp-hint">{hint}</div>}
+      <PortTip />
+      {pendingWire ? <PendingHint /> : hint ? <div className="vp-hint">{hint}</div> : null}
 
       <div className="vp-stats">
         {running && (

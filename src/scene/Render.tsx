@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { useThree } from '@react-three/fiber'
-import { Bloom, EffectComposer, N8AO, SMAA, ToneMapping } from '@react-three/postprocessing'
-import { BlendFunction, ToneMappingMode } from 'postprocessing'
+import { Bloom, EffectComposer, N8AO, Outline, SMAA, ToneMapping } from '@react-three/postprocessing'
+import { BlendFunction, KernelSize, ToneMappingMode } from 'postprocessing'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 import { useDoc } from '@/state/doc'
 import { documentBounds } from './CameraRig'
+import { useSelectedObjects } from './SelectionOutline'
 
 /**
  * Render pipeline.
@@ -123,6 +124,10 @@ function ToneMappingSync({ composed }: { composed: boolean }) {
 
 export function PostFx() {
   const quality = useDoc((s) => s.view.quality)
+  // Called unconditionally: hooks cannot sit behind the early return below,
+  // and an empty selection costs a set lookup.
+  const selected = useSelectedObjects()
+
   if (quality === 'off') return <ToneMappingSync composed={false} />
 
   const high = quality === 'high'
@@ -144,6 +149,20 @@ export function PostFx() {
       {/* Only genuinely emissive things bloom. White plastic under a key light
           sits near 0.9 luminance, so the threshold has to clear it. */}
       <Bloom intensity={0.9} luminanceThreshold={1.15} luminanceSmoothing={0.12} mipmapBlur radius={0.55} />
+      {/* Silhouette around whatever is selected. `xRay` draws the hidden part
+          of the outline in a darker blue, so a part inside a case still
+          announces itself instead of disappearing into it. */}
+      <Outline
+        selection={selected}
+        visibleEdgeColor={0x6fa4ff}
+        hiddenEdgeColor={0x24508f}
+        edgeStrength={8}
+        blur
+        xRay
+        pulseSpeed={0}
+        kernelSize={KernelSize.VERY_SMALL}
+        blendFunction={BlendFunction.SCREEN}
+      />
       <ToneMapping mode={ToneMappingMode.ACES_FILMIC} blendFunction={BlendFunction.NORMAL} />
       {high ? <SMAA /> : <></>}
     </EffectComposer>

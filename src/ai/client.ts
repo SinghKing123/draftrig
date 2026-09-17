@@ -38,8 +38,18 @@ export function setStoredKey(key: string): void {
   }
 }
 
+/**
+ * Set once the server endpoint has told us it holds no key of its own.
+ *
+ * Without this, a deployment that sets VITE_AI_ENDPOINT but forgets the secret
+ * is worse than one with no assistant at all: the editor believes a model is
+ * connected, every request fails, and there is no way to reach the screen that
+ * would let someone use their own key instead.
+ */
+let endpointHasNoKey = false
+
 export function aiMode(): AiMode {
-  if (ENDPOINT) return 'endpoint'
+  if (ENDPOINT && !endpointHasNoKey) return 'endpoint'
   if (storedKey()) return 'own-key'
   return 'unconfigured'
 }
@@ -93,6 +103,15 @@ async function post(url: string, headers: Record<string, string>, body: unknown,
     const detail = json.error?.message ?? `HTTP ${res.status}`
     if (res.status === 401) throw new AiError('That key was rejected.', 'Check it and paste it again.')
     if (res.status === 429) throw new AiError('Rate limited.', 'Wait a moment and try again.')
+    // The proxy answering 501 means this deployment runs no key of its own.
+    // Remember it, so from here on the editor offers the own-key screen.
+    if (res.status === 501) {
+      endpointHasNoKey = true
+      throw new AiError(
+        'This site does not provide a model.',
+        'Add your own Anthropic API key to use the assistant. It stays in this browser.',
+      )
+    }
     throw new AiError(detail)
   }
   return json

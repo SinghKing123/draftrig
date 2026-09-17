@@ -17,6 +17,9 @@ interface NumberFieldProps {
   disabled?: boolean
 }
 
+/** How far the pointer must travel before a press counts as a scrub, px. */
+const DRAG_SLOP = 4
+
 const clamp = (v: number, min?: number, max?: number): number => {
   if (min !== undefined && v < min) return min
   if (max !== undefined && v > max) return max
@@ -27,7 +30,7 @@ export function NumberField({ value, onChange, unit, min, max, step = 1, eng: us
   const format = (v: number) => (useEng ? eng(v, '', 4) : String(Math.round(v * 1000) / 1000))
   const [text, setText] = useState(() => format(value))
   const [editing, setEditing] = useState(false)
-  const drag = useRef<{ x: number; start: number } | null>(null)
+  const drag = useRef<{ x: number; start: number; live: boolean } | null>(null)
 
   useEffect(() => {
     if (!editing) setText(format(value))
@@ -44,37 +47,55 @@ export function NumberField({ value, onChange, unit, min, max, step = 1, eng: us
     onChange(clamp(parsed, min, max), true)
   }
 
-  // Horizontal drag scrubs the value, the way every 3D tool does it.
+  /*
+   * Horizontal drag scrubs the value, the way every 3D tool does it.
+   *
+   * Two things here are deliberate and were both wrong before. The pointer is
+   * not captured until the drag has actually started, because a capture taken
+   * on press retargets the click that follows and the field then cannot be
+   * focused by clicking it. And a press that never became a drag commits
+   * nothing: it used to commit the unchanged value, which recorded an undo
+   * step for every click on a number, so Ctrl+Z spent a while undoing nothing
+   * before it undid anything.
+   */
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (disabled || editing) return
     if (e.button !== 0) return
-    const el = e.currentTarget
-    el.setPointerCapture(e.pointerId)
-    drag.current = { x: e.clientX, start: value }
+    drag.current = { x: e.clientX, start: value, live: false }
   }
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     const d = drag.current
     if (!d) return
     const dx = e.clientX - d.x
-    if (Math.abs(dx) < 3) return
+    if (!d.live) {
+      if (Math.abs(dx) < DRAG_SLOP) return
+      d.live = true
+      e.currentTarget.setPointerCapture(e.pointerId)
+      // Typing and scrubbing at once makes no sense, and the caret sitting in
+      // a field whose value is being dragged out from under it looks broken.
+      ;(e.currentTarget.querySelector('input') as HTMLInputElement | null)?.blur()
+    }
     const scale = useEng ? Math.max(Math.abs(d.start), 1e-12) * 0.012 : (e.shiftKey ? step / 10 : step)
     const next = clamp(useEng ? d.start * Math.pow(1.03, dx) : d.start + dx * scale, min, max)
     onChange(useEng ? next : Math.round(next / step) * step, false)
   }
   const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (drag.current) {
-      e.currentTarget.releasePointerCapture(e.pointerId)
-      drag.current = null
-      onChange(value, true)
-    }
+    const d = drag.current
+    if (!d) return
+    drag.current = null
+    if (!d.live) return
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId)
+    onChange(value, true)
   }
 
   return (
     <div
       className="input-unit scrub"
+      data-editing={editing}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
+      onPointerCancel={onPointerUp}
     >
       <input
         className="input"

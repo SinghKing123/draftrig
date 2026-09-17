@@ -30,6 +30,8 @@ export function Assistant({ onClose }: { onClose: () => void }) {
   const [error, setError] = useState<{ message: string; hint?: string } | null>(null)
   const [key, setKey] = useState(storedKey())
   const [needsKey, setNeedsKey] = useState(aiMode() === 'unconfigured')
+  /** Wires the plan asked for that the catalog would not allow. */
+  const [skipped, setSkipped] = useState<string[]>([])
   const abort = useRef<AbortController | null>(null)
   const input = useRef<HTMLTextAreaElement>(null)
 
@@ -59,7 +61,10 @@ export function Assistant({ onClose }: { onClose: () => void }) {
       const err = e as AiError
       setError({ message: err.message, hint: err.hint })
       setPhase('error')
-      if (err.message.includes('key')) setNeedsKey(true)
+      // Ask aiMode rather than reading the message: a rejected key and a
+      // deployment that turns out to run no key of its own both end here, and
+      // matching on the word "key" only ever caught the first.
+      if (aiMode() === 'unconfigured' || err.message.includes('key')) setNeedsKey(true)
     }
   }, [prompt, phase])
 
@@ -68,15 +73,28 @@ export function Assistant({ onClose }: { onClose: () => void }) {
       if (!result?.ok) return
       const doc = useDoc.getState()
       const base = replace ? { ...doc.doc, instances: {}, order: [], connections: {}, connectionOrder: [] } : doc.doc
-      const { doc: next, placed } = applyPlan(result.plan, base)
-      doc.loadDoc(next)
-      doc.select(placed.map((p) => p.id))
+      const { doc: next, placed, skipped } = applyPlan(result.plan, base)
+
+      /*
+       * Recorded as one edit, not as a fresh document.
+       *
+       * This used to go through loadDoc, which clears the undo stack along with
+       * everything else — so letting the assistant add a dozen parts to a bench
+       * you had been working on for an hour threw away every step of that hour,
+       * and there was no way back from a suggestion you did not like. Pushing
+       * the current document onto the history and then swapping it makes the
+       * whole placement a single Ctrl+Z.
+       */
+      doc.beginEdit()
+      useDoc.setState({ doc: next, selection: placed.map((p) => p.id), issues: {} })
       engine.reset()
       useSim.getState().setRunning(false)
       setPhase('idle')
       setResult(null)
-      setPrompt('')
-      onClose()
+      // The prompt is kept. Refining a description you already typed is the
+      // normal second step, and retyping it is not.
+      if (skipped.length) setSkipped(skipped)
+      else onClose()
     },
     [result, onClose],
   )
@@ -104,6 +122,17 @@ export function Assistant({ onClose }: { onClose: () => void }) {
               Get a key
             </a>
             <div className="grow" />
+            {storedKey() && (
+              <button
+                className="btn danger"
+                onClick={() => {
+                  setStoredKey('')
+                  setKey('')
+                }}
+              >
+                Remove
+              </button>
+            )}
             <button
               className="btn primary"
               disabled={!key.startsWith('sk-')}
@@ -122,7 +151,7 @@ export function Assistant({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="assistant">
-      <Header onClose={onClose} />
+      <Header onClose={onClose} onKey={aiMode() === 'own-key' ? () => setNeedsKey(true) : undefined} />
       <div className="ai-body">
         <textarea
           ref={input}
@@ -162,6 +191,28 @@ export function Assistant({ onClose }: { onClose: () => void }) {
             {phase === 'thinking' ? 'Working...' : 'Design it'}
           </button>
         </div>
+
+        {phase === 'thinking' && (
+          <div className="ai-working">
+            <span className="ai-spinner" />
+            Designing it. This usually takes a few seconds.
+          </div>
+        )}
+
+        {skipped.length > 0 && (
+          <div className="ai-error">
+            <strong>Placed, but {skipped.length} connection{skipped.length === 1 ? '' : 's'} could not be made.</strong>
+            <ul>
+              {skipped.slice(0, 6).map((w, i) => (
+                <li key={i}>{w}</li>
+              ))}
+            </ul>
+            <div className="ai-actions">
+              <div className="grow" />
+              <button className="btn" onClick={() => { setSkipped([]); onClose() }}>Got it</button>
+            </div>
+          </div>
+        )}
 
         {phase === 'error' && error && (
           <div className="ai-error">
@@ -239,11 +290,18 @@ export function Assistant({ onClose }: { onClose: () => void }) {
   )
 }
 
-function Header({ onClose }: { onClose: () => void }) {
+function Header({ onClose, onKey }: { onClose: () => void; onKey?: () => void }) {
   return (
     <div className="ai-head">
       <span className="ai-title">Assistant</span>
       <div className="grow" />
+      {/* The key screen promises you can remove the key at any time, so there
+          has to be a way back to it. There was not. */}
+      {onKey && (
+        <button className="link-btn" onClick={onKey} title="Change or remove the stored API key">
+          API key
+        </button>
+      )}
       <button className="btn ghost icon" onClick={onClose} title="Close">
         &times;
       </button>

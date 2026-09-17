@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { IconChevron, IconSearch, IconX } from './Icons'
 import { CategoryIcon, PartIcon } from './PartIcons'
 import { allParts, CATEGORY_META, searchParts, valueTargetFor } from '@/parts/kernel/registry'
@@ -7,11 +7,40 @@ import { useDoc } from '@/state/doc'
 
 const SECTION_ORDER: ('Electronics' | 'Build' | 'Computers')[] = ['Electronics', 'Computers', 'Build']
 
+/**
+ * Which categories are expanded, remembered between sessions.
+ *
+ * Everything starts closed. With four sections and nineteen categories, any
+ * category left open pushes the rest off the bottom of the panel, and the
+ * first thing you see is the middle of a list you did not ask for. Closed, the
+ * whole catalogue fits on one screen and you can see what is in it.
+ */
+const OPEN_KEY = 'draftrig.library.open.v1'
+
+function readOpen(): Record<string, boolean> {
+  try {
+    const raw = localStorage.getItem(OPEN_KEY)
+    return raw ? (JSON.parse(raw) as Record<string, boolean>) : {}
+  } catch {
+    // Private windows and blocked site data both land here; everything closed
+    // is the right answer, not a crash.
+    return {}
+  }
+}
+
 export function Library() {
   const [query, setQuery] = useState('')
-  const [open, setOpen] = useState<Record<string, boolean>>({ passive: true, prototyping: true, power: true, structural: true })
+  const [open, setOpen] = useState<Record<string, boolean>>(readOpen)
   const addPart = useDoc((s) => s.addPart)
   const setMode = useDoc((s) => s.setMode)
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(OPEN_KEY, JSON.stringify(open))
+    } catch {
+      /* storage full or unavailable; the panel still works, it just forgets */
+    }
+  }, [open])
 
   const searching = query.trim().length > 0
   const results = useMemo(() => (searching ? searchParts(query) : allParts()), [query, searching])
@@ -26,6 +55,8 @@ export function Library() {
     for (const list of map.values()) list.sort((a, b) => a.name.localeCompare(b.name))
     return map
   }, [results])
+
+  const anyOpen = useMemo(() => Object.values(open).some(Boolean), [open])
 
   const place = (def: PartDef) => {
     // Drop new parts in a loose spiral so they never land on top of each other.
@@ -45,10 +76,18 @@ export function Library() {
 
   return (
     <aside className="panel" data-tour="library">
-      <div className="panel-head">Parts</div>
+      <div className="panel-head">
+        Parts
+        <div className="grow" />
+        {!searching && anyOpen && (
+          <button className="link-btn" onClick={() => setOpen({})} title="Close every category">
+            Collapse all
+          </button>
+        )}
+      </div>
 
       <div className="search">
-        <IconSearch size={12} />
+        <IconSearch size={13} />
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -57,7 +96,7 @@ export function Library() {
         />
         {searching && (
           <button className="clear" onClick={() => setQuery('')} title="Clear">
-            <IconX size={11} />
+            <IconX size={12} />
           </button>
         )}
       </div>
@@ -104,9 +143,10 @@ export function Library() {
                     <button
                       className="lib-group"
                       data-open={!!isOpen}
+                      aria-expanded={!!isOpen}
                       onClick={() => setOpen((o) => ({ ...o, [cat]: !o[cat] }))}
                     >
-                      <IconChevron size={11} className="chev" />
+                      <IconChevron size={12} className="chev" />
                       <span className="lib-glyph"><CategoryIcon category={cat} /></span>
                       {CATEGORY_META[cat].label}
                       <span className="count">{parts.length}</span>

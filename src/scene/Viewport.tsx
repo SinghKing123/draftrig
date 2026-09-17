@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
-import { Canvas, type ThreeEvent } from '@react-three/fiber'
+import { Canvas, useThree, type ThreeEvent } from '@react-three/fiber'
 import { GizmoHelper, GizmoViewport, Grid, OrbitControls, TransformControls } from '@react-three/drei'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import { PartObject } from './PartObject'
@@ -16,6 +16,8 @@ import { installPointerTracker, wasClick } from './pointer'
 import { registerCanvas } from './capture'
 import { SnapSession, type SnapHit } from './snap'
 import { SnapIndicator, snapStore } from './SnapIndicator'
+import { SelectionCage } from './SelectionOutline'
+import { beginDrag, endDrag, updateDrag, type DragState } from './dragMove'
 import type { Vec3 } from '@/parts/kernel/types'
 
 /* ------------------------------------------------------------------ */
@@ -246,17 +248,102 @@ function SceneContents() {
   const controls = useRef<OrbitControlsImpl | null>(null)
   const [cursor, setCursor] = useState<THREE.Vector3 | null>(null)
 
+  const { camera, gl, raycaster } = useThree()
+  const drag = useRef<DragState | null>(null)
+  const [grabbing, setGrabbing] = useState(false)
+
+  /*
+   * What the pointer looks like.
+   *
+   * Set on the canvas element directly rather than in the stylesheet, because
+   * it depends on what is under the cursor in the 3D scene, which no CSS
+   * selector can see. Without it the cursor is a plain arrow everywhere and
+   * nothing distinguishes a part you can pick up from empty space you can
+   * orbit, which is most of what makes a viewport feel unpredictable.
+   */
+  useEffect(() => {
+    const el = gl.domElement
+    el.style.cursor = grabbing
+      ? 'grabbing'
+      : mode === 'wire'
+        ? 'crosshair'
+        : hovered
+          ? 'grab'
+          : 'default'
+  }, [gl, mode, hovered, grabbing])
+
   const selectionSet = useMemo(() => new Set(selection), [selection])
 
   const onPartDown = useCallback(
     (e: ThreeEvent<PointerEvent>, id: string) => {
       if (mode === 'wire') return
       e.stopPropagation()
-      if (e.shiftKey || e.ctrlKey) toggleSelect(id)
-      else if (!selectionSet.has(id)) select([id])
+
+      // Work out what the gesture applies to before the store has caught up:
+      // select() lands on the next render, and the drag starts on this one.
+      let ids: string[]
+      if (e.shiftKey || e.ctrlKey) {
+        toggleSelect(id)
+        ids = selectionSet.has(id) ? selection.filter((x) => x !== id) : [...selection, id]
+      } else if (selectionSet.has(id)) {
+        // Grabbing one of several selected parts drags the whole set.
+        ids = selection
+      } else {
+        select([id])
+        ids = [id]
+      }
+
+      if (mode !== 'build' || e.button !== 0) return
+      /*
+       * Take the gesture away from the orbit controls immediately, not once it
+       * turns into a drag. They have no click threshold of their own, so a
+       * plain click on a part used to rotate the camera by however far the
+       * mouse happened to travel between press and release.
+       */
+      if (controls.current) controls.current.enabled = false
+      drag.current = beginDrag(ids, e.point)
+      if (drag.current) setGrabbing(true)
     },
-    [mode, select, toggleSelect, selectionSet],
+    [mode, select, toggleSelect, selectionSet, selection],
   )
+
+  /*
+   * The move and release halves of a part drag. Bound to the window rather
+   * than to the part, so the gesture survives the pointer leaving the part it
+   * started on, which it does immediately in any drag worth making.
+   */
+  useEffect(() => {
+    const ndc = new THREE.Vector2()
+
+    const onMove = (e: PointerEvent) => {
+      const d = drag.current
+      if (!d) return
+      const r = gl.domElement.getBoundingClientRect()
+      ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1)
+      raycaster.setFromCamera(ndc, camera)
+      if (updateDrag(d, raycaster, controls.current)) dragging.active = true
+    }
+
+    const onUp = () => {
+      const d = drag.current
+      if (!d) return
+      drag.current = null
+      setGrabbing(false)
+      endDrag(d, controls.current)
+      // Let the click-versus-drag guard settle before deselection is live
+      // again, or the release that ends a drag also clears the selection.
+      if (d.live) requestAnimationFrame(() => { dragging.active = false })
+    }
+
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    window.addEventListener('pointercancel', onUp)
+    return () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointercancel', onUp)
+    }
+  }, [camera, gl, raycaster])
 
   // Only a genuine click clears the selection. Without this every camera orbit
   // that starts over empty space throws away what you had selected.
@@ -291,6 +378,7 @@ function SceneContents() {
       <Ports />
       <PendingWire cursor={cursor} />
 
+      <SelectionCage />
       <SelectionTransform controls={controls} />
       <SnapIndicator />
       <CameraRig controls={controls} />

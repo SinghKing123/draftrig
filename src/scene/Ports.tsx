@@ -6,6 +6,7 @@ import { useDoc } from '@/state/doc'
 import { useSim } from '@/state/sim'
 import { portKey } from '@/sim/circuit/netlist'
 import { wasClick } from './pointer'
+import { usePortHover } from './portHover'
 
 const UP = new THREE.Vector3(0, 1, 0)
 
@@ -152,6 +153,36 @@ export function Ports() {
     pick.instanceMatrix.needsUpdate = true
   })
 
+  /*
+   * Publish what is under the pointer, so the overlay can name it.
+   *
+   * Recomputed per frame rather than on the hover event, because the label has
+   * to stay pinned to the terminal while the camera moves, and the camera can
+   * move without the pointer moving at all.
+   */
+  useFrame(({ camera, size: view }) => {
+    const set = usePortHover.getState().set
+    const p = ports[hover]
+    if (!p || mode === 'build') {
+      set(null)
+      return
+    }
+    const v = p.pos.clone().project(camera)
+    // Behind the camera: there is nothing to point at on screen.
+    if (v.z > 1) {
+      set(null)
+      return
+    }
+    const inst = useDoc.getState().doc.instances[p.instanceId]
+    set({
+      label: p.port.label,
+      owner: inst?.name ?? '',
+      role: p.port.role,
+      x: ((v.x + 1) / 2) * view.width,
+      y: ((1 - v.y) / 2) * view.height,
+    })
+  })
+
   // Colour: hover, the pending endpoint, and net voltage while running.
   useFrame(() => {
     const mesh = markRef.current
@@ -205,6 +236,7 @@ export function Ports() {
 
   if (!ports.length) {
     hoverStore.set(null)
+    usePortHover.getState().set(null)
     return null
   }
 
@@ -256,6 +288,16 @@ export function Ports() {
         onPointerOut={() => {
           setHover(-1)
           hoverStore.set(null)
+          usePortHover.getState().set(null)
+        }}
+        /* Right-click abandons a half-drawn wire, the same as Esc. Reaching for
+           the keyboard to cancel a gesture made with the mouse is the kind of
+           small friction that makes a mode feel fiddly. */
+        onContextMenu={(e) => {
+          if (!pending) return
+          e.nativeEvent.preventDefault()
+          e.stopPropagation()
+          setPendingWire(null)
         }}
         onClick={(e) => {
           // A camera orbit that ends over a terminal is not a click on it.

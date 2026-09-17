@@ -47,6 +47,120 @@ function divider(top: string, out: string, bottom: string, f: number, total = 10
   ]
 }
 
+/**
+ * Mirror a half-silhouette, given as (half-width, height) pairs running bottom
+ * to top, into the closed outline of a symmetrical panel.
+ *
+ * `inset` pulls the whole outline in, which is how the cushion is cut from the
+ * same shape as the shell it sits in: one description, two parts that agree.
+ */
+function mirrorProfile(half: [number, number][], inset: number): Vec2[] {
+  const left: Vec2[] = []
+  const right: Vec2[] = []
+  const lastAt = half.length - 1
+  for (let i = 0; i < half.length; i++) {
+    const [w, y] = half[i]
+    // Ends pull in vertically too, or the cushion stands proud at top and base.
+    const dy = i === 0 ? inset : i === lastAt ? -inset : 0
+    const x = Math.max(w - inset, 4)
+    right.push([x, y + dy])
+    left.push([-x, y + dy])
+  }
+  return [...right, ...left.reverse()]
+}
+
+/**
+ * Front-view silhouette of a bucket seat back, headrest included.
+ *
+ * Closely spaced through the shoulder, because that is where the shape turns
+ * fastest: a sparse outline there gave a visible stair-step where the
+ * shoulders drew in to the neck, and a seat with a staircase on it does not
+ * look like a seat.
+ */
+function backOutline(W: number, inset: number): Vec2[] {
+  const hw = W / 2
+  return mirrorProfile(
+    [
+      [hw - 24, -350],
+      [hw - 42, -246],
+      [hw - 40, -140],
+      [hw - 26, -34],
+      [hw - 12, 64],
+      [hw - 6, 146],
+      [hw - 13, 206],
+      [hw - 32, 252],
+      [hw - 62, 288],
+      [W * 0.33, 312],
+      [W * 0.285, 344],
+      [W * 0.26, 384],
+      [W * 0.255, 436],
+      [W * 0.235, 474],
+      [W * 0.175, 498],
+    ],
+    inset,
+  )
+}
+
+/** Plan-view outline of a seat pan. +y is toward the back of the seat. */
+function panOutline(W: number, inset: number): Vec2[] {
+  const hw = W / 2
+  return mirrorProfile(
+    [
+      [hw - 96, -212],
+      [hw - 62, -150],
+      [hw - 34, -20],
+      [hw - 28, 110],
+      [hw - 40, 196],
+    ],
+    inset,
+  )
+}
+
+/**
+ * Stitched seams: thin dark cords lying on a cushion face, at `at` along the
+ * axis they stand off. Cheaper and far more convincing than a painted stripe,
+ * which is what these replaced.
+ */
+function seams(xs: number[], from: number, to: number, at: number, along: 'y' | 'z'): Solid[] {
+  const thread = { color: '#0C0D10', rough: 0.9, density: 0.1, name: 'Stitching' }
+  return xs.map((x): Solid => ({
+    kind: 'tube', mat: thread, r: 2.1, seg: 8, noCollide: true,
+    path: along === 'y'
+      ? [[x, from, at], [x, (from + to) / 2, at + 2], [x, to, at]]
+      : [[x, at, from], [x, at + 2, (from + to) / 2], [x, at, to]],
+  }))
+}
+
+/** A polyline along a circular arc in the XY plane, for a swept tube. */
+function arc(radius: number, fromDeg: number, toDeg: number, steps = 8): Vec3[] {
+  const out: Vec3[] = []
+  for (let i = 0; i <= steps; i++) {
+    const a = (fromDeg + ((toDeg - fromDeg) * i) / steps) * DEG
+    out.push([radius * Math.cos(a), radius * Math.sin(a), 0])
+  }
+  return out
+}
+
+/**
+ * The silhouette of one steering-wheel spoke, from the hub out to the rim.
+ *
+ * Deep where it leaves the hub, waisted in the middle and narrow where it
+ * meets the rim, with two lightening holes through the waist. Drawn along +X;
+ * the three spokes are the same profile placed at three angles.
+ */
+function spokeProfile(inner: number, outer: number): { outline: Vec2[]; holes: Vec2[][] } {
+  const span = Math.max(outer - inner, 20)
+  const at = (t: number) => inner + span * t
+  const outline: Vec2[] = [
+    [at(0), 34], [at(0.28), 25], [at(0.62), 19], [at(1), 15],
+    [at(1), -15], [at(0.62), -19], [at(0.28), -25], [at(0), -34],
+  ]
+  const holes: Vec2[][] = span > 70
+    ? [circle(7, at(0.42), 0, 14), circle(6, at(0.68), 0, 14)]
+    : []
+  return { outline, holes }
+}
+
 /** Four holes on a rectangle, as mechanical ports sharing a group. */
 function holePorts(prefix: string, xs: number[], zs: number[], y: number, dir: Vec3, size: number, thread = false): Port[] {
   const out: Port[] = []
@@ -108,16 +222,24 @@ const racingSeat: PartDef = {
       })
     }
 
-    // Seat pan: a tub of shell with the cushion in it, front edge lifted.
+    /*
+     * Seat pan.
+     *
+     * Cut from a plan-view outline and stood up, rather than stacked out of
+     * boxes: the pan of a bucket seat is wide at the hips, pinched where your
+     * thighs pass over the front edge, and rounded off at that edge. Three
+     * bevelled boxes gave the width but none of the shape, and the result read
+     * as a mattress on a frame.
+     */
     out.push({
       kind: 'group', mat: SHELL, at: [0, 112, 40], rot: [-6, 0, 0], children: [
-        { kind: 'box', mat: SHELL, size: [W - 60, 26, 430], at: [0, -34, -10], bevel: 10 },
-        { kind: 'box', mat: cloth, size: [W - 170, 56, 380], at: [0, 0, 0], bevel: 22 },
-        ...[-1, 1].map((sx): Solid => ({
-          kind: 'box', mat: accent, size: [26, 2, 360], at: [sx * 58, 28.5, 0], noCollide: true,
-        })),
+        { kind: 'extrude', mat: SHELL, depth: 30, bevel: 8, rot: [-90, 0, 0], at: [0, -48, -10], profile: { outline: panOutline(W, 0) } },
+        { kind: 'extrude', mat: cloth, depth: 62, bevel: 20, rot: [-90, 0, 0], at: [0, -30, -10], profile: { outline: panOutline(W, 46) } },
+        // Stitched seams down the cushion. Piping in a colour is what a seat
+        // has; two painted stripes is what a toy has.
+        ...seams([-52, 52], -200, 180, 32.5, 'z'),
         ...(p.harness !== false
-          ? [{ kind: 'box' as const, mat: DARK, size: [40, 3, 70] as Vec3, at: [0, 28, 150] as Vec3, noCollide: true }]
+          ? [{ kind: 'box' as const, mat: DARK, size: [40, 3, 70] as Vec3, at: [0, 30, 150] as Vec3, noCollide: true }]
           : []),
       ],
     })
@@ -131,18 +253,33 @@ const racingSeat: PartDef = {
       })
     }
 
-    // Back, in its own frame: y runs up the back, z toward the driver.
+    /*
+     * Back, in its own frame: y runs up the back, z toward the driver.
+     *
+     * One shell cut to an hourglass silhouette — wide at the hips, waisted,
+     * flaring to the shoulders and drawing in again to the headrest — with the
+     * cushion as an inset copy of the same outline. The headrest is part of
+     * that outline rather than a separate box balanced on top, which is what
+     * used to make it look detachable.
+     */
+    const backShell = backOutline(W, 0)
+    const backPad = backOutline(W, 34)
     out.push({
       kind: 'group', mat: SHELL, at: [0, 400, -205], rot: [-lean, 0, 0], children: [
-        { kind: 'box', mat: SHELL, size: [W - 50, 830, 26], at: [0, 70, -90], bevel: 10 },
-        { kind: 'box', mat: cloth, size: [W - 180, 520, 72], at: [0, 0, 0], bevel: 22 },
+        { kind: 'extrude', mat: SHELL, depth: 26, bevel: 8, at: [0, 0, -104], profile: { outline: backShell } },
+        { kind: 'extrude', mat: cloth, depth: 76, bevel: 26, at: [0, 0, -74], profile: { outline: backPad } },
+        // Shoulder and lumbar wings, wrapping forward around the driver. Both
+        // sit under the crest of the shell rather than beside it, so they read
+        // as the seat swelling toward you instead of as slabs bolted on.
         ...[-1, 1].flatMap((sx): Solid[] => [
-          { kind: 'box', mat: cloth, size: [84, 560, 156], at: [sx * (W / 2 - 58), 20, -28], bevel: 30 },
-          { kind: 'box', mat: cloth, size: [72, 190, 136], at: [sx * (W / 2 - 66), 310, -28], bevel: 26 },
-          { kind: 'box', mat: accent, size: [26, 480, 2], at: [sx * 58, 0, 37], noCollide: true },
+          { kind: 'box', mat: cloth, size: [78, 420, 148], at: [sx * (W / 2 - 52), -70, -26], bevel: 34 },
+          { kind: 'box', mat: cloth, size: [70, 240, 132], at: [sx * (W / 2 - 58), 176, -24], bevel: 32 },
+          // Thin piping along the crest of each wing, in the accent colour.
+          { kind: 'tube', mat: accent, r: 3, seg: 8, noCollide: true,
+            path: [[sx * (W / 2 - 52), -262, 42], [sx * (W / 2 - 46), -40, 46], [sx * (W / 2 - 52), 160, 44], [sx * (W / 2 - 62), 282, 30]] },
         ]),
-        { kind: 'box', mat: cloth, size: [W * 0.46, 210, 96], at: [0, 385, -12], bevel: 30 },
-        { kind: 'cyl', mat: accent, r: 34, h: 2, rot: [90, 0, 0], at: [0, 400, 37], seg: 28, noCollide: true },
+        ...seams([-46, 46], -230, 250, 37, 'y'),
+        { kind: 'cyl', mat: accent, r: 24, h: 1.6, rot: [90, 0, 0], at: [0, 410, 38], seg: 26, noCollide: true },
         ...(p.harness !== false
           ? [-1, 1].map((sx): Solid => ({
               kind: 'box', mat: DARK, size: [46, 22, 120], at: [sx * 72, 272, -30], noCollide: true,
@@ -361,22 +498,74 @@ const steeringWheel: PartDef = {
         path.push([R * Math.cos(-52 * DEG), R * Math.sin(-52 * DEG), 0])
         out.push({ kind: 'tube', mat: grip, r: tube, seg: 14, path })
       }
-      out.push({ kind: 'box', mat: accent, size: [26, tube * 2 + 1, tube * 2 + 1], at: [0, R, 0] })
-      // Three spokes, dished back toward the hub.
-      for (const s of [-1, 1] as const) {
-        out.push({ kind: 'box', mat: 'alu-anod-black', size: [R - 40, 34, 12], at: [s * (40 + (R - 40) / 2), -6, -8], bevel: 3 })
-      }
+
+      /*
+       * Centre marker: a stripe across the face of the rim at top dead centre.
+       *
+       * Swept as a tube at a whisker over the rim radius, so it curves with the
+       * rim and stays flush with it. Drawn as a band around the whole section
+       * it turned into a fat red sausage, which is what a tube of that radius
+       * over a short arc is; the earlier version, a box sitting proud of the
+       * rim, was worse still.
+       */
+      out.push({
+        kind: 'tube', mat: accent, r: 2.2, seg: 10, noCollide: true,
+        path: arc(R + tube - 1.4, 81, 99, 7),
+      })
+
+      /*
+       * Three spokes, dished back toward the hub.
+       *
+       * Extruded from a tapered silhouette rather than built from boxes: a
+       * spoke is deep at the hub, narrow where it meets the rim, and has
+       * lightening holes through it. Three rectangular slabs radiating from a
+       * cylinder read as a diagram of a wheel; this reads as a wheel.
+       */
       const bottom = shape === 'd' ? R * Math.sin(52 * DEG) : R
-      out.push({ kind: 'box', mat: 'alu-anod-black', size: [40, bottom - 40, 12], at: [0, -(40 + (bottom - 40) / 2), -8], bevel: 3 })
-      out.push({ kind: 'cyl', mat: 'alu-anod-black', r: 56, h: 18, rot: [90, 0, 0], at: [0, 0, -6], seg: 36, chamfer: 3 })
-      out.push({ kind: 'cyl', mat: accent, r: 26, h: 2, rot: [90, 0, 0], at: [0, 0, 4], seg: 28, noCollide: true })
-      // Buttons on the spokes.
+      const spokes: [number, number][] = [
+        [-8, R],
+        [188, R],
+        [270, bottom],
+      ]
+      for (const [angle, reach] of spokes) {
+        out.push({
+          kind: 'extrude', mat: 'alu-anod-black', depth: 13, bevel: 2.5,
+          profile: spokeProfile(54, reach - 6),
+          rot: [0, 0, angle], at: [0, 0, -9],
+        })
+      }
+
+      /*
+       * Hub: a stepped boss, turned rather than stamped out of one cylinder.
+       * The step is what catches the light and tells you the centre of the
+       * wheel is nearer to you than the rim is.
+       */
+      out.push({
+        kind: 'lathe', mat: 'alu-anod-black', seg: 40, rot: [90, 0, 0], at: [0, 0, 0],
+        points: [[0, -17], [52, -17], [56, -13], [56, 1], [51, 7], [38, 11], [22, 13], [0, 13]],
+      })
+      // Badge, sunk into the boss rather than stuck on the front of it.
+      out.push({ kind: 'cyl', mat: { color: '#0B0D10', rough: 0.5, density: 1.2 }, r: 14, h: 2, rot: [90, 0, 0], at: [0, 0, 12.4], seg: 28, noCollide: true })
+      out.push({ kind: 'cyl', mat: accent, r: 10.5, h: 1.4, rot: [90, 0, 0], at: [0, 0, 13.4], seg: 28, noCollide: true })
+
+      /*
+       * Buttons, on the spokes rather than floating in front of them. Each sits
+       * in a shallow recessed plate, so a button is something set into a
+       * surface instead of a disc stuck to the air in front of one.
+       */
       const cols = ['#C4262C', '#2F6FE0', '#E0A81E', '#2BA84A']
       cols.forEach((c, i) => {
-        const s = i < 2 ? -1 : 1
+        const sx = i < 2 ? -1 : 1
+        const along = 0.46 + (i % 2) * 0.17
+        const x = sx * (54 + (R - 60) * along)
+        const y = -8 + (i % 2 === 0 ? 11 : -11)
         out.push({
-          kind: 'cyl', mat: { color: c, rough: 0.4, density: 1.2 }, r: 7, h: 6, rot: [90, 0, 0],
-          at: [s * R * 0.52, i % 2 === 0 ? 7 : -19, 1], seg: 16,
+          kind: 'cyl', mat: { color: '#0F1114', rough: 0.7, density: 1.2 }, r: 9.5, h: 2.5,
+          rot: [90, 0, 0], at: [x, y, -2.4], seg: 20, noCollide: true,
+        })
+        out.push({
+          kind: 'cyl', mat: { color: c, rough: 0.4, density: 1.2 }, r: 7, h: 4.5,
+          rot: [90, 0, 0], at: [x, y, -1.4], seg: 20, chamfer: 0.8, noCollide: true,
         })
       })
     }
@@ -384,11 +573,23 @@ const steeringWheel: PartDef = {
     // Quick release, and the paddles behind it.
     out.push({ kind: 'cyl', mat: 'alu-6063', r: 28, h: 34, rot: [90, 0, 0], at: [0, 0, -30], seg: 32, chamfer: 2 })
     out.push({ kind: 'cyl', mat: { color: '#C4262C', rough: 0.5, density: 2.7 }, r: 30, h: 6, rot: [90, 0, 0], at: [0, 0, -40], seg: 32 })
+    /*
+     * Shift paddles. Cut as a tapered blade rather than a rectangle: a paddle
+     * is wide where it pivots and narrows to the tip you catch with a
+     * fingertip, and the shape is most of what makes it read as a paddle and
+     * not as a flap of carbon.
+     */
     for (const s of [-1, 1] as const) {
       const held = (s > 0 && paddle === 'up') || (s < 0 && paddle === 'down')
       out.push({
-        kind: 'box', mat: CARBON, size: [70, 118, 5], at: [s * 76, 28, held ? -44 : -50],
-        rot: [0, 0, s * 16], bevel: 2,
+        kind: 'extrude', mat: CARBON, depth: 5, bevel: 1.6,
+        profile: { outline: [[-30, 62], [34, 44], [34, -44], [-24, -56], [-32, -20]].map(([x, y]): Vec2 => [s * x, y]) },
+        at: [s * 76, 28, held ? -44 : -50], rot: [0, 0, s * 16],
+      })
+      // The pivot it swings on, which is also what holds it off the rim.
+      out.push({
+        kind: 'cyl', mat: 'alu-6063', r: 5, h: 14, rot: [0, 90, 0],
+        at: [s * 46, 62, held ? -44 : -50], seg: 16, noCollide: true,
       })
     }
     return out
@@ -1195,7 +1396,81 @@ const desk: PartDef = {
   ],
 }
 
+/* ================================================================== */
+/* Steel office desk                                                   */
+/* ================================================================== */
+
+/**
+ * The first part drawn from a mesh file rather than from solids.
+ *
+ * The solids below are not decoration and not a placeholder: they are the
+ * desk, as far as everything except the picture is concerned. They set the
+ * bounding box the model is fitted into, they carry the two mounting faces,
+ * and they are what gets drawn if the file does not arrive. The .gltf only
+ * replaces what you look at.
+ */
+const steelDesk: PartDef = {
+  id: 'steel-desk',
+  name: 'Steel office desk',
+  category: 'peripheral',
+  blurb: 'Heavy pedestal desk, drawers both sides',
+  tags: ['desk', 'office desk', 'pedestal desk', 'steel desk', 'table', 'furniture', 'tanker desk'],
+  doc: {
+    price: 420,
+    description:
+      'The kind of steel pedestal desk that outlives several of the people who sit at it. Drawers down both sides, a linoleum top, and enough mass that nothing on it moves when you lean on it.',
+  },
+  model: {
+    url: 'models/steel-desk/metal_office_desk_1k.gltf',
+    fit: 'bbox',
+    credit: {
+      title: 'Metal Office Desk',
+      author: 'Poly Haven',
+      license: 'CC0-1.0',
+      source: 'https://polyhaven.com/a/metal_office_desk',
+    },
+  },
+  params: [
+    { key: 'width', label: 'Width', type: 'number', unit: 'mm', default: 1520, min: 1200, max: 1900, step: 20, group: 'Desk' },
+    { key: 'depth', label: 'Depth', type: 'number', unit: 'mm', default: 760, min: 600, max: 900, step: 20, group: 'Desk' },
+    { key: 'height', label: 'Height', type: 'number', unit: 'mm', default: 745, min: 700, max: 800, step: 5, group: 'Desk' },
+  ],
+  solids: (p) => {
+    const W = num(p, 'width', 1520)
+    const D = num(p, 'depth', 760)
+    const H = num(p, 'height', 745)
+    const T = 32
+    const steel = { color: '#3A3E44', metal: 0.7, rough: 0.55, density: 7.85, name: 'Enamelled steel' }
+    const out: Solid[] = [
+      { kind: 'box', mat: { color: '#4A4E54', rough: 0.72, density: 1.4, name: 'Linoleum top' }, size: [W, T, D], at: [0, H - T / 2, 0], bevel: 4 },
+    ]
+    // Two drawer pedestals and the knee hole between them.
+    for (const sx of [-1, 1] as const) {
+      const pw = W * 0.26
+      out.push({ kind: 'box', mat: steel, size: [pw, H - T - 40, D - 40], at: [sx * (W / 2 - pw / 2 - 10), 40 + (H - T - 40) / 2, 0], bevel: 3 })
+      for (let i = 0; i < 3; i++) {
+        out.push({
+          kind: 'box', mat: { color: '#23262B', rough: 0.6, density: 7.85 }, size: [pw * 0.42, 14, 8],
+          at: [sx * (W / 2 - pw / 2 - 10), 120 + i * ((H - 220) / 3), (D - 40) / 2 + 4], noCollide: true,
+        })
+      }
+    }
+    out.push({ kind: 'box', mat: steel, size: [W, 60, 30], at: [0, H - T - 60, -D / 2 + 20], bevel: 3 })
+    return out
+  },
+  ports: (p) => [
+    { id: 'top', label: 'Desk top', kind: 'mechanical', pos: [0, num(p, 'height', 745), 0], dir: [0, 1, 0], mate: { type: 'face' } },
+    { id: 'base', label: 'Feet', kind: 'mechanical', pos: [0, 0, 0], dir: [0, -1, 0], mate: { type: 'face' } },
+  ],
+  mass: (p) => 54000 + num(p, 'width', 1520) * 12,
+  readouts: (p) => [
+    { label: 'Top', value: `${num(p, 'width', 1520)} x ${num(p, 'depth', 760)} mm` },
+    { label: 'Height', value: `${num(p, 'height', 745)} mm` },
+    { label: 'Drawers', value: '6' },
+  ],
+}
+
 registerParts([
   racingSeat, wheelBase, steeringWheel, pedals, shifter, handbrake, buttonBox, flightStick,
-  monitor, keyboard, mouse, headset, desk,
+  monitor, keyboard, mouse, headset, desk, steelDesk,
 ])

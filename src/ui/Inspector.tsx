@@ -4,7 +4,7 @@ import { Field, NumberField, Readout, Toggle } from './Fields'
 import { IconChevron, IconCopy, IconLock, IconTrash, IconUnlock, IconZap } from './Icons'
 import { useDoc } from '@/state/doc'
 import { useSim } from '@/state/sim'
-import { getPart } from '@/parts/kernel/registry'
+import { getPart, unitPrice } from '@/parts/kernel/registry'
 import { buildPart } from '@/parts/kernel/build'
 import type { ParamSpec, Params, Vec3 } from '@/parts/kernel/types'
 import { eng, formatMass, formatMoney } from '@/parts/kernel/units'
@@ -202,7 +202,10 @@ export function Inspector() {
   const electricalPorts = built?.ports.filter((p) => p.kind === 'electrical') ?? []
   const hasLive = Object.keys(nodeV).length > 0
 
-  const price = def.doc?.price
+  // unitPrice, not doc.price: a graphics card's price is a function of how it
+  // is configured, and reading the flat field showed nothing for every part
+  // that prices itself. The bill of materials has always used this one.
+  const price = unitPrice(def, inst.params)
   const size = built ? built.bbox.getSize(new THREE.Vector3()) : null
 
   return (
@@ -272,7 +275,7 @@ export function Inspector() {
           {built && <Readout k="Mass" v={formatMass(built.mass)} />}
           {built && <Readout k="Volume" v={`${built.volume.toFixed(2)} cm³`} />}
           {size && <Readout k="Bounding box" v={`${size.x.toFixed(1)} × ${size.y.toFixed(1)} × ${size.z.toFixed(1)} mm`} />}
-          {price !== undefined && <Readout k="Unit price" v={formatMoney(price)} />}
+          {price > 0 && <Readout k="Unit price" v={formatMoney(price)} />}
           {built && <Readout k="Terminals" v={String(built.ports.length)} />}
         </Group>
 
