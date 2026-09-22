@@ -1,0 +1,33 @@
+{
+  // Cloudflare Workers deployment.
+  //
+  // This file exists to stop `wrangler deploy` guessing. Without it, wrangler
+  // detects Vite, tries to configure the project itself, and refuses on
+  // anything below Vite 6 — which failed every build with "The version of Vite
+  // used in the project cannot be automatically configured". With explicit
+  // config there is nothing to detect: the site is already built by
+  // `npm run build`, and wrangler's only job is to upload ./dist and the one
+  // Worker route that is not a static file.
+  //
+  // Cloudflare Pages remains supported and needs none of this; vercel.json,
+  // netlify.toml and functions/ are all still in the repo. This is the third
+  // option, not a replacement for them.
+  "name": "draftrig",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-09-01",
+
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+
+    // The editor lives at /app and /app/<project-id>, neither of which is a
+    // file on disk. Without this, refreshing on a saved project 404s.
+    "not_found_handling": "single-page-application",
+
+    // Everything except the API is a static file, so the Worker is skipped
+    // entirely for it. Only /api/* reaches the script below, which is what
+    // keeps the assistant's endpoint from being swallowed by the SPA
+    // fallback above.
+    "run_worker_first": ["/api/*"]
+  }
+}
