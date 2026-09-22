@@ -62,6 +62,16 @@ export interface DocState {
   /** Colour the next wire is drawn in. */
   wireColor: string
   view: ViewFlags
+  /**
+   * True once the render quality has been chosen by hand.
+   *
+   * The frame-rate monitor lowers quality on machines that cannot keep up, but
+   * it must never argue with a decision somebody made on purpose: picking
+   * "Best look" and watching it silently revert a few seconds later reads as
+   * the control being broken, not as the app being helpful.
+   */
+  qualityPinned: boolean
+
   /** Instance ids that failed a design rule, with messages. */
   issues: Record<string, string[]>
   /** Bumped to ask the viewport to reframe; the scene owns the camera. */
@@ -104,6 +114,8 @@ export interface DocState {
   setStandardView: (preset: ViewPreset) => void
   setSnap: (s: Partial<Snap>) => void
   setView: (v: Partial<ViewFlags>) => void
+  /** Set the render quality as a deliberate choice, and stop adapting it. */
+  pinQuality: (q: ViewFlags['quality']) => void
   setIssues: (issues: Record<string, string[]>) => void
 
   undo: () => void
@@ -214,6 +226,7 @@ export const useDoc = create<DocState>()((set, get) => {
      * High is still one click away for anyone with the GPU for it.
      */
     view: { grid: true, ports: true, wires: true, labels: false, shadows: true, xray: false, quality: 'balanced' },
+    qualityPinned: false,
     issues: {},
     frameToken: 0,
     frameTarget: 'all',
@@ -398,6 +411,7 @@ export const useDoc = create<DocState>()((set, get) => {
     setSnap: (s) => set((st) => ({ snap: { ...st.snap, ...s } })),
     setWireColor: (wireColor) => set({ wireColor }),
     setView: (v) => set((st) => ({ view: { ...st.view, ...v } })),
+    pinQuality: (quality) => set((st) => ({ view: { ...st.view, quality }, qualityPinned: true })),
     setIssues: (issues) => set({ issues }),
 
     undo: () => {

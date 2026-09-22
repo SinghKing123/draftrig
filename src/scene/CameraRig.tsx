@@ -97,10 +97,16 @@ export function CameraRig({ controls }: { controls: React.MutableRefObject<Orbit
    */
   useEffect(() => {
     if (viewToken === 0) return
-    const only = selection.length ? new Set(selection) : undefined
-    // Frame the selection if there is one, the whole build otherwise.
-    let box = documentBounds(only)
-    if (box.isEmpty()) box = documentBounds()
+    /*
+     * Always the whole build, never the selection.
+     *
+     * Framing the selection put the camera inside the rig whenever a small
+     * part happened to be selected: ask for the three-quarter view of a motion
+     * simulator with one steering wheel selected and you got the inside of a
+     * panel. A standard view is a statement about the model as a whole. F
+     * still frames the selection, which is the control for the other job.
+     */
+    let box = documentBounds()
     if (box.isEmpty()) box = new THREE.Box3(new THREE.Vector3(-60, 0, -60), new THREE.Vector3(60, 60, 60))
 
     const centre = box.getCenter(new THREE.Vector3())
@@ -122,9 +128,6 @@ export function CameraRig({ controls }: { controls: React.MutableRefObject<Orbit
     persp.near = Math.max(dist / 4000, 0.5)
     persp.far = dist * 12
     persp.updateProjectionMatrix()
-    // selection is read, not depended on: changing what is selected should not
-    // move the camera on its own.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewToken, viewPreset, camera, size, controls])
 
   useFrame((_, delta) => {

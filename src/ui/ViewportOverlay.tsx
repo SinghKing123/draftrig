@@ -113,6 +113,7 @@ export function ViewportOverlay({ onReplayTour }: { onReplayTour: () => void }) 
   const requestFrame = useDoc((s) => s.requestFrame)
   const pendingWire = useDoc((s) => s.pendingWire)
   const setStandardView = useDoc((s) => s.setStandardView)
+  const pinQuality = useDoc((s) => s.pinQuality)
 
   const running = useSim((s) => s.running)
   const time = useSim((s) => s.time)
@@ -227,7 +228,7 @@ export function ViewportOverlay({ onReplayTour }: { onReplayTour: () => void }) 
           className="input"
           style={{ width: 106, height: 'var(--ctl-h)' }}
           value={view.quality}
-          onChange={(e) => setView({ quality: e.target.value as 'off' | 'balanced' | 'high' })}
+          onChange={(e) => pinQuality(e.target.value as 'off' | 'balanced' | 'high')}
           title="Render quality. Drop this if the view feels slow."
         >
           <option value="high">Best look</option>

@@ -49,7 +49,12 @@ export function useAdaptiveQuality(): void {
     elapsed.current = 0
     if (fps >= FLOOR_FPS) return
 
-    const { view, setView } = useDoc.getState()
+    const { view, setView, qualityPinned } = useDoc.getState()
+    // Somebody has chosen a setting. It is theirs, not ours.
+    if (qualityPinned) {
+      started.current = Number.POSITIVE_INFINITY
+      return
+    }
     if (view.quality === 'high') setView({ quality: 'balanced' })
     else if (view.quality === 'balanced') setView({ quality: 'off' })
     else if (view.shadows) setView({ shadows: false })
