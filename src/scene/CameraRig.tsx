@@ -4,7 +4,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import { buildPart, instanceMatrix } from '@/parts/kernel/build'
 import { getPart } from '@/parts/kernel/registry'
-import { listInstances, useDoc } from '@/state/doc'
+import { listInstances, useDoc, type ViewPreset } from '@/state/doc'
 
 /** World-space bounds of the whole document, or of the current selection. */
 export function documentBounds(only?: Set<string>): THREE.Box3 {
@@ -24,6 +24,23 @@ export function documentBounds(only?: Set<string>): THREE.Box3 {
 }
 
 /**
+ * Where the camera sits for each standard view, as a direction from the target.
+ *
+ * Top is nudged off true vertical on purpose. Looking straight down the up
+ * axis makes the azimuth undefined, and orbit controls answer that by snapping
+ * to an arbitrary heading the moment you touch the mouse — the view spins
+ * without being asked to.
+ */
+const VIEW_DIR: Record<ViewPreset, THREE.Vector3> = {
+  top: new THREE.Vector3(0.0001, 1, 0.0012).normalize(),
+  front: new THREE.Vector3(0, 0.08, 1).normalize(),
+  back: new THREE.Vector3(0, 0.08, -1).normalize(),
+  right: new THREE.Vector3(1, 0.08, 0).normalize(),
+  left: new THREE.Vector3(-1, 0.08, 0).normalize(),
+  iso: new THREE.Vector3(0.8, 0.62, 0.95).normalize(),
+}
+
+/**
  * Frames the model on request. Keeps the camera's current viewing direction,
  * because a fit that also swings the camera around is disorienting.
  */
@@ -32,6 +49,9 @@ export function CameraRig({ controls }: { controls: React.MutableRefObject<Orbit
   const token = useDoc((s) => s.frameToken)
   const target = useDoc((s) => s.frameTarget)
   const selection = useDoc((s) => s.selection)
+
+  const viewToken = useDoc((s) => s.viewToken)
+  const viewPreset = useDoc((s) => s.viewPreset)
 
   const anim = useRef<{ from: THREE.Vector3; to: THREE.Vector3; fromT: THREE.Vector3; toT: THREE.Vector3; t: number } | null>(null)
 
@@ -66,6 +86,46 @@ export function CameraRig({ controls }: { controls: React.MutableRefObject<Orbit
     persp.far = dist * 12
     persp.updateProjectionMatrix()
   }, [token, target, selection, camera, size, controls])
+
+  /*
+   * Standard views.
+   *
+   * Always reframes as well as reorienting. "Top" that looks down from
+   * wherever the camera happened to be is only half an answer: the point of a
+   * standard view is to see the whole thing from a known angle, and having to
+   * press Fit afterwards every time defeats it.
+   */
+  useEffect(() => {
+    if (viewToken === 0) return
+    const only = selection.length ? new Set(selection) : undefined
+    // Frame the selection if there is one, the whole build otherwise.
+    let box = documentBounds(only)
+    if (box.isEmpty()) box = documentBounds()
+    if (box.isEmpty()) box = new THREE.Box3(new THREE.Vector3(-60, 0, -60), new THREE.Vector3(60, 60, 60))
+
+    const centre = box.getCenter(new THREE.Vector3())
+    const radius = Math.max(box.getSize(new THREE.Vector3()).length() / 2, 20)
+
+    const persp = camera as THREE.PerspectiveCamera
+    const vFov = (persp.fov * Math.PI) / 180
+    const aspect = size.width / Math.max(size.height, 1)
+    const hFov = 2 * Math.atan(Math.tan(vFov / 2) * aspect)
+    const dist = (radius / Math.sin(Math.min(vFov, hFov) / 2)) * 1.18
+
+    anim.current = {
+      from: camera.position.clone(),
+      to: centre.clone().addScaledVector(VIEW_DIR[viewPreset], dist),
+      fromT: (controls.current?.target ?? new THREE.Vector3()).clone(),
+      toT: centre,
+      t: 0,
+    }
+    persp.near = Math.max(dist / 4000, 0.5)
+    persp.far = dist * 12
+    persp.updateProjectionMatrix()
+    // selection is read, not depended on: changing what is selected should not
+    // move the camera on its own.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewToken, viewPreset, camera, size, controls])
 
   useFrame((_, delta) => {
     const a = anim.current

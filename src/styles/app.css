@@ -1167,3 +1167,96 @@ kbd {
   animation: ai-spin 700ms linear infinite;
 }
 @keyframes ai-spin { to { transform: rotate(360deg); } }
+
+/* ============================================================
+   Viewport: navigation help
+   ============================================================ */
+
+/* A toolbar button that carries a word as well as a glyph. */
+.btn.vp-text {
+  gap: 6px;
+  padding: 0 11px 0 9px;
+  font-weight: 550;
+}
+
+.btn.icon.sm { width: 22px; height: 22px; }
+
+.nav-help {
+  position: absolute;
+  top: 60px;
+  left: 12px;
+  z-index: 40;
+  width: 310px;
+  padding: 12px 14px 13px;
+  background: rgba(17, 20, 25, 0.95);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-md);
+  box-shadow: var(--sh-2);
+  animation: drop-in 140ms var(--ease);
+}
+
+.nav-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tx-3);
+}
+.nav-head .btn { margin-left: auto; }
+
+.nav-help dl { display: grid; gap: 9px; }
+.nav-help dl > div {
+  display: grid;
+  grid-template-columns: 88px 1fr;
+  align-items: baseline;
+  gap: 10px;
+}
+.nav-help dt {
+  font-size: var(--fs-sm);
+  color: var(--tx-1);
+  text-align: right;
+}
+.nav-help dt b { font-weight: 600; color: var(--tx-0); }
+.nav-help dd {
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+  color: var(--tx-2);
+}
+
+/* The three axis markers, so the row about them shows what to look for. */
+.nav-axes { display: inline-flex; gap: 3px; justify-content: flex-end; width: 100%; }
+.nav-axes i { width: 9px; height: 9px; border-radius: 50%; }
+
+/*
+ * Standard views, as a segmented control.
+ *
+ * Words rather than glyphs, for the same reason "Fit" is a word: four small
+ * cubes seen from four angles are not four distinguishable icons, and nobody
+ * hovers a toolbar reading tooltips to find the one that means "top".
+ */
+.vp-views {
+  display: inline-flex;
+  align-items: stretch;
+  height: var(--ctl-h);
+  padding: 2px;
+  gap: 1px;
+  border-radius: var(--r-sm);
+  background: var(--bg-0);
+  border: 1px solid var(--line);
+}
+.vp-view {
+  padding: 0 9px;
+  border-radius: 3px;
+  font-size: var(--fs-sm);
+  font-weight: 550;
+  color: var(--tx-2);
+  letter-spacing: 0.01em;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.vp-view:hover { background: var(--bg-4); color: var(--tx-0); }
+.vp-view:active { background: var(--brand-dim); color: var(--brand-hi); }

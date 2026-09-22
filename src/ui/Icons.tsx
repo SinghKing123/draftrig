@@ -138,3 +138,26 @@ export const IconPencil = (p: IconProps) => (
 export const IconDownload = (p: IconProps) => (
   <S {...p}><path d="M8 2.2v7.6M4.8 7l3.2 2.8L11.2 7" /><path d="M2.6 11.4v1.2a1.2 1.2 0 0 0 1.2 1.2h8.4a1.2 1.2 0 0 0 1.2-1.2v-1.2" /></S>
 )
+
+/** Standard views. Drawn as a cube face lit from the named side. */
+export const IconViewTop = (p: IconProps) => (
+  <S {...p}><path d="M8 1.9 14 5.1 8 8.3 2 5.1 8 1.9Z" fill="currentColor" fillOpacity=".9" /><path d="M2 5.1v5.8L8 14.1l6-3.2V5.1" strokeOpacity=".45" /><path d="M8 8.3v5.8" strokeOpacity=".45" /></S>
+)
+export const IconViewFront = (p: IconProps) => (
+  <S {...p}><path d="M2 5.1 8 8.3l6-3.2v5.8L8 14.1l-6-3.2V5.1Z" fill="currentColor" fillOpacity=".9" /><path d="M8 1.9 14 5.1 8 8.3 2 5.1 8 1.9Z" strokeOpacity=".45" /></S>
+)
+export const IconViewSide = (p: IconProps) => (
+  <S {...p}><path d="M8 8.3 14 5.1v5.8L8 14.1V8.3Z" fill="currentColor" fillOpacity=".9" /><path d="M8 1.9 14 5.1 8 8.3 2 5.1 8 1.9Z" strokeOpacity=".45" /><path d="M2 5.1v5.8L8 14.1" strokeOpacity=".45" /></S>
+)
+export const IconViewIso = (p: IconProps) => (
+  <S {...p}><path d="M8 1.9 14 5.1v5.8L8 14.1l-6-3.2V5.1L8 1.9Z" /><path d="M2 5.1 8 8.3l6-3.2M8 8.3v5.8" strokeOpacity=".5" /></S>
+)
+/** Render quality. */
+export const IconSparkle = (p: IconProps) => (
+  <S {...p}><path d="M6.2 2.2 7.3 5.4l3.2 1.1-3.2 1.1-1.1 3.2-1.1-3.2L1.9 6.5l3.2-1.1Z" /><path d="M11.6 8.6l.7 1.9 1.9.7-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7Z" /></S>
+)
+
+/** Where to find out how something works. */
+export const IconHelp = (p: IconProps) => (
+  <S {...p}><circle cx="8" cy="8" r="6.2" /><path d="M6.3 6.2a1.75 1.75 0 1 1 2.4 1.62c-.5.2-.7.6-.7 1.1v.4" /><path d="M8 11.9h.01" /></S>
+)

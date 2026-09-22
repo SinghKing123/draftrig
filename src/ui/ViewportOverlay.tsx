@@ -1,4 +1,8 @@
-import { IconEye, IconEyeOff, IconFrame, IconGrid, IconMagnet, IconMove, IconRotate, IconXray, IconZap } from './Icons'
+import { useEffect, useState } from 'react'
+import {
+  IconEye, IconEyeOff, IconFrame, IconGrid, IconHelp, IconMagnet, IconMove, IconRotate,
+  IconX, IconXray, IconZap,
+} from './Icons'
 import { useDoc, WIRE_COLORS } from '@/state/doc'
 import { useSim } from '@/state/sim'
 import { usePortHover } from '@/scene/portHover'
@@ -51,6 +55,52 @@ function PendingHint() {
   )
 }
 
+
+/**
+ * How to move the camera.
+ *
+ * A 3D viewport is the one part of an interface that cannot be worked out by
+ * looking at it: nothing on screen says that dragging orbits, that the right
+ * button pans, or that the coloured markers in the corner are buttons. Every
+ * 3D tool answers this somewhere, and the ones that answer it in the viewport
+ * rather than in a manual are the ones people get started in.
+ *
+ * Shows itself once, unprompted, on a first visit; after that it lives behind
+ * the question mark and stays out of the way.
+ */
+
+const NAV_SEEN = 'draftrig.nav.seen.v1'
+
+const NAV_ROWS: { how: React.ReactNode; what: string }[] = [
+  { how: <><b>Drag</b></>, what: 'Turn the view around the build' },
+  { how: <><b>Right-drag</b></>, what: 'Slide the view sideways' },
+  { how: <><b>Scroll</b></>, what: 'Zoom towards the pointer' },
+  { how: <kbd>F</kbd>, what: 'Fill the view with what is selected' },
+  { how: <span className="nav-axes"><i style={{ background: '#FF6B6B' }} /><i style={{ background: '#3DD68C' }} /><i style={{ background: '#4C8DFF' }} /></span>, what: 'Click a marker, bottom right, for a straight-on view' },
+]
+
+function NavHelp({ open, onClose }: { open: boolean; onClose: () => void }) {
+  if (!open) return null
+  return (
+    <div className="nav-help" role="dialog" aria-label="Moving around the view">
+      <div className="nav-head">
+        Moving around
+        <button className="btn ghost icon sm" onClick={onClose} aria-label="Close">
+          <IconX size={12} />
+        </button>
+      </div>
+      <dl>
+        {NAV_ROWS.map((r, i) => (
+          <div key={i}>
+            <dt>{r.how}</dt>
+            <dd>{r.what}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  )
+}
+
 export function ViewportOverlay({ onReplayTour }: { onReplayTour: () => void }) {
   const mode = useDoc((s) => s.mode)
   const view = useDoc((s) => s.view)
@@ -62,9 +112,22 @@ export function ViewportOverlay({ onReplayTour }: { onReplayTour: () => void }) 
   const empty = useDoc((s) => s.doc.order.length === 0)
   const requestFrame = useDoc((s) => s.requestFrame)
   const pendingWire = useDoc((s) => s.pendingWire)
+  const setStandardView = useDoc((s) => s.setStandardView)
 
   const running = useSim((s) => s.running)
   const time = useSim((s) => s.time)
+
+  // Opens itself once, on a first visit, then only when asked for.
+  const [navOpen, setNavOpen] = useState(false)
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(NAV_SEEN)) return
+      localStorage.setItem(NAV_SEEN, '1')
+    } catch {
+      // Private window: show it, and show it again next time. Harmless.
+    }
+    setNavOpen(true)
+  }, [])
 
   const hint = MODE_HINT[mode]
 
@@ -75,7 +138,7 @@ export function ViewportOverlay({ onReplayTour }: { onReplayTour: () => void }) 
         <button
           className="btn ghost icon"
           data-on={transformMode === 'move'}
-          title="Move (G)"
+          title="Drag parts to move them (G)"
           onClick={() => setTransformMode('move')}
         >
           <IconMove />
@@ -83,7 +146,7 @@ export function ViewportOverlay({ onReplayTour }: { onReplayTour: () => void }) 
         <button
           className="btn ghost icon"
           data-on={transformMode === 'rotate'}
-          title="Rotate (R)"
+          title="Drag parts to turn them (R)"
           onClick={() => setTransformMode('rotate')}
         >
           <IconRotate />
@@ -94,7 +157,7 @@ export function ViewportOverlay({ onReplayTour }: { onReplayTour: () => void }) 
         <button
           className="btn ghost icon"
           data-on={snap.enabled}
-          title={`Snap to a ${snap.grid} mm grid and to nearby terminals`}
+          title={`Snapping is ${snap.enabled ? 'on' : 'off'}: parts land on a ${snap.grid} mm grid and jump to nearby terminals`}
           onClick={() => setSnap({ enabled: !snap.enabled })}
         >
           <IconMagnet />
@@ -118,19 +181,74 @@ export function ViewportOverlay({ onReplayTour }: { onReplayTour: () => void }) 
 
         <div className="sep" />
 
-        <button className="btn ghost icon" title="Frame the build (F)" onClick={() => requestFrame('all')}>
+        {/*
+          * Standard views.
+          *
+          * The one thing the viewport had no answer for: once you had orbited
+          * somewhere strange there was no way back to a known angle short of
+          * reloading the page. Each of these also fits the build, because a
+          * top view of something off the edge of the screen is not a view of
+          * anything, and having to press Fit afterwards every time defeats the
+          * point of a preset.
+          */}
+        <span className="vp-views" role="group" aria-label="Standard views">
+          <button className="vp-view" title="Look straight down" onClick={() => setStandardView('top')}>Top</button>
+          <button className="vp-view" title="Look at the front" onClick={() => setStandardView('front')}>Front</button>
+          <button className="vp-view" title="Look from the right" onClick={() => setStandardView('right')}>Side</button>
+          <button className="vp-view" title="Back to the three-quarter view" onClick={() => setStandardView('iso')}>3D</button>
+        </span>
+
+        {/* Named rather than drawn. "Fit" is the control people look for by
+            name when they have lost the build off the edge of the screen, and
+            a glyph of a frame is not something anyone searches for. */}
+        <button className="btn ghost vp-text" title="Fit the whole build on screen (F)" onClick={() => requestFrame('all')}>
           <IconFrame />
+          Fit
         </button>
+
+        <div className="sep" />
+
         <button className="btn ghost icon" data-on={view.grid} title="Ground grid (H)" onClick={() => setView({ grid: !view.grid })}>
           <IconGrid />
         </button>
         <button className="btn ghost icon" data-on={view.ports} title="Show terminals (P)" onClick={() => setView({ ports: !view.ports })}>
           {view.ports ? <IconEye /> : <IconEyeOff />}
         </button>
-        <button className="btn ghost icon" data-on={view.xray} title="X-ray (X)" onClick={() => setView({ xray: !view.xray })}>
+        <button className="btn ghost icon" data-on={view.xray} title="See through solid parts (X)" onClick={() => setView({ xray: !view.xray })}>
           <IconXray />
         </button>
+        {/*
+          * Render quality, which has lived in the store since the beginning and
+          * has never once been shown. It is the setting that decides whether
+          * this runs at sixty frames a second or twenty-nine, so it belongs
+          * somewhere a person can reach it rather than in a source file.
+          */}
+        <select
+          className="input"
+          style={{ width: 106, height: 'var(--ctl-h)' }}
+          value={view.quality}
+          onChange={(e) => setView({ quality: e.target.value as 'off' | 'balanced' | 'high' })}
+          title="Render quality. Drop this if the view feels slow."
+        >
+          <option value="high">Best look</option>
+          <option value="balanced">Balanced</option>
+          <option value="off">Fastest</option>
+        </select>
+
+        <div className="sep" />
+
+        <button
+          className="btn ghost icon"
+          data-on={navOpen}
+          title="How to move around the view"
+          aria-label="How to move around the view"
+          onClick={() => setNavOpen((v) => !v)}
+        >
+          <IconHelp />
+        </button>
       </div>
+
+      <NavHelp open={navOpen} onClose={() => setNavOpen(false)} />
 
       <PortTip />
       {pendingWire ? <PendingHint /> : hint ? <div className="vp-hint">{hint}</div> : null}

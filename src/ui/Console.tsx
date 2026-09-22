@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { IconChevron, IconList, IconScope, IconWarning } from './Icons'
 import { Scope } from './Scope'
 import { useDoc } from '@/state/doc'
@@ -155,14 +155,57 @@ function Issues() {
 /* Console                                                             */
 /* ------------------------------------------------------------------ */
 
+/**
+ * Whether the console has anything worth two hundred pixels.
+ *
+ * Remembered per session rather than per tab, so opening it to read the bill
+ * of materials does not mean it springs shut again the moment the build stops
+ * having problems.
+ */
+const CONSOLE_OPEN = 'draftrig.console.open.v1'
+
 export function Console() {
   const [tab, setTab] = useState<Tab>('issues')
-  const [collapsed, setCollapsed] = useState(false)
   const issues = useSim((s) => s.issues)
   const probes = useSim((s) => s.probes)
 
   const errors = issues.filter((i) => i.severity === 'error').length
   const warnings = issues.length - errors
+
+  /*
+   * Starts closed, unless you have opened it before.
+   *
+   * It was taking a quarter of the window to say "No problems found", and the
+   * 3D view — the reason anyone is here — got what was left. A panel that
+   * reports problems should be the size of the problems it has to report, and
+   * the tab strip still carries the badge, so a real error is visible without
+   * the drawer being open at all.
+   */
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(CONSOLE_OPEN) !== '1'
+    } catch {
+      return true
+    }
+  })
+
+  const setOpen = (open: boolean) => {
+    setCollapsed(!open)
+    try {
+      localStorage.setItem(CONSOLE_OPEN, open ? '1' : '0')
+    } catch {
+      /* private window: it simply will not be remembered */
+    }
+  }
+
+  // An error is worth interrupting for; a warning is not.
+  const firstErrors = useRef(true)
+  useEffect(() => {
+    if (!errors) return
+    if (!firstErrors.current) return
+    firstErrors.current = false
+    setCollapsed(false)
+  }, [errors])
 
   const tabs: { id: Tab; label: string; icon: typeof IconList; badge?: React.ReactNode }[] = [
     {
@@ -189,7 +232,7 @@ export function Console() {
               data-on={tab === t.id && !collapsed}
               onClick={() => {
                 setTab(t.id)
-                setCollapsed(false)
+                setOpen(true)
               }}
             >
               <Icon size={12} />
@@ -201,8 +244,8 @@ export function Console() {
         <div className="grow" />
         <button
           className="btn ghost icon"
-          title={collapsed ? 'Expand' : 'Collapse'}
-          onClick={() => setCollapsed((c) => !c)}
+          title={collapsed ? 'Show checks, bill of materials and scope' : 'Hide, and give the space to the view'}
+          onClick={() => setOpen(collapsed)}
         >
           <IconChevron size={12} style={{ transform: collapsed ? 'rotate(-90deg)' : 'rotate(90deg)' }} />
         </button>

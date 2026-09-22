@@ -17,6 +17,7 @@ import { registerCanvas } from './capture'
 import { SnapSession, type SnapHit } from './snap'
 import { SnapIndicator, snapStore } from './SnapIndicator'
 import { SelectionCage } from './SelectionOutline'
+import { useAdaptiveQuality } from './adaptiveQuality'
 import { beginDrag, endDrag, updateDrag, type DragState } from './dragMove'
 import type { Vec3 } from '@/parts/kernel/types'
 
@@ -250,6 +251,10 @@ function SceneContents() {
 
   const { camera, gl, raycaster } = useThree()
   const drag = useRef<DragState | null>(null)
+
+  // Steps the render quality down if this machine cannot hold a usable frame
+  // rate. Only ever downward, and only after a warm-up.
+  useAdaptiveQuality()
   const [grabbing, setGrabbing] = useState(false)
 
   /*
@@ -392,13 +397,27 @@ function SceneContents() {
           publishControls(c)
         }}
         makeDefault
+        /*
+         * Damping high enough to smooth a jittery mouse and no higher. At 0.12
+         * the camera kept coasting after the pointer stopped, which reads as
+         * lag rather than as polish; the rest of the sluggishness was frame
+         * rate, handled by useAdaptiveQuality above.
+         */
         enableDamping
-        dampingFactor={0.12}
-        rotateSpeed={0.75}
-        panSpeed={0.9}
-        zoomSpeed={0.9}
+        dampingFactor={0.22}
+        rotateSpeed={0.95}
+        panSpeed={1.1}
+        zoomSpeed={1.15}
         minDistance={8}
         maxDistance={4000}
+        /*
+         * Zoom toward the pointer rather than the orbit centre. Without it,
+         * getting a close look at a corner of a large build means zoom, pan
+         * back to what you were looking at, zoom, pan, over and over, because
+         * every zoom pulls toward the middle of the scene instead of toward
+         * the thing under your cursor.
+         */
+        zoomToCursor
         maxPolarAngle={Math.PI * 0.495}
         mouseButtons={{
           LEFT: THREE.MOUSE.ROTATE,
@@ -407,8 +426,21 @@ function SceneContents() {
         }}
       />
 
-      <GizmoHelper alignment="bottom-right" margin={[76, 76]}>
-        <GizmoViewport axisColors={['#FF6B6B', '#3DD68C', '#4C8DFF']} labelColor="#0B0D10" />
+      {/*
+        * renderPriority 2, which is the whole reason this is visible at all.
+        *
+        * The gizmo and the effect composer both default to priority 1, and at
+        * equal priority r3f runs them in mount order. PostFx mounts last, so
+        * the composer's output was painted over the gizmo every frame and the
+        * one widget in the app that tells you which way is up had never been
+        * seen by anybody.
+        */}
+      <GizmoHelper alignment="bottom-right" margin={[80, 80]} renderPriority={2}>
+        <GizmoViewport
+          axisColors={['#FF6B6B', '#3DD68C', '#4C8DFF']}
+          labelColor="#0B0D10"
+          axisHeadScale={1.05}
+        />
       </GizmoHelper>
 
       <PostFx />
