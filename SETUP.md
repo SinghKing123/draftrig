@@ -86,7 +86,7 @@ Four files matter here, all of them already in place:
 
 | File | Why |
 |---|---|
-| `public/_redirects` | Serves the app for *every* path. Without it, refreshing on `/app/some-id` 404s, because that path exists inside the app, not on disk. |
+| `wrangler.jsonc` | Tells `wrangler deploy` what to upload. Without it wrangler detects Vite, tries to configure the project itself, and refuses below Vite 6. `not_found_handling` is also what serves the app for *every* path, so refreshing on `/app/some-id` works — that path exists inside the app, not on disk. |
 | `public/_headers` | Caches fingerprinted assets forever and `index.html` never, so a deploy is visible immediately and repeat visits are instant. |
 | `.nvmrc` | Pins Node 20 for the build. Cloudflare's default is older and the build fails on it. |
 | `package-lock.json` | Cloudflare runs `npm ci`, which installs exactly this and fails if it disagrees with `package.json`. Commit it whenever you add a dependency. |
@@ -94,6 +94,12 @@ Four files matter here, all of them already in place:
 
 `vercel.json` and `netlify.toml` are still there and still correct. They cost
 nothing and mean you are not locked in.
+
+**If you ever move to Cloudflare Pages**, add `public/_redirects` back with the
+single line `/*  /index.html  200`. Pages needs it to serve the app on paths
+that are not files; Workers does the same job through `not_found_handling` and
+actively rejects that rule, because it strips `.html` and `/index` from URLs
+and so reads the rule as redirecting to itself forever.
 
 ---
 
