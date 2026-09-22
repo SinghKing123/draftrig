@@ -1,0 +1,9 @@
+{
+  "name": "draftrig-keychain-build",
+  "private": true,
+  "type": "module",
+  "description": "One-off toolchain for the keychain STLs. Kept out of the app's package.json on purpose: potrace is not a dependency of the website.",
+  "dependencies": {
+    "potrace": "^2.1.8"
+  }
+}

@@ -36,3 +36,9 @@ rows.png
 top.png
 wire-palette.png
 hero-live.png
+
+# Keychain toolchain: potrace and the intermediate traces are rebuildable.
+keychain/build/node_modules
+keychain/build/package-lock.json
+keychain/build/mask-*.png
+keychain/build/trace-*.svg
