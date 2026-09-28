@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
-import { useThree } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import { Bloom, EffectComposer, N8AO, Outline, SMAA, ToneMapping } from '@react-three/postprocessing'
 import { BlendFunction, KernelSize, ToneMappingMode } from 'postprocessing'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
@@ -108,6 +108,75 @@ export function Lights() {
 /* Post-processing                                                     */
 /* ------------------------------------------------------------------ */
 
+/* ------------------------------------------------------------------ */
+/* Frame hygiene                                                       */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Puts `gl.autoClear` back at the start of every frame.
+ *
+ * Two things in the render loop switch it off and switch it back on again
+ * either side of a draw: the effect composer, and the Hud that the axis widget
+ * is drawn through. Both restore it on the line after they render. Neither
+ * restores it if the render between those two lines throws.
+ *
+ * And if it is ever left off, nothing clears the canvas again, ever. The
+ * symptom is unmistakable and was reported exactly: the move gizmo leaves a
+ * copy of itself everywhere it has been, the scene smears into a bright mess,
+ * and the whole viewport reads as frozen — because it is still drawing, on top
+ * of every frame that came before it. One unlucky exception, and the viewport
+ * never recovers for the rest of the session.
+ *
+ * So this puts it back, unconditionally, before anything else in the frame.
+ * A thrown exception now costs one bad frame instead of the session, and the
+ * next frame looks normal again.
+ *
+ * Priority 0.5 places it ahead of the composer at 1 and the Hud at 2 — r3f
+ * sorts frame callbacks by priority, ascending.
+ */
+function AutoClearGuard() {
+  const gl = useThree((s) => s.gl)
+  useFrame(() => {
+    if (!gl.autoClear) gl.autoClear = true
+  }, 0.5)
+  return null
+}
+
+/**
+ * A lost WebGL context, handled rather than left as a mystery.
+ *
+ * Integrated graphics drop the context when the driver is under pressure, and
+ * the default outcome is a canvas frozen on its last frame with nothing in the
+ * console and no way back but a reload. Asking for it back succeeds often
+ * enough to be worth doing, and saying so is better than silence either way.
+ */
+function ContextLossGuard() {
+  const gl = useThree((s) => s.gl)
+  useEffect(() => {
+    const canvas = gl.domElement
+    const onLost = (e: Event) => {
+      // Without this the browser will not even try to give it back.
+      e.preventDefault()
+      console.warn('[viewport] the graphics context was lost, asking for it back')
+      window.setTimeout(() => {
+        try {
+          gl.forceContextRestore()
+        } catch {
+          /* the browser refused; a reload is the only way back */
+        }
+      }, 600)
+    }
+    const onRestored = () => console.warn('[viewport] graphics context restored')
+    canvas.addEventListener('webglcontextlost', onLost)
+    canvas.addEventListener('webglcontextrestored', onRestored)
+    return () => {
+      canvas.removeEventListener('webglcontextlost', onLost)
+      canvas.removeEventListener('webglcontextrestored', onRestored)
+    }
+  }, [gl])
+  return null
+}
+
 /**
  * Tone mapping has to live somewhere. The composer does it when it is running;
  * when it is off the renderer has to, or the scene renders in raw linear values
@@ -128,11 +197,21 @@ export function PostFx() {
   // and an empty selection costs a set lookup.
   const selected = useSelectedObjects()
 
-  if (quality === 'off') return <ToneMappingSync composed={false} />
+  if (quality === 'off') {
+    return (
+      <>
+        <AutoClearGuard />
+        <ContextLossGuard />
+        <ToneMappingSync composed={false} />
+      </>
+    )
+  }
 
   const high = quality === 'high'
   return (
     <>
+    <AutoClearGuard />
+    <ContextLossGuard />
     <ToneMappingSync composed />
     <EffectComposer multisampling={high ? 4 : 0} enableNormalPass>
       {/* Contact darkening in the crevices, the single biggest cue that a
