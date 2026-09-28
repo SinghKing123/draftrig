@@ -343,3 +343,132 @@ export function controlPanel(): Doc {
 
   return b.doc
 }
+
+/* ================================================================== */
+/* Bench clock, on perfboard                                           */
+/* ================================================================== */
+
+/**
+ * A finished circuit rather than a demonstration of one.
+ *
+ * Every other electronics example is three parts proving one idea. This is the
+ * thing those ideas turn into: a board with a job, soldered onto perfboard,
+ * with the parts you only find out you need once you build it for real — the
+ * trimmer that makes the display legible, the pull-ups on the buttons, the
+ * bulk capacitor next to the jack, the resistor in series with the backlight.
+ *
+ * Laid out the way it would be laid out on the bench. The display faces you at
+ * the front edge, the board sits behind it where the wiring is short, the two
+ * buttons are where a thumb reaches, and the clock and the sensor sit off to
+ * the side on the bus that feeds them.
+ */
+export function benchClock(): Doc {
+  const b = new Builder('Bench clock and thermometer')
+
+  // Perfboard top surface, which is where every through-hole part seats.
+  const DECK = 1.75
+
+  /*
+   * Placed against real footprints, not by eye. The board is 73 mm across its
+   * own outline and the display is 80, so a layout that looks roomy in the
+   * abstract puts the power jack underneath the microcontroller. Three bands,
+   * back to front: the board and the bus parts at the back, the things a hand
+   * touches through the middle, the display along the front edge.
+   */
+  b.add('perfboard', [0, 0, 0], { cols: 52, rows: 50, mask: 'fr4-blue', layout: 'pads' }, [0, 0, 0], 'Perfboard')
+
+  const mcu = b.add('mcu-board', [-24, DECK, -36], {
+    program: 'lcd-clock',
+    text1: 'DRAFTRIG',
+    text2: '22.4C   45%',
+  }, [0, 0, 0], 'Controller')
+
+  const lcd = b.add('display-lcd-character', [0, DECK, 46], { format: '1602', mask: 'fr4-blue' }, [0, 0, 0], 'Display')
+
+  const rtc = b.add('rtc-ds3231', [45, DECK, -46], { battery: true }, [0, 0, 0], 'Real time clock')
+  const dht = b.add('sensor-dht', [52, DECK, -12], { model: 'dht22', tempC: 22.4, humidity: 45 }, [0, 0, 0], 'Temperature')
+  const decoup = b.add('capacitor-ceramic', [30, DECK, -16], { value: 1e-7 }, [0, 0, 0], 'Decoupling')
+
+  const pot = b.add('trimpot', [-52, DECK, 6], { value: 10000, position: 62 }, [0, 0, 0], 'Contrast')
+  const setBtn = b.add('pushbutton-tactile', [-32, DECK, 10], { capColor: '#2F6FE0' }, [0, 0, 0], 'Set')
+  const modeBtn = b.add('pushbutton-tactile', [-18, DECK, 10], { capColor: '#E8EBEF' }, [0, 0, 0], 'Mode')
+  const pullSet = b.add('resistor-axial', [-32, DECK, -2], { value: 10000 }, [0, 90, 0], 'Pull-up, set')
+  const pullMode = b.add('resistor-axial', [-18, DECK, -2], { value: 10000 }, [0, 90, 0], 'Pull-up, mode')
+
+  const led = b.add('led-5mm', [2, DECK, 10], { color: 'green' }, [0, 0, 0], 'Heartbeat')
+  const ledR = b.add('resistor-axial', [2, DECK, -2], { value: 330 }, [0, 90, 0], 'LED resistor')
+  const blR = b.add('resistor-axial', [18, DECK, -2], { value: 100 }, [0, 90, 0], 'Backlight resistor')
+  const buzz = b.add('buzzer-piezo', [34, DECK, 8], { vnom: 5 }, [0, 0, 0], 'Alarm')
+
+  const jack = b.add('jack-barrel-dc', [-58, DECK, 22], { polarity: 'centre-positive', plugged: true }, [0, 0, 0], 'Power in')
+  const bulk = b.add('capacitor-electrolytic', [-44, DECK, 22], { value: 1e-4, vmax: 25 }, [0, 0, 0], 'Bulk')
+
+  /* --- power ------------------------------------------------------- */
+
+  b.wire([jack, 'tip'], [mcu, 'vin'], RED)
+  b.wire([jack, 'sleeve'], [mcu, 'gnd'], BLACK)
+  b.wire([jack, 'tip'], [bulk, 'p'], RED)
+  b.wire([jack, 'sleeve'], [bulk, 'n'], BLACK)
+
+  // One 5 V rail and one return, fanned out to everything that needs them.
+  b.wire([mcu, 'v5'], [lcd, 'vdd'], RED)
+  b.wire([mcu, 'gnd2'], [lcd, 'vss'], BLACK)
+  b.wire([mcu, 'v5'], [rtc, 'vcc'], RED)
+  b.wire([mcu, 'gnd3'], [rtc, 'gnd'], BLACK)
+  b.wire([mcu, 'v5'], [dht, 'vcc'], RED)
+  b.wire([mcu, 'gnd2'], [dht, 'gnd'], BLACK)
+  b.wire([mcu, 'v5'], [decoup, '1'], RED)
+  b.wire([mcu, 'gnd3'], [decoup, '2'], BLACK)
+
+  /* --- display ----------------------------------------------------- */
+
+  // Contrast: the trimmer is a divider across the rail and its wiper drives
+  // V0. Leave this out and the panel is either blank or a row of black boxes,
+  // which is the single most common reason a first LCD build looks dead.
+  b.wire([mcu, 'v5'], [pot, 'a'], RED)
+  b.wire([mcu, 'gnd2'], [pot, 'b'], BLACK)
+  b.wire([pot, 'w'], [lcd, 'v0'], YELLOW)
+
+  // Backlight through a series resistor, not straight onto the rail.
+  b.wire([mcu, 'v5'], [blR, '1'], RED)
+  b.wire([blR, '2'], [lcd, 'a'], RED)
+  b.wire([lcd, 'k'], [mcu, 'gnd3'], BLACK)
+
+  // R/W tied low: this sketch writes and never reads back.
+  b.wire([mcu, 'gnd2'], [lcd, 'rw'], BLACK)
+  b.wire([mcu, 'd12'], [lcd, 'rs'], GREEN)
+  b.wire([mcu, 'd11'], [lcd, 'e'], GREEN)
+  b.wire([mcu, 'd5'], [lcd, 'd4'], BLUE)
+  b.wire([mcu, 'd4'], [lcd, 'd5'], BLUE)
+  b.wire([mcu, 'd3'], [lcd, 'd6'], BLUE)
+  b.wire([mcu, 'd2'], [lcd, 'd7'], BLUE)
+
+  /* --- bus and inputs ---------------------------------------------- */
+
+  b.wire([mcu, 'sda'], [rtc, 'sda'], YELLOW)
+  b.wire([mcu, 'scl'], [rtc, 'scl'], YELLOW)
+  b.wire([mcu, 'd7'], [dht, 'data'], YELLOW)
+
+  // Buttons to ground, with a pull-up each so the pin has a level when the
+  // button is open rather than floating and reading as noise.
+  b.wire([mcu, 'd8'], [setBtn, 'a1'], GREEN)
+  b.wire([setBtn, 'b1'], [mcu, 'gnd3'], BLACK)
+  b.wire([mcu, 'v5'], [pullSet, '1'], RED)
+  b.wire([pullSet, '2'], [mcu, 'd8'], GREEN)
+
+  b.wire([mcu, 'd9'], [modeBtn, 'a1'], GREEN)
+  b.wire([modeBtn, 'b1'], [mcu, 'gnd2'], BLACK)
+  b.wire([mcu, 'v5'], [pullMode, '1'], RED)
+  b.wire([pullMode, '2'], [mcu, 'd9'], GREEN)
+
+  /* --- outputs ------------------------------------------------------ */
+
+  b.wire([mcu, 'd13'], [ledR, '1'], GREEN)
+  b.wire([ledR, '2'], [led, 'a'], GREEN)
+  b.wire([led, 'c'], [mcu, 'gnd3'], BLACK)
+
+  b.wire([mcu, 'd10'], [buzz, 'p'], GREEN)
+  b.wire([buzz, 'n'], [mcu, 'gnd2'], BLACK)
+
+  return b.doc
+}

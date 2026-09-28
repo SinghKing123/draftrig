@@ -3,7 +3,7 @@ import { emptyDoc } from '@/state/doc'
 import type { Instance, Params, Vec3 } from '@/parts/kernel/types'
 import { defaultParams, requirePart } from '@/parts/kernel/registry'
 import { GPU_MODELS } from '@/parts/catalog/pc_models'
-import { cncRouter, controlPanel, motionSim, rover } from './builds'
+import { benchClock, cncRouter, controlPanel, motionSim, rover } from './builds'
 
 /**
  * Starter builds. These are ordinary documents constructed in code, which
@@ -449,6 +449,12 @@ export const STARTERS: Starter[] = [
   { id: 'mcu', title: 'Microcontroller blink', blurb: 'A board running a sketch, driving a real LED', build: mcuBlink },
   { id: 'lcd', title: 'Text on an LCD', blurb: 'A board bit-banging a 16x2 panel over its real bus', build: lcdText },
   { id: 'oled', title: 'OLED over I2C', blurb: 'Four wires, a decoded bus and a panel that fills in', build: oledText },
+  {
+    id: 'bench-clock',
+    title: 'Bench clock, on perfboard',
+    blurb: 'A finished board: display, clock, sensor, buttons and the parts you only find you need once you build it',
+    build: benchClock,
+  },
   { id: 'frame', title: '2020 frame cube', blurb: 'A 300 mm extrusion frame with a plywood deck', build: frameCube },
   { id: 'motor', title: 'Motor test rig', blurb: 'Bench supply through a switch into a DC motor', build: motorRig },
   { id: 'pc', title: 'Desktop PC', blurb: 'A whole machine, assembled. Take it apart', build: desktopPc },
