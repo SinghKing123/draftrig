@@ -17,6 +17,8 @@ import { registerCanvas } from './capture'
 import { SnapSession, type SnapHit } from './snap'
 import { SnapIndicator, snapStore } from './SnapIndicator'
 import { SelectionCage } from './SelectionOutline'
+import { DiagnosticsProbe } from './DiagnosticsProbe'
+import { countGlErrors } from './diagnostics'
 import { useAdaptiveQuality } from './adaptiveQuality'
 import { beginDrag, endDrag, updateDrag, type DragState } from './dragMove'
 import type { Vec3 } from '@/parts/kernel/types'
@@ -278,7 +280,10 @@ function SceneContents() {
   const [cursor, setCursor] = useState<THREE.Vector3 | null>(null)
 
   const { camera, gl, raycaster, scene } = useThree()
-  useEffect(() => publishRenderer(gl, scene), [gl, scene])
+  useEffect(() => {
+    publishRenderer(gl, scene)
+    countGlErrors(gl.getContext())
+  }, [gl, scene])
   const drag = useRef<DragState | null>(null)
 
   // Steps the render quality down if this machine cannot hold a usable frame
@@ -420,6 +425,7 @@ function SceneContents() {
       <Ports />
       <PendingWire cursor={cursor} />
 
+      <DiagnosticsProbe />
       <SelectionCage />
       <SelectionTransform controls={controls} suppressed={moving} />
       <SnapIndicator />

@@ -1302,3 +1302,58 @@ kbd {
   color: var(--tx-3);
   max-width: 62ch;
 }
+
+/* ============================================================
+   Diagnostics
+   ============================================================ */
+
+.diag {
+  position: absolute;
+  top: 60px;
+  right: 12px;
+  z-index: 45;
+  width: 274px;
+  padding: 11px 13px 12px;
+  background: rgba(10, 12, 16, 0.95);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-md);
+  box-shadow: var(--sh-2);
+  animation: drop-in 120ms var(--ease);
+}
+.diag-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 9px;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tx-3);
+}
+.diag dl { display: grid; gap: 2px; }
+.diag dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 2px 4px;
+  border-radius: var(--r-xs);
+}
+.diag dt { font-size: var(--fs-sm); color: var(--tx-2); }
+.diag dd {
+  font-family: var(--mono);
+  font-size: var(--fs-sm);
+  color: var(--tx-0);
+  font-variant-numeric: tabular-nums;
+}
+/* The rows worth noticing announce themselves, so a screenshot is readable
+   by somebody who does not know what the normal values are. */
+.diag dl > div[data-bad='true'] { background: rgba(255, 107, 107, 0.14); }
+.diag dl > div[data-bad='true'] dd { color: var(--err); }
+.diag-note {
+  margin-top: 9px;
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+  color: var(--tx-3);
+}

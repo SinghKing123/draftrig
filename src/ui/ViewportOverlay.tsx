@@ -6,6 +6,7 @@ import {
 import { useDoc, WIRE_COLORS } from '@/state/doc'
 import { useSim } from '@/state/sim'
 import { usePortHover } from '@/scene/portHover'
+import { useDiagnostics } from '@/scene/diagnostics'
 import { getPart } from '@/parts/kernel/registry'
 
 const MODE_HINT: Record<string, React.ReactNode> = {
@@ -97,6 +98,81 @@ function NavHelp({ open, onClose }: { open: boolean; onClose: () => void }) {
           </div>
         ))}
       </dl>
+    </div>
+  )
+}
+
+
+/**
+ * The diagnostics readout, on Ctrl+Shift+D.
+ *
+ * Deliberately plain text in a fixed-width block: the point is that it can be
+ * photographed or copied and pasted into a bug report, and read without any
+ * context by somebody who was not there.
+ *
+ * The row that matters is usually obvious — geometries or objects climbing
+ * means something is being created and never released; a worst frame in the
+ * hundreds of milliseconds is the freeze itself; GL errors climbing means a
+ * call is failing every frame; more than one gizmo means duplication.
+ */
+function DiagnosticsPanel() {
+  const open = useDiagnostics((s) => s.open)
+  const toggle = useDiagnostics((s) => s.toggle)
+  const d = useDiagnostics((s) => s.data)
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'd') {
+        e.preventDefault()
+        useDiagnostics.getState().toggle()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  if (!open) return null
+
+  const rows: [string, string, boolean][] = [
+    ['fps', String(d.fps), d.fps > 0 && d.fps < 30],
+    ['worst frame', `${d.worstFrame} ms`, d.worstFrame > 120],
+    ['geometries', String(d.geometries), false],
+    ['textures', String(d.textures), false],
+    ['programs', String(d.programs), false],
+    ['scene objects', String(d.objects), false],
+    ['move gizmos', String(d.gizmos), d.gizmos > 1],
+    ['draw calls', String(d.calls), false],
+    ['triangles', d.triangles.toLocaleString(), false],
+    ['failing GL calls', String(d.glErrors), d.glErrors > 0],
+    ['context lost', d.contextLost ? 'YES' : 'no', d.contextLost],
+    ['quality', d.quality, false],
+    ['JS heap', d.heapMb ? `${d.heapMb} MB` : 'n/a', false],
+  ]
+
+  const text = rows.map(([k, v]) => `${k.padEnd(18)}${v}`).join('\n')
+
+  return (
+    <div className="diag" role="dialog" aria-label="Viewport diagnostics">
+      <div className="diag-head">
+        Diagnostics
+        <div className="grow" />
+        <button className="link-btn" onClick={() => void navigator.clipboard.writeText(text).catch(() => {})}>
+          Copy
+        </button>
+        <button className="btn ghost icon sm" onClick={toggle} aria-label="Close"><IconX size={12} /></button>
+      </div>
+      <dl>
+        {rows.map(([k, v, bad]) => (
+          <div key={k} data-bad={bad}>
+            <dt>{k}</dt>
+            <dd>{v}</dd>
+          </div>
+        ))}
+      </dl>
+      <p className="diag-note">
+        Watch for a number that keeps climbing while you work, or a worst frame in
+        the hundreds. <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>D</kbd> closes this.
+      </p>
     </div>
   )
 }
@@ -257,6 +333,7 @@ export function ViewportOverlay({
 
       <NavHelp open={navOpen} onClose={() => setNavOpen(false)} />
 
+      <DiagnosticsPanel />
       <PortTip />
       {pendingWire ? <PendingHint /> : hint ? <div className="vp-hint">{hint}</div> : null}
 
