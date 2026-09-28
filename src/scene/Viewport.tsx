@@ -272,6 +272,7 @@ function SceneContents() {
   // Steps the render quality down if this machine cannot hold a usable frame
   // rate. Only ever downward, and only after a warm-up.
   useAdaptiveQuality()
+  const showGizmo = useDoc((s) => s.view.gizmo)
   const [grabbing, setGrabbing] = useState(false)
   // Distinct from `grabbing`, which starts on press: this waits for the drag
   // to pass the click threshold, so clicking a part does not blink its gizmo.
@@ -459,13 +460,15 @@ function SceneContents() {
         * one widget in the app that tells you which way is up had never been
         * seen by anybody.
         */}
-      <GizmoHelper alignment="bottom-right" margin={[80, 80]} renderPriority={2}>
-        <GizmoViewport
-          axisColors={['#FF6B6B', '#3DD68C', '#4C8DFF']}
-          labelColor="#0B0D10"
-          axisHeadScale={1.05}
-        />
-      </GizmoHelper>
+      {showGizmo && (
+        <GizmoHelper alignment="bottom-right" margin={[80, 80]} renderPriority={2}>
+          <GizmoViewport
+            axisColors={['#FF6B6B', '#3DD68C', '#4C8DFF']}
+            labelColor="#0B0D10"
+            axisHeadScale={1.05}
+          />
+        </GizmoHelper>
+      )}
 
       <PostFx />
     </>

@@ -16,14 +16,25 @@ export interface Build {
   note: string
 }
 
+/*
+ * Shorter than it was, on purpose.
+ *
+ * Every build the editor can open used to be on the front page, and half of
+ * them photographed badly: the gaming PC is a clear case with the parts hidden
+ * inside it, so it shot as an empty glass box; the frame cube is four
+ * extrusions and a floor; the control panel came out as a grey rectangle with
+ * its highlights blown; the motion rig has no seat in it and reads as a stack
+ * of plywood. A gallery is an argument that the tool makes good-looking
+ * things, and it is only ever as convincing as its weakest picture.
+ *
+ * Those four are still starters and still one click away inside the editor.
+ * They are just not the first thing a stranger sees.
+ */
 export const BUILDS: Build[] = [
-  { id: 'motion-sim', img: '/build-motion.jpg', name: 'Motion rig', note: 'Seat, wheel and two screw actuators' },
+  { id: 'bench-clock', img: '/build-clock.jpg', name: 'Bench clock', note: 'Seventeen parts soldered onto perfboard, and it runs' },
+  { id: 'lcd', img: '/build-lcd.jpg', name: 'LCD on a bus', note: 'Driven pin by pin, over the real four-bit bus' },
   { id: 'cnc', img: '/build-cnc.jpg', name: 'CNC router', note: 'Three axes and the drivers for them' },
   { id: 'rover', img: '/build-rover.jpg', name: 'Rover', note: 'Four motors, a range finder, a battery' },
-  { id: 'panel', img: '/build-panel.jpg', name: 'Control panel', note: 'Everything a hand touches' },
-  { id: 'gaming-4k', img: '/build-pc.jpg', name: 'Gaming PC', note: 'A 4090 and what it needs' },
-  { id: 'frame', img: '/build-frame.jpg', name: '2020 frame', note: 'Extrusion cut to length' },
-  { id: 'lcd', img: '/build-lcd.jpg', name: 'LCD on a bus', note: 'Driven pin by pin' },
 ]
 
 function useReducedMotion(): boolean {
@@ -44,7 +55,7 @@ function useReducedMotion(): boolean {
 
 const STAGE = [
   { kind: 'video' as const, name: 'Assembling', id: 'frame' },
-  ...BUILDS.slice(0, 5).map((b) => ({ kind: 'image' as const, ...b })),
+  ...BUILDS.map((b) => ({ kind: 'image' as const, ...b })),
 ]
 
 /** How long each build holds before the stage moves on, ms. */

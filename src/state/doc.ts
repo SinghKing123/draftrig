@@ -48,6 +48,17 @@ interface ViewFlags {
   xray: boolean
   /** Post-processing level. 'off' skips the composer entirely. */
   quality: 'off' | 'balanced' | 'high'
+  /**
+   * The axis widget in the corner.
+   *
+   * No control in the interface turns this off, and it should stay on for
+   * anybody using the editor: it is how you tell which way up you are. It
+   * exists because the widget is drawn inside the canvas, so the screenshot
+   * harness in tools/ cannot hide it with CSS the way it hides everything
+   * else, and every photograph of a build came out with an axis marker
+   * stamped in the corner.
+   */
+  gizmo: boolean
 }
 
 export interface DocState {
@@ -225,7 +236,7 @@ export const useDoc = create<DocState>()((set, get) => {
      * the camera lags behind the mouse and the whole viewport feels stuck.
      * High is still one click away for anyone with the GPU for it.
      */
-    view: { grid: true, ports: true, wires: true, labels: false, shadows: true, xray: false, quality: 'balanced' },
+    view: { grid: true, ports: true, wires: true, labels: false, shadows: true, xray: false, quality: 'balanced', gizmo: true },
     qualityPinned: false,
     issues: {},
     frameToken: 0,

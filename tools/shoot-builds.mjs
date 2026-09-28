@@ -14,7 +14,7 @@ import { chromium } from 'playwright'
  *   node tools/shoot-builds.mjs motion-sim    one
  */
 
-const base = process.env.BASE ?? 'http://localhost:5173'
+const base = process.env.BASE ?? 'http://localhost:5174'
 const only = process.argv.slice(2)
 
 /**
@@ -25,13 +25,16 @@ const only = process.argv.slice(2)
  * the interesting side of a screen is the side the driver sees.
  */
 const SHOTS = [
-  ['motion-sim', 'build-motion', 6, 212, 62],
+  // Front three-quarter, not from behind. The view over the driver's shoulder
+  // sounded right and photographed as a sheet of plywood filling the frame.
+  ['motion-sim', 'build-motion', 5, 28, 68],
   ['cnc', 'build-cnc', 6, 34, 64],
   ['rover', 'build-rover', 7, 44, 68],
   ['panel', 'build-panel', 6, 14, 74],
   ['gaming-4k', 'build-pc', 5, 40, 66],
   ['frame', 'build-frame', 5, 40, 64],
   ['lcd', 'build-lcd', 7, 30, 62],
+  ['bench-clock', 'build-clock', 8, 24, 56],
 ].filter((s) => only.length === 0 || only.includes(s[0]))
 
 const b = await chromium.launch({ channel: 'msedge' })
@@ -46,6 +49,16 @@ await page.goto(base + '/app', { waitUntil: 'networkidle' })
 await page.evaluate(() => localStorage.setItem('tour.seen.v1', '1'))
 await page.reload({ waitUntil: 'networkidle' })
 await page.waitForTimeout(2600)
+// Pin the top setting. The frame-rate monitor would otherwise quietly step
+// quality down partway through the session, and half the photographs would
+// come out without ambient occlusion for no reason anyone could see.
+await page.evaluate(() => {
+  const d = window.draftrig.doc.getState()
+  d.pinQuality('high')
+  // The axis widget is drawn inside the canvas, so the stylesheet above
+  // cannot reach it, and every photograph came out with it in the corner.
+  d.setView({ gizmo: false })
+})
 await page.addStyleTag({
   content: `
     .vp-toolbar, .vp-hint, .vp-stats, .ai-fab, .wire-palette, .vp-empty { display: none !important; }
