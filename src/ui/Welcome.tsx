@@ -18,11 +18,13 @@ export function Welcome({
   onTour,
   onSkip,
   onClose,
+  onExamples,
 }: {
   stage: 'intro' | 'starters'
   onTour: () => void
   onSkip: () => void
   onClose: () => void
+  onExamples: () => void
 }) {
   const loadDoc = useDoc((s) => s.loadDoc)
   const [busy, setBusy] = useState<string | null>(null)
@@ -54,7 +56,10 @@ export function Welcome({
               I'll explore on my own
             </button>
           </div>
-          <p className="welcome-fine">Takes about thirty seconds. You can skip at any point.</p>
+          <p className="welcome-fine">
+            Takes about thirty seconds, and you can skip at any point. Or{' '}
+            <button className="inline-link" onClick={onExamples}>open an example build</button> instead.
+          </p>
         </div>
       </div>
     )
@@ -82,7 +87,7 @@ export function Welcome({
         </div>
 
         <button className="btn lg wide" onClick={onClose}>
-          Start from an empty bench
+          No thanks, start from an empty bench
         </button>
       </div>
     </div>

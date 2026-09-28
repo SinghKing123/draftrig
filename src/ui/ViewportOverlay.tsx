@@ -101,7 +101,13 @@ function NavHelp({ open, onClose }: { open: boolean; onClose: () => void }) {
   )
 }
 
-export function ViewportOverlay({ onReplayTour }: { onReplayTour: () => void }) {
+export function ViewportOverlay({
+  onReplayTour,
+  onExamples,
+}: {
+  onReplayTour: () => void
+  onExamples: () => void
+}) {
   const mode = useDoc((s) => s.mode)
   const view = useDoc((s) => s.view)
   const setView = useDoc((s) => s.setView)
@@ -266,8 +272,14 @@ export function ViewportOverlay({ onReplayTour }: { onReplayTour: () => void }) 
         <div className="empty-state">
           <div className="empty-hint">
             <p>Nothing on the bench yet.</p>
-            <p className="sub">Pick a part from the library on the left to get started.</p>
-            <button className="btn" onClick={onReplayTour}>Show me around again</button>
+            <p className="sub">
+              Pick a part from the library on the left, or open something that already works
+              and take it apart.
+            </p>
+            <div className="empty-actions">
+              <button className="btn primary" onClick={onExamples}>Open an example</button>
+              <button className="btn" onClick={onReplayTour}>Show me around</button>
+            </div>
           </div>
         </div>
       )}

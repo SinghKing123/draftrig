@@ -1260,3 +1260,14 @@ kbd {
 }
 .vp-view:hover { background: var(--bg-4); color: var(--tx-0); }
 .vp-view:active { background: var(--brand-dim); color: var(--brand-hi); }
+
+/* A word inside a sentence that does something, without shouting about it. */
+.inline-link {
+  color: var(--brand-hi);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.inline-link:hover { color: var(--tx-0); }
+
+.empty-actions { display: flex; gap: 8px; justify-content: center; }

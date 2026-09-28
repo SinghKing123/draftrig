@@ -256,6 +256,7 @@ export function Editor() {
     onSaveAs: () => setPrompt('saveAs'),
     onDuplicate: () => setPrompt('duplicate'),
     onDownload: () => downloadProject(useDoc.getState().doc),
+    onExamples: () => setOnboarding('starters'),
   }
 
   /*
@@ -302,7 +303,10 @@ export function Editor() {
         <div className="app-center">
           <div className="viewport-wrap" data-tour="viewport">
             <Viewport />
-            <ViewportOverlay onReplayTour={() => setOnboarding('tour')} />
+            <ViewportOverlay
+              onReplayTour={() => setOnboarding('tour')}
+              onExamples={() => setOnboarding('starters')}
+            />
           </div>
           <Console />
         </div>
@@ -361,13 +365,24 @@ export function Editor() {
       </button>
       <StatusBar />
 
+      {/*
+        * Nothing here is compulsory, and nothing leads anywhere else.
+        *
+        * Every route out of the welcome used to end at the example picker —
+        * taking the tour, and skipping it — so choosing to be left alone still
+        * meant a second dialog demanding you open somebody else's project
+        * before you could touch anything. Both routes now finish on an empty
+        * bench, and the examples are something you go and ask for: from the
+        * welcome, from the File menu, or from the empty bench itself.
+        */}
       {(onboarding === 'intro' || onboarding === 'starters') && (
         <Welcome
           stage={onboarding}
           onTour={() => setOnboarding('tour')}
+          onExamples={() => setOnboarding('starters')}
           onSkip={() => {
             markTourSeen()
-            setOnboarding('starters')
+            setOnboarding('done')
           }}
           onClose={() => {
             markTourSeen()
@@ -375,7 +390,14 @@ export function Editor() {
           }}
         />
       )}
-      {onboarding === 'tour' && <Tour onDone={() => setOnboarding('starters')} />}
+      {onboarding === 'tour' && (
+        <Tour
+          onDone={() => {
+            markTourSeen()
+            setOnboarding('done')
+          }}
+        />
+      )}
     </div>
   )
 }

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { IconChevron, IconCopy, IconDownload, IconOpen, IconPlus, IconSave } from './Icons'
+import { IconChevron, IconCopy, IconDownload, IconOpen, IconPlus, IconSave, IconSpark } from './Icons'
 import { FILE_EXT } from '@/brand'
 
 /**
@@ -15,6 +15,7 @@ import { FILE_EXT } from '@/brand'
 
 export interface FileActions {
   onNew: () => void
+  onExamples: () => void
   onOpen: () => void
   onSave: () => void
   onSaveAs: () => void
@@ -68,6 +69,9 @@ export function FileMenu(actions: FileActions) {
           </button>
           <button role="menuitem" onClick={run(actions.onOpen)}>
             <IconOpen size={13} /> Open a file… <kbd>{MOD}+O</kbd>
+          </button>
+          <button role="menuitem" onClick={run(actions.onExamples)}>
+            <IconSpark size={13} /> Open an example…
           </button>
 
           <div className="dropdown-sep" />

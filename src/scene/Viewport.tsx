@@ -91,7 +91,14 @@ function Ground({ onPointerUp }: { onPointerUp: (e: ThreeEvent<PointerEvent>) =>
 /** True while a gizmo drag is in progress, read by the deselect handlers. */
 export const dragging = { active: false }
 
-function SelectionTransform({ controls }: { controls: React.MutableRefObject<OrbitControlsImpl | null> }) {
+function SelectionTransform({
+  controls,
+  suppressed,
+}: {
+  controls: React.MutableRefObject<OrbitControlsImpl | null>
+  /** True while the part is being dragged by hand, which owns the gesture. */
+  suppressed: boolean
+}) {
   const selection = useDoc((s) => s.selection)
   const instances = useDoc((s) => s.doc.instances)
   const mode = useDoc((s) => s.mode)
@@ -108,7 +115,17 @@ function SelectionTransform({ controls }: { controls: React.MutableRefObject<Orb
   const session = useRef<SnapSession | null>(null)
   const lastHit = useRef<SnapHit | null>(null)
 
-  const active = mode === 'build' && selection.length > 0
+  /*
+   * Hidden while a part is being dragged directly.
+   *
+   * TransformControls caches the position and scale of the object it is
+   * attached to and refreshes them on its own cycle. Dragging a part by hand
+   * moves that object from the outside, several times a frame, and the gizmo
+   * drew itself from half-stale state: skewed arrows, plane handles adrift,
+   * the whole thing scrambled. There is also nothing for it to do during a
+   * gesture that is already moving the part, so it steps aside.
+   */
+  const active = mode === 'build' && selection.length > 0 && !suppressed
 
   // Park the gizmo at the centroid of the selection, but never mid-drag, or
   // it fights the pointer as the parts it is measuring move under it.
@@ -256,6 +273,9 @@ function SceneContents() {
   // rate. Only ever downward, and only after a warm-up.
   useAdaptiveQuality()
   const [grabbing, setGrabbing] = useState(false)
+  // Distinct from `grabbing`, which starts on press: this waits for the drag
+  // to pass the click threshold, so clicking a part does not blink its gizmo.
+  const [moving, setMoving] = useState(false)
 
   /*
    * What the pointer looks like.
@@ -326,7 +346,10 @@ function SceneContents() {
       const r = gl.domElement.getBoundingClientRect()
       ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1)
       raycaster.setFromCamera(ndc, camera)
-      if (updateDrag(d, raycaster, controls.current)) dragging.active = true
+      if (updateDrag(d, raycaster, controls.current)) {
+        dragging.active = true
+        setMoving(true)
+      }
     }
 
     const onUp = () => {
@@ -334,6 +357,7 @@ function SceneContents() {
       if (!d) return
       drag.current = null
       setGrabbing(false)
+      setMoving(false)
       endDrag(d, controls.current)
       // Let the click-versus-drag guard settle before deselection is live
       // again, or the release that ends a drag also clears the selection.
@@ -384,7 +408,7 @@ function SceneContents() {
       <PendingWire cursor={cursor} />
 
       <SelectionCage />
-      <SelectionTransform controls={controls} />
+      <SelectionTransform controls={controls} suppressed={moving} />
       <SnapIndicator />
       <CameraRig controls={controls} />
 
