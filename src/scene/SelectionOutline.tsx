@@ -23,8 +23,11 @@ import { useDoc } from '@/state/doc'
 const SELECT = '#4C8DFF'
 const HOVER = '#7FB0FF'
 
+/** Eight corners, three arms each, two points an arm, three floats a point. */
+const BRACKET_FLOATS = 8 * 3 * 2 * 3
+
 /** Corner brackets, not a closed box: a full wireframe box reads as a part. */
-function bracketPositions(box: THREE.Box3, frac = 0.22): Float32Array {
+function writeBrackets(box: THREE.Box3, out: Float32Array, frac = 0.22): void {
   const { min, max } = box
   const size = new THREE.Vector3().subVectors(max, min)
   // Bracket arms are a fraction of each edge, but never longer than half of
@@ -35,9 +38,10 @@ function bracketPositions(box: THREE.Box3, frac = 0.22): Float32Array {
     Math.min(size.z * frac, size.z / 2),
   )
 
-  const pts: number[] = []
+  let i = 0
   const seg = (x1: number, y1: number, z1: number, x2: number, y2: number, z2: number) => {
-    pts.push(x1, y1, z1, x2, y2, z2)
+    out[i++] = x1; out[i++] = y1; out[i++] = z1
+    out[i++] = x2; out[i++] = y2; out[i++] = z2
   }
 
   for (const sx of [0, 1]) {
@@ -52,15 +56,32 @@ function bracketPositions(box: THREE.Box3, frac = 0.22): Float32Array {
       }
     }
   }
-  return new Float32Array(pts)
 }
 
+/**
+ * One cage, on one buffer.
+ *
+ * The bracket count never changes, so the geometry is allocated once and its
+ * positions are rewritten in place. Building a fresh BufferGeometry whenever
+ * the box moved meant allocating and disposing one every frame of every drag,
+ * and the disposals did not keep pace: dragging leaked a geometry at a time
+ * on top of everything else, which on a laptop sharing its memory with the GPU
+ * is how a viewport ends up stuttering and then stopping.
+ */
 function Cage({ box, color, opacity }: { box: THREE.Box3; color: string; opacity: number }) {
   const geometry = useMemo(() => {
     const g = new THREE.BufferGeometry()
-    g.setAttribute('position', new THREE.BufferAttribute(bracketPositions(box), 3))
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(BRACKET_FLOATS), 3))
     return g
-  }, [box])
+  }, [])
+
+  // Rewrite the existing buffer rather than replacing it.
+  useMemo(() => {
+    const attr = geometry.getAttribute('position') as THREE.BufferAttribute
+    writeBrackets(box, attr.array as Float32Array)
+    attr.needsUpdate = true
+    geometry.computeBoundingSphere()
+  }, [geometry, box])
 
   useEffect(() => () => geometry.dispose(), [geometry])
 

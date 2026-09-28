@@ -20,8 +20,24 @@ interface DebugCamera {
   controls: OrbitControlsImpl | null
 }
 
-/** The shape App.tsx puts on the window, with this one extra property. */
-type Harness = { camera?: DebugCamera }
+/** The shape App.tsx puts on the window, with these extra properties. */
+type Harness = { camera?: DebugCamera; gl?: unknown; scene?: unknown }
+
+/**
+ * The renderer and the scene graph, for the diagnostics in tools/.
+ *
+ * Nothing in the app reads these. They exist because questions like "is the
+ * scene accumulating objects" and "how many draw calls is this costing" cannot
+ * be answered from outside the canvas, and guessing at them wastes more time
+ * than the two lines it takes to publish them.
+ */
+export function publishRenderer(gl: unknown, scene: unknown): void {
+  if (typeof window === 'undefined') return
+  const harness = (window as unknown as { draftrig?: Harness }).draftrig
+  if (!harness) return
+  harness.gl = gl
+  harness.scene = scene
+}
 
 export function publishControls(c: OrbitControlsImpl | null): void {
   if (typeof window === 'undefined') return

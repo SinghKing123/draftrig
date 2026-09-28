@@ -9,7 +9,7 @@ import { Wires } from './Wires'
 import { Solder } from './Solder'
 import { PortIndexProvider } from './portIndex'
 import { CameraRig } from './CameraRig'
-import { publishControls } from './debugCamera'
+import { publishControls, publishRenderer } from './debugCamera'
 import { Lights, PostFx, StudioEnvironment } from './Render'
 import { useDoc, useInstanceList } from '@/state/doc'
 import { installPointerTracker, wasClick } from './pointer'
@@ -116,16 +116,23 @@ function SelectionTransform({
   const lastHit = useRef<SnapHit | null>(null)
 
   /*
-   * Hidden while a part is being dragged directly.
+   * Hidden while a part is being dragged directly, by turning its handles off
+   * rather than by unmounting it.
    *
-   * TransformControls caches the position and scale of the object it is
-   * attached to and refreshes them on its own cycle. Dragging a part by hand
-   * moves that object from the outside, several times a frame, and the gizmo
-   * drew itself from half-stale state: skewed arrows, plane handles adrift,
-   * the whole thing scrambled. There is also nothing for it to do during a
-   * gesture that is already moving the part, so it steps aside.
+   * It has to be hidden at all because TransformControls caches the position
+   * and scale of the object it is attached to and refreshes them on its own
+   * cycle. Dragging a part by hand moves that object from the outside, several
+   * times a frame, and the gizmo drew itself from half-stale state: skewed
+   * arrows, plane handles adrift, the whole thing scrambled.
+   *
+   * It has to be hidden this way because unmounting it leaks. Three's gizmo
+   * builds something like a dozen small geometries and does not release them
+   * all when it goes away, so a mount and unmount on every drag cost about
+   * eleven geometries a time — measured at 58 climbing to 150 over eight
+   * drags, against 8 for the same drags with it left mounted. On a laptop
+   * sharing its memory with the GPU that ends as a stalled viewport.
    */
-  const active = mode === 'build' && selection.length > 0 && !suppressed
+  const active = mode === 'build' && selection.length > 0
 
   // Park the gizmo at the centroid of the selection, but never mid-drag, or
   // it fights the pointer as the parts it is measuring move under it.
@@ -241,6 +248,10 @@ function SelectionTransform({
           object={anchor}
           mode={transformMode === 'move' ? 'translate' : 'rotate'}
           size={0.8}
+          showX={!suppressed}
+          showY={!suppressed}
+          showZ={!suppressed}
+          enabled={!suppressed}
           onMouseDown={onMouseDown}
           onMouseUp={onMouseUp}
           onObjectChange={onChange}
@@ -266,7 +277,8 @@ function SceneContents() {
   const controls = useRef<OrbitControlsImpl | null>(null)
   const [cursor, setCursor] = useState<THREE.Vector3 | null>(null)
 
-  const { camera, gl, raycaster } = useThree()
+  const { camera, gl, raycaster, scene } = useThree()
+  useEffect(() => publishRenderer(gl, scene), [gl, scene])
   const drag = useRef<DragState | null>(null)
 
   // Steps the render quality down if this machine cannot hold a usable frame
