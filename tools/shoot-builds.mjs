@@ -25,16 +25,14 @@ const only = process.argv.slice(2)
  * the interesting side of a screen is the side the driver sees.
  */
 const SHOTS = [
-  // Front three-quarter, not from behind. The view over the driver's shoulder
-  // sounded right and photographed as a sheet of plywood filling the frame.
-  ['motion-sim', 'build-motion', 5, 28, 68],
+  ['bench-clock', 'build-clock', 11, 24, 56],
+  ['lcd', 'build-lcd', 11, 30, 60],
+  ['oled', 'build-oled', 8, 26, 58],
+  ['blink555', 'build-555', 11, 28, 58],
+  ['mcu', 'build-mcu', 8, 32, 60],
+  ['led', 'build-led', 9, 30, 58],
   ['cnc', 'build-cnc', 6, 34, 64],
   ['rover', 'build-rover', 7, 44, 68],
-  ['panel', 'build-panel', 6, 14, 74],
-  ['gaming-4k', 'build-pc', 5, 40, 66],
-  ['frame', 'build-frame', 5, 40, 64],
-  ['lcd', 'build-lcd', 7, 30, 62],
-  ['bench-clock', 'build-clock', 8, 24, 56],
 ].filter((s) => only.length === 0 || only.includes(s[0]))
 
 const b = await chromium.launch({ channel: 'msedge' })
@@ -109,7 +107,16 @@ for (const [starter, out, zoom, az, pol] of SHOTS) {
   await page.waitForTimeout(400)
 
   await page.evaluate(([a, p]) => window.draftrig.camera?.view(a, p), [az, pol])
-  await page.waitForTimeout(600)
+  // Take the pointer off the model first. Zooming leaves it over the middle of
+  // the build, which hovers whatever is under it, and the hover outline was
+  // being photographed along with the part.
+  await page.mouse.move(2, 2)
+  await page.evaluate(() => {
+    const d = window.draftrig.doc.getState()
+    d.clearSelection()
+    d.setHovered(null)
+  })
+  await page.waitForTimeout(700)
   await page.locator('canvas').first().screenshot({ path: `public/${out}.jpg`, type: 'jpeg', quality: 82 })
   console.log('wrote public/' + out + '.jpg')
 }

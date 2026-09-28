@@ -14,27 +14,44 @@ export interface Build {
   img: string
   name: string
   note: string
+  /** Shown on the card, so the claim is specific rather than "a circuit". */
+  parts: number
+  wires: number
 }
 
 /*
- * Shorter than it was, on purpose.
+ * Three, and only the three that photograph like something somebody made.
  *
- * Every build the editor can open used to be on the front page, and half of
- * them photographed badly: the gaming PC is a clear case with the parts hidden
- * inside it, so it shot as an empty glass box; the frame cube is four
- * extrusions and a floor; the control panel came out as a grey rectangle with
- * its highlights blown; the motion rig has no seat in it and reads as a stack
- * of plywood. A gallery is an argument that the tool makes good-looking
- * things, and it is only ever as convincing as its weakest picture.
- *
- * Those four are still starters and still one click away inside the editor.
- * They are just not the first thing a stranger sees.
+ * The rest of the starters are still in the editor and still one click away.
+ * They are not here because a build with a component floating on the end of a
+ * long wire reads as unfinished however it is lit, and a gallery is only ever
+ * as convincing as its weakest picture. Three good photographs beat six.
  */
 export const BUILDS: Build[] = [
-  { id: 'bench-clock', img: '/build-clock.jpg', name: 'Bench clock', note: 'Seventeen parts soldered onto perfboard, and it runs' },
-  { id: 'lcd', img: '/build-lcd.jpg', name: 'LCD on a bus', note: 'Driven pin by pin, over the real four-bit bus' },
-  { id: 'cnc', img: '/build-cnc.jpg', name: 'CNC router', note: 'Three axes and the drivers for them' },
-  { id: 'rover', img: '/build-rover.jpg', name: 'Rover', note: 'Four motors, a range finder, a battery' },
+  {
+    id: 'bench-clock',
+    img: '/build-clock.jpg',
+    name: 'Bench clock',
+    note: 'A finished board: display, real-time clock, sensor, buttons and an alarm, soldered onto perfboard.',
+    parts: 17,
+    wires: 41,
+  },
+  {
+    id: 'lcd',
+    img: '/build-lcd.jpg',
+    name: 'Character LCD',
+    note: 'A microcontroller driving a 16x2 panel over its real four-bit bus, a pin at a time.',
+    parts: 2,
+    wires: 11,
+  },
+  {
+    id: 'blink555',
+    img: '/build-555.jpg',
+    name: '555 astable',
+    note: 'The timer everyone builds first, on perfboard, flashing at a hertz you can set with two resistors.',
+    parts: 8,
+    wires: 13,
+  },
 ]
 
 function useReducedMotion(): boolean {

@@ -137,37 +137,46 @@ function blinker555(): Doc {
   const R2 = 68_000
   const C = 10e-6
 
-  const psu = b.add('bench-supply', [-210, 0, 0], { voltage: 9, ilimit: 0.5 }, [0, 0, 0], 'Supply')
-  const ic = b.add('ne555', [0, 0, 0], {}, [0, 0, 0], 'Timer')
-  const r1 = b.add('resistor-axial', [-60, 0, -40], { value: R1 }, [0, 0, 0], 'R1 charge')
-  const r2 = b.add('resistor-axial', [-60, 0, 40], { value: R2 }, [0, 0, 0], 'R2 discharge')
-  const cap = b.add('capacitor-electrolytic', [-20, 0, 70], { value: C, vmax: 25 }, [0, 0, 0], 'Timing cap')
-  const rled = b.add('resistor-axial', [70, 0, -30], { value: 470 }, [0, 0, 0], 'LED resistor')
-  const led = b.add('led-5mm', [120, 0, -30], { color: 'red' }, [0, 0, 0], 'Indicator')
-  const gnd = b.add('ground', [0, 0, 110], {}, [0, 0, 0], 'Ground')
+  /*
+   * Soldered onto a board rather than spread across the bench.
+   *
+   * The same circuit laid out as loose parts on a table, joined by wires a
+   * hand-span long, photographs as a pile of components that happen to be near
+   * each other. On a board it reads as a thing somebody made. Deck height is
+   * the perfboard's top face, which is where a through-hole part seats.
+   */
+  const DECK = 1.75
+  b.add('perfboard', [0, 0, 0], { cols: 28, rows: 20, mask: 'fr4-blue' }, [0, 0, 0], 'Perfboard')
+
+  const ic = b.add('ne555', [2, DECK, -2], {}, [0, 0, 0], 'Timer')
+  const r1 = b.add('resistor-axial', [-18, DECK, -14], { value: R1 }, [0, 90, 0], 'R1 charge')
+  const r2 = b.add('resistor-axial', [-18, DECK, -2], { value: R2 }, [0, 90, 0], 'R2 discharge')
+  const cap = b.add('capacitor-electrolytic', [-18, DECK, 12], { value: C, vmax: 25 }, [0, 0, 0], 'Timing cap')
+  const rled = b.add('resistor-axial', [20, DECK, -14], { value: 470 }, [0, 90, 0], 'LED resistor')
+  const led = b.add('led-5mm', [22, DECK, 4], { color: 'red' }, [0, 0, 0], 'Indicator')
+  const jack = b.add('jack-barrel-dc', [-24, DECK, 14], { plugged: true }, [0, 0, 0], 'Power in')
 
   const RED = '#E34B4B'
   const BLACK = '#1C1F24'
   const YELLOW = '#E3A64B'
 
-  b.wire([psu, 'p'], [ic, 'vcc'], RED)
-  b.wire([psu, 'p'], [ic, 'reset'], RED)
-  b.wire([psu, 'n'], [ic, 'gnd'], BLACK)
-  b.wire([psu, 'n'], [gnd, 'gnd'], '#3DD68C')
+  b.wire([jack, 'tip'], [ic, 'vcc'], RED)
+  b.wire([jack, 'tip'], [ic, 'reset'], RED)
+  b.wire([jack, 'sleeve'], [ic, 'gnd'], BLACK)
 
   // Charge through R1 into DISCH, then on through R2 to the timing cap.
-  b.wire([psu, 'p'], [r1, '1'], RED)
+  b.wire([jack, 'tip'], [r1, '1'], RED)
   b.wire([r1, '2'], [ic, 'disch'], YELLOW)
   b.wire([ic, 'disch'], [r2, '1'], YELLOW)
   b.wire([r2, '2'], [ic, 'thresh'], YELLOW)
   b.wire([ic, 'thresh'], [ic, 'trig'], '#A78BFA')
   b.wire([ic, 'thresh'], [cap, 'p'], YELLOW)
-  b.wire([cap, 'n'], [psu, 'n'], BLACK)
+  b.wire([cap, 'n'], [jack, 'sleeve'], BLACK)
 
   // Output stage.
   b.wire([ic, 'out'], [rled, '1'], '#4C8DFF')
   b.wire([rled, '2'], [led, 'a'], '#4C8DFF')
-  b.wire([led, 'c'], [psu, 'n'], BLACK)
+  b.wire([led, 'c'], [jack, 'sleeve'], BLACK)
 
   return b.doc
 }
