@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { useDoc } from '@/state/doc'
 import { glErrorCount, useDiagnostics } from './diagnostics'
@@ -19,6 +19,31 @@ export function DiagnosticsProbe() {
   const elapsed = useRef(0)
   const worst = useRef(0)
 
+  /*
+   * Count every render in the frame, not just the last one.
+   *
+   * three clears gl.info at the top of each render() call, and a frame here is
+   * several: the composer's passes, then the Hud the axis widget draws
+   * through. Reading the counters afterwards therefore reported the gizmo —
+   * nine draw calls and forty-eight triangles — no matter what was on the
+   * bench, at every quality setting, which is a reading that looks precise and
+   * means nothing. Resetting once at the top of the frame and reading at the
+   * bottom gives the whole frame.
+   */
+  useEffect(() => {
+    gl.info.autoReset = !open
+    return () => {
+      gl.info.autoReset = true
+    }
+  }, [gl, open])
+
+  // Priority 0.4: ahead of the autoClear guard at 0.5, the composer at 1 and
+  // the Hud at 2, so the count starts clean each frame.
+  useFrame(() => {
+    if (open) gl.info.reset()
+  }, 0.4)
+
+  // Priority 3: after everything that draws.
   useFrame((_, delta) => {
     if (!open) return
     frames.current++
@@ -57,7 +82,7 @@ export function DiagnosticsProbe() {
     frames.current = 0
     elapsed.current = 0
     worst.current = 0
-  })
+  }, 3)
 
   // Nothing is drawn here: the readout is HTML over the canvas, so it stays
   // crisp and can be selected and copied.

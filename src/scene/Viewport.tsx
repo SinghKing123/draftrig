@@ -290,6 +290,7 @@ function SceneContents() {
   // rate. Only ever downward, and only after a warm-up.
   useAdaptiveQuality()
   const showGizmo = useDoc((s) => s.view.gizmo)
+  const quality = useDoc((s) => s.view.quality)
   const [grabbing, setGrabbing] = useState(false)
   // Distinct from `grabbing`, which starts on press: this waits for the drag
   // to pass the click threshold, so clicking a part does not blink its gizmo.
@@ -470,16 +471,33 @@ function SceneContents() {
       />
 
       {/*
-        * renderPriority 2, which is the whole reason this is visible at all.
+        * The render priority here decides whether the scene gets drawn at all.
         *
-        * The gizmo and the effect composer both default to priority 1, and at
-        * equal priority r3f runs them in mount order. PostFx mounts last, so
-        * the composer's output was painted over the gizmo every frame and the
-        * one widget in the app that tells you which way is up had never been
-        * seen by anybody.
+        * drei renders this widget through a Hud, and a Hud at priority 1 draws
+        * the main scene first and then the widget on top of it. At any other
+        * priority it draws only the widget, and assumes something else has
+        * already drawn the scene.
+        *
+        * Which is true when the effect composer is running, at priority 1 —
+        * and false when it is not. With post-processing on Fastest there is no
+        * composer, so nothing drew the scene: the canvas froze on its last
+        * good frame while the widget went on painting over itself, and the
+        * result was a stuck picture with a gizmo smeared across it. Measured
+        * at nine draw calls and forty-eight triangles for a build that needs
+        * five hundred and nine hundred thousand.
+        *
+        * So: priority 1 when the Hud has to do the whole job, priority 2 when
+        * it only has to sit on top of the composer's output. Two was needed at
+        * all because at equal priority r3f runs them in mount order, and PostFx
+        * mounts last — which is why this widget had never been seen by anybody
+        * until it was moved out of the composer's way.
         */}
       {showGizmo && (
-        <GizmoHelper alignment="bottom-right" margin={[80, 80]} renderPriority={2}>
+        <GizmoHelper
+          alignment="bottom-right"
+          margin={[80, 80]}
+          renderPriority={quality === 'off' ? 1 : 2}
+        >
           <GizmoViewport
             axisColors={['#FF6B6B', '#3DD68C', '#4C8DFF']}
             labelColor="#0B0D10"
