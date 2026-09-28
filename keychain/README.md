@@ -1,78 +1,69 @@
-# Draftrig logo keychain
+# Draftrig lockup keychain
 
-Three STL files, printed together as one three-colour part on a Bambu with AMS.
+The full logo — mark and wordmark — as three single-colour prints that slot
+together. **No AMS, and no purge.**
 
-| File | What it is | Suggested filament |
+| File | What it is | Filament |
 | --- | --- | --- |
-| `draftrig-keychain-1-plate.stl` | The tag, with the keyring hole | White, or any light colour |
-| `draftrig-keychain-2-mark-dark.stl` | The D | Black, or the brand navy `#0A141E` |
-| `draftrig-keychain-3-wedge-blue.stl` | The wedge | Blue, `#2F6FE0` |
+| `lockup-1-plate.stl` | The tag, keyring hole, and a pocket under every piece | White, or any light colour |
+| `lockup-2-mark-and-text.stl` | The D and the eight letters, as ten loose pieces | Black, or the brand navy `#0A141E` |
+| `lockup-3-wedge.stl` | The wedge | Blue, `#2F6FE0` |
 
-## Why three files and not one
+## Why it is an inlay
 
-**STL cannot store colour.** It is a list of triangles and nothing else. A
-multi-colour model is therefore several STLs — one per filament — that share a
-coordinate system, and the slicer is what puts them back together and assigns a
-material to each. That is what these are.
+The obvious way to make a multi-colour print is to stack the colours and let a
+multi-material printer change filament between them. It purges several grams at
+every change, which on a part this size is more waste than part.
 
-All three are exported in the same frame, so they line up on their own. Do not
-move them individually after loading, or the logo will sit off its plate.
+So the plate has pockets cut into it instead, the coloured pieces drop in, and
+you glue them. Each file is one colour and one print, and nothing is purged.
+
+**The wordmark is eight separate letters, so the dark colour cannot be a single
+solid.** `lockup-2` holds ten loose pieces in one STL — one print, one
+filament — and then it is a few minutes with tweezers. Each piece sits at the
+position it occupies in the logo, so which pocket it belongs in is never a
+guess.
 
 ## Printing it
 
-1. Open **Bambu Studio**.
-2. **File → Import → Import 3MF/STL...**, select **all three files at once**.
-3. It will ask *"Multiple objects detected — load as a single object with
-   multiple parts?"* → **Yes**. That is the step that keeps them aligned and
-   makes them one printable object.
-   - If you miss that prompt, select all three in the object list, right-click,
-     and choose **Assemble**.
-4. In the object list, expand the part and give each of the three a filament:
-   click the colour chip beside each part name and pick the AMS slot.
-5. Slice and print.
+Three separate jobs. Nothing needs supports; everything lies flat.
 
-## Settings
+1. **Plate** in the light colour. 0.2 mm layers, 3 walls, 15% infill.
+2. **Mark and text** in the dark colour. The pieces arrive already arranged;
+   do not rearrange them if you can avoid it — the layout is the map.
+3. **Wedge** in blue.
 
-Nothing exotic is needed.
+Then dry-fit everything before any glue. The pockets are cut 0.2 mm larger
+than the pieces on every side, which is the usual allowance for a part you push
+home rather than hammer. If your printer runs fat and a piece will not seat,
+scrape the pocket edge or drop `FIT` in `build/build-lockup.mjs` and reprint
+just the plate.
 
-- **Layer height 0.2 mm.** The logo stands 0.8 mm proud, which is exactly four
-  layers, so the colour change lands on a layer boundary.
-- **No supports.** The tag sits flat on the plate and everything above it is
-  built on solid material.
-- **No brim needed** at this size, though it costs nothing to add one.
-- **3 walls, 15% infill** is plenty. At 3.2 mm thick it is nearly solid anyway.
-
-Expect roughly 20 minutes and a few grams, plus whatever the AMS purges between
-colour changes — which is usually more material than the part itself. Printing
-several at once amortises that, since the purge happens per layer rather than
-per part.
+Glue with a gel cyanoacrylate, a dot at a time. Thin superglue wicks under the
+pieces and out onto the face, where it dries white.
 
 ## Dimensions
 
 ```
-tag            44 x 33 x 2.4 mm
-logo raised    0.8 mm  (3.2 mm over the raised areas)
-keyring hole   5.0 mm diameter, 3.0 mm of material between it and the edge
-logo           27.2 x 24 mm
+tag              92 x 26 x 2.6 mm
+pockets          1.0 mm deep
+inlays           1.0 mm thick, so they finish flush
+clearance        0.2 mm a side
+keyring hole     5.0 mm, 3.5 mm of material outside it
+lockup           68 mm wide
 ```
-
-The 5 mm hole takes an ordinary split ring. If you want a larger ring or a
-lanyard clip, raise `HOLE_D` in `build/build-stl.mjs` and rebuild — but keep at
-least 2.5 mm of material outside the hole, which is where it will break if it
-is going to.
 
 ## Changing it
 
-The STLs are generated, not drawn, so the logo is traced from
-`public/mark.png` rather than redrawn by hand and cannot drift away from the
-real artwork.
+Generated from `public/logo.png`, so the tag cannot drift away from the real
+artwork.
 
 ```bash
 cd keychain/build
-npm install          # potrace, kept out of the app's package.json on purpose
-node _masks.mjs      # needs `npm run dev` running: splits the PNG by colour
-node _trace.mjs      # bitmap -> outlines
-node build-stl.mjs   # outlines -> three STLs
+npm install                  # potrace
+node _masks-lockup.mjs       # needs `npm run dev` running: splits and crops the logo
+node _trace-lockup.mjs       # bitmap -> outlines
+node build-lockup.mjs        # outlines -> three STLs
 ```
 
-Every dimension is a named constant at the top of `build-stl.mjs`.
+Every dimension is a named constant at the top of `build-lockup.mjs`.
