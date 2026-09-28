@@ -41,4 +41,6 @@ hero-live.png
 keychain/build/node_modules
 keychain/build/package-lock.json
 keychain/build/mask-*.png
+keychain/build/lock-*.png
 keychain/build/trace-*.svg
+keychain/build/lock-*.svg
