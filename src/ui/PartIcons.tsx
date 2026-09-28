@@ -610,10 +610,6 @@ const BY_CATEGORY: Record<PartCategory, Glyph> = {
   panel: Panel,
   fastener: Screw,
   motion: Motion,
-  mainboard: Mainboard,
-  'pc-component': Cpu,
-  'pc-chassis': Chassis,
-  peripheral: Monitor,
 }
 
 export function PartIcon({ def, size = 18 }: { def: PartDef; size?: number }) {

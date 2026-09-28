@@ -30,11 +30,6 @@ const MATE_ACCEPTS: Record<MateType, MateType[]> = {
   face: ['face'],
   rail: ['rail'],
   peg: ['peg'],
-  socket: ['socket'],
-  dimm: ['dimm'],
-  pcie: ['pcie'],
-  m2: ['m2'],
-  standoff: ['standoff', 'hole'],
 }
 
 /** Sizes have to be in the same family, so an M3 screw skips an M8 hole. */

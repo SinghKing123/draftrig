@@ -179,13 +179,6 @@ export type MateType =
   | 'face' // flat mounting surface
   | 'rail' // DIN rail / drawer slide
   | 'peg' // breadboard / perfboard hole
-  /* Computer hardware. These are keyed rather than sized: what decides
-     whether a part fits is its standard, not a diameter. */
-  | 'socket' // CPU socket, `key` = 'AM5', 'LGA1700'
-  | 'dimm' // memory slot, `key` = 'DDR4', 'DDR5'
-  | 'pcie' // expansion slot, `key` = 'x16', 'x1'
-  | 'm2' // M.2 slot, `key` = 'M'
-  | 'standoff' // case standoff, `key` = the form factor it accepts
 
 export interface Port {
   id: string
@@ -291,10 +284,6 @@ export type PartCategory =
   | 'fastener'
   | 'panel'
   | 'motion'
-  | 'mainboard'
-  | 'pc-component'
-  | 'pc-chassis'
-  | 'peripheral'
 
 export interface PartDoc {
   manufacturer?: string

@@ -5,7 +5,6 @@ import '@/sim/behaviour/displays'
 import '@/sim/behaviour/oled'
 import { GROUND } from './circuit/mna'
 import { clearFramebuffers } from './display/framebuffer'
-import { checkBuild } from './checks/build'
 import { useDoc, type Doc } from '@/state/doc'
 import { useSim, type SimIssue } from '@/state/sim'
 import { getPart } from '@/parts/kernel/registry'
@@ -304,10 +303,6 @@ class SimEngine {
         }
       }
     }
-
-    // Design rules that do not involve current at all: whether a card fits a
-    // case, whether a chip fits a socket, whether the supply is big enough.
-    for (const issue of checkBuild(doc)) issues.push(issue)
 
     for (const w of nl.warnings) issues.push({ severity: 'warning', message: w })
     for (const e of nl.errors) issues.push({ severity: 'error', message: e })
