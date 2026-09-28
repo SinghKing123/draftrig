@@ -1271,3 +1271,34 @@ kbd {
 .inline-link:hover { color: var(--tx-0); }
 
 .empty-actions { display: flex; gap: 8px; justify-content: center; }
+
+/* Status-bar items that lead somewhere. Underlined only on hover, so the bar
+   still reads as a readout rather than as a row of links. */
+.sb-item.link {
+  font: inherit;
+  color: inherit;
+  border-radius: var(--r-xs);
+  padding: 0 4px;
+}
+.sb-item.link:hover { background: var(--bg-3); color: var(--tx-0); }
+.sb-item.link:hover b { text-decoration: underline; text-underline-offset: 2px; }
+
+/* --- bill of materials --- */
+
+.bom { display: flex; flex-direction: column; }
+.bom-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+  font-size: var(--fs-sm);
+  color: var(--tx-3);
+}
+.bom-note {
+  padding: 10px 12px 14px;
+  font-size: var(--fs-xs);
+  line-height: 1.55;
+  color: var(--tx-3);
+  max-width: 62ch;
+}

@@ -4,8 +4,10 @@ import { useSim } from '@/state/sim'
 import { getPart, unitPrice } from '@/parts/kernel/registry'
 import { buildPart } from '@/parts/kernel/build'
 import { formatMass, formatMoney } from '@/parts/kernel/units'
+import { useConsole } from '@/state/console'
 
 export function StatusBar() {
+  const showConsole = useConsole((s) => s.show)
   const instances = useDoc((s) => s.doc.instances)
   const order = useDoc((s) => s.doc.order)
   const connections = useDoc((s) => s.doc.connectionOrder)
@@ -56,8 +58,23 @@ export function StatusBar() {
 
       <span className="grow" />
 
-      <span className="sb-item">Mass <b>{formatMass(mass)}</b></span>
-      <span className="sb-item">Est. cost <b>{formatMoney(cost)}</b></span>
+      {/* These two are the totals the bill of materials explains, so they are
+          the way into it. Until this they were a dead end: the breakdown sat
+          on a tab in a drawer that starts closed. */}
+      <button
+        className="sb-item link"
+        title="Show the bill of materials"
+        onClick={() => showConsole('bom')}
+      >
+        Mass <b>{formatMass(mass)}</b>
+      </button>
+      <button
+        className="sb-item link"
+        title="Show the bill of materials"
+        onClick={() => showConsole('bom')}
+      >
+        Est. cost <b>{formatMoney(cost)}</b>
+      </button>
       <span className="sb-item">Snap <b>{snap.enabled ? `${snap.grid} mm` : 'off'}</b></span>
       <span className="sb-item">Mode <b style={{ textTransform: 'capitalize' }}>{mode}</b></span>
       <span className="sb-item">mm · Y-up</span>
