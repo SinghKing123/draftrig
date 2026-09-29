@@ -248,10 +248,18 @@ export async function record(shot, outDir) {
   if (shot.view) await page.evaluate((v) => window.draftrig.doc.getState().setView(v), shot.view)
   await page.waitForTimeout(500)
 
-  // Frame the bench with the editor's own Fit, so every shot starts from a
-  // known place rather than from wherever the load happened to leave it.
-  await page.getByRole('button', { name: /^Fit$/ }).click().catch(() => {})
-  await page.waitForTimeout(1200)
+  /*
+   * Frame the bench with the editor's own Fit, so every shot starts from a
+   * known place rather than from wherever the load happened to leave it.
+   *
+   * A shot can decline. Pressing Fit arms CameraRig — from then on it
+   * re-frames the document on every selection or canvas change — which is
+   * exactly wrong for a shot whose whole content is the document changing.
+   */
+  if (shot.fit !== false) {
+    await page.getByRole('button', { name: /^Fit$/ }).click().catch(() => {})
+    await page.waitForTimeout(1200)
+  }
 
   // Nothing should be hovered or selected when a shot starts.
   await page.mouse.move(1, 1)

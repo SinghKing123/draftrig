@@ -1,5 +1,6 @@
 import { click, moveTo, portAt } from './pointer.mjs'
 import { REELS2 } from './reels2.mjs'
+import { DISPLAY_REEL } from './display.mjs'
 
 /**
  * The shots, and which reel each belongs to.
@@ -169,6 +170,7 @@ const r1Run = {
 export const REELS = [
   { id: 'reel1-wire-and-run', shots: [r1Hook, r1Wire, r1Run] },
   ...REELS2,
+  DISPLAY_REEL,
 ]
 
 export const SHOTS = REELS.flatMap((r) => r.shots)

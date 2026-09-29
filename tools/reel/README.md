@@ -1,16 +1,25 @@
 # Reels
 
-Three vertical videos for Instagram, cut from the editor itself. 1080 × 1920,
-30 fps, H.264, no sound and no captions.
+Vertical video for Instagram, cut from the editor itself. 1080 × 1920, 30 fps,
+H.264, no sound and no captions.
 
 | Reel | What it shows |
 | --- | --- |
 | `reel1-wire-and-run` | Terminal to terminal, then switch it on |
 | `reel2-parts-and-values` | Search a value, get the part; change the value, the part changes |
 | `reel3-bill-of-materials` | What the build costs, and the CSV to order from |
+| `reel4-led-display` | An LED matrix building itself, and lighting up |
 
-Each is three beats: an opening with no interface in it, the tool being
-worked, and a payoff. Twenty seconds does not hold more than three ideas.
+The first three are three beats each: an opening with no interface in it, the
+tool being worked, and a payoff. Twenty seconds does not hold more than three
+ideas.
+
+The fourth is a different thing — one continuous take, no interface at all,
+and nothing in it is a recording of somebody working. See
+`display.mjs`: the document is staged complete and hidden, then revealed part
+by part on a schedule while the camera moves, so the build assembles itself.
+Sixty-five wires is not something to place with a mouse, and a shot that is
+meant to look composed should not depend on how steady a hand was on the day.
 
 ## Making them
 
