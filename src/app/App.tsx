@@ -5,10 +5,12 @@ import { TopBar } from '@/ui/TopBar'
 import { Library } from '@/ui/Library'
 import { Inspector } from '@/ui/Inspector'
 import { Console } from '@/ui/Console'
+import { BomPanel, BomTab } from '@/ui/Bom'
 import { StatusBar } from '@/ui/StatusBar'
 import { ViewportOverlay } from '@/ui/ViewportOverlay'
 import { NameDialog, type FileActions } from '@/ui/FileMenu'
 import { useShortcuts } from './shortcuts'
+import { useBomPanel } from '@/state/bom'
 import { Tour, hasSeenTour, markTourSeen } from '@/ui/Tour'
 import { Assistant } from '@/ui/Assistant'
 import { IconSpark } from '@/ui/Icons'
@@ -81,6 +83,7 @@ export function Editor() {
   )
   const loadDoc = useDoc((s) => s.loadDoc)
   const doc = useDoc((s) => s.doc)
+  const bomOpen = useBomPanel((s) => s.open)
 
   const fileInput = useRef<HTMLInputElement>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -298,7 +301,11 @@ export function Editor() {
   return (
     <div className="app">
       <TopBar saveState={saveState} file={file} />
-      <div className="app-body">
+      {/* The bill of materials is a column of its own rather than something
+          laid over the bench: you open it to decide what to order, and
+          covering up the thing you are pricing while you do that is no
+          help. */}
+      <div className="app-body" data-bom={bomOpen}>
         <Library />
         <div className="app-center">
           <div className="viewport-wrap" data-tour="viewport">
@@ -311,7 +318,9 @@ export function Editor() {
           <Console />
         </div>
         <Inspector />
+        <BomPanel />
       </div>
+      <BomTab />
 
       <input
         ref={fileInput}

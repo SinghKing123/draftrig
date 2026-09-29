@@ -33,6 +33,23 @@ const PICK_PX = 13
 const MIN_R = 0.35
 const MAX_R = 3.4
 
+/**
+ * A terminal is marked at both ends of its pin.
+ *
+ * A pin is not a point on a surface, it is a pin, and which end of it you can
+ * see depends on which side of the work you are on. Nearly every through-hole
+ * part puts its terminal at the tip of the lead, facing down, so once the part
+ * was seated in a board every terminal it had was under 1.6 mm of FR-4 with no
+ * way to orbit beneath and look at it: wiring a chip meant clicking dots that
+ * were not on screen.
+ *
+ * So each terminal draws twice — at the terminal itself, and at the far end of
+ * its pin, which portIndex works out from the part's own extent. Both marks
+ * are the same terminal and both are clickable, so it no longer matters which
+ * side of the work you are looking from.
+ */
+const FRONT_MM = 0.3
+
 function baseColor(p: WorldPort): THREE.Color {
   if (p.port.role === 'power') return C_POWER
   if (p.port.role === 'gnd') return C_GND
@@ -58,7 +75,8 @@ export const hoverStore = new HoverStore()
  * Electrical terminals.
  *
  * Two instanced meshes over the same set: one that is drawn, and a much larger
- * invisible one that is what the pointer actually hits. When several pick
+ * invisible one that is what the pointer actually hits. Each carries two
+ * instances per terminal, one either side of the pin — see FRONT_MM. When several pick
  * volumes overlap, which they do on a breadboard, the winner is the terminal
  * whose centre is nearest the cursor on screen rather than whichever happens to
  * be closest to the camera.
@@ -127,28 +145,37 @@ export function Ports() {
     const scale = new THREE.Vector3()
     const seat = new THREE.Vector3()
     const markPx = mode === 'wire' ? MARK_PX_WIRE : MARK_PX
+    const n = ports.length
 
-    for (let i = 0; i < ports.length; i++) {
+    for (let i = 0; i < n; i++) {
       const p = ports[i]
       const dir = p.dir.lengthSq() > 0 ? p.dir : UP
       q.setFromUnitVectors(UP, dir)
-      // Lift clear of the face it sits on, or it is half buried.
-      seat.copy(p.pos).addScaledVector(dir, 0.3)
 
-      const d = cam.position.distanceTo(p.pos)
-      const unit = k * d
+      const unit = k * cam.position.distanceTo(p.pos)
       const grown = i === hover ? 1.45 : 1
       const r = Math.min(Math.max(unit * markPx * grown, MIN_R), MAX_R)
-      scale.setScalar(r)
-      m.compose(seat, q, scale)
-      mark.setMatrixAt(i, m)
+      const pr = Math.min(Math.max(unit * PICK_PX, MIN_R * 2), MAX_R * 3)
 
-      scale.setScalar(Math.min(Math.max(unit * PICK_PX, MIN_R * 2), MAX_R * 3))
-      m.compose(seat, q, scale)
-      pick.setMatrixAt(i, m)
+      // Instance i is the front mark, i + n the one behind it. Both belong to
+      // ports[i], which is what makes doubling the pick volumes harmless:
+      // whichever of the pair wins a contested click names the same terminal.
+      for (let side = 0; side < 2; side++) {
+        // Lift clear of the face it sits on, or it is half buried. The far
+        // mark is already outside the part, so it is placed as it comes.
+        if (side === 0) seat.copy(p.pos).addScaledVector(dir, FRONT_MM)
+        else seat.copy(p.back)
+        const at = side * n + i
+        scale.setScalar(r)
+        m.compose(seat, q, scale)
+        mark.setMatrixAt(at, m)
+        scale.setScalar(pr)
+        m.compose(seat, q, scale)
+        pick.setMatrixAt(at, m)
+      }
     }
-    mark.count = ports.length
-    pick.count = ports.length
+    mark.count = n * 2
+    pick.count = n * 2
     mark.instanceMatrix.needsUpdate = true
     pick.instanceMatrix.needsUpdate = true
   })
@@ -190,6 +217,7 @@ export function Ports() {
     const sim = useSim.getState()
     const live = sim.running || Object.keys(sim.nodeV).length > 0
     const c = new THREE.Color()
+    const n = ports.length
     ports.forEach((p, i) => {
       if (i === hover) c.copy(C_HOVER)
       else if (pending && pending.instanceId === p.instanceId && pending.portId === p.portId) c.copy(C_ACTIVE)
@@ -203,6 +231,7 @@ export function Ports() {
         }
       } else c.copy(baseColor(p))
       mesh.setColorAt(i, c)
+      mesh.setColorAt(n + i, c)
     })
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
   })
@@ -220,7 +249,8 @@ export function Ports() {
     let bestPx = Infinity
     for (const hit of e.intersections) {
       if (hit.object !== pickRef.current) continue
-      const i = hit.instanceId
+      // Either half of a pair is the same terminal, so fold it back.
+      const i = hit.instanceId === undefined ? undefined : hit.instanceId % ports.length
       if (i === undefined || !ports[i]) continue
       v.copy(ports[i].pos).project(cam)
       const dx = ((v.x - e.pointer.x) * size.width) / 2
@@ -269,13 +299,13 @@ export function Ports() {
     <>
       <instancedMesh
         ref={markRef}
-        args={[markGeo, markMat, Math.max(ports.length, 1)]}
+        args={[markGeo, markMat, Math.max(ports.length * 2, 1)]}
         frustumCulled={false}
         renderOrder={4}
       />
       <instancedMesh
         ref={pickRef}
-        args={[pickGeo, pickMat, Math.max(ports.length, 1)]}
+        args={[pickGeo, pickMat, Math.max(ports.length * 2, 1)]}
         frustumCulled={false}
         renderOrder={5}
         onPointerMove={(e) => {

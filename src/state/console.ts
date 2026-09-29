@@ -3,13 +3,14 @@ import { create } from 'zustand'
 /**
  * Which drawer the console is showing, and whether it is showing at all.
  *
- * Lifted out of the Console component so anything can point at it. The status
- * bar's cost and mass are the totals the bill of materials explains, and until
- * this existed they were a dead end: the only way to the breakdown behind them
- * was to know it was on a tab in a drawer that starts closed.
+ * Lifted out of the Console component so anything can point at it — the tour
+ * opens it, an error opens it, and a shortcut can put it on a given tab.
+ *
+ * The bill of materials was a third tab here once. It has its own panel now:
+ * see state/bom.ts.
  */
 
-export type ConsoleTab = 'issues' | 'bom' | 'scope'
+export type ConsoleTab = 'issues' | 'scope'
 
 const OPEN_KEY = 'draftrig.console.open.v1'
 const readOpen = (): boolean => {

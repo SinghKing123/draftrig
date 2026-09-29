@@ -230,9 +230,9 @@ export function Landing() {
                 <span className="eyebrow">Before you order</span>
                 <h2>It knows what the build costs.</h2>
                 <p className="lead">
-                  Draftrig reads the bench and totals it: every part, its manufacturer
-                  number where the catalog knows one, and the wire measured between the
-                  terminals it actually runs between.
+                  The BOM generator reads the bench and totals it: every part, its
+                  manufacturer number where the catalog knows one, and the wire measured
+                  between the terminals it actually runs between.
                 </p>
                 <ul className="points">
                   <li><Tick /><p>The hook-up wire counted by colour and length, which is the thing everyone forgets to order.</p></li>

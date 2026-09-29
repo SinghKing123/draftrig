@@ -36,7 +36,7 @@ await page.waitForTimeout(2500)
 await page.screenshot({ path: `${OUT}/03-led-sim.png` })
 
 // Bill of materials.
-await page.getByRole('button', { name: /Bill of materials/i }).click()
+await page.getByRole('button', { name: /BOM generator/i }).click()
 await page.waitForTimeout(600)
 await page.screenshot({ path: `${OUT}/04-bom.png` })
 

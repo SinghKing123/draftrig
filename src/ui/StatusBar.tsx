@@ -1,14 +1,11 @@
-import { useMemo } from 'react'
 import { useDoc } from '@/state/doc'
 import { useSim } from '@/state/sim'
-import { getPart, unitPrice } from '@/parts/kernel/registry'
-import { buildPart } from '@/parts/kernel/build'
 import { formatMass, formatMoney } from '@/parts/kernel/units'
-import { useConsole } from '@/state/console'
+import { useBomPanel } from '@/state/bom'
+import { useFullBom } from './Bom'
 
 export function StatusBar() {
-  const showConsole = useConsole((s) => s.show)
-  const instances = useDoc((s) => s.doc.instances)
+  const openBom = useBomPanel((s) => s.setOpen)
   const order = useDoc((s) => s.doc.order)
   const connections = useDoc((s) => s.doc.connectionOrder)
   const selection = useDoc((s) => s.selection)
@@ -20,21 +17,14 @@ export function StatusBar() {
   const issues = useSim((s) => s.issues)
   const realtime = useSim((s) => s.realtimeRatio)
 
-  const { mass, cost } = useMemo(() => {
-    let m = 0
-    let c = 0
-    for (const id of order) {
-      const inst = instances[id]
-      if (!inst) continue
-      const def = getPart(inst.defId)
-      if (!def) continue
-      m += buildPart(def, inst.params).mass
-      const per = unitPrice(def, inst.params)
-      const len = typeof inst.params.length === 'number' ? (inst.params.length as number) : 1
-      c += def.category === 'structural' ? per * len : per
-    }
-    return { mass: m, cost: c }
-  }, [instances, order])
+  /*
+   * The same totals the panel prints, wire included. They used to be totalled
+   * separately here and came out lower, because this one counted parts and the
+   * bill counted parts and the hook-up wire between them — two different
+   * numbers for the same build, a centimetre apart on screen, one of them the
+   * button that opens the other.
+   */
+  const { mass, cost } = useFullBom()
 
   const errors = issues.filter((i) => i.severity === 'error').length
 
@@ -59,19 +49,20 @@ export function StatusBar() {
       <span className="grow" />
 
       {/* These two are the totals the bill of materials explains, so they are
-          the way into it. Until this they were a dead end: the breakdown sat
-          on a tab in a drawer that starts closed. */}
+          a way into it — the tab on the right edge being the other. Until
+          this they were a dead end: the breakdown sat on a tab in a drawer
+          that starts closed. */}
       <button
         className="sb-item link"
         title="Show the bill of materials"
-        onClick={() => showConsole('bom')}
+        onClick={() => openBom(true)}
       >
         Mass <b>{formatMass(mass)}</b>
       </button>
       <button
         className="sb-item link"
         title="Show the bill of materials"
-        onClick={() => showConsole('bom')}
+        onClick={() => openBom(true)}
       >
         Est. cost <b>{formatMoney(cost)}</b>
       </button>

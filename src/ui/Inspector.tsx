@@ -152,7 +152,7 @@ export function Inspector() {
 
   if (selection.length > 1) {
     return (
-      <aside className="panel">
+      <aside className="panel inspector">
         <div className="panel-head">Inspector</div>
         <div className="insp-empty">
           <b style={{ color: 'var(--tx-1)' }}>{selection.length} parts selected</b>
@@ -169,7 +169,7 @@ export function Inspector() {
 
   if (!inst || !def) {
     return (
-      <aside className="panel">
+      <aside className="panel inspector">
         <div className="panel-head">Inspector</div>
         <div className="insp-empty">
           Nothing selected.
@@ -209,7 +209,7 @@ export function Inspector() {
   const size = built ? built.bbox.getSize(new THREE.Vector3()) : null
 
   return (
-    <aside className="panel" data-tour="inspector">
+    <aside className="panel inspector" data-tour="inspector">
       <div className="panel-head">
         Inspector
         <div className="grow" />

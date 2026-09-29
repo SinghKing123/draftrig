@@ -51,10 +51,35 @@ await page.waitForTimeout(2200)
 const box = await page.locator('canvas').first().boundingBox()
 
 /* ---- 1. true radius, on a lone resistor ---- */
+/*
+ * Swept from the terminal itself, not from wherever a grid scan happens to
+ * land first. Terminals are marked at both ends of their pin now, so the scan
+ * finds the far mark before the near one and sweeping from that point measured
+ * the chord it happened to start on rather than the radius.
+ */
 await reset("d.addPart('resistor-axial', [0, 0, 0])")
-const lone = await findHover(box, 10)
+const centre = await page.evaluate(async () => {
+  const c = window.draftrig.camera?.controls
+  if (!c) return null
+  const THREE = await import('/node_modules/three/build/three.module.js')
+  const { buildPart, instanceMatrix } = await import('/src/parts/kernel/build.ts')
+  const { getPart } = await import('/src/parts/kernel/registry.ts')
+  const d = window.draftrig.doc.getState().doc
+  const inst = d.instances[d.order[0]]
+  const def = getPart(inst.defId)
+  const port = buildPart(def, inst.params).ports.find((p) => p.kind === 'electrical')
+  if (!port) return null
+  const v = new THREE.Vector3(...port.pos)
+    .applyMatrix4(instanceMatrix(inst.pos, inst.rot))
+    .project(c.object)
+  const el = c.domElement
+  return { x: ((v.x + 1) / 2) * el.clientWidth, y: ((1 - v.y) / 2) * el.clientHeight }
+})
 let radius = 0
+const lone = centre ? { x: box.x + centre.x, y: box.y + centre.y } : await findHover(box, 10)
 if (lone) {
+  await page.mouse.move(lone.x, lone.y)
+  await page.waitForTimeout(40)
   for (let dx = 1; dx <= 60; dx++) {
     await page.mouse.move(lone.x + dx, lone.y)
     await page.waitForTimeout(16)
@@ -63,6 +88,7 @@ if (lone) {
   }
 }
 console.log('isolated terminal found  :', lone ? 'yes' : 'no')
+console.log('measured from            :', centre ? 'the terminal' : 'a grid scan')
 console.log('pick radius, px          :', radius)
 
 /* ---- 2. a real wiring run on a breadboard ---- */
