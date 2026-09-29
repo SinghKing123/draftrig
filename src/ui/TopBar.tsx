@@ -24,7 +24,9 @@ const SPEEDS = [
 ]
 
 const SAVE_LABEL: Record<SaveState, string> = {
-  idle: 'Not saved yet',
+  // Nothing has been changed, so there is nothing to have saved. Saying
+  // "not saved yet" about an untouched example reads as a warning.
+  idle: 'Not saved',
   dirty: 'Unsaved changes',
   saving: 'Saving…',
   saved: 'Saved',

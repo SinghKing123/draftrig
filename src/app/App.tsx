@@ -81,6 +81,21 @@ export function Editor() {
   const doc = useDoc((s) => s.doc)
   const bomOpen = useBomPanel((s) => s.open)
 
+  /*
+   * The document as it arrived, before anybody touched it.
+   *
+   * Opening /app?start=bench-clock used to write a new project immediately —
+   * so every press of a build card on the front page, and every reload of one
+   * of those links, left another identical copy in the project list. Six
+   * clicks, six projects, none of them anything the person had made.
+   *
+   * An example somebody is only looking at is not their work. It becomes
+   * theirs the moment they change it, and that is the moment it is worth a
+   * row; until then this holds what was loaded so the autosave can tell the
+   * difference.
+   */
+  const pristine = useRef<Doc | null>(null)
+
   const fileInput = useRef<HTMLInputElement>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   // Read inside the autosave effect, which must not re-run when it changes.
@@ -111,7 +126,12 @@ export function Editor() {
           engine.reset()
         }
       }
-      if (!cancelled) setReady(true)
+      if (!cancelled) {
+        // Whatever ended up on the bench is the baseline, including the empty
+        // document when neither a project nor an example was asked for.
+        pristine.current = useDoc.getState().doc
+        setReady(true)
+      }
     })()
     return () => {
       cancelled = true
@@ -171,6 +191,8 @@ export function Editor() {
   useEffect(() => {
     if (!ready) return
     if (isEmpty(doc)) return
+    // Loaded and left alone. An example being read is not a project.
+    if (doc === pristine.current) return
 
     cancelPending()
     /*
@@ -181,6 +203,9 @@ export function Editor() {
      * two identical projects. Later saves are debounced as before: they are
      * overwriting a row that already exists, and nothing is riding on them
      * being instant.
+     *
+     * This only runs once something has actually been changed, so the first
+     * save is a real edit rather than the example landing on screen.
      */
     if (saveStateRef.current === 'idle') {
       void persist(id, doc)
