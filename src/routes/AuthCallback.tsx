@@ -4,13 +4,20 @@ import { BRAND } from '@/brand'
 import { LogoMark } from '@/ui/Logo'
 import { useAuth } from '@/auth/AuthProvider'
 import { projects } from '@/cloud/projects'
+import { ensureProfile } from '@/cloud/profile'
 
 /**
- * Where Google and the email link land.
+ * Where Auth0 sends people back to.
  *
- * Supabase parses the token out of the URL itself; all this page has to do is
- * wait for the session to appear, move any browser-local projects into the new
- * account, and get out of the way.
+ * The SDK has already taken the code out of the URL and swapped it for a
+ * session by the time this renders; all this page does is wait for that to
+ * settle, move anything built in this browser into the account, and get out of
+ * the way.
+ *
+ * Adopting the local projects here rather than on the projects page matters:
+ * it is the one moment we know a sign-in has just happened, so it runs once
+ * instead of on every visit, and somebody who built something before making an
+ * account does not have to be told what happened to it.
  */
 export function AuthCallback() {
   const { user, loading, error } = useAuth()
@@ -21,14 +28,14 @@ export function AuthCallback() {
     if (loading) return
 
     if (!user) {
-      // No session came back, most often a link that was already used.
       const t = setTimeout(() => navigate('/signin', { replace: true }), 2200)
-      setStatus('That sign-in link did not work. Taking you back…')
+      setStatus('That sign-in did not complete. Taking you back…')
       return () => clearTimeout(t)
     }
 
     let cancelled = false
     ;(async () => {
+      await ensureProfile(user)
       setStatus('Moving your local projects into your account…')
       const moved = await projects.adoptLocal().catch(() => 0)
       if (cancelled) return

@@ -1,14 +1,27 @@
 -- Draftrig database schema.
 --
--- Run this once in the Supabase SQL editor (Dashboard -> SQL Editor -> New query).
--- It is safe to run more than once.
+-- Run this once in the Supabase SQL editor (Dashboard -> SQL Editor -> New
+-- query). It is safe to run more than once.
 --
--- The security model is row-level: every policy is scoped to auth.uid(), so a
--- signed-in user can only ever reach their own rows. There is no application
--- code that can accidentally leak someone else's project, because the database
--- itself refuses.
+-- Identity comes from Auth0, not from Supabase. Supabase is configured to
+-- trust Auth0's signing keys (Dashboard -> Authentication -> Third-Party
+-- Auth), every request from the browser carries an Auth0 access token, and the
+-- policies below read the caller out of that token.
+--
+-- That is why nothing here mentions auth.uid() or auth.users. auth.uid() reads
+-- the subject of a token Supabase issued itself, and Supabase no longer issues
+-- one — it would be null on every request, so a policy written against it
+-- matches no rows and every read comes back empty with no error to explain it.
+-- The subject of the Auth0 token is what identifies a caller, and it is a
+-- string like 'google-oauth2|10769150350006150715' rather than a uuid.
 
 create extension if not exists "pgcrypto";
+
+-- The caller, according to the token they presented. Null when anonymous.
+create or replace function public.auth_sub()
+returns text language sql stable as $$
+  select nullif(current_setting('request.jwt.claims', true)::jsonb ->> 'sub', '')
+$$;
 
 /* ------------------------------------------------------------------ */
 /* Projects                                                            */
@@ -16,7 +29,9 @@ create extension if not exists "pgcrypto";
 
 create table if not exists public.projects (
   id          uuid primary key default gen_random_uuid(),
-  owner       uuid not null references auth.users (id) on delete cascade,
+  -- An Auth0 subject. Text, and with no foreign key, because the users live
+  -- in Auth0 and this database has no table to point at.
+  owner       text not null,
   name        text not null default 'Untitled build',
   -- The whole document: parts by id plus their parameters and connections.
   -- No geometry is stored; it is regenerated on load.
@@ -52,33 +67,37 @@ alter table public.projects enable row level security;
 drop policy if exists "own projects are readable" on public.projects;
 create policy "own projects are readable"
   on public.projects for select
-  using (auth.uid() = owner or is_public);
+  using (public.auth_sub() = owner or is_public);
 
 drop policy if exists "insert own projects" on public.projects;
 create policy "insert own projects"
   on public.projects for insert
-  with check (auth.uid() = owner);
+  with check (public.auth_sub() = owner);
 
 drop policy if exists "update own projects" on public.projects;
 create policy "update own projects"
   on public.projects for update
-  using (auth.uid() = owner)
-  with check (auth.uid() = owner);
+  using (public.auth_sub() = owner)
+  with check (public.auth_sub() = owner);
 
 drop policy if exists "delete own projects" on public.projects;
 create policy "delete own projects"
   on public.projects for delete
-  using (auth.uid() = owner);
+  using (public.auth_sub() = owner);
 
 /* ------------------------------------------------------------------ */
 /* Profiles                                                            */
 /* ------------------------------------------------------------------ */
 
--- A row per user, created automatically on sign-up. This is where a plan or a
--- billing customer id will live when subscriptions are added; keeping it
--- separate from auth.users means we never write to Supabase's own tables.
+-- A row per user. Auth0 holds the real account; this is the part of it this
+-- database needs to join against, plus somewhere for a plan or a billing
+-- customer id to live when subscriptions are added.
+--
+-- There is no trigger filling this in. The old schema had one on
+-- auth.users, which fired when Supabase created an account; nothing inserts
+-- into auth.users any more, so the app writes its own row on first sign-in.
 create table if not exists public.profiles (
-  id           uuid primary key references auth.users (id) on delete cascade,
+  id           text primary key,
   email        text,
   display_name text,
   avatar_url   text,
@@ -91,29 +110,30 @@ alter table public.profiles enable row level security;
 
 drop policy if exists "read own profile" on public.profiles;
 create policy "read own profile"
-  on public.profiles for select using (auth.uid() = id);
+  on public.profiles for select using (public.auth_sub() = id);
+
+drop policy if exists "upsert own profile" on public.profiles;
+create policy "upsert own profile"
+  on public.profiles for insert with check (public.auth_sub() = id);
 
 drop policy if exists "update own profile" on public.profiles;
 create policy "update own profile"
-  on public.profiles for update using (auth.uid() = id) with check (auth.uid() = id);
+  on public.profiles for update
+  using (public.auth_sub() = id) with check (public.auth_sub() = id);
 
--- Create the profile row the moment someone signs up, so the app never has to
--- handle a signed-in user with no profile.
-create or replace function public.handle_new_user()
-returns trigger language plpgsql security definer set search_path = public as $$
-begin
-  insert into public.profiles (id, email, display_name, avatar_url)
-  values (
-    new.id,
-    new.email,
-    coalesce(new.raw_user_meta_data ->> 'full_name', new.raw_user_meta_data ->> 'name'),
-    coalesce(new.raw_user_meta_data ->> 'avatar_url', new.raw_user_meta_data ->> 'picture')
-  )
-  on conflict (id) do nothing;
-  return new;
-end $$;
+/* ------------------------------------------------------------------ */
+/* Migrating from the Supabase-auth version of this schema              */
+/* ------------------------------------------------------------------ */
 
-drop trigger if exists on_auth_user_created on auth.users;
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute function public.handle_new_user();
+-- Only needed if the old schema was ever run and has rows in it. The owner
+-- column was a uuid keyed to auth.users; there is no way to map those to
+-- Auth0 subjects automatically, so this is here to be read rather than run.
+--
+--   alter table public.projects drop constraint if exists projects_owner_fkey;
+--   alter table public.projects alter column owner type text using owner::text;
+--   drop trigger if exists on_auth_user_created on auth.users;
+--   drop function if exists public.handle_new_user();
+--
+-- After that, existing rows carry uuids no signed-in caller will ever match,
+-- so they are invisible rather than dangerous. Delete them or reassign them by
+-- hand once you know which Auth0 account each belongs to.

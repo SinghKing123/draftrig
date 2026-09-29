@@ -1,15 +1,12 @@
 # Turning accounts on
 
-The code for accounts is finished and has been for a while: Google sign-in,
-email sign-in links, the callback page, the row-level security policies, and
-the sync that moves a browser's projects into an account the moment someone
-signs in. None of it needs writing.
+Sign-in is **Auth0**. Data is **Supabase**. They are joined by a token: Auth0
+issues it, the browser sends it with every database request, and Supabase is
+configured to trust Auth0's signing keys. The row-level policies read the
+caller out of that token.
 
-What it needs is configuration, in three dashboards that do not know about each
-other. This is the order to do it in, because each step depends on the one
-before.
-
-Values used below:
+The code is written. What follows is configuration, in four places that do not
+know about each other, in the order they depend on each other.
 
 ```
 site            https://draftrig.com
@@ -19,149 +16,147 @@ supabase url    https://kovrdzgebxswnfzkvipe.supabase.co
 
 ---
 
-## 1. Give the live build its keys — Cloudflare
+## 1. Auth0 — the tenant, the app, and the API
 
-**This is the one that is currently wrong.** The site at draftrig.com was built
-without the Supabase variables, so `cloudConfigured` is false and the sign-in
-page says accounts are not switched on. You can confirm it the same way I did:
-fetch the site's main JavaScript bundle and search it for `supabase.co`. If the
-string is not in there, the keys were not present when it was built.
+auth0.com → create a tenant. The region only matters for latency; pick the one
+nearest you.
 
-That is the important thing to understand about Vite: `VITE_*` variables are
-**baked in at build time**, not read at run time. Setting them after a deploy
-changes nothing until the site is built again.
+### 1a. The application
 
-Cloudflare dashboard → your Pages/Workers project → **Settings → Variables and
-Secrets**. Add, for the **Production** environment:
+**Applications → Create application** → *Single Page Web Application*. Then in
+its **Settings**:
+
+| Field | Value |
+| --- | --- |
+| Allowed Callback URLs | `https://draftrig.com/auth/callback, http://localhost:5173/auth/callback` |
+| Allowed Logout URLs | `https://draftrig.com, http://localhost:5173` |
+| Allowed Web Origins | `https://draftrig.com, http://localhost:5173` |
+
+Add the localhost entries now. Without them sign-in works in production and
+silently fails on your own machine, which is a confusing afternoon.
+
+Copy the **Domain** and **Client ID**.
+
+### 1b. The API — do not skip this
+
+**Applications → APIs → Create API**.
+
+- **Name**: anything, e.g. `Draftrig data`
+- **Identifier**: `https://api.draftrig.com` — this is just a unique string, it
+  does not have to resolve to anything. Whatever you type here is your
+  `VITE_AUTH0_AUDIENCE`, exactly, including the scheme.
+- **Signing algorithm**: RS256. Supabase verifies against your tenant's public
+  keys, which only works for RS256.
+
+**This is the step that decides whether any of it works.** Without an API to
+mint the token for, Auth0 returns an *opaque* token — a reference string with
+nothing inside it. Supabase cannot verify it, so every query comes back empty
+with no error. Sign-in looks perfect and the app looks broken.
+
+### 1c. Connections
+
+**Authentication → Social → Google** to add Google sign-in.
+**Authentication → Database** is on by default and gives email and password.
+
+Both appear on the hosted login automatically. Adding another provider later is
+a switch here and no code change at all.
+
+## 2. Supabase — trust the tokens
+
+**Authentication → Sign In / Providers → Third-Party Auth → Add provider →
+Auth0**, and give it your Auth0 domain. Supabase fetches the tenant's public
+keys from there and will accept tokens signed with them.
+
+Then **SQL Editor → New query**, paste all of `supabase/schema.sql`, run it.
+Safe to run more than once.
+
+Check it in **Table Editor**: `projects` and `profiles` both present, both
+showing **RLS enabled**. A table without that badge is readable by anyone with
+the anon key, which is public.
+
+Note `projects.owner` is `text`, not `uuid`. It holds an Auth0 subject like
+`google-oauth2|10769150350006150715`. If you ran the older version of this
+schema there is a migration sketch commented at the bottom of the file.
+
+## 3. Cloudflare — give the build its keys
+
+**This is what is currently wrong.** draftrig.com was built with none of these,
+so `enabled` is false, the account menu hides itself, and the sign-in page says
+accounts are not open yet.
+
+Cloudflare → your project → **Settings → Variables and Secrets**, for
+**Production**:
 
 | Name | Value |
 | --- | --- |
+| `VITE_AUTH0_DOMAIN` | e.g. `draftrig.eu.auth0.com` |
+| `VITE_AUTH0_CLIENT_ID` | from step 1a |
+| `VITE_AUTH0_AUDIENCE` | the API identifier from step 1b, character for character |
 | `VITE_SUPABASE_URL` | `https://kovrdzgebxswnfzkvipe.supabase.co` |
-| `VITE_SUPABASE_ANON_KEY` | the anon key from Supabase → Settings → API |
+| `VITE_SUPABASE_ANON_KEY` | Supabase → Settings → API |
 
-Add them as plain variables, not secrets. Secrets are hidden from the build in
-some configurations, and neither of these needs hiding — both are designed to
-be public and both end up in the JavaScript anyone can read. The thing that
-actually protects the data is the row-level security in `schema.sql`, which is
-enforced by the database and cannot be bypassed from a browser.
+Plain variables, not secrets — all five end up in the JavaScript anyway, and
+the anon key is designed to. Row-level security is what protects the data.
 
-Then **redeploy**. A new build is what picks them up.
+Then **redeploy**. `VITE_*` values are baked in when the site is built, so
+setting them changes nothing until a new build runs. You can check a deploy
+afterwards by fetching the site's main JS bundle and searching it for
+`supabase.co` — if the string is missing, the build did not have the keys.
 
-## 2. Create the tables — Supabase
+## 4. The emails
 
-Supabase dashboard → **SQL Editor → New query**. Paste all of
-`supabase/schema.sql` and run it. It is safe to run more than once, so if you
-are unsure whether you have already done it, just run it again.
+Auth0 sends the verification and password-reset mail. Out of the box it sends
+from its own shared servers with Auth0 branding, and that is **rate limited and
+explicitly not for production** — fine for testing, wrong for a launch.
 
-It creates `projects` and `profiles`, turns row-level security on for both,
-writes the policies that scope every row to `auth.uid()`, and adds a trigger so
-a profile row appears the moment someone signs up.
+**Branding → Email Provider**: pick one and give it an API key.
+[Resend](https://resend.com) is the least painful — free for 3,000 a month, and
+setup is three DNS records on draftrig.com to prove you own it. SendGrid,
+Mailgun and Postmark work the same way.
 
-To check it worked: **Table Editor** should list both tables, and each should
-show an **RLS enabled** badge. If a table is there without that badge, stop and
-re-run — a table with RLS off is readable by anyone with the anon key.
+Set the from address to something on your own domain, `hello@draftrig.com` or
+`no-reply@draftrig.com`. Mail from a domain you control is what keeps it out of
+spam folders, and it is why this step is worth doing before you tell anyone
+about the site. Give DNS an hour, then send a real one to check.
 
-## 3. Tell Supabase where the site lives
+**Branding → Email Templates** to make them yours. There is a template each for
+verification, welcome, password reset and blocked-account. They take Liquid, so
+`{{ application.name }}` and `{{ url }}` do the work; the logo and colours come
+from **Branding → Universal Login**, which is also where you restyle the login
+page itself so it does not look like a stock Auth0 screen.
 
-Supabase → **Authentication → URL Configuration**.
+**Authentication → Database → your connection → Settings**: *Requires Email
+Verification* decides whether someone must click the link before they can sign
+in. On is the stricter choice and the one most people expect.
 
-- **Site URL**: `https://draftrig.com`
-- **Redirect URLs**: add each of these on its own line:
+## Checking it works
 
-```
-https://draftrig.com/auth/callback
-http://localhost:5173/auth/callback
-```
+Private window, so you are not already signed in:
 
-The app builds its redirect from `window.location.origin`, so every origin you
-ever sign in from needs to be in this list. Anything not listed is rejected and
-the user lands back on the sign-in page with no explanation. Add the localhost
-one now — otherwise sign-in works in production and mysteriously does not work
-on your own machine. If Vite picks a different port because 5173 is busy, add
-that one too.
-
-## 4. Google sign-in — two dashboards, in this order
-
-### 4a. Google Cloud Console
-
-console.cloud.google.com → create a project (any name).
-
-**APIs & Services → OAuth consent screen**: choose **External**, fill in the app
-name, your support email, and the developer contact. Add `draftrig.com` under
-authorised domains. You do not need to submit for verification to sign in
-yourself, but while the app is in **Testing** only accounts on the test-user
-list can sign in — so when you are ready for other people, press **Publish
-app**. Publishing an app that only asks for name, email and profile picture
-does not require Google's review process.
-
-**APIs & Services → Credentials → Create credentials → OAuth client ID**, type
-**Web application**:
-
-- **Authorised JavaScript origins**: `https://draftrig.com`
-- **Authorised redirect URIs**: `https://kovrdzgebxswnfzkvipe.supabase.co/auth/v1/callback`
-
-That redirect URI is the part everybody gets wrong. It is **Supabase's**
-callback, not the app's. The round trip is Google → Supabase → draftrig.com, and
-Google only ever needs to know about the first hop. Putting
-`https://draftrig.com/auth/callback` here produces a `redirect_uri_mismatch`
-error that is very hard to read.
-
-Copy the **Client ID** and **Client secret**.
-
-### 4b. Supabase
-
-**Authentication → Providers → Google**: enable it, paste the client ID and
-secret, save.
-
-## 5. Email — the part that will bite you
-
-Sign-in links go out over email. Supabase gives every project a built-in email
-sender so that things work on day one, and it is **rate limited to a handful of
-messages per hour across the whole project**. It is there for development. On a
-launched site it means the fourth person to try signing in that hour silently
-gets nothing, and you have no way to tell.
-
-So before you tell anyone about the site, set up your own sender. Supabase →
-**Project Settings → Authentication → SMTP Settings** → enable custom SMTP.
-
-[Resend](https://resend.com) is the least painful of these: free for 3,000
-messages a month, and the setup is adding three DNS records to draftrig.com to
-prove you own it. Postmark and SendGrid work the same way and are equally fine.
-
-You will need to add the DNS records at whoever holds draftrig.com. Until those
-records verify, mail either does not send or goes straight to spam — give it an
-hour and check with a real send before assuming it is broken.
-
-While you are there, **Authentication → Email Templates** — the default magic
-link email says "Supabase" in it. It is one line of HTML to make it say
-Draftrig.
-
-## Checking it actually works
-
-In a private window, so you are not signed in already:
-
-1. `https://draftrig.com/signin` — it should show the Google button and the
-   email field, **not** the "accounts are not switched on" notice. If it shows
-   that notice, step 1 did not take: the build does not have the keys.
-2. Sign in with Google. You should come back to `/auth/callback` briefly and
-   land on `/projects`.
-3. Supabase → **Authentication → Users** should now list you, and **Table
-   Editor → profiles** should have a row with your name and avatar — that is
-   the trigger from step 2 firing.
-4. Build something in the editor, reload, and confirm it is still there.
-5. Sign in on a second device or browser and confirm the same project appears.
-   That is the whole point of the accounts, and it is the only test that
+1. `https://draftrig.com` — the header should show a **Sign in** button. If it
+   does not, step 3 did not take: the build has no Auth0 keys in it.
+2. Sign in with Google. You should pass through Auth0, land briefly on
+   `/auth/callback`, and end on `/projects`.
+3. Auth0 → **User Management → Users** lists you.
+4. Supabase → **Table Editor → profiles** has a row whose `id` is your Auth0
+   `sub`. That is the app writing it on first sign-in — there is no trigger
+   doing it any more.
+5. Build something, reload, confirm it is still there. Then sign in on a second
+   browser and confirm the same project appears. That is the only test that
    exercises the sync rather than the local cache.
-6. Then the email path: sign out, ask for a sign-in link, and use it. This is
-   the one to test last, because it is the one that depends on DNS.
+6. Sign up with an email address and click the verification link. Leave this
+   for last: it is the one that depends on DNS.
 
-## What is deliberately not here
+## If a query comes back empty but sign-in worked
 
-No password sign-up, so there is no "confirm your email" step in the usual
-sense — the link you are sent *is* the confirmation, and clicking it both
-creates the account and signs you in. There is nothing to forget and nothing to
-reset, which is fewer screens to build and fewer ways for someone to get stuck.
+Almost always the token. In the browser console:
 
-The `profiles` table has a `plan` column that everything ignores. It is there so
-that adding billing later does not mean a migration on a table with real user
-data in it.
+```js
+JSON.parse(atob(localStorage.getItem(
+  Object.keys(localStorage).find(k => k.startsWith('@@auth0spajs@@'))
+).match(/"access_token":"(.*?)"/)[1].split('.')[1]))
+```
+
+If that throws, the token is opaque — the audience is missing or wrong, step
+1b. If it prints a payload, check its `iss` matches the domain you gave
+Supabase in step 2 and that `sub` matches the `owner` on the rows you expected.

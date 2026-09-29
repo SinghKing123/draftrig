@@ -1,5 +1,6 @@
 import type { Doc } from '@/state/doc'
 import { supabase } from '@/auth/supabase'
+import { currentUserId as authUserId } from '@/auth/AuthProvider'
 import { parseProject, serializeProject } from '@/io/project'
 
 /**
@@ -141,10 +142,18 @@ interface Row {
   part_count: number | null
 }
 
+/**
+ * Who is signed in, as Auth0 knows them.
+ *
+ * This used to ask Supabase for its own session. Supabase no longer issues
+ * one — it holds the data and trusts Auth0's token for identity — so the id
+ * comes from the auth layer instead. It is an Auth0 subject, a string like
+ * `google-oauth2|10769150350006150715`, and it is what `projects.owner`
+ * stores and what the row-level policies compare against.
+ */
 async function currentUserId(): Promise<string | null> {
   if (!supabase) return null
-  const { data } = await supabase.auth.getSession()
-  return data.session?.user.id ?? null
+  return authUserId()
 }
 
 /* ------------------------------------------------------------------ */

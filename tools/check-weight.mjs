@@ -11,8 +11,21 @@ import { join } from 'node:path'
  */
 
 const DIST = 'dist'
-/** Uncompressed budget for everything index.html pulls in eagerly, kB. */
-const EAGER_BUDGET_KB = 800
+/**
+ * Uncompressed budget for everything index.html pulls in eagerly, kB.
+ *
+ * This is the drift alarm, not the real invariant — the real one is the list
+ * of banned chunks below, which fails if three.js or the postprocessing stack
+ * ever reaches the front page. The number is a baseline plus headroom, and it
+ * moves when something is added on purpose.
+ *
+ * It moved from 800 when Auth0 arrived. Its SDK is about 235 kB raw, 68 kB
+ * over the wire, and the landing page pays for it because the account menu in
+ * the header shows a signed-in visitor their own avatar — which means knowing
+ * who they are before they have asked for anything. The alternative was
+ * showing everyone "Sign in" and correcting it a moment later.
+ */
+const EAGER_BUDGET_KB = 950
 
 const html = readFileSync(join(DIST, 'index.html'), 'utf8')
 const refs = [...html.matchAll(/(?:src|href)="\/assets\/([^"]+)"/g)].map((m) => m[1])

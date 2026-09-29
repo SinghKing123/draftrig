@@ -66,8 +66,8 @@ export function Landing() {
           <Link to="/" aria-label={BRAND.name}><Wordmark size={24} /></Link>
           <nav className="site-nav">
             <a href="#builds">Builds</a>
-            <a href="#simulate">Simulation</a>
             <a href="#parts">Parts</a>
+            <a href="#simulate">Simulation</a>
             <a href="#how">How it works</a>
           </nav>
           <div className="header-actions">
@@ -168,9 +168,35 @@ export function Landing() {
         </div>
       </section>
 
+      {/* ---------------- parts ---------------- */}
+
+      <section className="band sand" id="parts">
+        <div className="wrap">
+          <div className="split flip">
+            <Reveal delay={80}><PartSearch /></Reveal>
+            <Reveal>
+              <div>
+                <span className="eyebrow">The library</span>
+                <h2>One resistor. Every value.</h2>
+                <p className="lead">
+                  Parts are described rather than drawn, so a resistor is not a hundred
+                  models — it is one part that takes a value, a tolerance and a wattage,
+                  and looks like the thing you would be sent.
+                </p>
+                <ul className="points">
+                  <li><Tick /><p>{stats ? `${stats.electronics} electronic parts` : 'Electronic parts'}: passives, semiconductors, boards, sensors and displays.</p></li>
+                  <li><Tick /><p>{stats ? `${stats.build} for the structure` : 'Structural stock'}: extrusion, sheet, stock and the fasteners to join them.</p></li>
+                  <li><Tick /><p>Search by value, package or part number — <span className="mono">10k</span>, <span className="mono">2020</span>, <span className="mono">NE555</span>.</p></li>
+                </ul>
+              </div>
+            </Reveal>
+          </div>
+        </div>
+      </section>
+
       {/* ---------------- simulation ---------------- */}
 
-      <section className="band sand" id="simulate">
+      <section className="band" id="simulate">
         <div className="wrap">
           <div className="split">
             <Reveal>
@@ -191,32 +217,6 @@ export function Landing() {
               </div>
             </Reveal>
             <Reveal delay={80}><LedDemo /></Reveal>
-          </div>
-        </div>
-      </section>
-
-      {/* ---------------- parts ---------------- */}
-
-      <section className="band" id="parts">
-        <div className="wrap">
-          <div className="split flip">
-            <Reveal delay={80}><PartSearch /></Reveal>
-            <Reveal>
-              <div>
-                <span className="eyebrow">The library</span>
-                <h2>One resistor. Every value.</h2>
-                <p className="lead">
-                  Parts are described rather than drawn, so a resistor is not a hundred
-                  models — it is one part that takes a value, a tolerance and a wattage,
-                  and looks like the thing you would be sent.
-                </p>
-                <ul className="points">
-                  <li><Tick /><p>{stats ? `${stats.electronics} electronic parts` : 'Electronic parts'}: passives, semiconductors, boards, sensors and displays.</p></li>
-                  <li><Tick /><p>{stats ? `${stats.build} for the structure` : 'Structural stock'}: extrusion, sheet, stock and the fasteners to join them.</p></li>
-                  <li><Tick /><p>Search by value, package or part number — <span className="mono">10k</span>, <span className="mono">2020</span>, <span className="mono">NE555</span>.</p></li>
-                </ul>
-              </div>
-            </Reveal>
           </div>
         </div>
       </section>

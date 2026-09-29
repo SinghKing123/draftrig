@@ -13,6 +13,7 @@
     "check:weight": "vite build && node tools/check-weight.mjs"
   },
   "dependencies": {
+    "@auth0/auth0-react": "^2.27.0",
     "@react-three/drei": "^9.114.0",
     "@react-three/fiber": "^8.17.10",
     "@react-three/postprocessing": "^2.19.1",
