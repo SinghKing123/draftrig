@@ -1,12 +1,45 @@
-import { useEffect, useState } from 'react'
+import { Suspense, lazy, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { BRAND, pageTitle } from '@/brand'
 import { Wordmark } from '@/ui/Logo'
 import { AccountMenu } from '@/ui/AccountMenu'
 import { useAuth } from '@/auth/AuthProvider'
 import { Reveal } from '@/ui/Reveal'
-import { LedDemo, PartSearch } from './demos'
+import { PartSearch } from './demos'
 import { BUILDS } from './gallery'
+
+/*
+ * The board on the front page pulls in three.js, the part catalog and the
+ * solver. None of that may be part of reading the page, so it is a chunk of
+ * its own that is fetched the first time the section holding it comes near the
+ * viewport — and never at all for somebody who does not scroll that far.
+ */
+const LiveBoard = lazy(() => import('./LiveBoard'))
+
+/** Mounts its child once, the first time it is close to being seen. */
+function WhenSeen({ children }: { children: React.ReactNode }) {
+  const box = useRef<HTMLDivElement>(null)
+  const [seen, setSeen] = useState(false)
+
+  useEffect(() => {
+    const el = box.current
+    if (!el || seen) return
+    // A screen of margin, so it is loaded and running by the time it arrives
+    // rather than starting up under somebody's eyes.
+    const io = new IntersectionObserver(
+      ([e]) => e.isIntersecting && setSeen(true),
+      { rootMargin: '600px' },
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [seen])
+
+  return (
+    <div className="live-slot" ref={box}>
+      {seen ? <Suspense fallback={<div className="live-wait" />}>{children}</Suspense> : <div className="live-wait" />}
+    </div>
+  )
+}
 
 const BUILD_CATEGORIES = ['structural', 'panel', 'fastener', 'motion']
 
@@ -216,7 +249,7 @@ export function Landing() {
                 </ul>
               </div>
             </Reveal>
-            <Reveal delay={80}><LedDemo /></Reveal>
+            <Reveal delay={80}><WhenSeen><LiveBoard /></WhenSeen></Reveal>
           </div>
         </div>
       </section>
