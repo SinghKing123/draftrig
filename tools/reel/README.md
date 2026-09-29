@@ -14,7 +14,17 @@ The first three are three beats each: an opening with no interface in it, the
 tool being worked, and a payoff. Twenty seconds does not hold more than three
 ideas.
 
-The fourth is a different thing — one continuous take, no interface at all,
+`still.mjs` shoots the same build as a photograph — whole, lit, framed so the
+board, the matrix, the resistors and the controller are all in one picture. It
+is 4:5, the tallest a still can be in a feed without being cropped, and it
+pauses the chase on a row near the front: left to run, the shutter usually
+falls on the backmost row, which sits behind the wire bundle.
+
+```bash
+BASE=http://localhost:5173 node tools/reel/still.mjs
+```
+
+The fourth reel is a different thing — one continuous take, no interface at all,
 and nothing in it is a recording of somebody working. See
 `display.mjs`: the document is staged complete and hidden, then revealed part
 by part on a schedule while the camera moves, so the build assembles itself.
