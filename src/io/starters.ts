@@ -156,9 +156,27 @@ function blinker555(): Doc {
   const led = b.add('led-5mm', [22, DECK, 4], { color: 'red' }, [0, 0, 0], 'Indicator')
   const jack = b.add('jack-barrel-dc', [-24, DECK, 14], { plugged: true }, [0, 0, 0], 'Power in')
 
+  /*
+   * The thing that plugs into the jack.
+   *
+   * A barrel jack is a connector, not a supply — its electrical model is the
+   * switch contact and nothing else — so this circuit had no source in it at
+   * all. It compiled, it solved, and every node sat at 0 V: press Run and the
+   * lamp never lit, which is not an obvious symptom of a missing power supply.
+   * Nine volts is what a 555 astable expects and what the barrel jack on a
+   * bench like this would be fed.
+   */
+  const psu = b.add('bench-supply', [-132, 0, 30], { voltage: 9, ilimit: 1 }, [0, 0, 0], 'Supply')
+  const gnd = b.add('ground', [-54, 0, 44], {}, [0, 0, 0], 'Ground')
+
   const RED = '#E34B4B'
   const BLACK = '#1C1F24'
   const YELLOW = '#E3A64B'
+  const GREEN = '#3DD68C'
+
+  b.wire([psu, 'p'], [jack, 'tip'], RED)
+  b.wire([psu, 'n'], [jack, 'sleeve'], BLACK)
+  b.wire([gnd, 'gnd'], [jack, 'sleeve'], GREEN)
 
   b.wire([jack, 'tip'], [ic, 'vcc'], RED)
   b.wire([jack, 'tip'], [ic, 'reset'], RED)

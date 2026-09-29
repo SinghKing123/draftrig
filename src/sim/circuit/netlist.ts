@@ -91,7 +91,12 @@ interface PendingDevice {
   instanceId: string
   model: DeviceModel
   /** Terminal keys, in the order the solved device consumes them. */
-  build: (nodeOf: (key: string) => number, addNode: (key: string) => number) => SolvedDevice[]
+  build: (
+    nodeOf: (key: string) => number,
+    addNode: (key: string) => number,
+    /** True for a behavioural pin that is worth its own node. */
+    live: (portId: string) => boolean,
+  ) => SolvedDevice[]
   luminous?: boolean
   /** Set for behavioural parts so their pin sources can be found afterwards. */
   behaviour?: { evalId: string; pins: string[]; ref?: string; params: import('@/parts/kernel/types').Params }
@@ -207,6 +212,59 @@ export function buildNetlist(doc: Doc): Netlist {
     wiredRoots.add(uf.find(portKey(conn.b.instanceId, conn.b.portId)))
   }
 
+  /*
+   * How many terminals sit on each net, so an unused pin can be recognised.
+   *
+   * A wire is not a union here — it becomes a small resistor so the solver can
+   * report a current through it — so this counts both: nets another terminal
+   * has been merged into by seating or a groupId, and nets a wire lands on.
+   */
+  const netPopulation = new Map<string, number>()
+  for (const [instId, ports] of portCache) {
+    for (const port of ports) {
+      if (port.kind !== 'electrical') continue
+      const root = uf.find(portKey(instId, port.id))
+      netPopulation.set(root, (netPopulation.get(root) ?? 0) + 1)
+    }
+  }
+  const terminalInUse = (instanceId: string, portId: string): boolean => {
+    const root = uf.find(portKey(instanceId, portId))
+    return wiredRoots.has(root) || (netPopulation.get(root) ?? 0) > 1
+  }
+
+  /*
+   * Unused pins of a behavioural part become its reference node.
+   *
+   * An Uno declares about thirty terminals and a sketch uses two or three.
+   * Giving every one of them its own node made a four-part circuit solve a
+   * thirty-node matrix, and the solve is superlinear: the blink starter
+   * advanced two milliseconds of simulated time for every five seconds of
+   * real time, which is a lamp that never visibly blinks.
+   *
+   * Dropping them outright does not work — each pin's pull-down to the
+   * reference was also the only DC path to ground for the board's internal
+   * nodes, and without it the matrix has floating subnets, goes singular, and
+   * every voltage in the circuit reads zero. Merging them into the reference
+   * instead removes the nodes without removing the path: a terminal with
+   * nothing attached is, for solving purposes, exactly the same point as the
+   * part's own ground.
+   *
+   * This must happen after the net populations are counted and before node
+   * numbers are handed out, so it sits here rather than at either end.
+   */
+  const livePins = new Map<PendingDevice, Set<string>>()
+  for (const p of pending) {
+    if (!p.behaviour) continue
+    if (p.model.type !== 'behavioral' || !p.model.sparsePins) continue
+    const live = new Set(p.behaviour.pins.filter((id) => terminalInUse(p.instanceId, id)))
+    livePins.set(p, live)
+    if (!p.behaviour.ref) continue
+    const refKey = portKey(p.instanceId, p.behaviour.ref)
+    for (const id of p.behaviour.pins) {
+      if (!live.has(id)) uf.union(refKey, portKey(p.instanceId, id))
+    }
+  }
+
   let groundKey: string | null = null
   let strandedGround = false
   for (const inst of instances) {
@@ -312,7 +370,9 @@ export function buildNetlist(doc: Doc): Netlist {
   const behaviours: BehaviourBinding[] = []
   for (const p of pending) {
     const base = solved.length
-    const built = p.build(nodeFor, addNode)
+    const live = livePins.get(p) ?? null
+    const isLive = (portId: string): boolean => (live ? live.has(portId) : true)
+    const built = p.build(nodeFor, addNode, isLive)
     for (const d of built) {
       deviceRefs.push({ index: solved.length, instanceId: p.instanceId, model: p.model, luminous: p.luminous })
       solved.push(d)
@@ -325,12 +385,14 @@ export function buildNetlist(doc: Doc): Netlist {
         evalId: p.behaviour.evalId,
         params: p.behaviour.params,
         refNode: p.behaviour.ref ? nodeFor(portKey(p.instanceId, p.behaviour.ref)) : GROUND,
-        pins: p.behaviour.pins.map((id, i) => ({
+        pins: p.behaviour.pins
+          .filter(isLive)
+          .map((id, i) => ({
           id,
-          node: nodeFor(portKey(p.instanceId, id)),
-          rIndex: base + i * 2,
-          iIndex: base + i * 2 + 1,
-        })),
+            node: nodeFor(portKey(p.instanceId, id)),
+            rIndex: base + i * 2,
+            iIndex: base + i * 2 + 1,
+          })),
       })
     }
   }
@@ -392,7 +454,7 @@ function compileDevice(inst: Instance, model: DeviceModel): PendingDevice {
       model.type === 'behavioral'
         ? { evalId: model.evalId, pins: model.pins, ref: model.ref, params: inst.params }
         : undefined,
-    build: (nodeOf, addNode) => {
+    build: (nodeOf, addNode, live) => {
       const n = (portId: string): number => (portId.startsWith('#') ? addNode(`${iid}${portId}`) : nodeOf(t(portId)))
       switch (model.type) {
         case 'resistor':
@@ -485,7 +547,12 @@ function compileDevice(inst: Instance, model: DeviceModel): PendingDevice {
            */
           const ref = model.ref ? n(model.ref) : -1
           const out: SolvedDevice[] = []
+          // Only the pins that carry something. The rest were merged into
+          // this part's reference before node numbering, so they are already
+          // the same node as `ref` and a Norton pair across them would be a
+          // source shorted to itself.
           for (const pin of model.pins) {
+            if (!live(pin)) continue
             out.push({ k: 'r', a: n(pin), b: ref, r: HI_Z })
             out.push({ k: 'i', a: ref, b: n(pin), i: 0 })
           }

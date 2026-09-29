@@ -246,7 +246,23 @@ export type DeviceModel =
    * becomes a Thevenin source referenced to `ref`, which the behaviour drives
    * or releases. Omit `ref` to reference global ground.
    */
-  | { type: 'behavioral'; pins: string[]; evalId: string; ref?: string }
+  | {
+      type: 'behavioral'
+      pins: string[]
+      evalId: string
+      ref?: string
+      /**
+       * Unconnected pins may be folded into `ref` rather than given nodes.
+       *
+       * Set this only where a terminal with nothing attached is genuinely a
+       * don't-care. It is true of a board with thirty headers and a sketch
+       * using three, and it is false of a part that reads a pin it does not
+       * drive — a 555 left with CTRL open behaves differently from one with
+       * CTRL grounded, and a display driver scanning open segments is not
+       * the same as one scanning grounded ones.
+       */
+      sparsePins?: boolean
+    }
 
 export interface ElectricalSpec {
   /** Devices this part contributes. Node names are port ids, or `#internal`. */

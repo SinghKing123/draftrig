@@ -169,6 +169,8 @@ const mcuBoard: PartDef = {
     devices: () => [
       {
         type: 'behavioral', evalId: 'mcu', ref: 'gnd',
+        // Thirty headers, and a sketch uses two or three. See sparsePins.
+        sparsePins: true,
         pins: [
           'vin', 'v5', 'v33',
           'd0', 'd1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7',
