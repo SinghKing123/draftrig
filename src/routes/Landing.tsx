@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { BRAND, pageTitle } from '@/brand'
 import { Wordmark } from '@/ui/Logo'
 import { AccountMenu } from '@/ui/AccountMenu'
+import { useAuth } from '@/auth/AuthProvider'
 import { Reveal } from '@/ui/Reveal'
 import { LedDemo, PartSearch } from './demos'
 import { BUILDS } from './gallery'
@@ -323,6 +324,7 @@ export function Landing() {
 }
 
 function Footer() {
+  const accounts = useAuth().enabled
   return (
     <footer className="site-footer">
       <div className="wrap">
@@ -341,7 +343,10 @@ function Footer() {
           <div className="footer-col">
             <h4>Account</h4>
             <Link to="/projects">Your projects</Link>
-            <Link to="/signin">Sign in</Link>
+            {/* The header's account menu already hides itself when accounts
+                are off; this link did not, and was the one route left that
+                led a visitor to a sign-in page that cannot sign anyone in. */}
+            {accounts && <Link to="/signin">Sign in</Link>}
             <a href={`mailto:${BRAND.support}`}>Contact</a>
           </div>
         </div>

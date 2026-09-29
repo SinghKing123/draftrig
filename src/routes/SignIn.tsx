@@ -50,11 +50,24 @@ export function SignIn() {
         </p>
 
         {!enabled ? (
+          /*
+           * Written for whoever arrives here, not for whoever deployed it.
+           *
+           * This said "add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY, then
+           * restart", which is the right sentence for a developer running the
+           * project and a baffling one for a stranger who pressed Sign in. The
+           * names are still what a developer needs, so they go to the console
+           * where a visitor will not trip over them.
+           */
           <div className="notice">
-            <b>Accounts are not switched on for this deployment.</b>
+            <b>Accounts are not open yet.</b>
             <br />
-            The editor works fully without one, projects save to this browser. To enable sign-in,
-            add <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code>, then restart.
+            The editor works without one, everything you build saves in this browser. Sign-in is
+            coming, and when it does your work comes with you.
+            <br />
+            <button className="auth-submit" style={{ marginTop: 14 }} onClick={() => navigate('/app')}>
+              Open the editor
+            </button>
           </div>
         ) : sent ? (
           <div className="notice" style={{ background: 'rgba(61,214,140,0.09)', borderColor: 'rgba(61,214,140,0.3)', color: 'var(--ok)' }}>
