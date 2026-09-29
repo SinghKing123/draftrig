@@ -118,7 +118,7 @@ export const IconFrame = (p: IconProps) => (
   <S {...p}><path d="M2.2 5.4V3.4a1.2 1.2 0 0 1 1.2-1.2h2M10.6 2.2h2a1.2 1.2 0 0 1 1.2 1.2v2M13.8 10.6v2a1.2 1.2 0 0 1-1.2 1.2h-2M5.4 13.8h-2a1.2 1.2 0 0 1-1.2-1.2v-2" /></S>
 )
 
-/** Four-pointed spark: the assistant. */
+/** Four-pointed spark. */
 export const IconSpark = (p: IconProps) => (
   <S {...p}>
     <path d="M8 1.6 9.5 6.5 14.4 8 9.5 9.5 8 14.4 6.5 9.5 1.6 8 6.5 6.5Z" />

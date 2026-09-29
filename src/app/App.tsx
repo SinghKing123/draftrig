@@ -12,8 +12,6 @@ import { NameDialog, type FileActions } from '@/ui/FileMenu'
 import { useShortcuts } from './shortcuts'
 import { useBomPanel } from '@/state/bom'
 import { Tour, hasSeenTour, markTourSeen } from '@/ui/Tour'
-import { Assistant } from '@/ui/Assistant'
-import { IconSpark } from '@/ui/Icons'
 import { Welcome } from '@/ui/Welcome'
 import { engine } from '@/sim/engine'
 import { registerSeating, useDoc, type Doc } from '@/state/doc'
@@ -76,8 +74,6 @@ export function Editor() {
   const [saveState, setSaveState] = useState<SaveState>('idle')
   const [ready, setReady] = useState(false)
   const [prompt, setPrompt] = useState<Prompt>(null)
-  // Someone opening a saved project already knows what this is.
-  const [assistantOpen, setAssistantOpen] = useState(false)
   const [onboarding, setOnboarding] = useState<Onboarding>(() =>
     projectId || startId || hasSeenTour() ? 'done' : 'intro',
   )
@@ -362,16 +358,6 @@ export function Editor() {
         />
       )}
 
-      {assistantOpen && <Assistant onClose={() => setAssistantOpen(false)} />}
-      <button
-        className="ai-fab"
-        data-open={assistantOpen}
-        onClick={() => setAssistantOpen((v) => !v)}
-        title="Describe a build and have it laid out for you"
-      >
-        <IconSpark size={16} />
-        Assistant
-      </button>
       <StatusBar />
 
       {/*

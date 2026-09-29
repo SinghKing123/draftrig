@@ -9,7 +9,6 @@ interface ImportMetaEnv {
    * Backend route that holds the model API key. Set this and the browser never
    * sees a key; leave it unset and each user supplies their own, kept locally.
    */
-  readonly VITE_AI_ENDPOINT?: string
 }
 
 interface ImportMeta {
