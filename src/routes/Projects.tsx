@@ -97,7 +97,7 @@ export function Projects() {
         <div className="lib-head">
           <div>
             <h1>Your projects</h1>
-            <p style={{ color: 'var(--tx-3)', fontSize: 'var(--fs-lg)', marginTop: 6 }}>
+            <p className="lib-sub">
               {enabled && !user
                 ? 'Saved in this browser. Sign in and they follow you everywhere.'
                 : user
@@ -110,7 +110,7 @@ export function Projects() {
         </div>
 
         {items === null ? (
-          <p style={{ color: 'var(--tx-3)', padding: '30px 0' }}>Loading…</p>
+          <p className="lib-sub" style={{ padding: '30px 0' }}>Loading…</p>
         ) : items.length === 0 ? (
           <div className="empty-lib">
             <LogoMark size={44} />
@@ -118,7 +118,7 @@ export function Projects() {
             <p>
               Start from scratch, or open one of these finished builds and take it apart, usually the fastest way to learn what {BRAND.name} does.
             </p>
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <div className="empty-lib-actions">
               <button className="cta primary" onClick={startBlank}>Start a blank build</button>
               {STARTERS.slice(0, 3).map((s) => (
                 <button key={s.id} className="cta ghost" onClick={() => startFrom(s.id)}>
@@ -134,7 +134,11 @@ export function Projects() {
               return (
                 <Link className="proj" key={p.id} to={`/app/${p.id}`}>
                   <div className="thumb">
-                    {shot ? <img src={shot} alt="" loading="lazy" /> : <LogoMark size={26} />}
+                    {shot ? (
+                      <img className="shot" src={shot} alt="" loading="lazy" />
+                    ) : (
+                      <span className="blank"><LogoMark size={26} /></span>
+                    )}
                   </div>
                   <h3 className="truncate">{p.name}</h3>
                   <div className="meta">

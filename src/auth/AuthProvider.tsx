@@ -189,6 +189,19 @@ export function displayName(user: User | null): string {
   return user.name || user.nickname || user.email?.split('@')[0] || 'Account'
 }
 
-export function avatarUrl(user: User | null): string | null {
-  return typeof user?.picture === 'string' ? user.picture : null
+/**
+ * Initials for the account button.
+ *
+ * Deliberately not the picture the provider hands back. That photo is a
+ * Google account's photo, at Google's pixel size, loaded from Google's
+ * servers on every page — it dates the header to whoever they last signed in
+ * with, and it is one more third party watching people read the site. Two
+ * letters say the same thing and are ours to draw.
+ */
+export function initials(user: User | null): string {
+  const source = user?.name || user?.nickname || user?.email?.split('@')[0] || ''
+  const words = source.split(/[s._-]+/).filter(Boolean)
+  if (words.length === 0) return '?'
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase()
+  return (words[0][0] + words[1][0]).toUpperCase()
 }

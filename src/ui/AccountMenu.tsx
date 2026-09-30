@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { avatarUrl, displayName, useAuth } from '@/auth/AuthProvider'
+import { displayName, initials, useAuth } from '@/auth/AuthProvider'
 import { IconList, IconOpen, IconX } from './Icons'
 
 /**
@@ -40,14 +40,11 @@ export function AccountMenu({ compact = false }: { compact?: boolean }) {
   }
 
   const name = displayName(user)
-  const avatar = avatarUrl(user)
 
   return (
     <div className="acct" ref={ref}>
       <button className="acct-btn" onClick={() => setOpen((o) => !o)} aria-haspopup="menu" aria-expanded={open}>
-        <span className="acct-avatar">
-          {avatar ? <img src={avatar} alt="" referrerPolicy="no-referrer" /> : name.slice(0, 1).toUpperCase()}
-        </span>
+        <span className="acct-avatar" aria-hidden="true">{initials(user)}</span>
         {!compact && <span className="truncate" style={{ maxWidth: 110 }}>{name}</span>}
       </button>
 

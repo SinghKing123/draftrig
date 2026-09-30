@@ -950,3 +950,247 @@
 @media (prefers-reduced-motion: reduce) {
   .auth-btn { transition: none; }
 }
+
+/* ==================================================================
+   Account button and menu
+   ------------------------------------------------------------------
+   Initials rather than a photo: see initials() in AuthProvider for
+   why. Two letters on ink, at the same 34px as the nav's other
+   controls so the row keeps one height.
+   ================================================================== */
+
+.acct { position: relative; }
+
+.acct-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  height: 40px;
+  padding: 0 6px 0 6px;
+  border-radius: var(--pill);
+  color: var(--ink);
+  font-size: 0.94rem;
+  font-weight: 600;
+  transition: background 160ms var(--ease);
+}
+.acct-btn:hover { background: var(--sand-2); }
+
+.acct-avatar {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--ink);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.acct .menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 60;
+  min-width: 232px;
+  padding: 6px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  box-shadow: var(--lift-2);
+}
+
+.acct .menu a,
+.acct .menu > button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 9px 10px;
+  border-radius: var(--r-sm);
+  color: var(--ink-2);
+  font-size: 0.92rem;
+  font-weight: 500;
+  text-align: left;
+}
+.acct .menu a:hover,
+.acct .menu > button:hover { background: var(--sand); color: var(--ink); }
+
+.acct .who {
+  padding: 10px 10px 12px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--line-2);
+  display: grid;
+  gap: 2px;
+}
+.acct .who b { font-size: 0.93rem; color: var(--ink); }
+.acct .who span {
+  font-size: 0.82rem;
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ==================================================================
+   Projects
+   ================================================================== */
+
+.lib-page {
+  min-height: 100dvh;
+  background: var(--sand);
+  color: var(--ink);
+  padding-bottom: 90px;
+}
+
+.lib-head {
+  display: flex;
+  align-items: flex-end;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: clamp(36px, 5vw, 64px) 0 clamp(22px, 3vw, 34px);
+}
+.lib-head h1 {
+  font-size: clamp(1.9rem, 3.2vw, 2.6rem);
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+
+.proj-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(258px, 1fr));
+  gap: clamp(14px, 1.6vw, 20px);
+}
+
+.proj {
+  position: relative;
+  display: block;
+  padding: 12px 12px 14px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  color: inherit;
+  transition: border-color 160ms var(--ease), box-shadow 160ms var(--ease),
+    transform 160ms var(--ease);
+}
+.proj:hover {
+  border-color: var(--ink-4);
+  box-shadow: var(--lift-1);
+  transform: translateY(-2px);
+}
+
+/* The board itself, on the dark the editor renders it against: a
+   screenshot of a lit circuit on white looks like a mistake. */
+.proj .thumb {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 16 / 10;
+  margin-bottom: 12px;
+  border-radius: var(--r-sm);
+  background: #0a0c0f;
+  overflow: hidden;
+}
+.proj .thumb img.shot { width: 100%; height: 100%; object-fit: cover; }
+/* No screenshot yet — the mark, small and dimmed, not an empty hole. */
+.proj .thumb .blank { opacity: 0.3; }
+
+.proj h3 {
+  font-size: 1rem;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  padding-right: 84px;
+  /* .site h3 sets text-wrap: balance, which is the modern spelling of
+     text-wrap-mode and therefore beats the nowrap inside .truncate white-space
+     shorthand. Without this the name wraps to two lines instead of eliding. */
+  white-space: nowrap;
+  text-wrap: nowrap;
+}
+
+.proj .meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 0.83rem;
+  color: var(--ink-3);
+}
+
+.badge {
+  padding: 3px 9px;
+  border-radius: var(--pill);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.badge.cloud { background: var(--blue-wash); color: var(--blue-deep); }
+.badge.local { background: var(--sand-2); color: var(--ink-3); }
+
+/* Revealed on hover, and always present for a keyboard: a row of
+   three unexplained glyphs on every card is noise, but hiding them
+   from anyone who cannot hover is not a trade worth making. */
+.proj-actions {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  border-radius: var(--r-sm);
+  background: rgba(10, 12, 15, 0.62);
+  backdrop-filter: blur(6px);
+  opacity: 0;
+  transition: opacity 160ms var(--ease);
+}
+.proj:hover .proj-actions,
+.proj:focus-within .proj-actions { opacity: 1; }
+
+.proj-actions button {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  color: #d6dbe1;
+}
+.proj-actions button:hover { background: rgba(255, 255, 255, 0.16); color: #fff; }
+
+.empty-lib {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 14px;
+  padding: clamp(46px, 7vw, 84px) 24px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+}
+.empty-lib h2 {
+  font-size: 1.5rem;
+  letter-spacing: -0.025em;
+}
+.empty-lib p {
+  max-width: 52ch;
+  color: var(--ink-2);
+  line-height: 1.6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .proj, .proj-actions, .acct-btn { transition: none; }
+  .proj:hover { transform: none; }
+}
+
+.lib-sub {
+  margin-top: 6px;
+  font-size: 1.02rem;
+  color: var(--ink-2);
+}
+
+.empty-lib-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}

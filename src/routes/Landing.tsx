@@ -118,14 +118,13 @@ export function Landing() {
             <h1>Build the circuit before you buy the parts.</h1>
             <p className="lead">
               Draftrig is a workbench in your browser. Lay the board out in 3D, wire it
-              terminal to terminal, and switch it on — with a solver behind it that works
-              out the real voltages, not an animation of them.
+              terminal to terminal, and switch it on. A circuit solver works out the
+              voltage and current at every point.
             </p>
             <div className="hero-actions">
               <Link className="cta primary" to="/app">Start building</Link>
               <a className="cta ghost" href="#builds">See what it makes</a>
             </div>
-            <p className="hero-fine">Free, and it runs without an account.</p>
           </div>
 
           <figure className="hero-figure">
@@ -137,7 +136,7 @@ export function Landing() {
               fetchPriority="high"
             />
             <figcaption className="figure-tag">
-              <b>{hero.name}</b> · built in Draftrig, not rendered elsewhere
+              <b>{hero.name}</b>
             </figcaption>
           </figure>
         </div>
@@ -159,8 +158,8 @@ export function Landing() {
           <span>downloads or plugins to install</span>
         </div>
         <div className="stat">
-          <b>Free</b>
-          <span>to design as much as you like</span>
+          <b>Live</b>
+          <span>voltages and currents while it runs</span>
         </div>
       </div>
 
@@ -234,13 +233,12 @@ export function Landing() {
           <div className="split">
             <Reveal>
               <div>
-                <span className="eyebrow">It actually runs</span>
-                <h2>A solver, not a cartoon.</h2>
+                <span className="eyebrow">Simulation</span>
+                <h2>It runs the circuit.</h2>
                 <p className="lead">
                   Draftrig builds a netlist from what you wired and solves it the way a
-                  circuit simulator does. Put the wrong resistor in and the LED is dim
-                  because the current really is lower, not because something decided it
-                  should look that way.
+                  circuit simulator does. Put the wrong resistor in and the LED goes dim,
+                  because the current through it has genuinely dropped.
                 </p>
                 <ul className="points">
                   <li><Tick /><p>Real component curves, so a diode has a forward drop and a wire has resistance.</p></li>
@@ -336,9 +334,8 @@ export function Landing() {
             <div className="closer">
               <h2>Build it twice. The first time is free.</h2>
               <p>
-                Open the editor and put something together. There is nothing to install and
-                no account to make, and your work saves in the browser until you want it
-                somewhere else.
+                Open the editor and put something together. Your work saves as you go, and
+                an account moves it to every machine you sign in from.
               </p>
               <div className="hero-actions">
                 <Link className="cta onink" to="/app">Open the editor</Link>
@@ -386,7 +383,7 @@ function Footer() {
         <div className="footer-base">
           <span>© {new Date().getFullYear()} {BRAND.name}</span>
           <span className="grow" />
-          <span>Built in the browser. No plugins, no installs.</span>
+          <span>{BRAND.tagline}</span>
         </div>
       </div>
     </footer>

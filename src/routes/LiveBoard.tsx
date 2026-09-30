@@ -144,7 +144,7 @@ export default function LiveBoard() {
         </PortIndexProvider>
       </Canvas>
       <figcaption className="figure-tag">
-        <b>LED and a series resistor</b> · lit by the solver, not by hand
+        <b>LED and a series resistor</b> · running now
       </figcaption>
     </div>
   )
