@@ -1613,3 +1613,167 @@ kbd {
 @media (max-width: 1400px) {
   :root { --sketch-w: 400px; }
 }
+
+/* ==================================================================
+   The editor on a phone
+   ------------------------------------------------------------------
+   Below 860px the three columns stop being columns. The bench gets the
+   whole window; the library and the inspector become sheets that come
+   up over it from the bar along the bottom, one at a time.
+
+   Everything here moves the same components rather than swapping in
+   different ones, so there is one library and one inspector to keep
+   working and they cannot drift apart.
+   ================================================================== */
+
+.mbar { display: none; }
+.msheet-head { display: none; }
+
+@media (max-width: 860px) {
+  /* Four rows, not three: the bar is a row of its own below the bench, and
+     the status bar goes — everything on it is either on the bar already or
+     is a number nobody reads on a phone. */
+  .app {
+    grid-template-rows: var(--topbar-h) 1fr auto;
+    /* .app declares rows only, so its single implicit column is sized to the
+       widest child — which was the three-column bench at 800px, stretching
+       every row to 800px inside a 390px window and pushing half the bar off
+       the right-hand edge. */
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .app > * { min-width: 0; }
+  .statusbar { display: none; }
+
+  /* One column, whatever the panels think. The specificity here has to beat
+     the four data-attribute combinations above, hence the repetition. */
+  .app-body,
+  .app-body[data-bom='true'],
+  .app-body[data-sketch='true'],
+  .app-body[data-bom='true'][data-sketch='true'] {
+    grid-template-columns: 1fr;
+    position: relative;
+  }
+
+  /* The bench, full width, under everything. */
+  .app-center { grid-column: 1; border: 0 !important; }
+
+  /* Panels become sheets: off the bottom until their name is on the bar. */
+  .app-body > .panel:not(.inspector),
+  .app-body > .panel.inspector,
+  .app-body > .bom-panel,
+  .app-body > .sketch-panel {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: 38%;
+    z-index: 44;
+    border: 0;
+    border-top: 1px solid var(--line-3);
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -18px 40px rgba(0, 0, 0, 0.45);
+    background: var(--bg-1);
+    overflow: auto;
+    overscroll-behavior: contain;
+    transform: translateY(101%);
+    visibility: hidden;
+    transition: transform 220ms cubic-bezier(0.22, 0.61, 0.36, 1), visibility 220ms;
+  }
+
+  .app-body[data-sheet='parts'] > .panel:not(.inspector),
+  .app-body[data-sheet='inspect'] > .panel.inspector,
+  .app-body[data-bom='true'] > .bom-panel,
+  .app-body[data-sketch='true'] > .sketch-panel {
+    transform: none;
+    visibility: visible;
+  }
+
+  /* The header on top of whichever sheet is up. */
+  .msheet-head {
+    display: flex;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(38% - 1px);
+    z-index: 45;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 16px 16px 0 0;
+    background: var(--bg-1);
+    border-top: 1px solid var(--line-3);
+    font-size: 13px;
+  }
+  .msheet-head b { flex: 1; }
+  .msheet-head button {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--bg-2);
+    color: var(--tx-1);
+  }
+  /* Room for it, so the first row of the sheet is not under the header. */
+  .app-body[data-sheet='parts'] > .panel:not(.inspector),
+  .app-body[data-sheet='inspect'] > .panel.inspector { padding-top: 46px; }
+
+  /* The side tabs are desktop furniture; the bar replaces them. */
+  .bom-tab, .sketch-tab { display: none !important; }
+
+  /* The bar itself. */
+  .mbar {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    z-index: 46;
+    border-top: 1px solid var(--line);
+    background: var(--bg-0);
+    /* Clear of the home indicator on a phone with no bezel. */
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  .mbar button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    /* 48px of target, which is the smallest a thumb reliably hits. */
+    min-height: 52px;
+    padding: 7px 4px 8px;
+    color: var(--tx-3);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .mbar button[data-on='true'] { color: var(--tx-0); background: var(--bg-2); }
+  .mbar-run[data-on='true'] { color: #fff; background: var(--brand); }
+  .mbar-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 1.6px solid currentColor;
+  }
+  .mbar-dot[data-has='true'] { background: var(--brand); border-color: var(--brand); }
+
+  /* The console drawer is a third thing wanting the bottom; on a phone the
+     bar owns it and the drawer collapses to its handle. */
+  .console { max-height: 34px; }
+
+  /* Three rows of toolbar over a bench this size is most of the bench.
+     The two dropdowns — snap pitch and render quality — and the separators
+     go; the view buttons and Fit are what anybody actually reaches for. */
+  .vp-toolbar select.input,
+  .vp-toolbar .sep { display: none; }
+  .vp-toolbar { padding: 4px 6px; }
+
+  /* The top bar carries nine controls and a name field. Only the ones you
+     cannot work without survive the width. */
+  .topbar { gap: 6px; padding: 0 8px; }
+  .topbar .sep-v,
+  .topbar .save-state,
+  .topbar .doc-name { display: none; }
+
+  /* The viewport toolbar wraps rather than running off the edge. */
+  .vp-toolbar { flex-wrap: wrap; gap: 4px; max-width: calc(100vw - 16px); }
+}

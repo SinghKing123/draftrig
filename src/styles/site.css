@@ -1429,3 +1429,34 @@
 .preset-grid, .proj-grid { list-style: none; padding-left: 0; margin: 0; }
 .preset-grid > li, .proj-grid > li { display: flex; }
 .proj-grid > li > .proj { flex: 1; }
+
+/* ==================================================================
+   Phones
+   ------------------------------------------------------------------
+   The front page was laid out for a desktop and squeezed, which mostly
+   worked: the one part that did not is the parts-search demonstration,
+   which is a fixed-width mock of the editor's search box and pushed
+   the page 136 pixels wider than the window. A page that scrolls
+   sideways reads as broken however good the rest of it is.
+   ================================================================== */
+
+@media (max-width: 560px) {
+  .searchdemo, .searchbar, .chips, .hits, .hit { max-width: 100%; }
+  .searchdemo { overflow: hidden; }
+
+  /* The rows inside it are a label, a value and a category; the category
+     is the one that can go, and its width is what forced the overflow. */
+  .hit .catlabel { display: none; }
+  .hit { gap: 8px; }
+  .hit > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .chips { flex-wrap: wrap; }
+
+  /* Two buttons and a wordmark do not fit across 390. The wordmark and the
+     one that starts you building do. */
+  .header-actions .cta.ghost { display: none; }
+}
+
+/* Belt and braces: nothing on the public pages may make the page wider than
+   the window, whatever a future section does. */
+.site, .dash, .auth-page { overflow-x: hidden; }

@@ -8,6 +8,8 @@ import { Inspector } from '@/ui/Inspector'
 import { Console } from '@/ui/Console'
 import { BomPanel, BomTab } from '@/ui/Bom'
 import { SketchEditor, SketchTab } from '@/ui/SketchEditor'
+import { MobileBar, MobileSheetHead } from '@/ui/MobileBar'
+import { useMobile } from '@/state/mobile'
 import { useSketchPanel } from '@/state/sketch'
 import { StatusBar } from '@/ui/StatusBar'
 import { ViewportOverlay } from '@/ui/ViewportOverlay'
@@ -122,6 +124,8 @@ export function Editor() {
   const doc = useDoc((s) => s.doc)
   const bomOpen = useBomPanel((s) => s.open)
   const sketchOpen = useSketchPanel((s) => s.editing) !== null
+  // On a phone the columns become sheets; see MobileBar for why.
+  const sheet = useMobile((s) => s.sheet)
 
   /*
    * The document as it arrived, before anybody touched it.
@@ -347,7 +351,7 @@ export function Editor() {
           laid over the bench: you open it to decide what to order, and
           covering up the thing you are pricing while you do that is no
           help. */}
-      <div className="app-body" data-bom={bomOpen} data-sketch={sketchOpen}>
+      <div className="app-body" data-bom={bomOpen} data-sketch={sketchOpen} data-sheet={sheet ?? 'none'}>
         <Library />
         <div className="app-center">
           <div className="viewport-wrap" data-tour="viewport">
@@ -362,7 +366,9 @@ export function Editor() {
         <Inspector />
         <BomPanel />
         <SketchEditor />
+        <MobileSheetHead />
       </div>
+      <MobileBar />
       <BomTab />
       <SketchTab />
 
