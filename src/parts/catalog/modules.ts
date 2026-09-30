@@ -1,4 +1,5 @@
 import type { PartDef, Port, Solid, Vec3 } from '../kernel/types'
+import { DEFAULT_SKETCH } from '@/sim/behaviour/sketch'
 import { registerParts } from '../kernel/registry'
 import { eng } from '../kernel/units'
 import { num, roundRect, str } from './_helpers'
@@ -69,6 +70,7 @@ const MCU_PROGRAMS = [
   { value: 'lcd-clock', label: 'LCD, running clock' },
   { value: 'oled-text', label: 'OLED, show two lines over I2C' },
   { value: 'oled-clock', label: 'OLED, running clock over I2C' },
+  { value: 'custom', label: 'Your own sketch' },
   { value: 'off', label: 'No program, all pins input' },
 ]
 
@@ -102,6 +104,12 @@ const mcuBoard: PartDef = {
   },
   params: [
     { key: 'program', label: 'Sketch', type: 'enum', default: 'blink', group: 'Control', options: MCU_PROGRAMS },
+    {
+      key: 'code', label: 'Program', type: 'code', language: 'javascript',
+      default: DEFAULT_SKETCH, group: 'Control',
+      showIf: (p) => p.program === 'custom',
+      help: 'setup() runs once, loop() runs over and over. Write loop as function* and use yield delay(ms) to wait.',
+    },
     { key: 'interval', label: 'Interval', type: 'number', unit: 's', default: 0.5, min: 0.001, max: 10, step: 0.05, group: 'Control' },
     { key: 'duty', label: 'PWM duty', type: 'number', unit: '%', default: 50, min: 0, max: 100, step: 1, group: 'Control', showIf: (p) => p.program === 'pwm' },
     { key: 'text1', label: 'Display line 1', type: 'text', default: 'Draftrig', group: 'Control', showIf: PANEL_SKETCH },

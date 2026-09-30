@@ -1457,3 +1457,159 @@ kbd {
   }
   .app-body[data-bom='true'] .inspector { display: none; }
 }
+
+/* ==================================================================
+   Sketch editor
+   ------------------------------------------------------------------
+   A fourth column, same shape as the bill of materials panel, and the
+   same tab on the edge to open it. Wider than the BOM: a line of code
+   wraps badly and 80 columns is the width people write to.
+   ================================================================== */
+
+:root { --sketch-w: 460px; }
+
+.app-body[data-sketch='true'] {
+  grid-template-columns: var(--library-w, 268px) 1fr var(--inspector-w, 300px) var(--sketch-w);
+}
+/* Both open at once: the bench gives up the width, not the panels. */
+.app-body[data-bom='true'][data-sketch='true'] {
+  grid-template-columns:
+    var(--library-w, 268px) 1fr var(--inspector-w, 300px) var(--bom-w) var(--sketch-w);
+}
+
+.sketch-tab {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-190%);
+  z-index: 38;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  padding: 14px 7px 15px;
+  border: 1px solid var(--line);
+  border-right: 0;
+  border-radius: var(--r-md) 0 0 var(--r-md);
+  background: linear-gradient(180deg, var(--bg-2), var(--bg-1));
+  color: var(--tx-1);
+  font: inherit;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.sketch-tab span:last-child {
+  writing-mode: vertical-rl;
+}
+.sketch-tab span:first-child {
+  font-family: var(--mono, ui-monospace, monospace);
+  color: var(--brand);
+  letter-spacing: 0;
+}
+.sketch-tab:hover { color: var(--tx-0); border-color: var(--line-3); }
+.sketch-tab[data-open='true'] { color: var(--tx-0); border-color: var(--brand); }
+.app-body[data-sketch='true'] ~ .sketch-tab { right: var(--sketch-w); }
+.app-body[data-bom='true'][data-sketch='true'] ~ .sketch-tab {
+  right: calc(var(--bom-w) + var(--sketch-w));
+}
+
+.sketch-panel {
+  display: grid;
+  grid-template-rows: auto auto 1fr auto auto;
+  min-height: 0;
+  border-left: 1px solid var(--line);
+  background: var(--bg-1);
+}
+
+.sketch-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--line);
+}
+.sketch-head > div { display: flex; align-items: baseline; gap: 8px; }
+.sketch-head b { font-size: 13px; }
+.sketch-sub {
+  font-size: 11px;
+  color: var(--tx-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
+}
+.sketch-head .btn { margin-left: auto; }
+
+.sketch-note {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--line);
+  background: #2a2312;
+  color: #e6c675;
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+/* The gutter and the text are two elements kept in step by hand, so every
+   metric that decides where a line sits has to be identical in both. */
+.sketch-body {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  min-height: 0;
+  overflow: hidden;
+  --code-font: 12.5px/1.55 var(--mono, ui-monospace, 'SF Mono', Menlo, Consolas, monospace);
+  --code-pad: 10px;
+}
+
+.sketch-gutter {
+  display: flex;
+  flex-direction: column;
+  padding: var(--code-pad) 8px var(--code-pad) 12px;
+  border-right: 1px solid var(--line);
+  background: var(--bg-0);
+  font: var(--code-font);
+  color: var(--tx-4, #5b6472);
+  text-align: right;
+  overflow: hidden;
+  user-select: none;
+}
+
+.sketch-code {
+  padding: var(--code-pad) 12px;
+  border: 0;
+  outline: none;
+  resize: none;
+  background: transparent;
+  color: var(--tx-0);
+  font: var(--code-font);
+  tab-size: 2;
+  white-space: pre;
+  overflow: auto;
+}
+.sketch-code::selection { background: color-mix(in srgb, var(--brand) 40%, transparent); }
+
+.sketch-status {
+  padding: 8px 12px;
+  border-top: 1px solid var(--line);
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 11.5px;
+  color: var(--ok, #58c47a);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sketch-status[data-bad='true'] { color: #ff6f5e; }
+
+.sketch-foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--line);
+}
+.sketch-examples { display: flex; align-items: center; gap: 7px; font-size: 11.5px; color: var(--tx-2); }
+.sketch-examples .input { width: 150px; }
+
+@media (max-width: 1400px) {
+  :root { --sketch-w: 400px; }
+}

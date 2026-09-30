@@ -4,6 +4,9 @@ import { LCD_WIRING, newLcdDriver, runLcdDriver, type LcdDriverState } from './l
 import {
   newOledDriver, oledBar, oledClear, oledText, runOledDriver, OLED_CHARS, type OledDriverState,
 } from './oleddriver'
+import {
+  DEFAULT_SKETCH, newSketchState, pushOut, runSketch, type SketchState,
+} from './sketch'
 
 /**
  * Built-in behavioural models.
@@ -264,11 +267,25 @@ interface McuState {
   oled?: OledDriverState
   /** What was last drawn on the OLED, so a static screen is not redrawn. */
   oledSent: string
+  /** Present only while a sketch of the person's own is selected. */
+  sketch?: SketchState
   count: number
   countAt: number
 }
 
 const DIGITAL = Array.from({ length: 14 }, (_, i) => `d${i}`)
+const ANALOG = Array.from({ length: 6 }, (_, i) => `a${i}`)
+
+/**
+ * The PWM carrier an AVR runs on most of its pins.
+ *
+ * analogWrite does not set a voltage, it sets a duty cycle, and what a circuit
+ * makes of that depends on what is on the other end: an LED averages it, a
+ * motor averages it more slowly, a logic input does not average it at all and
+ * sees a square wave. Driving the real square wave is the only way all three
+ * come out right.
+ */
+const PWM_HZ = 490
 
 /**
  * A small microcontroller running one of a set of stock sketches. This is not
@@ -436,6 +453,45 @@ ${body}`
         { pull: (pin) => c.drive(pin, 0, 30), release: (pin) => c.hiZ(pin) },
         { sda: 'a4', scl: 'a5' },
       )
+      break
+    }
+
+    case 'custom': {
+      /*
+       * A sketch somebody wrote. See sketch.ts for what it may do, and for why
+       * loop() is a generator.
+       *
+       * Every pin starts the timestep released, and the sketch claims back the
+       * ones it has declared as outputs. A pin it has stopped writing to goes
+       * high-impedance by itself rather than holding its last value forever,
+       * which is what a real port does when its direction bit is cleared, and
+       * what makes an unfinished sketch look unfinished rather than look like a
+       * short.
+       */
+      if (!s.sketch) s.sketch = newSketchState()
+      const sk = s.sketch
+      const pins = { digital: DIGITAL, analog: ANALOG }
+      const held = new Set<string>()
+
+      runSketch(sk, str(c.params, 'code', DEFAULT_SKETCH), pins, {
+        t: c.t,
+        rail,
+        write: (pin, high) => { held.add(pin); write(pin, high) },
+        read: (pin) => input(pin),
+        release: (pin) => c.hiZ(pin),
+        print: (line) => pushOut(sk, line),
+      })
+
+      for (const pin of [...DIGITAL, ...ANALOG]) {
+        if (sk.modes[pin] !== 'output') {
+          if (!held.has(pin)) c.hiZ(pin)
+          continue
+        }
+        const duty = sk.duty[pin] ?? 0
+        if (duty >= 1) write(pin, true)
+        else if (duty <= 0) write(pin, false)
+        else write(pin, (c.t % (1 / PWM_HZ)) * PWM_HZ < duty)
+      }
       break
     }
 

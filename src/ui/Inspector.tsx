@@ -1,4 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react'
+import { useSketchPanel } from '@/state/sketch'
 import * as THREE from 'three'
 import { Field, NumberField, Readout, Toggle } from './Fields'
 import { IconChevron, IconCopy, IconLock, IconTrash, IconUnlock, IconZap } from './Icons'
@@ -24,11 +25,13 @@ function Group({ title, children, defaultOpen = true }: { title: string; childre
 }
 
 function ParamControl({
-  spec, params, onChange,
+  spec, params, onChange, onEditCode,
 }: {
   spec: ParamSpec
   params: Params
   onChange: (key: string, value: number | string | boolean, commit: boolean) => void
+  /** Open the sketch panel. Only a 'code' parameter has anywhere to send it. */
+  onEditCode?: () => void
 }) {
   if (spec.showIf && !spec.showIf(params)) return null
 
@@ -104,6 +107,24 @@ function ParamControl({
         </Field>
       )
     }
+    case 'code': {
+      /* The source itself lives in the panel: a one-line field is the wrong
+         shape for a program, and the inspector column is 300px wide. */
+      const value = String(params[spec.key] ?? spec.default)
+      const lines = value.split('\n').length
+      return (
+        <Field label={spec.label}>
+          <button
+            className="btn"
+            style={{ width: '100%', justifyContent: 'space-between' }}
+            onClick={onEditCode}
+          >
+            <span>Open editor</span>
+            <span className="mono" style={{ color: 'var(--tx-3)' }}>{lines} lines</span>
+          </button>
+        </Field>
+      )
+    }
     case 'text': {
       const value = String(params[spec.key] ?? spec.default)
       return (
@@ -119,6 +140,7 @@ export function Inspector() {
   const selection = useDoc((s) => s.selection)
   const instances = useDoc((s) => s.doc.instances)
   const setParam = useDoc((s) => s.setParam)
+  const openSketch = useSketchPanel((s) => s.open)
   const moveInstance = useDoc((s) => s.moveInstance)
   const rotateInstance = useDoc((s) => s.rotateInstance)
   const renameInstance = useDoc((s) => s.renameInstance)
@@ -233,7 +255,13 @@ export function Inspector() {
         {groups.map(([title, specs]) => (
           <Group key={title} title={title === 'Control' ? 'Live control' : title}>
             {specs.map((spec) => (
-              <ParamControl key={spec.key} spec={spec} params={inst.params} onChange={onParam} />
+              <ParamControl
+                key={spec.key}
+                spec={spec}
+                params={inst.params}
+                onChange={onParam}
+                onEditCode={() => openSketch(inst.id)}
+              />
             ))}
           </Group>
         ))}

@@ -44,6 +44,12 @@ export type ParamSpec =
   | (ParamBase & { type: 'bool'; default: boolean })
   | (ParamBase & { type: 'color'; default: string })
   | (ParamBase & { type: 'text'; default: string })
+  /**
+   * A block of source. Same value type as text; a different type only because
+   * one line of input is the wrong shape for a program, and the inspector has
+   * to know to give it an editor instead of a field.
+   */
+  | (ParamBase & { type: 'code'; default: string; language?: 'javascript' })
 
 export type ParamValue = number | string | boolean
 export type Params = Record<string, ParamValue>
