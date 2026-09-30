@@ -737,3 +737,216 @@
   font-size: 12.5px;
 }
 .live-board .figure-tag b { color: #fff; font-weight: 600; }
+
+/* ==================================================================
+   Sign-in
+   ------------------------------------------------------------------
+   A two-up page: a dark panel that carries the brand, and a light
+   panel that carries the decision. The panel collapses away under
+   900px, where it would be a screen of preamble before the buttons.
+
+   .auth-page is also in the token block at the top of this file, so
+   everything below can use the site's ink, paper and lift.
+   ================================================================== */
+
+.auth-page {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1fr);
+  background: var(--paper);
+  color: var(--ink);
+}
+
+/* ---- the brand panel ---- */
+
+.auth-aside {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 40px;
+  padding: clamp(32px, 4vw, 54px);
+  background: var(--ink);
+  color: #fff;
+  overflow: hidden;
+}
+
+/* Perfboard, at the scale it is actually drilled: a 2.54 mm grid, faint
+   enough to read as texture rather than as a pattern to look at. */
+.auth-aside::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle at center, rgba(255, 255, 255, 0.16) 1.1px, transparent 1.2px);
+  background-size: 26px 26px;
+  mask-image: radial-gradient(120% 90% at 78% 8%, #000 0%, transparent 72%);
+  pointer-events: none;
+}
+
+.auth-aside > * { position: relative; z-index: 1; }
+
+.auth-brand { display: inline-block; width: fit-content; }
+
+.auth-pitch h2 {
+  font-size: clamp(1.7rem, 2.6vw, 2.5rem);
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+  color: #fff;
+  max-width: 15ch;
+}
+.auth-pitch p {
+  margin-top: 18px;
+  max-width: 42ch;
+  font-size: 1.02rem;
+  line-height: 1.6;
+  color: #aeb9c5;
+}
+
+.auth-aside-fine {
+  font-size: 0.86rem;
+  color: #78848f;
+}
+
+/* ---- the decision ---- */
+
+.auth-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  padding: clamp(32px, 5vw, 64px) 24px;
+  background: var(--sand);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 400px;
+  padding: clamp(28px, 4vw, 40px);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--lift-1);
+}
+
+.auth-card-mark { display: inline-block; margin-bottom: 22px; }
+
+.auth-card h1 {
+  font-size: 1.6rem;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+}
+
+.auth-lede {
+  margin-top: 8px;
+  margin-bottom: 26px;
+  color: var(--ink-2);
+  font-size: 0.98rem;
+}
+
+.auth-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  height: 50px;
+  padding: 0 18px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 0.99rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  transition: border-color 160ms var(--ease), background 160ms var(--ease),
+    transform 160ms var(--ease), box-shadow 160ms var(--ease);
+}
+.auth-btn + .auth-btn { margin-top: 10px; }
+.auth-btn:hover { border-color: var(--ink-4); background: var(--sand-2); }
+.auth-btn:active { transform: translateY(1px); }
+.auth-btn:focus-visible {
+  outline: none;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px var(--blue-wash);
+}
+
+.auth-btn.primary {
+  margin-top: 16px;
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+.auth-btn.primary:hover { background: #1d2c3d; border-color: #1d2c3d; }
+
+.auth-btn.provider svg { flex: none; }
+
+.auth-switch {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 0.93rem;
+  color: var(--ink-2);
+}
+
+.auth-link {
+  color: var(--blue-deep);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.auth-link:hover { color: var(--ink); }
+
+.auth-rule {
+  height: 1px;
+  margin: 22px 0 18px;
+  background: var(--line-2);
+}
+
+.auth-skip {
+  display: block;
+  width: 100%;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--ink-3);
+}
+.auth-skip:hover { color: var(--ink); }
+
+.auth-notice {
+  padding: 18px;
+  border-radius: var(--r-sm);
+  background: var(--sand);
+  border: 1px solid var(--line);
+  font-size: 0.94rem;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+.auth-notice b { color: var(--ink); }
+
+.auth-error {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: var(--r-sm);
+  background: #fff1f0;
+  border: 1px solid #ffd2cd;
+  color: #a3271a;
+  font-size: 0.9rem;
+}
+
+.auth-foot { font-size: 0.9rem; }
+.auth-foot a { color: var(--ink-3); }
+.auth-foot a:hover { color: var(--ink); }
+
+.auth-page a, .auth-page button { cursor: pointer; }
+
+/* Below this the panel is a screenful of preamble in front of two
+   buttons, so it goes and the card carries the page on its own. */
+@media (max-width: 900px) {
+  .auth-page { grid-template-columns: 1fr; }
+  .auth-aside { display: none; }
+  .auth-main { background: var(--paper); }
+  .auth-card { border: none; box-shadow: none; padding-inline: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-btn { transition: none; }
+}

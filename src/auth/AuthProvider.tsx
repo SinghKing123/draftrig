@@ -25,11 +25,28 @@ export interface AuthState {
   enabled: boolean
   error: string | null
 
-  signIn: () => void
-  /** Same trip as signIn, but asks Auth0 for the sign-up screen first. */
-  signUp: () => void
+  /**
+   * Start a sign-in. Naming a connection skips Auth0s own screen and goes
+   * straight to that provider, which is what makes "Continue with Google"
+   * behave the way people expect it to: one hop to Google and back.
+   */
+  signIn: (connection?: Connection) => void
+  /** Same trip as signIn, but asks for the sign-up screen first. */
+  signUp: (connection?: Connection) => void
   signOut: () => void
 }
+
+/**
+ * The connections this tenant has switched on, by the names Auth0 knows them
+ * by. They are configuration rather than code — adding a provider is a switch
+ * in the dashboard — but naming one in a sign-in call needs the exact string,
+ * and getting it wrong fails at Auth0 rather than at compile time.
+ */
+export const CONNECTIONS = {
+  google: "google-oauth2",
+  password: "Username-Password-Authentication",
+} as const
+export type Connection = (typeof CONNECTIONS)[keyof typeof CONNECTIONS]
 
 const domain = import.meta.env.VITE_AUTH0_DOMAIN as string | undefined
 const clientId = import.meta.env.VITE_AUTH0_CLIENT_ID as string | undefined
@@ -126,13 +143,21 @@ const SIGNED_OUT: AuthState = {
 function useAuthLive(): AuthState {
   const { isLoading, isAuthenticated, user, error, loginWithRedirect, logout } = useAuth0()
 
-  const signIn = useCallback(() => {
-    void loginWithRedirect()
-  }, [loginWithRedirect])
+  const signIn = useCallback(
+    (connection?: Connection) => {
+      void loginWithRedirect(connection ? { authorizationParams: { connection } } : undefined)
+    },
+    [loginWithRedirect],
+  )
 
-  const signUp = useCallback(() => {
-    void loginWithRedirect({ authorizationParams: { screen_hint: 'signup' } })
-  }, [loginWithRedirect])
+  const signUp = useCallback(
+    (connection?: Connection) => {
+      void loginWithRedirect({
+        authorizationParams: { screen_hint: 'signup', ...(connection ? { connection } : {}) },
+      })
+    },
+    [loginWithRedirect],
+  )
 
   const signOut = useCallback(() => {
     currentSub = null
