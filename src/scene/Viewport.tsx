@@ -48,6 +48,20 @@ function Ground({ onPointerUp }: { onPointerUp: (e: ThreeEvent<PointerEvent>) =>
   const showGrid = useDoc((s) => s.view.grid)
   return (
     <>
+      {/*
+        * A floor you can see through.
+        *
+        * It used to be an opaque slab, and anything below it was simply gone:
+        * a preset whose leads reach 2 mm under the deck looked like it had
+        * been swallowed, and there was no camera angle that showed otherwise,
+        * because the camera could not get under it either.
+        *
+        * A shadow-only material keeps what the slab was actually for — parts
+        * casting onto something, which is most of what tells you where they
+        * are in space — and stops it hiding anything. It still takes a
+        * raycast, so clicking empty space still deselects and dropping a part
+        * still lands it here.
+        */}
       <mesh
         rotation={[-Math.PI / 2, 0, 0]}
         position={[0, -0.05, 0]}
@@ -56,16 +70,7 @@ function Ground({ onPointerUp }: { onPointerUp: (e: ThreeEvent<PointerEvent>) =>
         name="ground"
       >
         <planeGeometry args={[GROUND, GROUND]} />
-        {/* Pushed back in depth so the grid sitting a fraction above it always
-            wins, without needing a gap big enough to see. */}
-        <meshStandardMaterial
-          color="#0E1116"
-          roughness={0.96}
-          metalness={0}
-          polygonOffset
-          polygonOffsetFactor={2}
-          polygonOffsetUnits={2}
-        />
+        <shadowMaterial transparent opacity={0.42} depthWrite={false} />
       </mesh>
       {showGrid && (
         <Grid
@@ -77,9 +82,14 @@ function Ground({ onPointerUp }: { onPointerUp: (e: ThreeEvent<PointerEvent>) =>
           sectionSize={100}
           sectionThickness={1.1}
           sectionColor="#3A4C64"
-          fadeDistance={GROUND * 0.42}
-          fadeStrength={1.2}
-          followCamera={false}
+          /* Faded to nothing well before its own edge, and moving with the
+             camera, so it reads as going on for ever without being the
+             fifteen-million-unit plane drei's infinite mode builds — see the
+             note on GROUND for what that did to the depth buffer. */
+          fadeDistance={GROUND * 0.16}
+          fadeStrength={1.6}
+          followCamera
+          side={THREE.DoubleSide}
         />
       )}
     </>
