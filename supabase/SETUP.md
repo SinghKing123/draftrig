@@ -91,7 +91,7 @@ Cloudflare → your project → **Settings → Variables and Secrets**, for
 | --- | --- |
 | `VITE_AUTH0_DOMAIN` | e.g. `draftrig.eu.auth0.com` |
 | `VITE_AUTH0_CLIENT_ID` | from step 1a |
-| `VITE_AUTH0_AUDIENCE` | the API identifier from step 1b, character for character |
+| `VITE_AUTH0_AUDIENCE` | the API identifier from step 1b, character for character (currently `draftrig-api`) |
 | `VITE_SUPABASE_URL` | `https://kovrdzgebxswnfzkvipe.supabase.co` |
 | `VITE_SUPABASE_ANON_KEY` | Supabase → Settings → API |
 
@@ -146,6 +146,28 @@ Private window, so you are not already signed in:
    exercises the sync rather than the local cache.
 6. Sign up with an email address and click the verification link. Leave this
    for last: it is the one that depends on DNS.
+
+## Two things that cost an evening
+
+**A trial Auth0 tenant refuses every API by default.** Its access policy ships
+as `User-delegated Access: Per-app authorization`, meaning no application may
+use any API until it is individually authorized. A normal tenant defaults to
+`All apps allowed`. The symptom is `invalid_request` — *Client "…" is not
+authorized to access resource server "…"* — and it is identical whether the
+API is missing, misnamed, or merely unauthorized, so it reads like a typo in
+the identifier and is not. Creating a second API with a trivial name and
+watching it fail the same way is what rules the identifier out.
+
+The setting is on the API's **Application Access** tab, behind *Edit in
+Settings*. Auth0 renamed that tab from "Machine To Machine Applications", so
+every guide that mentions the old name sends you somewhere that no longer
+exists.
+
+**A free Supabase project pauses after about a week idle.** A paused project
+has no SQL editor, no API, and no obvious banner if you arrive straight at a
+sub-page — it simply looks broken. Resume it from the project home; the data
+comes back as it was. This will happen again any week the site is quiet, which
+is worth knowing before launch: either keep it warm or take the Pro plan.
 
 ## If a query comes back empty but sign-in worked
 
