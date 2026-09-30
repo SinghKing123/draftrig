@@ -58,7 +58,20 @@ export function TopBar({ saveState = 'idle', file }: { saveState?: SaveState; fi
 
   return (
     <header className="topbar">
-      <Link to="/projects" title="Your projects" style={{ textDecoration: 'none' }}>
+      {/* The one way out of the editor that is not the browser back button,
+          so it is the one that has to ask. beforeunload covers the rest;
+          it never fires on a route change inside the same page. */}
+      <Link
+        to="/projects"
+        title="Your projects"
+        style={{ textDecoration: 'none' }}
+        onClick={(e) => {
+          if (saveState !== 'dirty' && saveState !== 'error') return
+          if (!window.confirm('Leave this build? Your changes have not been saved and will be lost.')) {
+            e.preventDefault()
+          }
+        }}
+      >
         <Wordmark onDark />
       </Link>
       <div className="sep-v" />
@@ -80,7 +93,7 @@ export function TopBar({ saveState = 'idle', file }: { saveState?: SaveState; fi
           saveState === 'error'
             ? 'Could not save. Your work is still in the window; try Save again in a moment.'
             : saveState === 'dirty'
-              ? 'Changes not written yet. They save on their own, or press Ctrl+S.'
+              ? 'Not saved yet. Press Ctrl+S, or the button beside this.'
               : undefined
         }
       >

@@ -53,8 +53,18 @@ registerSeating((def, params) => {
   return bbox.isEmpty() ? 0 : -bbox.min.y
 })
 
-/** Debounce for autosave: long enough not to thrash, short enough to trust. */
-const AUTOSAVE_MS = 1500
+/**
+ * Saving is explicit.
+ *
+ * It used to be automatic: a debounced write fired on every change, so a
+ * project row appeared the moment anyone nudged a part. That made the list a
+ * record of everything ever touched rather than of anything anyone chose to
+ * keep, and the bench always came back holding the last thing fiddled with.
+ *
+ * Now it behaves like every other document: open it, work on it, save it. What
+ * pays for that is the warning on the way out, below — an editor that can lose
+ * work silently is worse than one that saves too eagerly.
+ */
 
 export type SaveState = 'idle' | 'dirty' | 'saving' | 'saved' | 'error'
 
@@ -96,11 +106,17 @@ export function Editor() {
    */
   const pristine = useRef<Doc | null>(null)
 
+  /**
+   * The document as it was last written, or null if it never has been.
+   * Identity, not a deep compare: the store replaces the object on every
+   * edit and leaves it alone otherwise, so === is both correct and free.
+   */
+  const savedAs = useRef<Doc | null>(null)
+
   const fileInput = useRef<HTMLInputElement>(null)
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  // Read inside the autosave effect, which must not re-run when it changes.
-  const saveStateRef = useRef<SaveState>('idle')
-  saveStateRef.current = saveState
+  const dirty = saveState === 'dirty' || saveState === 'error'
+  const dirtyRef = useRef(dirty)
+  dirtyRef.current = dirty
 
   useShortcuts()
 
@@ -159,6 +175,7 @@ export function Editor() {
       // the build rather than a row of identical logos.
       const shot = captureThumbnail()
       if (shot) setThumb(targetId, shot)
+      savedAs.current = d
       setSaveState('saved')
       // Update the address bar so a reload reopens the same project.
       window.history.replaceState(null, '', `/app/${targetId}`)
@@ -169,60 +186,25 @@ export function Editor() {
     }
   }, [])
 
-  const cancelPending = () => {
-    if (timer.current) {
-      clearTimeout(timer.current)
-      timer.current = null
-    }
-  }
-
   /** Nothing worth saving yet: an untouched empty bench is not a project. */
   const isEmpty = (d: Doc) => d.order.length === 0 && d.connectionOrder.length === 0
 
   /*
-   * Autosave.
+   * Mark the bench dirty. Nothing is written until somebody asks.
    *
-   * Held back until the initial load has finished, so a blank document can
-   * never overwrite the project we are in the middle of opening. Once it is,
-   * an opened starter saves itself on the first pass without being touched:
-   * the alternative is a build sitting on screen under a "not saved yet" label
-   * until you happen to nudge something.
+   * Held back until the initial load has finished, or opening a project would
+   * flag it as changed before anyone had touched it.
    */
   useEffect(() => {
     if (!ready) return
     if (isEmpty(doc)) return
-    // Loaded and left alone. An example being read is not a project.
+    // Loaded and left alone. An example being read is not a change.
     if (doc === pristine.current) return
-
-    cancelPending()
-    /*
-     * The first save of a session does not wait.
-     *
-     * Until it lands the address bar still says /app?start=whatever, so a
-     * reload in that window opened the starter a second time and left you with
-     * two identical projects. Later saves are debounced as before: they are
-     * overwriting a row that already exists, and nothing is riding on them
-     * being instant.
-     *
-     * This only runs once something has actually been changed, so the first
-     * save is a real edit rather than the example landing on screen.
-     */
-    if (saveStateRef.current === 'idle') {
-      void persist(id, doc)
-      return
-    }
-
-    setSaveState((s) => (s === 'saving' ? s : 'dirty'))
-    timer.current = setTimeout(() => {
-      timer.current = null
-      void persist(id, doc)
-    }, AUTOSAVE_MS)
-
-    return cancelPending
-  }, [doc, id, ready, persist])
+    if (doc === savedAs.current) return
+    setSaveState('dirty')
+  }, [doc, ready])
 
   const onSave = useCallback(() => {
-    cancelPending()
     const d = useDoc.getState().doc
     if (isEmpty(d)) return
     void persist(id, d)
@@ -235,7 +217,6 @@ export function Editor() {
    */
   const saveCopy = useCallback(
     async (name: string, follow: boolean) => {
-      cancelPending()
       const current = useDoc.getState().doc
       const copy: Doc = { ...current, name }
       const newId = newProjectId()
@@ -263,15 +244,17 @@ export function Editor() {
 
   const onNew = useCallback(() => {
     const d = useDoc.getState().doc
-    if (!isEmpty(d) && !window.confirm('Start a new build? Anything unsaved in this one is written first.')) return
-    cancelPending()
-    if (!isEmpty(d)) void projects.save(id, d).catch(() => {})
+    if (dirtyRef.current && !isEmpty(d)) {
+      if (!window.confirm('Start a new build? The changes in this one have not been saved and will be lost.')) return
+    }
     useDoc.getState().newDoc()
     engine.reset()
     setId(newProjectId())
+    savedAs.current = null
+    pristine.current = useDoc.getState().doc
     setSaveState('idle')
     window.history.replaceState(null, '', '/app')
-  }, [id])
+  }, [])
 
   const file: FileActions = {
     onNew,
@@ -310,10 +293,16 @@ export function Editor() {
     return () => window.removeEventListener('keydown', onKey)
   }, [onSave, onNew])
 
-  // Last line of defence: never let the tab close on an unwritten change.
+  /*
+   * Closing the tab, reloading, or following a link off the page.
+   *
+   * Now that nothing is written on its own this is not a nicety: it is the
+   * only thing between an afternoon of work and an accidental Ctrl+W. The
+   * browser decides the wording; all a page can do is ask to be asked.
+   */
   useEffect(() => {
     const onLeave = (e: BeforeUnloadEvent) => {
-      if (saveState === 'dirty' || saveState === 'error') e.preventDefault()
+      if (dirtyRef.current) e.preventDefault()
     }
     window.addEventListener('beforeunload', onLeave)
     return () => window.removeEventListener('beforeunload', onLeave)
@@ -351,13 +340,18 @@ export function Editor() {
         onChange={async (e) => {
           const f = e.target.files?.[0]
           if (!f) return
+          if (dirtyRef.current && !window.confirm('Open this file? The changes in the current build have not been saved and will be lost.')) {
+            e.target.value = ''
+            return
+          }
           try {
-            cancelPending()
             loadDoc(await openProject(f))
             engine.reset()
             // An opened file is a new project until it is saved, or opening a
             // downloaded copy would silently overwrite the project it came from.
             setId(newProjectId())
+            savedAs.current = null
+            pristine.current = useDoc.getState().doc
             setSaveState('idle')
             window.history.replaceState(null, '', '/app')
           } catch (err) {
