@@ -210,6 +210,8 @@ const perfboard: PartDef = {
           pos: [x0 + c * P, 1.6, z0 + r * P], dir: [0, 1, 0], role: 'passive',
           groupId: strips ? `strip-${r}` : undefined,
           solderable: true,
+          // Straight through the board: on perfboard the joint is underneath.
+          insert: 1.6,
         })
       }
     }

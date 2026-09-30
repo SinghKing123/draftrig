@@ -192,6 +192,17 @@ export interface Port {
   role?: SignalRole
   /** Maximum continuous current, amps. Used for wire-gauge warnings. */
   imax?: number
+  /**
+   * How far a lead sinks past this terminal when it snaps into it, mm.
+   *
+   * Only a board sets it, and only on the holes it is drilled with. A hole is
+   * marked on the face you can see, because that is where the pad is and where
+   * a wire should land — but a lead put into it does not stop on the surface,
+   * it goes through and is soldered on the other side. Without this the whole
+   * build sits a lead-length proud of the board it is supposedly in, which is
+   * visible the moment you look at it from underneath.
+   */
+  insert?: number
   /* mechanical */
   mate?: {
     type: MateType

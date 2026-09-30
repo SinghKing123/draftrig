@@ -142,8 +142,20 @@ export class SnapSession {
         if (!target) continue
         const d = target.pos.distanceTo(world)
         if (best && d >= best.distance) continue
+        /*
+         * Seat the lead rather than rest it on the surface.
+         *
+         * The hole is marked on the face of the board, because that is where the
+         * pad is and where a wire should land. Putting the lead tip exactly there
+         * leaves the part standing a whole lead proud of the board it is meant to
+         * be in. A board that says how deep its holes are gets the lead pushed
+         * that far along the hole's own normal, which is into the board.
+         */
+        const seat = target.port.insert
+          ? target.pos.clone().addScaledVector(target.dir, -target.port.insert)
+          : target.pos
         best = {
-          offset: target.pos.clone().sub(world),
+          offset: seat.clone().sub(world),
           at: target.pos.clone(),
           movingInstance: part.id,
           movingPort: mp.port.id,

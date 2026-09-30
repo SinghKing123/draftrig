@@ -462,7 +462,20 @@ function SceneContents() {
          * the thing under your cursor.
          */
         zoomToCursor
-        maxPolarAngle={Math.PI * 0.495}
+        /*
+         * Far enough under to look up at a board, and no further.
+         *
+         * This used to stop at 0.495 pi — nine tenths of a degree above dead
+         * level — so the camera could never get beneath anything. Every
+         * through-hole terminal is on the underside of the board it is seated
+         * in, which made the one view you actually need to check a joint the
+         * one view you could not have.
+         *
+         * It still stops short of the pole. At exactly pi the azimuth is
+         * undefined and orbit controls resolve it by snapping the scene round,
+         * so the last few degrees cost nothing and save a flip.
+         */
+        maxPolarAngle={Math.PI * 0.94}
         mouseButtons={{
           LEFT: THREE.MOUSE.ROTATE,
           MIDDLE: THREE.MOUSE.DOLLY,

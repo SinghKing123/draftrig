@@ -5,6 +5,7 @@ import type { Connection } from '@/parts/kernel/types'
 import { useConnectionList, useDoc } from '@/state/doc'
 import { useSim } from '@/state/sim'
 import { usePortIndex } from './portIndex'
+import { wireCurve } from './wirePath'
 
 /**
  * Wires are drawn as swept tubes that leave each terminal along its normal and
@@ -47,23 +48,6 @@ const wireFragment = /* glsl */ `
   }
 `
 
-function wireCurve(a: THREE.Vector3, da: THREE.Vector3, b: THREE.Vector3, db: THREE.Vector3, waypoints?: THREE.Vector3[]): THREE.CatmullRomCurve3 {
-  const dist = a.distanceTo(b)
-  const lift = Math.min(dist * 0.18, 14)
-  const pts: THREE.Vector3[] = [a.clone()]
-  pts.push(a.clone().addScaledVector(da, Math.min(6, dist * 0.2)))
-  if (waypoints?.length) {
-    for (const w of waypoints) pts.push(w.clone())
-  } else {
-    const mid = a.clone().add(b).multiplyScalar(0.5)
-    mid.y += lift
-    pts.push(mid)
-  }
-  pts.push(b.clone().addScaledVector(db, Math.min(6, dist * 0.2)))
-  pts.push(b.clone())
-  return new THREE.CatmullRomCurve3(pts, false, 'centripetal', 0.4)
-}
-
 function WireMesh({ conn, selected }: { conn: Connection; selected: boolean }) {
   const index = usePortIndex()
   const setHovered = useDoc((s) => s.setHovered)
@@ -73,7 +57,7 @@ function WireMesh({ conn, selected }: { conn: Connection; selected: boolean }) {
     const a = index.get(conn.a.instanceId, conn.a.portId)
     const b = index.get(conn.b.instanceId, conn.b.portId)
     if (!a || !b) return null
-    const curve = wireCurve(a.pos, a.dir, b.pos, b.dir, conn.waypoints?.map((w) => new THREE.Vector3(...w)))
+    const curve = wireCurve(a, b, conn.waypoints?.map((w) => new THREE.Vector3(...w)))
     const radius = Math.sqrt((conn.gauge ?? 0.2) / Math.PI) + 0.55
     return new THREE.TubeGeometry(curve, 44, radius, 8, false)
   }, [index, conn])
