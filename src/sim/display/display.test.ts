@@ -121,6 +121,57 @@ describe('character LCD', () => {
     expect(row(peekFramebuffer(fbKey(lcd, 'main')) as CharBuffer, 0)).toBe('SECOND')
   })
 
+  /**
+   * The editor recompiles the netlist whenever the document changes, which is
+   * how a parameter edit reaches a passive whose value is baked in at compile
+   * time. The recompile resets the circuit. A driver halfway through clocking
+   * a byte out is not reset by it, so unless its state is dropped too it
+   * carries on from a phase the panel no longer agrees with: the screen fills
+   * with garbage and the controller reads one of those bytes as display-off.
+   *
+   * SimEngine.forgetChanged is what drops it. This is the same sequence at the
+   * netlist level, because the engine needs a store and a timer to run.
+   */
+  it('recovers the panel when a recompile lands mid-transfer', () => {
+    const b = new Bench()
+    const mcu = b.put('mcu-board', { program: 'lcd-text', text1: 'BEFORE', text2: '' })
+    const lcd = b.put('display-lcd-character')
+    for (const [a, c] of [['v5', 'vdd'], ['gnd', 'vss'], ['v5', 'a'], ['gnd', 'k'], ['gnd', 'rw'],
+      ['d12', 'rs'], ['d11', 'e'], ['d5', 'd4'], ['d4', 'd5'], ['d3', 'd6'], ['d2', 'd7']] as const) {
+      b.join([mcu, a], [lcd, c])
+    }
+
+    const state = new Map<string, Record<string, unknown>>()
+    const compile = () => {
+      const nl = buildNetlist(b.doc)
+      const runner = new BehaviourRunner(nl, state)
+      nl.circuit.reset()
+      return (seconds: number, dt = 25e-6) => {
+        for (let i = 0; i < Math.round(seconds / dt); i++) {
+          runner.run(nl.circuit.time, dt)
+          nl.circuit.step(dt)
+        }
+      }
+    }
+
+    compile()(0.3)
+    expect(row(peekFramebuffer(fbKey(lcd, 'main')) as CharBuffer, 0)).toBe('BEFORE')
+
+    // A parameter edit, as the inspector makes one: a new object, then a
+    // recompile. The part that changed starts again; nothing else does.
+    b.doc.instances[mcu] = {
+      ...b.doc.instances[mcu],
+      params: { ...b.doc.instances[mcu].params, text1: 'AFTER' },
+    }
+    state.delete(mcu)
+    compile()(0.5)
+
+    const fb = peekFramebuffer(fbKey(lcd, 'main')) as CharBuffer
+    expect(row(fb, 0)).toBe('AFTER')
+    // The panel that used to come back switched off by a misread nibble.
+    expect(fb.displayOn).toBe(true)
+  })
+
   it('stays blank when the enable line is not connected', () => {
     const b = new Bench()
     const mcu = b.put('mcu-board', { program: 'lcd-text', text1: 'HELLO' })

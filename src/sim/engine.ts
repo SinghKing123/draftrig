@@ -55,6 +55,22 @@ class SimEngine {
    * oscillating when the user nudges a part and the circuit is recompiled.
    */
   private behaviourState = new Map<string, Record<string, unknown>>()
+  /**
+   * What each instance looked like at the last compile.
+   *
+   * Keeping behaviour state across a recompile is what lets a 555 go on
+   * oscillating while a part is nudged somewhere else on the bench. It is
+   * also how a bus gets corrupted: the rebuild wipes the circuit, but a
+   * driver halfway through clocking a byte out is not wiped, so it carries
+   * on from a phase the other end no longer agrees with. A character panel
+   * left like that fills with garbage and switches itself off, and the only
+   * clue is that it happened the instant something was changed.
+   *
+   * So state is kept for the parts that did not change and dropped for the
+   * ones that did. A part whose wiring or parameters have just changed is a
+   * part that should be starting again anyway.
+   */
+  private signatures = new Map<string, string>()
   /** Rebuilt whenever the netlist is. */
   private behaviours: BehaviourRunner | null = null
 
@@ -90,6 +106,7 @@ class SimEngine {
     this.dirty = true
     this.traces.clear()
     this.behaviourState.clear()
+    this.signatures.clear()
     clearFramebuffers()
     this.debt = 0
     useSim.getState().resetOutputs()
@@ -103,7 +120,37 @@ class SimEngine {
 
   /* ---------------- compile ---------------- */
 
+  /** Enough of an instance to tell whether it has to start over. */
+  private signature(doc: Doc, id: string): string {
+    const inst = doc.instances[id]
+    if (!inst) return ''
+    const links: string[] = []
+    for (const cid of doc.connectionOrder) {
+      const c = doc.connections[cid]
+      if (!c) continue
+      if (c.a.instanceId === id) links.push(c.a.portId + '>' + c.b.instanceId + ':' + c.b.portId)
+      else if (c.b.instanceId === id) links.push(c.b.portId + '>' + c.a.instanceId + ':' + c.a.portId)
+    }
+    links.sort()
+    return inst.defId + '|' + JSON.stringify(inst.params) + '|' + links.join(',')
+  }
+
+  /** Forget the state of everything whose wiring or parameters have changed. */
+  private forgetChanged(doc: Doc): void {
+    const next = new Map<string, string>()
+    for (const id of doc.order) next.set(id, this.signature(doc, id))
+    for (const [id, sig] of next) {
+      const was = this.signatures.get(id)
+      if (was !== undefined && was !== sig) this.behaviourState.delete(id)
+    }
+    // A part that has gone takes its state with it, or the map grows for the
+    // life of the session and a re-added id inherits a stranger's state.
+    for (const id of this.signatures.keys()) if (!next.has(id)) this.behaviourState.delete(id)
+    this.signatures = next
+  }
+
   private rebuild(doc: Doc): void {
+    this.forgetChanged(doc)
     const nl = buildNetlist(doc)
     this.netlist = nl
     this.bindBehaviours(nl)

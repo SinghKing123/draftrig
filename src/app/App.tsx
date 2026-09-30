@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { Viewport } from '@/scene/Viewport'
+import { fbKey, peekFramebuffer, type CharBuffer } from '@/sim/display/framebuffer'
 import { TopBar } from '@/ui/TopBar'
 import { Library } from '@/ui/Library'
 import { Inspector } from '@/ui/Inspector'
@@ -38,10 +39,38 @@ declare global {
       sim: typeof useSim
       engine: typeof engine
       starters: typeof STARTERS
+      /** What a panel is actually showing, for tools/ and for bug reports. */
+      screen: (instanceId: string, screen?: string) => unknown
     }
   }
 }
-window.draftrig = { doc: useDoc, sim: useSim, engine, starters: STARTERS }
+window.draftrig = {
+  doc: useDoc,
+  sim: useSim,
+  engine,
+  starters: STARTERS,
+  /*
+   * A display's contents, read out of the simulation rather than off the
+   * screen. Whether a panel is stale because nothing was sent to it or
+   * because the picture was not redrawn are different faults with the same
+   * symptom, and there is no way to tell them apart from a screenshot.
+   */
+  screen: (instanceId: string, screen = 'main') => {
+    const raw = peekFramebuffer(fbKey(instanceId, screen))
+    if (!raw || raw.kind !== 'chars') return raw
+    const fb = raw as CharBuffer
+    const rows: string[] = []
+    for (let r = 0; r < fb.rows; r++) {
+      rows.push(
+        Array.from(fb.chars.slice(r * fb.cols, (r + 1) * fb.cols))
+          .map((c) => String.fromCharCode(c || 32))
+          .join('')
+          .trimEnd(),
+      )
+    }
+    return { rows, contrast: fb.contrast, backlight: fb.backlight, displayOn: fb.displayOn }
+  },
+}
 
 /**
  * Lend the store a way to seat a part on the ground plane. Only the editor has
