@@ -8,6 +8,11 @@ caller out of that token.
 The code is written. What follows is configuration, in four places that do not
 know about each other, in the order they depend on each other.
 
+**Auth0 and Supabase are done.** The tenant, the API, the role-claim Action and
+the database all exist and are live; what is left is step 3, which needs a
+Cloudflare login, and step 4, which needs a mail provider. The finished steps
+are kept here because a setup nobody wrote down is a setup nobody can repeat.
+
 ```
 site            https://draftrig.com
 supabase ref    kovrdzgebxswnfzkvipe
@@ -53,7 +58,31 @@ mint the token for, Auth0 returns an *opaque* token — a reference string with
 nothing inside it. Supabase cannot verify it, so every query comes back empty
 with no error. Sign-in looks perfect and the app looks broken.
 
-### 1c. Connections
+### 1c. The role claim — do not skip this either
+
+Supabase hands every request to Postgres as whatever role the token names in
+its `role` claim. An Auth0 access token has no such claim on its own, so the
+request arrives as `anon`, every policy below declines it, and reads come back
+empty. Same symptom as a missing audience, different cause.
+
+**Actions → Library → Create Action → Create Custom Action**, trigger *Login /
+Post Login*:
+
+```js
+exports.onExecutePostLogin = async (event, api) => {
+  api.accessToken.setCustomClaim("role", "authenticated");
+  if (event.user.email) {
+    api.accessToken.setCustomClaim("email", event.user.email);
+  }
+};
+```
+
+**Deploy** it, then **Actions → Triggers → Post Login** and drag it from the
+list on the right into the flow. Deploying is not enough on its own — an action
+that is not in a flow never runs. Press **Apply**; the header should read *All
+changes are live*.
+
+### 1d. Connections
 
 **Authentication → Social → Google** to add Google sign-in.
 **Authentication → Database** is on by default and gives email and password.
@@ -64,11 +93,15 @@ a switch here and no code change at all.
 ## 2. Supabase — trust the tokens
 
 **Authentication → Sign In / Providers → Third-Party Auth → Add provider →
-Auth0**, and give it your Auth0 domain. Supabase fetches the tenant's public
-keys from there and will accept tokens signed with them.
+Auth0**. The field is framed by a literal `https://` and `.auth0.com`, so it
+takes the middle of the domain and nothing else — for
+`dev-nzrzf76dem86ou2l.us.auth0.com` you type `dev-nzrzf76dem86ou2l.us`.
+Supabase fetches the tenant's public keys from there and will accept tokens
+signed with them.
 
 Then **SQL Editor → New query**, paste all of `supabase/schema.sql`, run it.
-Safe to run more than once.
+Safe to run more than once. It has been run: `projects` and `profiles` are
+there, with row-level security on and four and three policies respectively.
 
 Check it in **Table Editor**: `projects` and `profiles` both present, both
 showing **RLS enabled**. A table without that badge is readable by anyone with
