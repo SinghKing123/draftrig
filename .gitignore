@@ -45,9 +45,11 @@ keychain/build/lock-*.png
 keychain/build/trace-*.svg
 keychain/build/lock-*.svg
 
-# Reels: the frame captures and the encoded videos are both rebuildable from
-# tools/reel, and both are far too large to keep in the repository. `broll` is
-# footage that belongs to whoever shot it.
+# Reels: the frame captures are rebuildable from tools/reel and far too large
+# to keep in the repository. `broll` is footage that belongs to whoever shot
+# it. The encoded videos no longer land here at all — they go to ~/Videos, or
+# wherever REELS_DIR points — but the rule stays, because an older checkout or
+# an explicit REELS_DIR=reels would put them back.
 reels
 broll
 

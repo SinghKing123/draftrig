@@ -1,6 +1,7 @@
+import { homedir } from 'node:os'
 import { chromium } from 'playwright'
 import { mkdirSync } from 'node:fs'
-import { dirname } from 'node:path'
+import { dirname, join } from 'node:path'
 import { BUILD } from './display.mjs'
 
 /**
@@ -17,7 +18,10 @@ import { BUILD } from './display.mjs'
  */
 
 const BASE = process.env.BASE ?? 'http://localhost:5173'
-const OUT = process.env.OUT ?? 'shots/reel/led-display.png'
+/* Beside the reels, for the same reason: it is something somebody posts,
+   not a working file. OUT still overrides it. */
+const OUT = process.env.OUT
+  ?? join(process.env.REELS_DIR || join(homedir(), 'Videos', 'Draftrig reels'), 'led-display.png')
 
 /** 4:5 — the tallest a still can be in an Instagram feed without cropping. */
 const W = 1080

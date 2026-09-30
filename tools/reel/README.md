@@ -40,8 +40,19 @@ FFMPEG=/path/to/ffmpeg node tools/reel/run.mjs build
 ```
 
 `record` drives the editor and writes frames to `shots/reel/<shot>/`; `build`
-retimes them and writes `reels/<reel>.mp4`. Either takes shot or reel ids to do
+retimes them and writes the finished reel. Either takes shot or reel ids to do
 part of the job: `run.mjs record r1-` does the first reel's shots.
+
+Finished reels go to **`~/Videos/Draftrig reels`**, not into the project. They
+are the one thing here anybody opens, and hunting for them inside a source
+tree inside Downloads got old. `REELS_DIR` overrides it:
+
+```bash
+REELS_DIR=/d/clips node tools/reel/run.mjs build
+```
+
+The frames stay in `shots/reel/` — hundreds of megabytes a reel of working
+files that only `build` ever reads, and nothing outside this directory wants.
 
 Recording all nine shots takes about fifteen minutes. Nothing is real time —
 see below.
