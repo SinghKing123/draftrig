@@ -7,6 +7,7 @@ import {
 import {
   DEFAULT_SKETCH, newSketchState, pushOut, runSketch, type SketchState,
 } from './sketch'
+import { espRailIds, espSketchPins } from '@/parts/catalog/esp'
 
 /**
  * Built-in behavioural models.
@@ -498,6 +499,113 @@ ${body}`
     default: {
       for (const d of DIGITAL) c.hiZ(d)
     }
+  }
+})
+
+/* ================================================================== */
+/* ESP boards                                                          */
+/* ================================================================== */
+
+interface EspState {
+  sketch?: SketchState
+  on: boolean
+  toggleAt: number
+}
+
+/**
+ * An ESP32 or ESP8266 devkit.
+ *
+ * The same sketch runtime the Uno uses, on this board's own pins and at its
+ * own rail. Three things differ and all three matter:
+ *
+ * 3.3 volts, not five. None of these boards is 5 V tolerant, and the number
+ * here is what decides whether a divider is needed to read a 5 V sensor.
+ *
+ * Twelve milliamps a pin, not twenty-eight. An ESP32 pad will source about
+ * twelve before its output droops, so the source impedance is higher and an
+ * LED driven straight off one is dimmer than the same LED on an Uno — which
+ * is the thing people are surprised by on real hardware too.
+ *
+ * And the pins are the board's, by GPIO number. espSketchPins builds a sparse
+ * map, so digitalWrite(3) on a board that does not bring out GPIO 3 reaches
+ * nothing, rather than reaching whatever happened to be third in a list.
+ */
+registerBehaviour('esp', (c) => {
+  const s = slot<EspState>(c.state, 'esp', () => ({ on: false, toggleAt: 0 }))
+  const pins = espSketchPins(c.params)
+  const rails = espRailIds(c.params)
+  const rail = 3.3
+
+  /* Supply. USB feeds the regulator; so does anything on VIN above about 4.5,
+     which is what the 5 V pin on a D1 mini is. Below that the board is dark. */
+  const usb = str(c.params, 'power', 'usb') === 'usb'
+  const vin = rails.vin.reduce((v, id) => Math.max(v, c.read(id)), 0)
+  const powered = usb || vin > 4.3
+  for (const id of rails.vin) c.hiZ(id)
+  for (const id of rails.reset) c.hiZ(id)
+
+  const everyPin = [...pins.digital, ...pins.analog].filter(Boolean)
+
+  if (!powered) {
+    for (const id of rails.v33) c.hiZ(id)
+    for (const id of everyPin) c.hiZ(id)
+    return
+  }
+
+  // The on-board LDO. A real AMS1117 holds 3.3 with a few hundred milliohms.
+  // Driving one of them is enough: they all share a net.
+  if (rails.v33.length) c.drive(rails.v33[0], rail, 0.3)
+  for (const id of rails.v33.slice(1)) c.hiZ(id)
+
+  const program = str(c.params, 'program', 'blink')
+
+  /** Push-pull, at the source impedance an ESP pad actually has. */
+  const write = (pin: string, high: boolean): void => c.drive(pin, high ? rail : 0, 55)
+
+  if (program === 'off') {
+    for (const id of everyPin) c.hiZ(id)
+    return
+  }
+
+  if (program === 'blink') {
+    /* The on-board LED: GPIO 2 on every board in the table, which is why it
+       is the one the stock program uses. */
+    const led = pins.digital[2]
+    for (const id of everyPin) if (id !== led) c.hiZ(id)
+    if (!led) return
+    const interval = Math.max(num(c.params, 'interval', 0.5), 0.005)
+    if (c.t >= s.toggleAt) {
+      s.on = !s.on
+      s.toggleAt = c.t + interval
+    }
+    write(led, s.on)
+    return
+  }
+
+  // A sketch of their own. Same runtime as the Uno; see sketch.ts.
+  if (!s.sketch) s.sketch = newSketchState()
+  const sk = s.sketch
+  const held = new Set<string>()
+
+  runSketch(sk, str(c.params, 'code', ''), pins, {
+    t: c.t,
+    rail,
+    write: (pin, high) => { held.add(pin); write(pin, high) },
+    read: (pin) => { c.hiZ(pin); return c.read(pin) },
+    release: (pin) => c.hiZ(pin),
+    print: (line) => pushOut(sk, line),
+  })
+
+  for (const id of everyPin) {
+    if (sk.modes[id] !== 'output') {
+      if (!held.has(id)) c.hiZ(id)
+      continue
+    }
+    const duty = sk.duty[id] ?? 0
+    if (duty >= 1) write(id, true)
+    else if (duty <= 0) write(id, false)
+    // The ESP32 LEDC default is 5 kHz, an order up from an AVR's 490 Hz.
+    else write(id, (c.t % (1 / 5000)) * 5000 < duty)
   }
 })
 

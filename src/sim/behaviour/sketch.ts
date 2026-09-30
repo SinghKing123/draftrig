@@ -46,9 +46,22 @@ export interface Suspend {
 }
 
 export interface SketchPins {
-  /** Digital pin ids in board order: d0..d13 then a0..a5. */
+  /**
+   * Pin ids indexed by the number a sketch would write.
+   *
+   * Dense on an Uno — digital[13] is 'd13' — and full of holes on an ESP,
+   * because a board that brings out GPIO 2, 4 and 5 but not 3 should answer
+   * digitalWrite(3) with nothing, rather than with whichever pin happens to
+   * be third in a list. A sparse array says that directly.
+   */
   readonly digital: string[]
+  /** The same, for the ADC: analog[0] is what A0 means on this board. */
   readonly analog: string[]
+  /**
+   * The board's own names, lower-cased. A NodeMCU silkscreens D0 to D8 and
+   * nobody writing for one uses the GPIO numbers, so both have to work.
+   */
+  readonly aliases?: Readonly<Record<string, string>>
 }
 
 /** What the sketch is allowed to do to the world, supplied per timestep. */
@@ -171,8 +184,10 @@ function pinId(pins: SketchPins, v: unknown, analogue = false): string | null {
   }
   if (typeof v !== 'string') return null
   const t = v.trim().toLowerCase()
+  const alias = pins.aliases?.[t]
+  if (alias) return alias
   if (/^a\d+$/.test(t)) return pins.analog[Number(t.slice(1))] ?? null
-  if (/^d?\d+$/.test(t)) return pinId(pins, Number(t.replace(/^d/, '')), analogue)
+  if (/^(gpio|io|d)?\d+$/.test(t)) return pinId(pins, Number(t.replace(/^(gpio|io|d)/, '')), analogue)
   return null
 }
 
@@ -200,6 +215,8 @@ function makeApi(s: SketchState, pins: SketchPins): Record<string, unknown> {
 
   return {
     ...CONSTANTS,
+    // The board's own silkscreen names, so D5 is a name a sketch may use.
+    ...Object.fromEntries(Object.keys(pins.aliases ?? {}).map((k) => [k.toUpperCase(), k])),
 
     $tick: (): boolean => {
       if (++s.steps > STEP_LIMIT) {

@@ -208,92 +208,6 @@ const mcuBoard: PartDef = {
 }
 
 /* ================================================================== */
-/* ESP32 development board                                             */
-/* ================================================================== */
-
-const esp32: PartDef = {
-  id: 'esp32-devkit',
-  name: 'ESP32 dev board',
-  category: 'module',
-  blurb: 'Wi-Fi microcontroller on a 30-pin devkit',
-  tags: ['esp32', 'wifi', 'bluetooth', 'devkit', 'microcontroller', 'iot', 'module', 'board'],
-  doc: { manufacturer: 'Espressif', mpn: 'ESP32-DevKitC', price: 8, description: 'Dual-core Wi-Fi and Bluetooth microcontroller on a breadboard-friendly carrier. Note: 3.3 V logic, not 5 V tolerant.' },
-  params: [
-    { key: 'pins', label: 'Pins per side', type: 'number', default: 15, min: 12, max: 19, step: 1, group: 'Board' },
-  ],
-  solids: (p) => {
-    const n = Math.round(num(p, 'pins', 15))
-    const w = 25.4
-    const d = n * P + 6
-    const t = 1.2
-    return [
-      { kind: 'extrude', mat: 'fr4-black', profile: { outline: roundRect(w, d, 1.5) }, depth: t, rot: [-90, 0, 0], at: [0, t / 2, 0] },
-      // The shielded radio module, with its antenna cut-out at the end.
-      { kind: 'box', mat: { color: '#C2C7CE', metal: 1, rough: 0.34, density: 7.8 }, size: [18, 3.1, 25.5], at: [0, t + 1.55, -d / 2 + 15], bevel: 0.35 },
-      { kind: 'box', mat: 'fr4-black', size: [16, 1.2, 6], at: [0, t + 0.6, -d / 2 + 3.5] },
-      { kind: 'box', mat: { color: '#C2C7CE', metal: 1, rough: 0.4, density: 7.8 }, size: [11, 0.3, 4.5], at: [0, t + 1.3, -d / 2 + 3.5], noCollide: true },
-      // Micro-USB socket.
-      { kind: 'box', mat: { color: '#B8BDC4', metal: 1, rough: 0.36, density: 7.8 }, size: [8, 3, 5.6], at: [0, t + 1.5, d / 2 - 2] },
-      // Buttons and regulator.
-      { kind: 'box', mat: 'abs-black', size: [4.5, 2.6, 4.5], at: [-9, t + 1.3, d / 2 - 10] },
-      { kind: 'box', mat: 'abs-black', size: [4.5, 2.6, 4.5], at: [9, t + 1.3, d / 2 - 10] },
-      { kind: 'box', mat: 'epoxy-black', size: [3.2, 1.2, 2.6], at: [6, t + 0.6, d / 2 - 17] },
-      // Pin headers down both long edges.
-      ...Array.from({ length: n }, (_, i): Solid => ({
-        kind: 'box', mat: 'abs-black', size: [P - 0.1, 2.5, P - 0.1],
-        at: [-w / 2 + 1.5, t + 1.25, -d / 2 + 3 + i * P],
-      })),
-      ...Array.from({ length: n }, (_, i): Solid => ({
-        kind: 'box', mat: 'gold', size: [0.64, 11, 0.64], at: [-w / 2 + 1.5, t + 2.9, -d / 2 + 3 + i * P],
-      })),
-      ...Array.from({ length: n }, (_, i): Solid => ({
-        kind: 'box', mat: 'abs-black', size: [P - 0.1, 2.5, P - 0.1],
-        at: [w / 2 - 1.5, t + 1.25, -d / 2 + 3 + i * P],
-      })),
-      ...Array.from({ length: n }, (_, i): Solid => ({
-        kind: 'box', mat: 'gold', size: [0.64, 11, 0.64], at: [w / 2 - 1.5, t + 2.9, -d / 2 + 3 + i * P],
-      })),
-    ]
-  },
-  ports: (p) => {
-    const n = Math.round(num(p, 'pins', 15))
-    const w = 25.4
-    const d = n * P + 6
-    const ports: Port[] = []
-    // Left side: 3V3, GND then GPIOs. Right side: VIN, GND then GPIOs.
-    const left = ['v33', 'gndl', ...Array.from({ length: n - 2 }, (_, i) => `io${i}`)]
-    const right = ['vin', 'gndr', ...Array.from({ length: n - 2 }, (_, i) => `io${i + n - 2}`)]
-    left.forEach((id, i) => {
-      ports.push({
-        id, label: id === 'v33' ? '3.3 V' : id === 'gndl' ? 'GND' : `GPIO ${i - 2}`,
-        kind: 'electrical', pos: [-w / 2 + 1.5, 8.2, -d / 2 + 3 + i * P], dir: [0, 1, 0],
-        role: id === 'v33' ? 'power' : id === 'gndl' ? 'gnd' : 'io', imax: 0.04,
-      })
-    })
-    right.forEach((id, i) => {
-      ports.push({
-        id, label: id === 'vin' ? 'VIN (5 V)' : id === 'gndr' ? 'GND' : `GPIO ${i + n - 4}`,
-        kind: 'electrical', pos: [w / 2 - 1.5, 8.2, -d / 2 + 3 + i * P], dir: [0, 1, 0],
-        role: id === 'vin' ? 'power' : id === 'gndr' ? 'gnd' : 'io', imax: 0.04,
-        groupId: id === 'gndr' ? 'gnd' : undefined,
-      })
-    })
-    ports.push({ id: 'base', label: 'Underside', kind: 'mechanical', pos: [0, 0, 0], dir: [0, -1, 0], mate: { type: 'face' } })
-    return ports
-  },
-  electrical: {
-    devices: () => [{ type: 'short', a: 'gndl', b: 'gndr' }],
-    limits: { vmax: 3.6, imax: 0.04 },
-  },
-  readouts: () => [
-    { label: 'Logic level', value: '3.3 V, not 5 V tolerant' },
-    { label: 'Clock', value: '240 MHz, dual core' },
-    { label: 'Per-pin current', value: '12 mA' },
-    { label: 'Wi-Fi peak draw', value: '~250 mA' },
-  ],
-}
-
-/* ================================================================== */
 /* H-bridge motor driver                                               */
 /* ================================================================== */
 
@@ -499,4 +413,4 @@ const buck: PartDef = {
   },
 }
 
-registerParts([mcuBoard, esp32, motorDriver, relayModule, buck])
+registerParts([mcuBoard, motorDriver, relayModule, buck])

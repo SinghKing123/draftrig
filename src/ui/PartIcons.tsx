@@ -495,7 +495,7 @@ const BY_ID: Record<string, Glyph> = {
   'shift-register-595': Chip,
   'ic-dip': Chip,
   'mcu-board': Board,
-  'esp32-devkit': Board,
+  'esp-board': Board,
   'motor-driver': Board,
   'relay-module': Relay,
   'buck-converter': Regulator,
