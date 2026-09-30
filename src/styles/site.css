@@ -1194,3 +1194,238 @@
   flex-wrap: wrap;
   margin-top: 6px;
 }
+
+/* ==================================================================
+   Dashboard
+   ------------------------------------------------------------------
+   A bar, three tabs and a column of content. Dense: a dashboard is
+   somewhere you pass through on the way to the thing you want, so the
+   useful part is above the fold and there is no decoration in it.
+   ================================================================== */
+
+.dash {
+  min-height: 100dvh;
+  background: var(--sand);
+  color: var(--ink);
+}
+
+.dash-bar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 10px clamp(16px, 3vw, 32px);
+  background: color-mix(in srgb, var(--paper) 86%, transparent);
+  backdrop-filter: saturate(160%) blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+
+.dash-tabs { display: flex; gap: 2px; }
+.dash-tabs button {
+  padding: 7px 13px;
+  border-radius: var(--r-sm);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+.dash-tabs button:hover { color: var(--ink); background: var(--sand); }
+.dash-tabs button[data-on='true'] { color: var(--ink); background: var(--sand-2); }
+
+.dash-who { display: flex; align-items: center; }
+
+.dash-main {
+  max-width: 1340px;
+  margin: 0 auto;
+  padding: clamp(22px, 3vw, 34px) clamp(16px, 3vw, 32px) 90px;
+}
+
+.dash-head {
+  display: flex;
+  align-items: flex-end;
+  gap: 22px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.dash-head h1 {
+  font-size: clamp(1.6rem, 2.6vw, 2.1rem);
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+.dash-head .lib-sub { flex: 1 1 340px; margin: 0 0 3px; }
+
+/* Three numbers, tabular, so the row does not jiggle as they load. */
+.dash-figures { display: flex; gap: 26px; margin-left: auto; }
+.dash-figures div { display: flex; flex-direction: column-reverse; gap: 1px; }
+.dash-figures dt { font-size: 0.76rem; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.06em; }
+.dash-figures dd {
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- toolbar over the presets ---- */
+
+.dash-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.dash-search { position: relative; flex: 1 1 330px; max-width: 480px; }
+.dash-search .input {
+  width: 100%;
+  height: 40px;
+  padding: 0 34px 0 13px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 0.95rem;
+}
+.dash-search .input:focus-visible {
+  outline: none;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px var(--blue-wash);
+}
+.dash-clear {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  color: var(--ink-3);
+}
+.dash-clear:hover { background: var(--sand-2); color: var(--ink); }
+
+.dash-seg {
+  display: flex;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--paper);
+}
+.dash-seg button {
+  padding: 5px 11px;
+  border-radius: 7px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+.dash-seg button[data-on='true'] { background: var(--ink); color: #fff; }
+
+.dash-count {
+  font-size: 0.82rem;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+  margin-left: auto;
+}
+
+/* ---- presets ---- */
+
+.preset-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(252px, 1fr));
+  gap: 10px;
+}
+
+.preset {
+  display: grid;
+  gap: 5px;
+  width: 100%;
+  height: 100%;
+  padding: 13px 14px 12px;
+  text-align: left;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  transition: border-color 140ms var(--ease), box-shadow 140ms var(--ease), transform 140ms var(--ease);
+}
+.preset:hover {
+  border-color: var(--ink-4);
+  box-shadow: var(--lift-1);
+  transform: translateY(-1px);
+}
+.preset b { font-size: 0.98rem; font-weight: 650; letter-spacing: -0.015em; }
+.preset-blurb { font-size: 0.85rem; line-height: 1.45; color: var(--ink-2); }
+.preset-kind {
+  justify-self: start;
+  padding: 2px 7px;
+  border-radius: var(--pill);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.preset-kind[data-kind='circuit'] { background: var(--blue-wash); color: var(--blue-deep); }
+.preset-kind[data-kind='build'] { background: #f3efe6; color: #8a6d2f; }
+.preset-go {
+  margin-top: 3px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+.preset:hover .preset-go { color: var(--blue-deep); }
+
+/* ---- account ---- */
+
+.dash-card {
+  max-width: 560px;
+  padding: 18px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+}
+.dash-id { display: flex; align-items: center; gap: 12px; }
+.dash-id > div { display: grid; gap: 1px; min-width: 0; }
+.dash-id b { font-size: 1.02rem; }
+.dash-id span:last-child { font-size: 0.86rem; color: var(--ink-3); }
+.acct-avatar.lg { width: 42px; height: 42px; font-size: 0.92rem; }
+
+.dash-rows { margin-top: 16px; display: grid; gap: 1px; background: var(--line-2); border-radius: var(--r-sm); overflow: hidden; }
+.dash-rows div { display: flex; justify-content: space-between; gap: 16px; padding: 9px 12px; background: var(--paper); }
+.dash-rows dt { font-size: 0.88rem; color: var(--ink-2); }
+.dash-rows dd { font-size: 0.88rem; font-weight: 600; }
+
+.dash-card-actions { margin-top: 16px; display: flex; gap: 8px; }
+
+/* ---- empties ---- */
+
+.dash-empty {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 12px;
+  padding: clamp(40px, 6vw, 72px) 24px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+}
+.dash-empty h2 { font-size: 1.4rem; letter-spacing: -0.025em; }
+.dash-empty p { max-width: 50ch; color: var(--ink-2); line-height: 1.6; }
+.dash-empty-actions { display: flex; gap: 9px; flex-wrap: wrap; justify-content: center; margin-top: 4px; }
+.dash-empty-line { padding: 26px 0; color: var(--ink-2); max-width: 62ch; line-height: 1.6; }
+
+@media (max-width: 720px) {
+  .dash-bar { gap: 10px; flex-wrap: wrap; }
+  .dash-tabs { order: 3; width: 100%; overflow-x: auto; }
+  .dash-figures { width: 100%; margin-left: 0; gap: 20px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .preset { transition: none; }
+  .preset:hover { transform: none; }
+}
+
+/* The grids are <ul>s for the semantics, not for the markers. */
+.preset-grid, .proj-grid { list-style: none; padding-left: 0; margin: 0; }
+.preset-grid > li, .proj-grid > li { display: flex; }
+.proj-grid > li > .proj { flex: 1; }

@@ -9,7 +9,7 @@ import { AuthProvider } from '@/auth/AuthProvider'
 import { Landing } from '@/routes/Landing'
 import { SignIn } from '@/routes/SignIn'
 import { AuthCallback } from '@/routes/AuthCallback'
-import { Projects } from '@/routes/Projects'
+import { Dashboard } from '@/routes/Dashboard'
 import { LogoMark } from '@/ui/Logo'
 
 /**
@@ -67,7 +67,7 @@ createRoot(el).render(
           <Route path="/" element={<Landing />} />
           <Route path="/app" element={<EditorRoute />} />
           <Route path="/app/:projectId" element={<EditorRoute />} />
-          <Route path="/projects" element={<Projects />} />
+          <Route path="/projects" element={<Dashboard />} />
           <Route path="/signin" element={<SignIn />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="*" element={<Navigate to="/" replace />} />

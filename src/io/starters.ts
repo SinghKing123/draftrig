@@ -273,24 +273,35 @@ export interface Starter {
   id: string
   title: string
   blurb: string
+  /**
+   * Words somebody would type looking for this, beyond the ones already in
+   * the title. Searching a list of eleven by title alone means knowing what
+   * we decided to call it: "arduino" finds nothing, because the part is a
+   * Microcontroller board and the preset is Microcontroller blink.
+   */
+  tags: string[]
+  /** Electronics or fabrication. The two halves of the catalog, and of this. */
+  kind: 'circuit' | 'build'
   build: () => Doc
 }
 
 export const STARTERS: Starter[] = [
-  { id: 'led', title: 'LED on a breadboard', blurb: 'Supply, resistor and LED, see the current arrive', build: ledCircuit },
-  { id: 'blink555', title: '555 blinker', blurb: 'The classic astable, flashing at one hertz', build: blinker555 },
-  { id: 'mcu', title: 'Microcontroller blink', blurb: 'A board running a sketch, driving a real LED', build: mcuBlink },
-  { id: 'lcd', title: 'Text on an LCD', blurb: 'A board bit-banging a 16x2 panel over its real bus', build: lcdText },
-  { id: 'oled', title: 'OLED over I2C', blurb: 'Four wires, a decoded bus and a panel that fills in', build: oledText },
+  { id: 'led', title: 'LED on a breadboard', blurb: 'Supply, resistor and LED, see the current arrive', kind: 'circuit', tags: ["led","breadboard","resistor","ohms law","first","beginner","current"], build: ledCircuit },
+  { id: 'blink555', title: '555 blinker', blurb: 'The classic astable, flashing at one hertz', kind: 'circuit', tags: ["555","ne555","timer","astable","oscillator","blink","flash","capacitor"], build: blinker555 },
+  { id: 'mcu', title: 'Microcontroller blink', blurb: 'A board running a sketch, driving a real LED', kind: 'circuit', tags: ["arduino","uno","microcontroller","sketch","code","blink","firmware"], build: mcuBlink },
+  { id: 'lcd', title: 'Text on an LCD', blurb: 'A board bit-banging a 16x2 panel over its real bus', kind: 'circuit', tags: ["lcd","1602","hd44780","display","text","arduino","screen","bus"], build: lcdText },
+  { id: 'oled', title: 'OLED over I2C', blurb: 'Four wires, a decoded bus and a panel that fills in', kind: 'circuit', tags: ["oled","i2c","ssd1306","display","screen","arduino","bus"], build: oledText },
   {
     id: 'bench-clock',
     title: 'Bench clock, on perfboard',
     blurb: 'A finished board: display, clock, sensor, buttons and the parts you only find you need once you build it',
+    kind: 'circuit',
+    tags: ["clock","rtc","perfboard","sensor","buttons","alarm","project","finished"],
     build: benchClock,
   },
-  { id: 'frame', title: '2020 frame cube', blurb: 'A 300 mm extrusion frame with a plywood deck', build: frameCube },
-  { id: 'motor', title: 'Motor test rig', blurb: 'Bench supply through a switch into a DC motor', build: motorRig },
-  { id: 'cnc', title: 'CNC router', blurb: 'Three axes, a moving gantry and the drivers for it', build: cncRouter },
-  { id: 'rover', title: 'Four-wheel rover', blurb: 'Motors, a driver, a range finder and a display', build: rover },
-  { id: 'panel', title: 'Control panel', blurb: 'Everything a hand touches, on one aluminium face', build: controlPanel },
+  { id: 'frame', title: '2020 frame cube', blurb: 'A 300 mm extrusion frame with a plywood deck', kind: 'build', tags: ["2020","extrusion","aluminium","frame","plywood","enclosure","mechanical"], build: frameCube },
+  { id: 'motor', title: 'Motor test rig', blurb: 'Bench supply through a switch into a DC motor', kind: 'circuit', tags: ["motor","dc","switch","bench supply","power","test"], build: motorRig },
+  { id: 'cnc', title: 'CNC router', blurb: 'Three axes, a moving gantry and the drivers for it', kind: 'build', tags: ["cnc","router","gantry","stepper","axis","machine","driver","motion"], build: cncRouter },
+  { id: 'rover', title: 'Four-wheel rover', blurb: 'Motors, a driver, a range finder and a display', kind: 'build', tags: ["rover","robot","wheels","motor driver","ultrasonic","range","display"], build: rover },
+  { id: 'panel', title: 'Control panel', blurb: 'Everything a hand touches, on one aluminium face', kind: 'build', tags: ["panel","enclosure","switches","aluminium","front","controls","knobs"], build: controlPanel },
 ]
