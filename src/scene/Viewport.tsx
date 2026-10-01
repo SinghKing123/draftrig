@@ -49,18 +49,19 @@ function Ground({ onPointerUp }: { onPointerUp: (e: ThreeEvent<PointerEvent>) =>
   return (
     <>
       {/*
-        * A floor you can see through.
+        * Opaque, and still not in the way from underneath.
         *
-        * It used to be an opaque slab, and anything below it was simply gone:
-        * a preset whose leads reach 2 mm under the deck looked like it had
-        * been swallowed, and there was no camera angle that showed otherwise,
-        * because the camera could not get under it either.
+        * A shadow-only floor was tried, so that a lead poking below the deck
+        * would not be swallowed. It swallowed the whole scene instead: with
+        * nothing on the ground plane there is no surface for the ambient
+        * occlusion to darken against and nothing for the key light to fall
+        * on, and the bench became a black void with a few grid lines in it.
         *
-        * A shadow-only material keeps what the slab was actually for — parts
-        * casting onto something, which is most of what tells you where they
-        * are in space — and stops it hiding anything. It still takes a
-        * raycast, so clicking empty space still deselects and dropping a part
-        * still lands it here.
+        * The problem it was solving was already solved by the material's own
+        * default: a standard material is FrontSide, so the plane is culled
+        * when the camera is under it, and now that the camera can go under it
+        * — see maxPolarAngle below — looking up at a joint works without the
+        * floor having to stop being a floor.
         */}
       <mesh
         rotation={[-Math.PI / 2, 0, 0]}
@@ -70,7 +71,16 @@ function Ground({ onPointerUp }: { onPointerUp: (e: ThreeEvent<PointerEvent>) =>
         name="ground"
       >
         <planeGeometry args={[GROUND, GROUND]} />
-        <shadowMaterial transparent opacity={0.42} depthWrite={false} />
+        {/* Pushed back in depth so the grid sitting a fraction above it always
+            wins, without needing a gap big enough to see. */}
+        <meshStandardMaterial
+          color="#0E1116"
+          roughness={0.96}
+          metalness={0}
+          polygonOffset
+          polygonOffsetFactor={2}
+          polygonOffsetUnits={2}
+        />
       </mesh>
       {showGrid && (
         <Grid
@@ -82,14 +92,14 @@ function Ground({ onPointerUp }: { onPointerUp: (e: ThreeEvent<PointerEvent>) =>
           sectionSize={100}
           sectionThickness={1.1}
           sectionColor="#3A4C64"
-          /* Faded to nothing well before its own edge, and moving with the
-             camera, so it reads as going on for ever without being the
-             fifteen-million-unit plane drei's infinite mode builds — see the
-             note on GROUND for what that did to the depth buffer. */
-          fadeDistance={GROUND * 0.16}
-          fadeStrength={1.6}
-          followCamera
-          side={THREE.DoubleSide}
+          /* Not followCamera, and not a short fade.
+             Following the camera slides the lines under the model as you
+             orbit, which reads as the scene glitching rather than as an
+             infinite plane. And at a 0.16 fade the 10 mm cells were gone a
+             few centimetres out, leaving four section lines on black. */
+          fadeDistance={GROUND * 0.42}
+          fadeStrength={1.2}
+          followCamera={false}
         />
       )}
     </>
