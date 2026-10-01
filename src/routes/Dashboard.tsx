@@ -258,7 +258,12 @@ export function Dashboard() {
   return (
     <div className="dash site">
       <nav className="dash-bar">
-        <Link to="/" aria-label={BRAND.name}><Wordmark size={24} /></Link>
+        {/* state, not a query parameter: the front page sends a signed-in
+            visitor back here, and this is how it is told the visit was meant.
+            A copied link carries no state, so it still shows the front page. */}
+        <Link to="/" state={{ fromApp: true }} aria-label={BRAND.name}>
+          <Wordmark size={24} />
+        </Link>
         <div className="dash-tabs">
           {TABS.map((t) => (
             <button key={t.id} data-on={tab === t.id} onClick={() => setTab(t.id)}>

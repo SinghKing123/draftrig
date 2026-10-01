@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, Navigate, useLocation } from 'react-router-dom'
 import { BRAND, pageTitle } from '@/brand'
 import { Wordmark } from '@/ui/Logo'
 import { AccountMenu } from '@/ui/AccountMenu'
@@ -88,9 +88,25 @@ export function Landing() {
   const stuck = useStuck()
   const hero = BUILDS[0]
 
+  /*
+   * Somebody signed in has already been sold to.
+   *
+   * Opening the site with an account should land on the work rather than on
+   * the pitch, which is what every tool with a sign-in does. The exception is
+   * arriving here on purpose — the wordmark in the dashboard bar — and that
+   * says so in router state rather than in the URL, so a link somebody shares
+   * still shows the front page and a reload of this one goes back to the
+   * dashboard.
+   */
+  const { user, loading } = useAuth()
+  const location = useLocation()
+  const onPurpose = Boolean((location.state as { fromApp?: boolean } | null)?.fromApp)
+
   useEffect(() => {
     document.title = pageTitle()
   }, [])
+
+  if (!loading && user && !onPurpose) return <Navigate to="/projects" replace />
 
   return (
     <div className="site">

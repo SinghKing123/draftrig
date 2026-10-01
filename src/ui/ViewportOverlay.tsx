@@ -3,6 +3,7 @@ import {
   IconEye, IconEyeOff, IconFrame, IconGrid, IconHelp, IconMagnet, IconMove, IconRotate,
   IconX, IconXray, IconZap,
 } from './Icons'
+import { hasSeenTour } from './Tour'
 import { useDoc, WIRE_COLORS } from '@/state/doc'
 import { useSim } from '@/state/sim'
 import { usePortHover } from '@/scene/portHover'
@@ -192,6 +193,21 @@ export function ViewportOverlay({
   const transformMode = useDoc((s) => s.transformMode)
   const setTransformMode = useDoc((s) => s.setTransformMode)
   const empty = useDoc((s) => s.doc.order.length === 0)
+  /*
+   * The empty bench used to carry a card offering a tour. Every time.
+   *
+   * An empty bench is not an unusual state: it is where every build starts and
+   * where you land every time you press New. So what reads as a helpful
+   * first-run prompt was in practice a dialog sitting on top of the thing you
+   * had just asked for, several times an hour, saying the same two sentences.
+   * It is for somebody who has never been here before. Everyone else gets an
+   * empty bench, which is what they asked for and what they can see.
+   *
+   * Read once rather than watched: the flag is set by finishing or dismissing
+   * the tour, and a card vanishing out from under the button you are reaching
+   * for is its own small annoyance.
+   */
+  const [firstVisit] = useState(() => !hasSeenTour())
   const requestFrame = useDoc((s) => s.requestFrame)
   const pendingWire = useDoc((s) => s.pendingWire)
   const setStandardView = useDoc((s) => s.setStandardView)
@@ -345,7 +361,7 @@ export function ViewportOverlay({
         )}
       </div>
 
-      {empty && (
+      {empty && firstVisit && (
         <div className="empty-state">
           <div className="empty-hint">
             <p>Nothing on the bench yet.</p>
