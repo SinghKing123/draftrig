@@ -213,7 +213,23 @@ export function PostFx() {
     <AutoClearGuard />
     <ContextLossGuard />
     <ToneMappingSync composed />
-    <EffectComposer multisampling={high ? 4 : 0} enableNormalPass>
+    {/*
+      * No stencil buffer.
+      *
+      * With one, the colour target carries a combined depth-stencil
+      * attachment, and N8AO reads the scene depth while writing to a target
+      * that shares it. WebGL refuses that blit outright —
+      *
+      *   GL_INVALID_OPERATION: glBlitFramebuffer:
+      *   Read and write depth stencil attachments cannot be the same image
+      *
+      * — about once a frame, two hundred times in six seconds, and the copy
+      * it refuses is the depth the occlusion is computed from. Nothing in
+      * this chain uses a stencil: the outline renders selected objects to a
+      * target of its own, and the rest are full-screen passes. Asking for a
+      * depth-only attachment makes the conflict impossible.
+      */}
+    <EffectComposer multisampling={high ? 4 : 0} enableNormalPass stencilBuffer={false}>
       {/* Contact darkening in the crevices, the single biggest cue that a
           scene is solid rather than a set of floating shapes. */}
       <N8AO
