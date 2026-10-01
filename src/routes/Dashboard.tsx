@@ -4,6 +4,7 @@ import { BRAND, pageTitle } from '@/brand'
 import { Wordmark, LogoMark } from '@/ui/Logo'
 import { IconCopy, IconList, IconOpen, IconPencil, IconPlus, IconTrash, IconX } from '@/ui/Icons'
 import { displayName, initials, useAuth } from '@/auth/AuthProvider'
+import { devUserOn } from '@/auth/devUser'
 import { newProjectId, projects, type ProjectSummary } from '@/cloud/projects'
 import { getThumb, removeThumb, setThumb } from '@/cloud/thumbs'
 import { STARTERS, type Starter } from '@/io/starters'
@@ -266,6 +267,7 @@ export function Dashboard() {
           ))}
         </div>
         <div className="grow" />
+        {devUserOn() && <span className="dash-fake" title="A stand-in account. Nothing is signed in.">Pretend account</span>}
         {user && <span className="dash-who"><span className="acct-avatar">{initials(user)}</span></span>}
         <button className="cta primary small" onClick={startBlank}>
           <IconPlus size={12} /> New build
@@ -396,6 +398,12 @@ export function Dashboard() {
                   </div>
                 </div>
                 <dl className="dash-rows">
+                  {devUserOn() && (
+                    <div>
+                      <dt>This account</dt>
+                      <dd>Pretend, for development</dd>
+                    </div>
+                  )}
                   <div><dt>Plan</dt><dd>Free</dd></div>
                   <div><dt>Builds in your account</dt><dd>{synced}</dd></div>
                   <div><dt>Signed in with</dt><dd>{String(user.sub ?? '').split('|')[0].replace('-oauth2', '')}</dd></div>

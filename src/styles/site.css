@@ -1510,3 +1510,17 @@
   min-height: calc(2 * 1.45 * 0.85rem);
 }
 .preset { align-content: start; }
+
+/* A pretend account has to look like one. Amber rather than red: it is not a
+   fault, it is a stand-in, and it only ever exists on a development build. */
+.dash-fake {
+  padding: 3px 9px;
+  border-radius: var(--pill);
+  background: #fdf1d6;
+  border: 1px solid #efd9a4;
+  color: #8a6416;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}

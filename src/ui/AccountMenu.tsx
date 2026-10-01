@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { displayName, initials, useAuth } from '@/auth/AuthProvider'
+import { devUserOn } from '@/auth/devUser'
 import { IconList, IconOpen, IconX } from './Icons'
 
 /**
@@ -53,6 +54,7 @@ export function AccountMenu({ compact = false }: { compact?: boolean }) {
           <div className="who">
             <b>{name}</b>
             <span>{user.email}</span>
+            {devUserOn() && <span className="who-fake">Pretend account</span>}
           </div>
           <Link to="/projects" onClick={() => setOpen(false)}>
             <IconList size={13} /> My projects

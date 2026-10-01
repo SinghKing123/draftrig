@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, type ReactNode } from 'react'
 import { Auth0Provider, useAuth0, type User } from '@auth0/auth0-react'
 import { cloudConfigured, provideAccessToken, supabase } from './supabase'
+import { applyDevUserFlag, DEV_USER, devUserOn } from './devUser'
 
 /**
  * Sign-in, by Auth0.
@@ -69,6 +70,8 @@ let currentSub: string | null = null
 export const currentUserId = (): string | null => currentSub
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  // Reads ?dev-user= out of the address bar before anything renders.
+  applyDevUserFlag()
   if (!authConfigured) return <>{children}</>
   return (
     <Auth0Provider
@@ -123,11 +126,43 @@ function TokenBridge() {
 }
 
 export function useAuth(): AuthState {
+  /*
+   * The pretend account, on a development build only.
+   *
+   * Checked before anything else so it works whether or not Auth0 is
+   * configured: the point of it is to see the signed-in interface on a
+   * machine that cannot sign in. See devUser.ts for why it is identity only.
+   */
+  if (devUserOn()) return DEV_SIGNED_IN
+
   // Hooks cannot be called conditionally, and useAuth0 throws outside a
   // provider — so the unconfigured build gets a fixed signed-out state.
   if (!authConfigured) return SIGNED_OUT
   // eslint-disable-next-line react-hooks/rules-of-hooks
   return useAuthLive()
+}
+
+/**
+ * What the pretend account looks like to the rest of the app.
+ *
+ * Signing out of it turns the flag off and reloads, which is the only honest
+ * thing the button can do: there is no session to end.
+ */
+const DEV_SIGNED_IN: AuthState = {
+  loading: false,
+  user: DEV_USER,
+  enabled: true,
+  error: null,
+  signIn: () => {},
+  signUp: () => {},
+  signOut: () => {
+    try {
+      localStorage.setItem('draftrig.devuser.v1', '0')
+    } catch {
+      /* nothing to do but reload and hope */
+    }
+    window.location.reload()
+  },
 }
 
 const SIGNED_OUT: AuthState = {
