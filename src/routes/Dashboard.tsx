@@ -24,6 +24,15 @@ import { STARTERS, type Starter } from '@/io/starters'
 
 type Tab = 'builds' | 'presets' | 'account'
 
+/** How the build list is ordered. Recent first is what anybody wants. */
+type Sort = 'recent' | 'name' | 'size'
+
+const SORTS: { id: Sort; label: string }[] = [
+  { id: 'recent', label: 'Last opened' },
+  { id: 'name', label: 'Name' },
+  { id: 'size', label: 'Parts' },
+]
+
 const TABS: { id: Tab; label: string; icon: typeof IconList }[] = [
   { id: 'builds', label: 'Your builds', icon: IconList },
   { id: 'presets', label: 'Start from', icon: IconOpen },
@@ -85,7 +94,7 @@ function Presets({ onOpen }: { onOpen: (id: string) => void }) {
         <div className="dash-search">
           <input
             className="input"
-            placeholder="Search presets — 555, arduino, lcd, cnc, rover…"
+            placeholder="Search presets — 555, arduino, lcd, cnc…   /"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             autoComplete="off"
@@ -117,12 +126,18 @@ function Presets({ onOpen }: { onOpen: (id: string) => void }) {
           {found.map((s) => (
             <li key={s.id}>
               <button className="preset" onClick={() => onOpen(s.id)}>
-                <span className="preset-kind" data-kind={s.kind}>
-                  {s.kind === 'circuit' ? 'Circuit' : 'Fabrication'}
+                {/* Shot once by tools/shoot-presets.mjs and shipped. Rendering
+                    eleven builds in the browser is several seconds and a
+                    megabyte of part catalog, on a page whose job is to get
+                    out of the way. */}
+                <span className="preset-shot">
+                  <img src={`/presets/${s.id}.jpg`} alt="" loading="lazy" width={760} height={475} />
+                  <span className="preset-kind" data-kind={s.kind}>
+                    {s.kind === 'circuit' ? 'Circuit' : 'Fabrication'}
+                  </span>
                 </span>
                 <b>{s.title}</b>
                 <span className="preset-blurb">{s.blurb}</span>
-                <span className="preset-go">Open →</span>
               </button>
             </li>
           ))}
@@ -139,6 +154,8 @@ function Presets({ onOpen }: { onOpen: (id: string) => void }) {
 export function Dashboard() {
   const { user, enabled, signOut } = useAuth()
   const [items, setItems] = useState<ProjectSummary[] | null>(null)
+  const [q, setQ] = useState('')
+  const [sort, setSort] = useState<Sort>('recent')
   const [params, setParams] = useSearchParams()
   const navigate = useNavigate()
 
@@ -153,6 +170,31 @@ export function Dashboard() {
     document.title = pageTitle('Dashboard')
     refresh()
   }, [refresh])
+
+  /*
+   * Slash goes to the search box, Escape comes back out of it.
+   *
+   * The convention everywhere that has a list worth searching. Guarded on the
+   * target so typing a slash into the box does not re-focus the box, and so it
+   * cannot steal the key from a rename prompt.
+   */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null
+      const typing = el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)
+      if (e.key === '/' && !typing && !e.metaKey && !e.ctrlKey) {
+        const box = document.querySelector<HTMLInputElement>('.dash-search .input')
+        if (!box) return
+        e.preventDefault()
+        box.focus()
+        box.select()
+      } else if (e.key === 'Escape' && typing && el?.closest('.dash-search')) {
+        ;(el as HTMLInputElement).blur()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   const startBlank = () => navigate(`/app/${newProjectId()}`)
 
@@ -199,6 +241,19 @@ export function Dashboard() {
   const parts = items?.reduce((n, p) => n + p.parts, 0) ?? 0
   const synced = items?.filter((p) => p.remote).length ?? 0
 
+  /* Filtering and ordering happen here rather than on the server: the list is
+     everything you have ever built, which is tens of rows, not thousands. */
+  const shown = useMemo(() => {
+    const needle = q.trim().toLowerCase()
+    const list = (items ?? []).filter((p) => !needle || p.name.toLowerCase().includes(needle))
+    const by: Record<Sort, (a: ProjectSummary, b: ProjectSummary) => number> = {
+      recent: (a, b) => b.updatedAt.localeCompare(a.updatedAt),
+      name: (a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }),
+      size: (a, b) => b.parts - a.parts,
+    }
+    return [...list].sort(by[sort])
+  }, [items, q, sort])
+
   return (
     <div className="dash site">
       <nav className="dash-bar">
@@ -229,6 +284,34 @@ export function Dashboard() {
               </dl>
             </header>
 
+            {items !== null && items.length > 0 && (
+              <div className="dash-toolbar">
+                <div className="dash-search">
+                  <input
+                    className="input"
+                    placeholder="Search your builds…   /"
+                    value={q}
+                    onChange={(e) => setQ(e.target.value)}
+                    autoComplete="off"
+                    spellCheck={false}
+                  />
+                  {q && (
+                    <button className="dash-clear" onClick={() => setQ('')} aria-label="Clear">
+                      <IconX size={11} />
+                    </button>
+                  )}
+                </div>
+                <div className="dash-seg">
+                  {SORTS.map((o) => (
+                    <button key={o.id} data-on={sort === o.id} onClick={() => setSort(o.id)}>
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
+                {q && <span className="dash-count">{shown.length} of {items.length}</span>}
+              </div>
+            )}
+
             {items === null ? (
               <p className="dash-empty-line">Loading…</p>
             ) : items.length === 0 ? (
@@ -244,9 +327,13 @@ export function Dashboard() {
                   <button className="cta ghost" onClick={() => setTab('presets')}>Browse presets</button>
                 </div>
               </div>
+            ) : shown.length === 0 ? (
+              <p className="dash-empty-line">
+                None of your builds is called “{q}”.
+              </p>
             ) : (
               <ul className="proj-grid">
-                {items.map((p) => {
+                {shown.map((p) => {
                   const shot = getThumb(p.id)
                   return (
                     <li key={p.id}>
