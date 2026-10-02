@@ -21,6 +21,79 @@ import { useSelectedObjects } from './SelectionOutline'
 /* Environment                                                         */
 /* ------------------------------------------------------------------ */
 
+/**
+ * The world, as something rather than nothing.
+ *
+ * The bench used to sit in a flat near-black background with an opaque ground
+ * plane across the middle of it. From above that reads fine, because the
+ * ground is what you see. Drop the camera under it — which it can do now —
+ * and the plane is culled, so the top half of the window becomes flat black
+ * with a hard straight horizon where the grid stops. It looks like the
+ * renderer has failed, not like a point of view.
+ *
+ * So the scene gets an inside-out sphere with a gradient painted on it. There
+ * is no floor to be under and no void to fall into: every direction has
+ * something in it, lighter overhead and darker below, which is also the
+ * fastest cue anybody has for which way up they are.
+ *
+ * It is drawn first and writes no depth, so it costs one full-screen pass of
+ * the cheapest possible shader and can never occlude anything.
+ */
+function Backdrop() {
+  const geometry = useMemo(() => new THREE.SphereGeometry(1, 32, 16), [])
+  const material = useMemo(
+    () =>
+      new THREE.ShaderMaterial({
+        side: THREE.BackSide,
+        depthWrite: false,
+        depthTest: false,
+        fog: false,
+        uniforms: {
+          uUp: { value: new THREE.Color('#1A2029') },
+          uMid: { value: new THREE.Color('#0D1117') },
+          uDown: { value: new THREE.Color('#090C11') },
+        },
+        vertexShader: `
+          varying vec3 vDir;
+          void main() {
+            vDir = normalize(position);
+            // Translation is dropped so the sphere is always centred on the
+            // camera: a backdrop you can approach is a backdrop you can leave.
+            mat4 rot = modelViewMatrix;
+            rot[3] = vec4(0.0, 0.0, 0.0, 1.0);
+            vec4 p = projectionMatrix * rot * vec4(position, 1.0);
+            // z = w parks it on the far plane, behind everything.
+            gl_Position = p.xyww;
+          }
+        `,
+        fragmentShader: `
+          uniform vec3 uUp;
+          uniform vec3 uMid;
+          uniform vec3 uDown;
+          varying vec3 vDir;
+          void main() {
+            float h = vDir.y;
+            // Two ramps rather than one, so the horizon is a band rather than
+            // a line and nothing reads as an edge.
+            vec3 c = h > 0.0
+              ? mix(uMid, uUp, smoothstep(0.0, 0.62, h))
+              : mix(uMid, uDown, smoothstep(0.0, 0.55, -h));
+            gl_FragColor = vec4(c, 1.0);
+            #include <colorspace_fragment>
+          }
+        `,
+      }),
+    [],
+  )
+
+  useEffect(() => () => {
+    geometry.dispose()
+    material.dispose()
+  }, [geometry, material])
+
+  return <mesh geometry={geometry} material={material} renderOrder={-1000} frustumCulled={false} />
+}
+
 export function StudioEnvironment() {
   const { gl, scene } = useThree()
   useEffect(() => {
@@ -200,6 +273,7 @@ export function PostFx() {
   if (quality === 'off') {
     return (
       <>
+        <Backdrop />
         <AutoClearGuard />
         <ContextLossGuard />
         <ToneMappingSync composed={false} />
@@ -210,6 +284,7 @@ export function PostFx() {
   const high = quality === 'high'
   return (
     <>
+    <Backdrop />
     <AutoClearGuard />
     <ContextLossGuard />
     <ToneMappingSync composed />

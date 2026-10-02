@@ -100,6 +100,13 @@ function Ground({ onPointerUp }: { onPointerUp: (e: ThreeEvent<PointerEvent>) =>
           fadeDistance={GROUND * 0.42}
           fadeStrength={1.2}
           followCamera={false}
+          /* Visible from underneath as well.
+             drei's grid faces up, so dropping the camera below it left the
+             window with nothing in it but the backdrop and whatever part you
+             were looking at — no horizon, no scale, no way to tell which way
+             you were facing. The grid is the only spatial reference down
+             there, so it has to be drawn on both faces. */
+          side={THREE.DoubleSide}
         />
       )}
     </>
@@ -423,8 +430,11 @@ function SceneContents() {
 
   return (
     <>
-      <color attach="background" args={['#0A0C0F']} />
-      <fog attach="fog" args={['#0A0C0F', 2200, 6000]} />
+      {/* The backdrop paints every direction, so a clear colour would only
+          ever be seen for the one frame before it draws. Kept as the colour
+          the fog fades into, which has to match the horizon band. */}
+      <color attach="background" args={['#0D1117']} />
+      <fog attach="fog" args={['#0D1117', 2200, 6000]} />
       <StudioEnvironment />
       <Lights />
       <Ground onPointerUp={onMiss} />

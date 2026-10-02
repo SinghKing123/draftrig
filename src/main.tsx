@@ -6,7 +6,7 @@ import '@/styles/base.css'
 import '@/styles/app.css'
 import '@/styles/site.css'
 import { AuthProvider } from '@/auth/AuthProvider'
-import { Landing } from '@/routes/Landing'
+import { Root } from '@/routes/Root'
 import { SignIn } from '@/routes/SignIn'
 import { AuthCallback } from '@/routes/AuthCallback'
 import { Dashboard } from '@/routes/Dashboard'
@@ -64,7 +64,7 @@ createRoot(el).render(
       <AuthProvider>
         <ThemeByRoute />
         <Routes>
-          <Route path="/" element={<Landing />} />
+          <Route path="/" element={<Root />} />
           <Route path="/app" element={<EditorRoute />} />
           <Route path="/app/:projectId" element={<EditorRoute />} />
           <Route path="/projects" element={<Dashboard />} />
