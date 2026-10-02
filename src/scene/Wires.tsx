@@ -2,10 +2,12 @@ import { useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { useFrame } from '@react-three/fiber'
 import type { Connection } from '@/parts/kernel/types'
-import { useConnectionList, useDoc } from '@/state/doc'
+import { listInstances, useConnectionList, useDoc } from '@/state/doc'
+import { buildPart, instanceMatrix } from '@/parts/kernel/build'
+import { getPart } from '@/parts/kernel/registry'
 import { useSim } from '@/state/sim'
 import { usePortIndex } from './portIndex'
-import { wireCurve } from './wirePath'
+import { wireCurve, type Obstacle } from './wirePath'
 
 /**
  * Wires are drawn as swept tubes that leave each terminal along its normal and
@@ -48,7 +50,38 @@ const wireFragment = /* glsl */ `
   }
 `
 
-function WireMesh({ conn, selected }: { conn: Connection; selected: boolean }) {
+/**
+ * A box per part, in world space, for the wires to go over.
+ *
+ * Built once per document rather than once per wire: a bench of forty parts
+ * and two hundred wires is eight thousand box tests, which is nothing, but
+ * compiling forty parts' geometry two hundred times is not.
+ *
+ * The box is the part's own bounds, which includes its leads. That is the
+ * right shape for this: a wire that passes an inch over a resistor should
+ * clear the resistor, and a wire that passes over the board the resistor is
+ * in is below both of its terminals and ignored anyway.
+ */
+function useObstacles(): Obstacle[] {
+  const instances = listInstances(useDoc((s) => s.doc))
+  return useMemo(() => {
+    const out: Obstacle[] = []
+    for (const inst of instances) {
+      if (inst.hidden) continue
+      const def = getPart(inst.defId)
+      if (!def) continue
+      const built = buildPart(def, inst.params)
+      if (built.bbox.isEmpty()) continue
+      const box = built.bbox.clone().applyMatrix4(instanceMatrix(inst.pos, inst.rot))
+      out.push({ instanceId: inst.id, box })
+    }
+    return out
+  }, [instances])
+}
+
+function WireMesh({
+  conn, selected, obstacles,
+}: { conn: Connection; selected: boolean; obstacles: Obstacle[] }) {
   const index = usePortIndex()
   const setHovered = useDoc((s) => s.setHovered)
   const matRef = useRef<THREE.ShaderMaterial>(null)
@@ -57,10 +90,17 @@ function WireMesh({ conn, selected }: { conn: Connection; selected: boolean }) {
     const a = index.get(conn.a.instanceId, conn.a.portId)
     const b = index.get(conn.b.instanceId, conn.b.portId)
     if (!a || !b) return null
-    const curve = wireCurve(a, b, conn.waypoints?.map((w) => new THREE.Vector3(...w)))
+    const curve = wireCurve(
+      a,
+      b,
+      conn.waypoints?.map((w) => new THREE.Vector3(...w)),
+      obstacles,
+      // Its own two parts: a wire has to reach into the things it joins.
+      [conn.a.instanceId, conn.b.instanceId],
+    )
     const radius = Math.sqrt((conn.gauge ?? 0.2) / Math.PI) + 0.55
     return new THREE.TubeGeometry(curve, 44, radius, 8, false)
-  }, [index, conn])
+  }, [index, conn, obstacles])
 
   const uniforms = useMemo(
     () => ({
@@ -114,11 +154,12 @@ export function Wires() {
   const connections = useConnectionList()
   const show = useDoc((s) => s.view.wires)
   const hovered = useDoc((s) => s.hovered)
+  const obstacles = useObstacles()
   if (!show) return null
   return (
     <group>
       {connections.map((c) => (
-        <WireMesh key={c.id} conn={c} selected={hovered === c.id} />
+        <WireMesh key={c.id} conn={c} selected={hovered === c.id} obstacles={obstacles} />
       ))}
     </group>
   )
