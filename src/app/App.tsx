@@ -9,6 +9,8 @@ import { Console } from '@/ui/Console'
 import { BomPanel, BomTab } from '@/ui/Bom'
 import { SketchEditor, SketchTab } from '@/ui/SketchEditor'
 import { MobileBar, MobileSheetHead } from '@/ui/MobileBar'
+import { SignInWall } from '@/ui/SignInWall'
+import { useAuth } from '@/auth/AuthProvider'
 import { useMobile } from '@/state/mobile'
 import { useSketchPanel } from '@/state/sketch'
 import { StatusBar } from '@/ui/StatusBar'
@@ -128,6 +130,32 @@ export function Editor() {
   const sheet = useMobile((s) => s.sheet)
 
   /*
+   * The bench is open to everybody; keeping things is not.
+   *
+   * Anyone can build, wire and run without an account, because a tool nobody
+   * can try is a tool nobody adopts. What needs one is anything that outlives
+   * the tab: saving a build, and the list those builds live in. The ask comes
+   * at the moment somebody wants the thing rather than at the door.
+   */
+  const { user, enabled: accountsOn } = useAuth()
+  const [wall, setWall] = useState<string | null>(null)
+  const mayKeep = Boolean(user) || !accountsOn
+
+  /**
+   * Put the bench somewhere before leaving for the sign-in page.
+   *
+   * Signing in is a round trip through another site, so an unsaved document
+   * is gone by the time it comes back. Writing it to this browser first means
+   * the callback's adoptLocal() moves it into the new account with everything
+   * else that was waiting, and the build is there when they land.
+   */
+  const stashForSignIn = useCallback(() => {
+    const d = useDoc.getState().doc
+    if (d.order.length === 0 && d.connectionOrder.length === 0) return
+    void projects.save(id, d).catch(() => {})
+  }, [id])
+
+  /*
    * The document as it arrived, before anybody touched it.
    *
    * Opening /app?start=bench-clock used to write a new project immediately —
@@ -243,8 +271,12 @@ export function Editor() {
   const onSave = useCallback(() => {
     const d = useDoc.getState().doc
     if (isEmpty(d)) return
+    if (!mayKeep) {
+      setWall('Sign in to save this build')
+      return
+    }
     void persist(id, d)
-  }, [id, persist])
+  }, [id, persist, mayKeep])
 
   /**
    * Save as / Duplicate. Both write the current bench to a brand new project,
@@ -296,8 +328,8 @@ export function Editor() {
     onNew,
     onOpen: () => fileInput.current?.click(),
     onSave,
-    onSaveAs: () => setPrompt('saveAs'),
-    onDuplicate: () => setPrompt('duplicate'),
+    onSaveAs: () => (mayKeep ? setPrompt('saveAs') : setWall('Sign in to save a copy')),
+    onDuplicate: () => (mayKeep ? setPrompt('duplicate') : setWall('Sign in to duplicate this build')),
     onDownload: () => downloadProject(useDoc.getState().doc),
     onExamples: () => setOnboarding('starters'),
   }
@@ -369,6 +401,10 @@ export function Editor() {
         <MobileSheetHead />
       </div>
       <MobileBar />
+
+      {wall && (
+        <SignInWall reason={wall} onClose={() => setWall(null)} onContinue={stashForSignIn} />
+      )}
       <BomTab />
       <SketchTab />
 

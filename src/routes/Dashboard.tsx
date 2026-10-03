@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { BRAND, pageTitle } from '@/brand'
 import { Wordmark, LogoMark } from '@/ui/Logo'
 import {
@@ -226,7 +226,7 @@ function BuildList({
 /* ------------------------------------------------------------------ */
 
 export function Dashboard() {
-  const { user, enabled, signOut } = useAuth()
+  const { user, enabled, loading, signOut } = useAuth()
   const [items, setItems] = useState<ProjectSummary[] | null>(null)
   const [params, setParams] = useSearchParams()
   const navigate = useNavigate()
@@ -342,6 +342,20 @@ export function Dashboard() {
   }
 
   const recent = (items ?? []).slice().sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+
+  /*
+   * No account, no dashboard.
+   *
+   * Builds live in an account, so a list of them without one is a list of
+   * nothing with a heading over it. The editor is still open to anybody —
+   * see SignInWall for where the ask actually happens — but this page is not.
+   *
+   * A build with no sign-in configured at all is the exception: there, work
+   * lives in the browser because there is nowhere else for it to go, and
+   * taking the page away would leave no way back to anything.
+   */
+  if (loading) return <div className="root-wait" />
+  if (enabled && !user) return <Navigate to="/signin" replace />
 
   return (
     <div className="dash site">
