@@ -621,3 +621,39 @@ export function CategoryIcon({ category, size = 14 }: { category: PartCategory; 
   const Glyph = BY_CATEGORY[category] ?? Chip
   return <Glyph size={size} />
 }
+
+/**
+ * A spread of glyphs for the front page.
+ *
+ * Curated rather than every one of them: a marquee wants variety and rhythm,
+ * and fifty symbols in a row is a texture rather than a list of things you
+ * can make. These are the ones somebody would recognise at a glance.
+ */
+export const SHOWCASE_GLYPHS: { Glyph: Glyph; label: string }[] = [
+  { Glyph: Resistor, label: 'Resistor' },
+  { Glyph: Capacitor, label: 'Capacitor' },
+  { Glyph: Led, label: 'LED' },
+  { Glyph: Diode, label: 'Diode' },
+  { Glyph: Transistor, label: 'Transistor' },
+  { Glyph: Chip, label: 'NE555' },
+  { Glyph: Board, label: 'Uno' },
+  { Glyph: Opamp, label: 'Op-amp' },
+  { Glyph: Lcd, label: '16x2 LCD' },
+  { Glyph: SevenSeg, label: 'Seven-seg' },
+  { Glyph: Breadboard, label: 'Breadboard' },
+  { Glyph: Header, label: 'Header' },
+  { Glyph: Switch, label: 'Switch' },
+  { Glyph: Pot, label: 'Potentiometer' },
+  { Glyph: Relay, label: 'Relay' },
+  { Glyph: Motor, label: 'Motor' },
+  { Glyph: Servo, label: 'Servo' },
+  { Glyph: Sensor, label: 'Sensor' },
+  { Glyph: Battery, label: 'Battery' },
+  { Glyph: Regulator, label: 'Regulator' },
+  { Glyph: Extrusion, label: '2020 extrusion' },
+  { Glyph: Panel, label: 'Panel' },
+  { Glyph: Bearing, label: 'Bearing' },
+  { Glyph: LeadScrew, label: 'Lead screw' },
+  { Glyph: Rail, label: 'Linear rail' },
+  { Glyph: Screw, label: 'M3 screw' },
+]

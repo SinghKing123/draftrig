@@ -1745,194 +1745,363 @@
   .tcard-shot, .btile-shot, .dnew, .dsearch { transition: none; }
 }
 
+
 /* ==================================================================
    Front page
    ------------------------------------------------------------------
-   Shown rather than described: four clips of the editor carry it and
-   the words are labels. Dark where the film is, light where the facts
-   are, so the two never compete.
+   Dark, because everything it shows is dark. Its own tokens rather
+   than the site's: this page is the one light thing in the product
+   that is not light, and borrowing the shopfront palette here meant
+   fighting it on every rule.
    ================================================================== */
 
-.lp { background: var(--paper); overflow-x: clip; }
+.lp {
+  --bg: #07090D;
+  --bg-2: #0B0F16;
+  --card: #0E131C;
+  --edge: #1B2330;
+  --edge-2: #28303E;
+  --tx: #F2F5F9;
+  --tx-2: #A6B2C2;
+  --tx-3: #6F7D8F;
+  --accent: #4FA8FF;
+  --accent-2: #8FD8FF;
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
 
-/* ---- the bar across the top ---- */
+  position: relative;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--tx);
+  overflow-x: clip;
+  font-family: Archivo, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
 
-.scrollbar {
+.lp a { color: inherit; text-decoration: none; }
+.lp .grow { flex: 1; }
+
+/* A fine grain over everything. Flat dark panels band on cheap screens, and
+   a few per cent of noise is what stops that without being visible. */
+.lp-grain {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---- progress ---- */
+
+.xp {
   position: fixed;
   inset: 0 0 auto 0;
   z-index: 60;
   height: 2px;
   transform-origin: 0 50%;
-  background: linear-gradient(90deg, #1E8CFA, #6FD2FF 55%, #1E8CFA);
-  box-shadow: 0 0 12px rgba(79, 180, 255, 0.75);
-  will-change: transform;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2) 60%, var(--accent));
+  box-shadow: 0 0 14px rgba(79, 168, 255, 0.8), 0 0 3px rgba(143, 216, 255, 0.9);
 }
 
-/* ---- header ---- */
+/* ---- nav ---- */
 
-.lp-top {
+.lp-nav {
   position: sticky;
   top: 0;
   z-index: 50;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px clamp(16px, 4vw, 40px);
-  color: #fff;
-  transition: background 220ms var(--ease), color 220ms var(--ease),
-    border-color 220ms var(--ease), backdrop-filter 220ms var(--ease);
+  padding: 15px clamp(18px, 4vw, 44px);
   border-bottom: 1px solid transparent;
+  transition: background 260ms var(--ease), border-color 260ms var(--ease);
 }
-.lp-top[data-stuck='true'] {
-  background: color-mix(in srgb, var(--paper) 88%, transparent);
-  backdrop-filter: saturate(170%) blur(14px);
-  border-bottom-color: var(--line);
-  color: var(--ink);
+.lp-nav[data-stuck='true'] {
+  background: rgba(7, 9, 13, 0.72);
+  backdrop-filter: saturate(160%) blur(14px);
+  border-bottom-color: var(--edge);
 }
-/* Over the film the wordmark has to be the light one; against paper, the dark.
-   One image swapped by filter rather than two files to keep in step. */
-.lp-top img { filter: brightness(0) invert(1); transition: filter 220ms var(--ease); }
-.lp-top[data-stuck='true'] img { filter: none; }
+
+/* ---- buttons ---- */
+
+.btn-sheen,
+.btn-ghost {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 999px;
+  font-size: 0.92rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: transform 160ms var(--ease), box-shadow 220ms var(--ease),
+    background 220ms var(--ease), border-color 220ms var(--ease);
+}
+.btn-sheen.lg, .btn-ghost.lg { height: 50px; padding: 0 26px; font-size: 1rem; }
+
+.btn-sheen {
+  background: linear-gradient(180deg, #67B4FF, #1E8CFA);
+  color: #04121F;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.4) inset, 0 8px 26px rgba(30, 140, 250, 0.32);
+}
+.btn-sheen:hover { transform: translateY(-1px); box-shadow: 0 1px 0 rgba(255, 255, 255, 0.45) inset, 0 12px 34px rgba(30, 140, 250, 0.45); }
+.btn-sheen:active { transform: translateY(0); }
+/* A highlight that crosses the button on hover. One pass, not a loop: a
+   button that shines at you continuously is a button nobody trusts. */
+.btn-sheen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-120%) skewX(-18deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+}
+.btn-sheen:hover::after { animation: sheen 760ms var(--ease); }
+@keyframes sheen { to { transform: translateX(120%) skewX(-18deg); } }
+
+.btn-ghost {
+  border: 1px solid var(--edge-2);
+  color: var(--tx);
+  background: rgba(255, 255, 255, 0.03);
+}
+.btn-ghost:hover { border-color: #46566B; background: rgba(255, 255, 255, 0.07); }
+
+.row-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 30px; }
+.row-cta.center { justify-content: center; }
 
 /* ---- hero ---- */
 
-.lp-hero {
+.hero {
   position: relative;
-  display: grid;
-  align-items: end;
-  min-height: min(92vh, 860px);
-  margin-top: calc(-1 * (14px * 2 + 23px));
-  padding: clamp(80px, 12vh, 160px) clamp(16px, 4vw, 40px) clamp(40px, 7vh, 80px);
-  background: #06080B;
+  padding: clamp(40px, 7vh, 86px) clamp(18px, 4vw, 44px) 0;
   isolation: isolate;
 }
 
-.lp-hero-film { position: absolute; inset: 0; z-index: -1; overflow: hidden; }
-.lp-film {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 0.88;
+/* Two soft lights that drift. They are what stops a dark page reading as a
+   switched-off screen. Slow enough that nothing is ever caught moving. */
+.hero-glow {
+  position: absolute;
+  inset: -20% -10% auto -10%;
+  height: 120%;
+  z-index: -2;
+  background:
+    radial-gradient(42% 46% at 18% 22%, rgba(30, 140, 250, 0.26), transparent 70%),
+    radial-gradient(38% 44% at 82% 32%, rgba(104, 92, 255, 0.2), transparent 70%);
+  filter: blur(14px);
+  animation: drift 22s ease-in-out infinite alternate;
 }
-/* Dark at the bottom so the words sit on something, clear at the top so the
-   build is visible. Two stops, no vignette: a vignette on a dark clip reads
-   as a smudge. */
-.lp-hero-wash {
+@keyframes drift {
+  from { transform: translate3d(-2%, -1%, 0) scale(1); }
+  to { transform: translate3d(3%, 2%, 0) scale(1.07); }
+}
+
+/* The grid the product is drawn on, faded out before it reaches anything. */
+.hero-mesh {
   position: absolute;
   inset: 0;
-  background:
-    linear-gradient(180deg, rgba(6, 8, 11, 0.55) 0%, rgba(6, 8, 11, 0) 34%),
-    linear-gradient(0deg, rgba(6, 8, 11, 0.92) 4%, rgba(6, 8, 11, 0) 56%);
+  z-index: -1;
+  background-image:
+    linear-gradient(rgba(120, 160, 210, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(120, 160, 210, 0.08) 1px, transparent 1px);
+  background-size: 54px 54px;
+  mask-image: radial-gradient(90% 70% at 50% 18%, #000 10%, transparent 72%);
 }
 
-.lp-hero-text { position: relative; max-width: 22ch; }
-.lp-hero h1 {
-  color: #fff;
-  font-size: clamp(2.4rem, 6.2vw, 4.6rem);
-  line-height: 1.02;
-  letter-spacing: -0.035em;
-  font-weight: 800;
-}
-.lp-hero p {
-  margin-top: 16px;
-  max-width: 34ch;
-  color: #c7d0da;
-  font-size: clamp(1rem, 1.5vw, 1.18rem);
-}
-
-.lp-cta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 26px; }
-.cta.onfilm {
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.34);
-  background: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(6px);
-}
-.cta.onfilm:hover { background: rgba(255, 255, 255, 0.14); border-color: rgba(255, 255, 255, 0.6); }
-
-/* ---- the three ---- */
-
-.lp-strip {
+.hero-in {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
-  gap: clamp(14px, 1.8vw, 22px);
-  max-width: 1280px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr);
+  align-items: center;
+  gap: clamp(26px, 4vw, 60px);
+  max-width: 1240px;
   margin: 0 auto;
-  padding: clamp(42px, 7vw, 88px) clamp(16px, 4vw, 40px);
+  padding-bottom: clamp(36px, 6vh, 72px);
 }
 
-.lp-card {
+.hero h1 {
+  font-size: clamp(2.5rem, 5.4vw, 4.2rem);
+  line-height: 1.03;
+  letter-spacing: -0.038em;
+  font-weight: 800;
+  text-wrap: balance;
+}
+.hero h1 em {
+  font-style: normal;
+  background: linear-gradient(100deg, var(--accent-2), var(--accent) 60%, #7C8CFF);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.hero p {
+  margin-top: 18px;
+  max-width: 38ch;
+  font-size: clamp(1rem, 1.3vw, 1.14rem);
+  line-height: 1.55;
+  color: var(--tx-2);
+}
+
+/* The clip, in something that reads as the application rather than a video. */
+.frame {
   position: relative;
-  margin: 0;
-  border-radius: var(--r-lg);
-  background: #06080B;
+  border: 1px solid var(--edge-2);
+  border-radius: 16px;
+  background: var(--card);
   overflow: hidden;
-  border: 1px solid var(--line);
-  transition: transform 260ms var(--ease), box-shadow 260ms var(--ease);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.05) inset,
+    0 40px 90px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(79, 168, 255, 0.08);
 }
-.lp-card:hover { transform: translateY(-3px); box-shadow: var(--lift-2); }
-.lp-card-film {
-  display: block;
-  width: 100%;
-  aspect-ratio: 16 / 10;
-  object-fit: cover;
+.frame-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 13px;
+  border-bottom: 1px solid var(--edge);
+  background: linear-gradient(180deg, #121823, #0D1219);
 }
-.lp-card figcaption {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: grid;
-  gap: 1px;
-  padding: 44px 16px 14px;
-  background: linear-gradient(0deg, rgba(6, 8, 11, 0.9), rgba(6, 8, 11, 0));
-}
-.lp-card figcaption b { color: #fff; font-size: 1.05rem; letter-spacing: -0.02em; }
-.lp-card figcaption span { color: #a9b4c0; font-size: 0.86rem; }
+.frame-bar i { width: 9px; height: 9px; border-radius: 50%; background: #2A3443; }
+.frame-film { display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: cover; }
 
-/* ---- numbers ---- */
+/* ---- marquee ---- */
 
-.lp-figures {
+.mq-wrap {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  max-width: 1280px;
+  gap: 10px;
+  padding: clamp(18px, 3vh, 34px) 0 clamp(34px, 6vh, 64px);
+  border-top: 1px solid var(--edge);
+  mask-image: linear-gradient(90deg, transparent, #000 9%, #000 91%, transparent);
+}
+.mq { overflow: hidden; }
+.mq-run {
+  display: flex;
+  gap: 10px;
+  width: max-content;
+  animation: run 52s linear infinite;
+}
+.mq[data-reverse='true'] .mq-run { animation-direction: reverse; }
+/* The row holds its list twice and travels exactly half its own width, which
+   is why the loop has no seam and needs no measuring. */
+@keyframes run { to { transform: translateX(-50%); } }
+
+.mq-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border: 1px solid var(--edge);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.015);
+  color: var(--tx-2);
+  font-size: 0.83rem;
+  font-weight: 550;
+  white-space: nowrap;
+}
+.mq-chip svg { color: var(--accent); opacity: 0.85; }
+
+/* ---- bento ---- */
+
+.bento {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(12px, 1.4vw, 18px);
+  max-width: 1240px;
   margin: 0 auto;
-  padding: 0 clamp(16px, 4vw, 40px) clamp(42px, 7vw, 88px);
-  border-top: 1px solid var(--line);
+  padding: clamp(20px, 4vh, 48px) clamp(18px, 4vw, 44px) clamp(50px, 9vh, 110px);
 }
-.lp-figures div {
+
+.tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 268px;
+  border: 1px solid var(--edge);
+  border-radius: 18px;
+  background: linear-gradient(180deg, var(--card), #0A0E15);
+  overflow: hidden;
+  transition: border-color 260ms var(--ease), transform 260ms var(--ease), box-shadow 260ms var(--ease);
+}
+.tile:hover {
+  transform: translateY(-3px);
+  border-color: #2E3A4B;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(79, 168, 255, 0.14);
+}
+.tile-wide { grid-column: span 2; }
+.tile-film { display: block; width: 100%; flex: 1; object-fit: cover; min-height: 0; }
+
+.tile-cap {
   display: grid;
-  gap: 2px;
-  padding: clamp(24px, 3vw, 36px) 0 0;
-  border-left: 1px solid var(--line);
-  padding-left: clamp(16px, 2.4vw, 28px);
+  gap: 3px;
+  padding: 16px 18px 18px;
+  border-top: 1px solid var(--edge);
+  background: rgba(7, 9, 13, 0.6);
 }
-.lp-figures div:first-child { border-left: 0; padding-left: 0; }
-.lp-figures b {
-  font-size: clamp(1.9rem, 4vw, 3rem);
-  font-weight: 800;
-  letter-spacing: -0.035em;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
+.tile-cap b { font-size: 1.02rem; font-weight: 650; letter-spacing: -0.02em; }
+.tile-cap span { font-size: 0.86rem; color: var(--tx-3); }
+
+/* ---- orbit ---- */
+
+.tile-orbit { align-items: center; justify-content: center; }
+.orbit {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  display: grid;
+  place-items: center;
 }
-.lp-figures span { color: var(--ink-3); font-size: 0.9rem; }
+.orbit-ring {
+  position: relative;
+  width: 1px;
+  height: 1px;
+  animation: spin 46s linear infinite;
+}
+.orbit-node {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  margin: -19px;
+  border: 1px solid var(--edge-2);
+  border-radius: 11px;
+  background: #0D131C;
+  color: var(--accent);
+}
+/* Counter-rotation at the same duration, so the symbols stay upright however
+   far round the ring has gone. */
+.orbit-flip { display: grid; place-items: center; animation: spin-back 46s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin-back { to { transform: rotate(-360deg); } }
 
 /* ---- closer ---- */
 
-.lp-closer {
+.closer {
+  position: relative;
   display: grid;
   place-items: center;
   gap: 18px;
-  padding: clamp(60px, 10vw, 128px) clamp(16px, 4vw, 40px);
-  background: var(--ink);
+  padding: clamp(66px, 11vw, 136px) clamp(18px, 4vw, 44px);
   text-align: center;
+  border-top: 1px solid var(--edge);
+  isolation: isolate;
 }
-.lp-closer h2 {
-  color: #fff;
-  font-size: clamp(1.7rem, 3.6vw, 2.8rem);
-  letter-spacing: -0.03em;
-  max-width: 20ch;
+.closer-glow {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(52% 70% at 50% 108%, rgba(30, 140, 250, 0.26), transparent 72%);
 }
-.lp-closer .lp-cta { justify-content: center; }
+.closer h2 {
+  font-size: clamp(1.8rem, 3.8vw, 2.9rem);
+  letter-spacing: -0.032em;
+  font-weight: 780;
+  max-width: 18ch;
+  margin: 0 auto;
+  text-wrap: balance;
+}
 
 /* ---- foot ---- */
 
@@ -1940,62 +2109,76 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  max-width: 1280px;
+  max-width: 1240px;
   margin: 0 auto;
-  padding: 22px clamp(16px, 4vw, 40px);
-  font-size: 0.85rem;
-  color: var(--ink-3);
+  padding: 22px clamp(18px, 4vw, 44px) 34px;
+  border-top: 1px solid var(--edge);
+  font-size: 0.84rem;
+  color: var(--tx-3);
 }
-.lp-foot a { color: var(--ink-3); }
-.lp-foot a:hover { color: var(--ink); }
+.lp-foot a:hover { color: var(--tx); }
 
-/* ---- motion ---- */
+/* ---- reveal ---- */
 
 .rise {
   opacity: 0;
-  transform: translateY(14px);
-  transition: opacity 520ms var(--ease), transform 520ms var(--ease);
+  transform: translateY(18px);
+  transition: opacity 620ms var(--ease), transform 620ms var(--ease);
 }
 .rise[data-on='true'] { opacity: 1; transform: none; }
 
+/* ---- the account control, on dark ---- */
+
+.lp .acct-btn { color: var(--tx); }
+.lp .acct-btn:hover { background: rgba(255, 255, 255, 0.07); }
+.lp .acct-avatar { background: var(--accent); color: #04121F; }
+.lp .cta.ghost.small {
+  border: 1px solid var(--edge-2);
+  border-radius: 999px;
+  color: var(--tx);
+  background: rgba(255, 255, 255, 0.03);
+}
+.lp .cta.ghost.small:hover { border-color: #46566B; background: rgba(255, 255, 255, 0.07); }
+
+/* ---- narrow ---- */
+
+@media (max-width: 960px) {
+  .hero-in { grid-template-columns: 1fr; }
+  .hero p { max-width: 46ch; }
+  .bento { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tile-wide { grid-column: span 2; }
+}
+
+@media (max-width: 620px) {
+  .bento { grid-template-columns: 1fr; }
+  .tile-wide { grid-column: span 1; }
+  .tile { min-height: 232px; }
+  .row-cta .btn-sheen, .row-cta .btn-ghost { flex: 1 1 auto; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .rise { opacity: 1; transform: none; transition: none; }
-  .lp-card { transition: none; }
-  .lp-card:hover { transform: none; }
-  .scrollbar { transition: none; }
+  .hero-glow, .mq-run, .orbit-ring, .orbit-flip { animation: none; }
+  .tile, .btn-sheen, .btn-ghost { transition: none; }
+  .tile:hover { transform: none; }
+  .btn-sheen:hover::after { animation: none; }
 }
 
-@media (max-width: 640px) {
-  .lp-figures { grid-template-columns: 1fr; gap: 2px; }
-  .lp-figures div { border-left: 0; padding-left: 0; padding-top: 18px; }
-  .lp-hero { min-height: 78vh; }
+/* The orbit tile centres its children, which shrank the caption to its own
+   text width and left it floating in the middle of the card. */
+.tile-cap { width: 100%; align-self: stretch; }
+.tile-orbit { align-items: stretch; }
+.tile-orbit .tile-cap { text-align: left; }
+
+/* Three columns, four tiles: 2+1 then 1+2, so neither row has a hole in it. */
+.bento > .tile:last-child { grid-column: span 2; }
+@media (max-width: 960px) {
+  .bento > .tile:last-child { grid-column: span 2; }
+}
+@media (max-width: 620px) {
+  .bento > .tile:last-child { grid-column: span 1; }
 }
 
-/* The header sits on the film until the page scrolls, so anything in it that
-   was drawn for paper has to be redrawn for a dark picture. */
-.lp-top:not([data-stuck='true']) .cta.ghost {
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.32);
-  background: rgba(255, 255, 255, 0.06);
-}
-.lp-top:not([data-stuck='true']) .cta.ghost:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.55);
-}
-.lp-top:not([data-stuck='true']) .acct-btn { color: #fff; }
-.lp-top:not([data-stuck='true']) .acct-btn:hover { background: rgba(255, 255, 255, 0.12); }
-.lp-top:not([data-stuck='true']) .acct-avatar { background: rgba(255, 255, 255, 0.92); color: var(--ink); }
-
-/* The hero text block had a 22ch ceiling meant for the paragraph, which at a
-   4.6rem headline is four words wide and broke the line five times. */
-.lp-hero-text { max-width: min(54ch, 56%); }
-.lp-hero h1 { max-width: 13ch; text-wrap: balance; }
-
-/* On the film, ink on near-black is not a button. White is. */
-.lp-hero .cta.primary { background: #fff; color: var(--ink); border-color: #fff; }
-.lp-hero .cta.primary:hover { background: #e8eef6; border-color: #e8eef6; }
-
-@media (max-width: 760px) {
-  .lp-hero-text { max-width: 100%; }
-  .lp-hero h1 { max-width: 11ch; }
-}
+/* The hero and the marquee were a screen apart. */
+.hero-in { padding-bottom: clamp(20px, 3.5vh, 44px); }
+.mq-wrap { padding-top: clamp(14px, 2.4vh, 26px); }
