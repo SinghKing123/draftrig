@@ -1,73 +1,123 @@
-import { Suspense, lazy, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { BRAND, pageTitle } from '@/brand'
 import { Wordmark } from '@/ui/Logo'
 import { AccountMenu } from '@/ui/AccountMenu'
 import { useAuth } from '@/auth/AuthProvider'
-import { Reveal } from '@/ui/Reveal'
-import { PartSearch } from './demos'
-import { BUILDS } from './gallery'
-
-/*
- * The board on the front page pulls in three.js, the part catalog and the
- * solver. None of that may be part of reading the page, so it is a chunk of
- * its own that is fetched the first time the section holding it comes near the
- * viewport — and never at all for somebody who does not scroll that far.
- */
-const LiveBoard = lazy(() => import('./LiveBoard'))
-
-/** Mounts its child once, the first time it is close to being seen. */
-function WhenSeen({ children }: { children: React.ReactNode }) {
-  const box = useRef<HTMLDivElement>(null)
-  const [seen, setSeen] = useState(false)
-
-  useEffect(() => {
-    const el = box.current
-    if (!el || seen) return
-    // A screen of margin, so it is loaded and running by the time it arrives
-    // rather than starting up under somebody's eyes.
-    const io = new IntersectionObserver(
-      ([e]) => e.isIntersecting && setSeen(true),
-      { rootMargin: '600px' },
-    )
-    io.observe(el)
-    return () => io.disconnect()
-  }, [seen])
-
-  return (
-    <div className="live-slot" ref={box}>
-      {seen ? <Suspense fallback={<div className="live-wait" />}>{children}</Suspense> : <div className="live-wait" />}
-    </div>
-  )
-}
-
-const BUILD_CATEGORIES = ['structural', 'panel', 'fastener', 'motion']
-
-interface Stats { parts: number; electronics: number; build: number }
+import { Clip } from './Clip'
 
 /**
- * Counts read from the catalog itself, so the page can never claim more parts
- * than exist. Fetched after first paint; the catalog is a hundred kilobytes
- * and the hero should not wait for it.
+ * The front page.
+ *
+ * Shown, not described. Four short clips of the editor doing real things
+ * carry it, and the words around them are labels rather than paragraphs —
+ * nobody reads a paragraph on a landing page, and writing one anyway is how a
+ * page ends up long and unconvincing at the same time.
+ *
+ * Everything that moves either responds to the pointer or plays only while it
+ * is on screen. Nothing animates for its own sake, and nothing loads before it
+ * is close.
  */
-function useCatalogStats(): Stats | null {
-  const [stats, setStats] = useState<Stats | null>(null)
+
+/** Counts read from the catalog, so the page cannot claim parts that are not there. */
+function useCatalogCount(): number | null {
+  const [n, setN] = useState<number | null>(null)
   useEffect(() => {
     let live = true
     import('@/parts/catalog').then((m) => {
-      if (!live) return
-      const parts = m.allParts()
-      setStats({
-        parts: parts.length,
-        electronics: parts.filter((p) => !BUILD_CATEGORIES.includes(p.category)).length,
-        build: parts.filter((p) => BUILD_CATEGORIES.includes(p.category)).length,
-      })
+      if (live) setN(m.allParts().length)
     })
     return () => {
       live = false
     }
   }, [])
-  return stats
+  return n
+}
+
+/**
+ * Count up to a number once it is on screen.
+ *
+ * Driven by a scroll listener rather than an IntersectionObserver, because
+ * the number arrives from a dynamic import and the observer has to be armed
+ * after it does. Getting that order wrong leaves a zero on the page for ever,
+ * which is what happened: the first run had nothing to count to and returned
+ * before observing, and by the time the catalog landed nobody was watching.
+ */
+function Counter({ to }: { to: number | null }) {
+  const [shown, setShown] = useState(0)
+  const ref = useRef<HTMLSpanElement>(null)
+  const done = useRef(false)
+
+  useEffect(() => {
+    if (to === null) return
+    const el = ref.current
+    if (!el) return
+
+    const start = () => {
+      if (done.current) return
+      done.current = true
+      const t0 = performance.now()
+      const step = () => {
+        const k = Math.min(1, (performance.now() - t0) / 900)
+        setShown(Math.round(to * (1 - Math.pow(1 - k, 3))))
+        if (k < 1) requestAnimationFrame(step)
+      }
+      requestAnimationFrame(step)
+    }
+
+    const check = () => {
+      const r = el.getBoundingClientRect()
+      if (r.top < window.innerHeight * 0.92 && r.bottom > 0) start()
+    }
+    check()
+    window.addEventListener('scroll', check, { passive: true })
+    return () => window.removeEventListener('scroll', check)
+  }, [to])
+
+  return <span ref={ref}>{to === null ? '—' : shown}</span>
+}
+
+/** Fades and lifts its child the first time it comes near the viewport. */
+function Rise({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [on, setOn] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (!el || typeof IntersectionObserver === 'undefined') return setOn(true)
+    const io = new IntersectionObserver(([e]) => e.isIntersecting && setOn(true), { rootMargin: '-8%' })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
+  return (
+    <div ref={ref} className="rise" data-on={on} style={{ transitionDelay: `${delay}ms` }}>
+      {children}
+    </div>
+  )
+}
+
+/**
+ * The bar across the top of the page.
+ *
+ * It fills as you scroll, so it is a position rather than decoration — the
+ * one piece of motion here that tells you something you would otherwise have
+ * to guess.
+ */
+function ScrollBar() {
+  const [pct, setPct] = useState(0)
+  useEffect(() => {
+    const on = () => {
+      const h = document.documentElement.scrollHeight - window.innerHeight
+      setPct(h > 0 ? Math.min(1, window.scrollY / h) : 0)
+    }
+    on()
+    window.addEventListener('scroll', on, { passive: true })
+    window.addEventListener('resize', on)
+    return () => {
+      window.removeEventListener('scroll', on)
+      window.removeEventListener('resize', on)
+    }
+  }, [])
+  return <div className="scrollbar" style={{ transform: `scaleX(${pct})` }} aria-hidden="true" />
 }
 
 function useStuck(): boolean {
@@ -81,311 +131,91 @@ function useStuck(): boolean {
   return stuck
 }
 
-const Tick = () => <span className="tick">✓</span>
+const FEATURES = [
+  { clip: 'clip-wire', poster: '/clips/clip-wire.jpg', label: 'Wire it', note: 'Terminal to terminal' },
+  { clip: 'clip-run', poster: '/clips/clip-run.jpg', label: 'Run it', note: 'A solver, not an animation' },
+  { clip: 'clip-builds', poster: '/clips/clip-builds.jpg', label: 'Frame it', note: 'Extrusion, panels, motion' },
+]
 
 export function Landing() {
-  const stats = useCatalogStats()
   const stuck = useStuck()
-  const hero = BUILDS[0]
+  const parts = useCatalogCount()
+  const accounts = useAuth().enabled
 
   useEffect(() => {
     document.title = pageTitle()
   }, [])
 
   return (
-    <div className="site">
-      <header className="site-header" data-stuck={stuck}>
-        <div className="wrap">
-          <Link to="/" aria-label={BRAND.name}><Wordmark size={24} /></Link>
-          <nav className="site-nav">
-            <a href="#builds">Builds</a>
-            <a href="#parts">Parts</a>
-            <a href="#simulate">Simulation</a>
-            <a href="#how">How it works</a>
-          </nav>
-          <div className="header-actions">
-            <AccountMenu compact />
-            <Link className="cta primary small" to="/app">Open the editor</Link>
-          </div>
-        </div>
+    <div className="site lp">
+      <ScrollBar />
+
+      <header className="lp-top" data-stuck={stuck}>
+        <Link to="/" aria-label={BRAND.name}><Wordmark size={23} /></Link>
+        <div className="grow" />
+        <AccountMenu compact />
+        <Link className="cta primary small" to="/app">Open the editor</Link>
       </header>
 
       {/* ---------------- hero ---------------- */}
 
-      <section className="hero">
-        <div className="wrap">
-          <div>
-            <h1>Build the circuit before you buy the parts.</h1>
-            <p className="lead">
-              Draftrig is a workbench in your browser. Lay the board out in 3D, wire it
-              terminal to terminal, and switch it on. A circuit solver works out the
-              voltage and current at every point.
-            </p>
-            <div className="hero-actions">
-              <Link className="cta primary" to="/app">Start building</Link>
-              <a className="cta ghost" href="#builds">See what it makes</a>
-            </div>
-          </div>
-
-          <figure className="hero-figure">
-            <img
-              src={hero.img}
-              alt={`${hero.name}: ${hero.note}`}
-              width={1500}
-              height={1125}
-              fetchPriority="high"
-            />
-            <figcaption className="figure-tag">
-              <b>{hero.name}</b>
-            </figcaption>
-          </figure>
+      <section className="lp-hero">
+        <div className="lp-hero-film">
+          <Clip name="clip-assemble" poster="/clips/clip-assemble.jpg" className="lp-film" priority />
+          <div className="lp-hero-wash" />
         </div>
-      </section>
 
-      {/* ---------------- figures ---------------- */}
-
-      <div className="stats">
-        <div className="stat">
-          <b className="num">{stats ? stats.parts : '—'}</b>
-          <span>parts in the library</span>
-        </div>
-        <div className="stat">
-          <b className="num">3D</b>
-          <span>every part, to scale in millimetres</span>
-        </div>
-        <div className="stat">
-          <b className="num">0</b>
-          <span>downloads or plugins to install</span>
-        </div>
-        <div className="stat">
-          <b>Live</b>
-          <span>voltages and currents while it runs</span>
-        </div>
-      </div>
-
-      {/* ---------------- builds ---------------- */}
-
-      <section className="band" id="builds">
-        <div className="wrap">
-          <Reveal>
-            <div className="sec-head">
-              <span className="eyebrow">Made with Draftrig</span>
-              <h2>Circuits you can open and take apart.</h2>
-              <p>
-                Every one of these is a starter in the editor. Open it, pull a wire out,
-                change a resistor and watch what it does to the rest.
-              </p>
-            </div>
-          </Reveal>
-
-          <Reveal delay={80}>
-            <div className="build-grid">
-              {BUILDS.map((b) => (
-                <a className="build-card" key={b.id} href={`/app?start=${b.id}`}>
-                  <div className="pic">
-                    <img src={b.img} alt={`${b.name}: ${b.note}`} loading="lazy" />
-                  </div>
-                  <div className="body">
-                    <h3>{b.name}</h3>
-                    <p>{b.note}</p>
-                    <div className="meta">
-                      <span className="num">{b.parts} parts</span>
-                      <span className="num">{b.wires} connections</span>
-                    </div>
-                  </div>
-                </a>
-              ))}
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ---------------- parts ---------------- */}
-
-      <section className="band sand" id="parts">
-        <div className="wrap">
-          <div className="split flip">
-            <Reveal delay={80}><PartSearch /></Reveal>
-            <Reveal>
-              <div>
-                <span className="eyebrow">The library</span>
-                <h2>One resistor. Every value.</h2>
-                <p className="lead">
-                  Parts are described rather than drawn, so a resistor is not a hundred
-                  models — it is one part that takes a value, a tolerance and a wattage,
-                  and looks like the thing you would be sent.
-                </p>
-                <ul className="points">
-                  <li><Tick /><p>{stats ? `${stats.electronics} electronic parts` : 'Electronic parts'}: passives, semiconductors, boards, sensors and displays.</p></li>
-                  <li><Tick /><p>{stats ? `${stats.build} for the structure` : 'Structural stock'}: extrusion, sheet, stock and the fasteners to join them.</p></li>
-                  <li><Tick /><p>Search by value, package or part number — <span className="mono">10k</span>, <span className="mono">2020</span>, <span className="mono">NE555</span>.</p></li>
-                </ul>
-              </div>
-            </Reveal>
+        <div className="lp-hero-text">
+          <h1>Build it before you buy it.</h1>
+          <p>Electronics and the frame around them, in one 3D scene.</p>
+          <div className="lp-cta">
+            <Link className="cta primary" to="/app">Start building</Link>
+            <a className="cta ghost onfilm" href="#see">See it work</a>
           </div>
         </div>
       </section>
 
-      {/* ---------------- simulation ---------------- */}
+      {/* ---------------- three things ---------------- */}
 
-      <section className="band" id="simulate">
-        <div className="wrap">
-          <div className="split">
-            <Reveal>
-              <div>
-                <span className="eyebrow">Simulation</span>
-                <h2>It runs the circuit.</h2>
-                <p className="lead">
-                  Draftrig builds a netlist from what you wired and solves it the way a
-                  circuit simulator does. Put the wrong resistor in and the LED goes dim,
-                  because the current through it has genuinely dropped.
-                </p>
-                <ul className="points">
-                  <li><Tick /><p>Real component curves, so a diode has a forward drop and a wire has resistance.</p></li>
-                  <li><Tick /><p>Microcontrollers run a program and drive their pins from it.</p></li>
-                  <li><Tick /><p>Displays light up from the data actually arriving on the bus.</p></li>
-                </ul>
-              </div>
-            </Reveal>
-            <Reveal delay={80}><WhenSeen><LiveBoard /></WhenSeen></Reveal>
-          </div>
-        </div>
+      <section className="lp-strip" id="see">
+        {FEATURES.map((f, i) => (
+          <Rise key={f.clip} delay={i * 90}>
+            <figure className="lp-card">
+              <Clip name={f.clip} poster={f.poster} className="lp-card-film" />
+              <figcaption>
+                <b>{f.label}</b>
+                <span>{f.note}</span>
+              </figcaption>
+            </figure>
+          </Rise>
+        ))}
       </section>
 
-      {/* ---------------- bill of materials ---------------- */}
+      {/* ---------------- numbers ---------------- */}
 
-      <section className="band sand">
-        <div className="wrap">
-          <div className="split">
-            <Reveal>
-              <div>
-                <span className="eyebrow">Before you order</span>
-                <h2>It knows what the build costs.</h2>
-                <p className="lead">
-                  The BOM generator reads the bench and totals it: every part, its
-                  manufacturer number where the catalog knows one, and the wire measured
-                  between the terminals it actually runs between.
-                </p>
-                <ul className="points">
-                  <li><Tick /><p>The hook-up wire counted by colour and length, which is the thing everyone forgets to order.</p></li>
-                  <li><Tick /><p>Mass and cost for the whole build, updating as you change it.</p></li>
-                  <li><Tick /><p>Download it as a CSV and paste it straight into an order.</p></li>
-                </ul>
-                <p style={{ marginTop: 26 }}>
-                  <Link className="arrow-link" to="/app?start=bench-clock">Open this build <span>→</span></Link>
-                </p>
-              </div>
-            </Reveal>
-            <Reveal delay={80}>
-              <figure className="shot">
-                <img
-                  src="/feature-bom.jpg"
-                  alt="The bill of materials for the bench clock, listing parts, part numbers, wire by colour, mass and cost"
-                  loading="lazy"
-                />
-              </figure>
-            </Reveal>
-          </div>
-        </div>
-      </section>
-
-      {/* ---------------- how ---------------- */}
-
-      <section className="band" id="how">
-        <div className="wrap">
-          <Reveal>
-            <div className="sec-head centred">
-              <h2>Three steps, and nothing to install.</h2>
-            </div>
-          </Reveal>
-          <Reveal delay={80}>
-            <div className="steps">
-              <div className="step">
-                <h3>Place the parts</h3>
-                <p>
-                  Drag them out of the library onto the bench. Everything is to scale in
-                  millimetres, so what fits on screen fits on the desk.
-                </p>
-              </div>
-              <div className="step">
-                <h3>Wire it up</h3>
-                <p>
-                  Click a terminal, click another. Terminals are named as you hover them,
-                  so you are wiring D13 to a resistor rather than one grey dot to another.
-                </p>
-              </div>
-              <div className="step">
-                <h3>Switch it on</h3>
-                <p>
-                  Press run. Probe any terminal to put it on the scope, read the current
-                  through a part, and find the mistakes while they are still free.
-                </p>
-              </div>
-            </div>
-          </Reveal>
-        </div>
+      <section className="lp-figures">
+        <div><b><Counter to={parts} /></b><span>parts, to scale</span></div>
+        <div><b>3D</b><span>in the browser</span></div>
+        <div><b>0</b><span>to install</span></div>
       </section>
 
       {/* ---------------- closer ---------------- */}
 
-      <section className="band tight">
-        <div className="wrap">
-          <Reveal>
-            <div className="closer">
-              <h2>Build it twice. The first time is free.</h2>
-              <p>
-                Open the editor and put something together. Your work saves as you go, and
-                an account moves it to every machine you sign in from.
-              </p>
-              <div className="hero-actions">
-                <Link className="cta onink" to="/app">Open the editor</Link>
-                <a className="cta ghost" style={{ color: '#fff', borderColor: 'rgba(255,255,255,.28)' }} href="#builds">
-                  Look at the builds again
-                </a>
-              </div>
-            </div>
-          </Reveal>
-        </div>
+      <section className="lp-closer">
+        <Rise>
+          <h2>Open it and put something together.</h2>
+          <div className="lp-cta">
+            <Link className="cta onink" to="/app">Open the editor</Link>
+            {accounts && <Link className="cta ghost onfilm" to="/signin">Sign in</Link>}
+          </div>
+        </Rise>
       </section>
 
-      <Footer />
+      <footer className="lp-foot">
+        <span>© {new Date().getFullYear()} {BRAND.name}</span>
+        <div className="grow" />
+        <a href={`mailto:${BRAND.support}`}>Contact</a>
+      </footer>
     </div>
-  )
-}
-
-function Footer() {
-  const accounts = useAuth().enabled
-  return (
-    <footer className="site-footer">
-      <div className="wrap">
-        <div className="footer-top">
-          <div>
-            <Wordmark size={22} />
-            <p>{BRAND.description}</p>
-          </div>
-          <div className="footer-col">
-            <h4>Product</h4>
-            <Link to="/app">Editor</Link>
-            <a href="#builds">Builds</a>
-            <a href="#parts">Parts</a>
-            <a href="#how">How it works</a>
-          </div>
-          <div className="footer-col">
-            <h4>Account</h4>
-            <Link to="/projects">Your projects</Link>
-            {/* The header's account menu already hides itself when accounts
-                are off; this link did not, and was the one route left that
-                led a visitor to a sign-in page that cannot sign anyone in. */}
-            {accounts && <Link to="/signin">Sign in</Link>}
-            <a href={`mailto:${BRAND.support}`}>Contact</a>
-          </div>
-        </div>
-        <div className="footer-base">
-          <span>© {new Date().getFullYear()} {BRAND.name}</span>
-          <span className="grow" />
-          <span>{BRAND.tagline}</span>
-        </div>
-      </div>
-    </footer>
   )
 }

@@ -1744,3 +1744,258 @@
 @media (prefers-reduced-motion: reduce) {
   .tcard-shot, .btile-shot, .dnew, .dsearch { transition: none; }
 }
+
+/* ==================================================================
+   Front page
+   ------------------------------------------------------------------
+   Shown rather than described: four clips of the editor carry it and
+   the words are labels. Dark where the film is, light where the facts
+   are, so the two never compete.
+   ================================================================== */
+
+.lp { background: var(--paper); overflow-x: clip; }
+
+/* ---- the bar across the top ---- */
+
+.scrollbar {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 60;
+  height: 2px;
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, #1E8CFA, #6FD2FF 55%, #1E8CFA);
+  box-shadow: 0 0 12px rgba(79, 180, 255, 0.75);
+  will-change: transform;
+}
+
+/* ---- header ---- */
+
+.lp-top {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px clamp(16px, 4vw, 40px);
+  color: #fff;
+  transition: background 220ms var(--ease), color 220ms var(--ease),
+    border-color 220ms var(--ease), backdrop-filter 220ms var(--ease);
+  border-bottom: 1px solid transparent;
+}
+.lp-top[data-stuck='true'] {
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  backdrop-filter: saturate(170%) blur(14px);
+  border-bottom-color: var(--line);
+  color: var(--ink);
+}
+/* Over the film the wordmark has to be the light one; against paper, the dark.
+   One image swapped by filter rather than two files to keep in step. */
+.lp-top img { filter: brightness(0) invert(1); transition: filter 220ms var(--ease); }
+.lp-top[data-stuck='true'] img { filter: none; }
+
+/* ---- hero ---- */
+
+.lp-hero {
+  position: relative;
+  display: grid;
+  align-items: end;
+  min-height: min(92vh, 860px);
+  margin-top: calc(-1 * (14px * 2 + 23px));
+  padding: clamp(80px, 12vh, 160px) clamp(16px, 4vw, 40px) clamp(40px, 7vh, 80px);
+  background: #06080B;
+  isolation: isolate;
+}
+
+.lp-hero-film { position: absolute; inset: 0; z-index: -1; overflow: hidden; }
+.lp-film {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.88;
+}
+/* Dark at the bottom so the words sit on something, clear at the top so the
+   build is visible. Two stops, no vignette: a vignette on a dark clip reads
+   as a smudge. */
+.lp-hero-wash {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(6, 8, 11, 0.55) 0%, rgba(6, 8, 11, 0) 34%),
+    linear-gradient(0deg, rgba(6, 8, 11, 0.92) 4%, rgba(6, 8, 11, 0) 56%);
+}
+
+.lp-hero-text { position: relative; max-width: 22ch; }
+.lp-hero h1 {
+  color: #fff;
+  font-size: clamp(2.4rem, 6.2vw, 4.6rem);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  font-weight: 800;
+}
+.lp-hero p {
+  margin-top: 16px;
+  max-width: 34ch;
+  color: #c7d0da;
+  font-size: clamp(1rem, 1.5vw, 1.18rem);
+}
+
+.lp-cta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 26px; }
+.cta.onfilm {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.34);
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(6px);
+}
+.cta.onfilm:hover { background: rgba(255, 255, 255, 0.14); border-color: rgba(255, 255, 255, 0.6); }
+
+/* ---- the three ---- */
+
+.lp-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: clamp(14px, 1.8vw, 22px);
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: clamp(42px, 7vw, 88px) clamp(16px, 4vw, 40px);
+}
+
+.lp-card {
+  position: relative;
+  margin: 0;
+  border-radius: var(--r-lg);
+  background: #06080B;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  transition: transform 260ms var(--ease), box-shadow 260ms var(--ease);
+}
+.lp-card:hover { transform: translateY(-3px); box-shadow: var(--lift-2); }
+.lp-card-film {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+}
+.lp-card figcaption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  gap: 1px;
+  padding: 44px 16px 14px;
+  background: linear-gradient(0deg, rgba(6, 8, 11, 0.9), rgba(6, 8, 11, 0));
+}
+.lp-card figcaption b { color: #fff; font-size: 1.05rem; letter-spacing: -0.02em; }
+.lp-card figcaption span { color: #a9b4c0; font-size: 0.86rem; }
+
+/* ---- numbers ---- */
+
+.lp-figures {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 clamp(16px, 4vw, 40px) clamp(42px, 7vw, 88px);
+  border-top: 1px solid var(--line);
+}
+.lp-figures div {
+  display: grid;
+  gap: 2px;
+  padding: clamp(24px, 3vw, 36px) 0 0;
+  border-left: 1px solid var(--line);
+  padding-left: clamp(16px, 2.4vw, 28px);
+}
+.lp-figures div:first-child { border-left: 0; padding-left: 0; }
+.lp-figures b {
+  font-size: clamp(1.9rem, 4vw, 3rem);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.lp-figures span { color: var(--ink-3); font-size: 0.9rem; }
+
+/* ---- closer ---- */
+
+.lp-closer {
+  display: grid;
+  place-items: center;
+  gap: 18px;
+  padding: clamp(60px, 10vw, 128px) clamp(16px, 4vw, 40px);
+  background: var(--ink);
+  text-align: center;
+}
+.lp-closer h2 {
+  color: #fff;
+  font-size: clamp(1.7rem, 3.6vw, 2.8rem);
+  letter-spacing: -0.03em;
+  max-width: 20ch;
+}
+.lp-closer .lp-cta { justify-content: center; }
+
+/* ---- foot ---- */
+
+.lp-foot {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 22px clamp(16px, 4vw, 40px);
+  font-size: 0.85rem;
+  color: var(--ink-3);
+}
+.lp-foot a { color: var(--ink-3); }
+.lp-foot a:hover { color: var(--ink); }
+
+/* ---- motion ---- */
+
+.rise {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 520ms var(--ease), transform 520ms var(--ease);
+}
+.rise[data-on='true'] { opacity: 1; transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .rise { opacity: 1; transform: none; transition: none; }
+  .lp-card { transition: none; }
+  .lp-card:hover { transform: none; }
+  .scrollbar { transition: none; }
+}
+
+@media (max-width: 640px) {
+  .lp-figures { grid-template-columns: 1fr; gap: 2px; }
+  .lp-figures div { border-left: 0; padding-left: 0; padding-top: 18px; }
+  .lp-hero { min-height: 78vh; }
+}
+
+/* The header sits on the film until the page scrolls, so anything in it that
+   was drawn for paper has to be redrawn for a dark picture. */
+.lp-top:not([data-stuck='true']) .cta.ghost {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.32);
+  background: rgba(255, 255, 255, 0.06);
+}
+.lp-top:not([data-stuck='true']) .cta.ghost:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.55);
+}
+.lp-top:not([data-stuck='true']) .acct-btn { color: #fff; }
+.lp-top:not([data-stuck='true']) .acct-btn:hover { background: rgba(255, 255, 255, 0.12); }
+.lp-top:not([data-stuck='true']) .acct-avatar { background: rgba(255, 255, 255, 0.92); color: var(--ink); }
+
+/* The hero text block had a 22ch ceiling meant for the paragraph, which at a
+   4.6rem headline is four words wide and broke the line five times. */
+.lp-hero-text { max-width: min(54ch, 56%); }
+.lp-hero h1 { max-width: 13ch; text-wrap: balance; }
+
+/* On the film, ink on near-black is not a button. White is. */
+.lp-hero .cta.primary { background: #fff; color: var(--ink); border-color: #fff; }
+.lp-hero .cta.primary:hover { background: #e8eef6; border-color: #e8eef6; }
+
+@media (max-width: 760px) {
+  .lp-hero-text { max-width: 100%; }
+  .lp-hero h1 { max-width: 11ch; }
+}
