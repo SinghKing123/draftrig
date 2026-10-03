@@ -2512,6 +2512,9 @@
   position: relative;
   max-width: 1100px;
   margin: 0 auto;
+  /* It is the target of "See it work", and the bar at the top is sticky:
+     without this the heading arrives tucked underneath it. */
+  scroll-margin-top: 92px;
   padding: clamp(40px, 7vh, 90px) clamp(18px, 4vw, 44px) clamp(20px, 4vh, 50px);
 }
 

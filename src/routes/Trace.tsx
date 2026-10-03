@@ -151,7 +151,7 @@ export function Trace() {
   }, [])
 
   return (
-    <section className="trace" ref={root} data-on={on}>
+    <section className="trace" id="work" ref={root} data-on={on}>
       <div className="trace-head">
         <h2>Draw it, switch it on.</h2>
         <p>Every part is solved, not animated. Open the switch and the light goes out.</p>

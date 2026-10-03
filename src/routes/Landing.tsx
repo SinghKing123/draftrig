@@ -395,7 +395,12 @@ export function Landing() {
         </div>
       </section>
 
-      <section className="bento" id="work" ref={bento}>
+      {/* The drawing leads, the pictures follow. It is the one thing on the
+          page that is drawn rather than filmed, so it is also the one thing
+          that rewards arriving at it, and "See it work" lands here. */}
+      <Trace />
+
+      <section className="bento" ref={bento}>
         <Rise className="tile tile-wide">
           <Clip name="clip-wire" poster="/clips/clip-wire.jpg" className="tile-film" />
         </Rise>
@@ -413,8 +418,6 @@ export function Landing() {
           <Clip name="clip-builds" poster="/clips/clip-builds.jpg" className="tile-film" />
         </Rise>
       </section>
-
-      <Trace />
 
       <Showcase />
 
