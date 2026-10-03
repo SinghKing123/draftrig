@@ -37,7 +37,7 @@ export function SignIn() {
           <Wordmark size={26} onDark />
         </Link>
         <div className="auth-pitch">
-          <h2>Your bench, wherever you are.</h2>
+          <h2>One account, every machine.</h2>
           <p>
             An account keeps every board you build, on every machine you sign in from. Anything
             already saved in this browser comes with you the first time.
@@ -55,7 +55,6 @@ export function SignIn() {
           </Link>
 
           <h1>Sign in to {BRAND.name}</h1>
-          <p className="auth-lede">Pick how you would like to continue.</p>
 
           {!enabled ? (
             <div className="auth-notice">

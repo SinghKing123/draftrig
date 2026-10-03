@@ -61,6 +61,26 @@ const CLEAR = 2.4
  */
 const MAX_BOW = 1.7
 
+/**
+ * And an absolute ceiling, in millimetres, whatever the span.
+ *
+ * `MAX_BOW` is a multiple of the span, so a long wire is allowed a long
+ * detour — and a long detour is exactly what looks wrong. The first version
+ * of this had no absolute limit and produced wires hundreds of millimetres
+ * tall on the two biggest builds, leaving the picture entirely.
+ *
+ * Thirty is the measured knee. Raising it does not buy much clearance — at
+ * ninety the deepest graze across every shipped build improves by two tenths
+ * of a millimetre — and it costs a great deal of appearance: the LED matrix
+ * goes from a 26 mm loop, which reads as slack, to an 85 mm one, which reads
+ * as a fault. Below thirty the grazes start to multiply.
+ *
+ * So the cap buys a visible fix with an invisible cost. Twelve wires on the
+ * rover clip a panel by seven tenths of a millimetre, inside a hull that is
+ * already allowed a 1.2 mm graze, between pins 2.54 mm apart.
+ */
+const BOW_MAX = 30
+
 /** A part's own outermost millimetre may be brushed without it counting. */
 const GRAZE = 1.2
 
@@ -89,8 +109,48 @@ export function avoidable(
    * something to avoid asks for a route that does not exist, and the search
    * spends its whole budget failing to find one.
    */
-  return !o.box.containsPoint(a) && !o.box.containsPoint(b)
+  if (o.box.containsPoint(a) || o.box.containsPoint(b)) return false
+
+  /*
+   * And neither can a part the run spends most of its length inside.
+   *
+   * Big open structures — a machine frame, a chassis, a motor can — have
+   * bounding boxes full of air, and a wire running down the inside of one is
+   * correct: it is what the real wire does. Counting that as a collision asks
+   * the search to leave the whole machine, and on the CNC build it produced a
+   * single wire arching 445 mm, because getting clear of the frame's box
+   * genuinely does take that long.
+   *
+   * The test is how much of the straight run is inside, not whether its
+   * midpoint is. A wire crossing a flat panel has its midpoint in the sheet
+   * but is inside for a few per cent of its length, and that one should still
+   * go around — which is the difference between this rule and the simpler one
+   * that replaced the panels on the rover with wires driven straight through
+   * them.
+   */
+  let inside = 0
+  for (let i = 0; i <= INSIDE_SAMPLES; i++) {
+    PROBE.lerpVectors(a, b, i / INSIDE_SAMPLES)
+    if (o.box.containsPoint(PROBE)) inside++
+  }
+  return inside / (INSIDE_SAMPLES + 1) < INSIDE_ENOUGH
 }
+
+/*
+ * Half the run, and the shipped builds are nowhere near it.
+ *
+ * Measured over every wire against every part it is not attached to: of the
+ * hundred and ten pairs that overlap at all, a hundred and nine are inside
+ * for a fifth of the run or less — panel and board crossings — and one, a
+ * wire down the length of a motor, is inside for 0.62. Nothing lands between
+ * 0.2 and 0.6, so the threshold has a clear gap on both sides of it rather
+ * than a crowd of cases balanced on the edge.
+ */
+const INSIDE_SAMPLES = 12
+const INSIDE_ENOUGH = 0.5
+
+/** Scratch for the test above; it runs per wire per obstacle. */
+const PROBE = new THREE.Vector3()
 
 function intrusion(
   pts: THREE.Vector3[],
@@ -183,6 +243,21 @@ function reachFor(
  * switch on a panel, down to the board behind it — could not be helped by
  * lifting: there, up and along are the same direction.
  */
+/*
+ * What each direction costs, relative to going up, in the order below.
+ *
+ * Sideways is twice as expensive, so it wins only when it is much shorter.
+ * Without this the search took the shortest detour outright, and a wire met
+ * by a tall thin part went round the side of it every time: shorter, and
+ * wrong, because wire hangs over things rather than snaking around them.
+ *
+ * Adding up-and-over diagonals was tried here and did not earn its place —
+ * across the shipped builds it moved the number of wires grazing anything
+ * from 29 to 31, so the remaining grazes are not ones a better direction
+ * fixes. They are wires crossing a panel that a 30 mm bow cannot clear.
+ */
+const BIAS = [1, 2, 2]
+
 function bowDirections(travel: THREE.Vector3): THREE.Vector3[] {
   const out: THREE.Vector3[] = []
   const up = new THREE.Vector3(0, 1, 0).addScaledVector(travel, -travel.y)
@@ -264,7 +339,7 @@ export function wirePoints(
 
   const natural = Math.min(span * SAG_FRACTION, SAG_MAX)
   const centre = a.pos.clone().add(b.pos).multiplyScalar(0.5)
-  const ceiling = natural + span * MAX_BOW
+  const ceiling = Math.min(natural + span * MAX_BOW, BOW_MAX)
   const at = (dir: THREE.Vector3, reach: number): THREE.Vector3[] =>
     pathVia(centre.clone().addScaledVector(dir, reach))
 
@@ -273,20 +348,41 @@ export function wirePoints(
   let best = { pts: ordinary, bad: intrusion(ordinary, obstacles, skip) }
   if (best.bad <= 0) return best.pts
 
-  for (const dir of dirs) {
-    /* The computed distance first, then a little more each time: how far is
-       needed depends on where the drawn curve bulges, not on where the
-       control point is, and a spline falls short of its control point by an
-       amount that depends on the spacing of the rest. */
+  /* The computed distance first, then a little more each time: how far is
+     needed depends on where the drawn curve bulges, not on where the control
+     point is, and a spline falls short of its control point by an amount that
+     depends on the spacing of the rest. */
+  const tries: { dir: THREE.Vector3; reach: number; score: number }[] = []
+  for (let d = 0; d < dirs.length; d++) {
+    const dir = dirs[d]
     const want = Math.max(reachFor(a, b, dir, obstacles, skip), natural)
     for (const slack of [1.35, 1.8, 2.4, 3.2, 4.4]) {
       const reach = Math.min(want * slack, ceiling)
-      const pts = at(dir, reach)
-      const bad = intrusion(pts, obstacles, skip)
-      if (bad <= 0) return pts
-      if (bad < best.bad) best = { pts, bad }
+      tries.push({ dir, reach, score: reach * BIAS[d] })
       if (reach >= ceiling) break
     }
+  }
+
+  /*
+   * Shortest detour first, rather than the first one that happens to work.
+   *
+   * Taking the first clear path found meant exhausting one direction before
+   * trying the next, so a wire would go a long way up when a short step
+   * sideways was clear. Sorting costs nothing against the measurements it
+   * saves, and the ordinary candidate above has already returned for every
+   * wire with nothing in its way.
+   *
+   * Weighted, though, not purely by distance. Wire hangs over things; it does
+   * not snake around them at bench level. On distance alone a wire met by a
+   * tall thin part goes round the side of it every time, which is shorter and
+   * looks wrong. Sideways has to be a good deal shorter before it wins.
+   */
+  tries.sort((x, y) => x.score - y.score)
+  for (const { dir, reach } of tries) {
+    const pts = at(dir, reach)
+    const bad = intrusion(pts, obstacles, skip)
+    if (bad <= 0) return pts
+    if (bad < best.bad) best = { pts, bad }
   }
   return best.pts
 }

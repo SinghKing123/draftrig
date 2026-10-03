@@ -20,7 +20,7 @@ function Issues() {
     return (
       <div className="console-empty">
         <span style={{ color: 'var(--ok)', fontSize: 18 }}>✓</span>
-        <span>No problems found. Nothing here is going to let out the magic smoke.</span>
+        <span>No problems found.</span>
       </div>
     )
   }

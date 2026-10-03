@@ -337,10 +337,7 @@ export function BomPanel() {
   return (
     <aside className="bom-panel" aria-label="Bill of materials">
       <header className="bom-head">
-        <div>
-          <h2>BOM generator</h2>
-          <p>Everything this build is made of, priced and weighed.</p>
-        </div>
+        <h2>Bill of materials</h2>
         <button className="btn ghost icon" onClick={() => setOpen(false)} title="Close">
           <IconX size={12} />
         </button>

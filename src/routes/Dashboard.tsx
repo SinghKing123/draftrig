@@ -460,7 +460,6 @@ export function Dashboard() {
                   <div className="dempty">
                     <LogoMark size={32} />
                     <h3>Nothing here yet</h3>
-                    <p>Start from a blank bench, or open a template and take it apart.</p>
                     <div className="dempty-row">
                       <button className="cta primary small" onClick={startBlank}>Start a blank build</button>
                       <button className="cta ghost small" onClick={() => switchTo('templates')}>Browse templates</button>
@@ -500,7 +499,6 @@ export function Dashboard() {
                 <div className="dempty">
                   <LogoMark size={32} />
                   <h3>Nothing here yet</h3>
-                  <p>Start from a blank bench, or open a template and take it apart.</p>
                   <div className="dempty-row">
                     <button className="cta primary small" onClick={startBlank}>Start a blank build</button>
                     <button className="cta ghost small" onClick={() => switchTo('templates')}>Browse templates</button>

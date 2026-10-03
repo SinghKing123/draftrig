@@ -2,7 +2,7 @@ import type { Doc } from '@/state/doc'
 import { emptyDoc } from '@/state/doc'
 import type { Instance, Params, Vec3 } from '@/parts/kernel/types'
 import { defaultParams, requirePart } from '@/parts/kernel/registry'
-import { benchClock, cncRouter, controlPanel, rover } from './builds'
+import { benchClock, cncRouter, controlPanel, ledMatrix, rover, scoreboard } from './builds'
 
 /**
  * Starter builds. These are ordinary documents constructed in code, which
@@ -285,7 +285,30 @@ export interface Starter {
   build: () => Doc
 }
 
+/*
+ * Order decides what the front page and the dashboard show first, so the
+ * dense boards lead. The plywood decks and the bench supply are further down:
+ * a sheet of wood and a grey box are the two things in the catalog that
+ * photograph worst, and leading with them made the whole set look like the
+ * back room of a hardware shop.
+ */
 export const STARTERS: Starter[] = [
+  {
+    id: 'matrix',
+    title: 'LED matrix',
+    blurb: 'Thirty LEDs in five rows, chased from a microcontroller',
+    kind: 'circuit',
+    tags: ['led', 'matrix', 'display', 'arduino', 'chase', 'perfboard', 'rows', 'dense'],
+    build: ledMatrix,
+  },
+  {
+    id: 'scoreboard',
+    title: 'Scoreboard',
+    blurb: 'A 1602 panel, a contrast pot and the wiring it really needs',
+    kind: 'circuit',
+    tags: ['lcd', '1602', 'display', 'arduino', 'potentiometer', 'contrast', 'perfboard'],
+    build: scoreboard,
+  },
   { id: 'led', title: 'LED on a breadboard', blurb: 'Supply, resistor and LED, see the current arrive', kind: 'circuit', tags: ["led","breadboard","resistor","ohms law","first","beginner","current"], build: ledCircuit },
   { id: 'blink555', title: '555 blinker', blurb: 'The classic astable, flashing at one hertz', kind: 'circuit', tags: ["555","ne555","timer","astable","oscillator","blink","flash","capacitor"], build: blinker555 },
   { id: 'mcu', title: 'Microcontroller blink', blurb: 'A board running a sketch, driving a real LED', kind: 'circuit', tags: ["arduino","uno","microcontroller","sketch","code","blink","firmware"], build: mcuBlink },

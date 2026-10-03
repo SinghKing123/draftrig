@@ -62,7 +62,6 @@ export function SignInWall({
           <button className="btn lg" onClick={go(signIn)}>Sign in</button>
         </div>
 
-        <p className="wall-fine">This build comes with you.</p>
       </div>
     </div>
   )

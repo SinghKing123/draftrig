@@ -1927,7 +1927,17 @@
   font-weight: 800;
   text-wrap: balance;
 }
+/*
+ * The accented phrase holds together.
+ *
+ * `balance` on its own evens the two lines by character count and lands on
+ * "Your bench, in / the browser." — a line ending on a preposition, and the
+ * coloured phrase split across the break. Keeping the em whole moves the
+ * break to the comma, where it belongs. Released again when the headline is
+ * narrow enough that the phrase alone fills a line.
+ */
 .hero h1 em {
+  white-space: nowrap;
   font-style: normal;
   background: linear-gradient(100deg, var(--accent-2), var(--accent) 60%, #7C8CFF);
   -webkit-background-clip: text;
@@ -2182,3 +2192,309 @@
 /* The hero and the marquee were a screen apart. */
 .hero-in { padding-bottom: clamp(20px, 3.5vh, 44px); }
 .mq-wrap { padding-top: clamp(14px, 2.4vh, 26px); }
+
+/* ---- display face ---------------------------------------------- */
+
+/*
+ * Space Grotesk on the headings only.
+ *
+ * It is a grotesque with the corners cut rather than rounded, which is the
+ * same decision a machined part makes, and its single-storey g gives a page
+ * some voice. At interface sizes that voice becomes noise, so prose and the
+ * editor stay on Archivo.
+ */
+.lp h1, .lp h2, .lp .tile-figure, .lp .show-name, .lp .btn-sheen, .lp .btn-ghost {
+  font-family: 'Space Grotesk', Archivo, ui-sans-serif, system-ui, sans-serif;
+}
+.lp h1 { letter-spacing: -0.045em; font-weight: 700; }
+.lp h2 { letter-spacing: -0.035em; font-weight: 700; }
+
+/* ---- tiles, without the caption bars ---------------------------- */
+
+/*
+ * The strip of grey text under each clip is gone. It was written because a
+ * card looks unfinished without one, and it turned four pictures into four
+ * pictures and four paragraphs that nobody read.
+ */
+.tile { min-height: 230px; }
+.tile-film { aspect-ratio: 16 / 10; height: auto; }
+.tile-wide .tile-film { aspect-ratio: 16 / 7.4; }
+
+.tile-figure {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 22px;
+  text-align: center;
+  font-size: clamp(1.3rem, 2.4vw, 1.9rem);
+  letter-spacing: -0.03em;
+}
+.tile-orbit { min-height: 230px; }
+
+/* ---- showcase ---------------------------------------------------- */
+
+.show {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: clamp(10px, 2vh, 26px) clamp(18px, 4vw, 44px) clamp(54px, 9vh, 110px);
+}
+
+.show-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.show-head h2 { font-size: clamp(1.4rem, 2.6vw, 2rem); margin-right: auto; }
+
+.show-arrows { display: flex; gap: 8px; }
+.show-arrows button {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--edge-2);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--tx);
+  font-size: 20px;
+  line-height: 1;
+  transition: background 180ms var(--ease), border-color 180ms var(--ease);
+}
+.show-arrows button:hover { background: rgba(255, 255, 255, 0.09); border-color: #46566B; }
+
+/* One slide visible, the rest stacked behind it. Crossfade rather than slide:
+   the pictures are different shapes of the same dark scene, and sliding them
+   past each other reads as a glitch. */
+.show-stage {
+  position: relative;
+  border: 1px solid var(--edge);
+  border-radius: 20px;
+  background: #0A0E15;
+  overflow: hidden;
+  aspect-ratio: 16 / 8.2;
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5);
+}
+.show-slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transform: scale(1.015);
+  transition: opacity 620ms var(--ease), transform 900ms var(--ease);
+  pointer-events: none;
+}
+.show-slide[data-on='true'] { opacity: 1; transform: none; pointer-events: auto; }
+.show-slide img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.show-name {
+  position: absolute;
+  left: 20px;
+  bottom: 18px;
+  padding: 7px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: rgba(8, 11, 16, 0.72);
+  backdrop-filter: blur(8px);
+  color: #F2F5F9;
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.show-rail {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.show-rail::-webkit-scrollbar { display: none; }
+.show-pip {
+  flex: 0 0 92px;
+  height: 56px;
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+  overflow: hidden;
+  opacity: 0.42;
+  transition: opacity 220ms var(--ease), border-color 220ms var(--ease);
+}
+.show-pip img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.show-pip:hover { opacity: 0.8; }
+.show-pip[data-on='true'] { opacity: 1; border-color: var(--accent); }
+
+@media (max-width: 620px) {
+  .show-stage { aspect-ratio: 4 / 3; }
+  .show-pip { flex: 0 0 72px; height: 46px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .show-slide { transition: none; }
+  .show-arrows button, .show-pip { transition: none; }
+}
+
+/* ---- the hero frame, cycling ------------------------------------- */
+
+.reel { position: relative; display: block; }
+.reel-film {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+}
+/* Stacked, with only the current one visible. Crossfaded rather than swapped,
+   so a cut between two dark scenes is a dissolve and not a flash of black. */
+.reel-film[data-on='false'] { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
+.reel-film[data-on='true'] { position: relative; opacity: 1; transition: opacity 320ms var(--ease); }
+
+.reel-tabs {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  display: flex;
+  gap: 6px;
+}
+.reel-tabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px 5px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: rgba(8, 11, 16, 0.6);
+  backdrop-filter: blur(8px);
+  color: #93A1B2;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  transition: color 200ms var(--ease), border-color 200ms var(--ease);
+}
+.reel-tabs button i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.5;
+}
+.reel-tabs button:hover { color: #C2CCD8; }
+.reel-tabs button[data-on='true'] {
+  color: #F2F5F9;
+  border-color: rgba(79, 168, 255, 0.5);
+}
+.reel-tabs button[data-on='true'] i { background: var(--accent); opacity: 1; box-shadow: 0 0 8px var(--accent); }
+
+@media (max-width: 520px) {
+  .reel-tabs button span { display: none; }
+  .reel-tabs button { padding: 7px; }
+  /* Narrow enough that the phrase fills a line by itself. */
+  .hero h1 em { white-space: normal; }
+}
+
+/* ---- the switch ---- */
+
+.theme-flip {
+  position: relative;
+  width: 46px;
+  height: 26px;
+  flex: 0 0 auto;
+  border: 1px solid var(--edge-2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  transition: background 220ms var(--ease), border-color 220ms var(--ease);
+}
+.theme-flip:hover { border-color: #46566B; }
+.theme-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #8FD8FF, #4FA8FF);
+  box-shadow: 0 0 10px rgba(79, 168, 255, 0.6);
+  transition: transform 260ms var(--ease), background 260ms var(--ease);
+}
+
+/* ==================================================================
+   Light
+   ------------------------------------------------------------------
+   The page is a dozen custom properties, so this is the same page
+   with them redefined. Nothing above knows which way round it is,
+   which is the only reason offering the choice is cheap.
+
+   The clips stay dark either way. That is the point of the switch
+   rather than an accident of it: on a light page they read as objects
+   on a desk, on a dark one as a screen.
+   ================================================================== */
+
+.lp[data-theme='light'] {
+  --bg: #FBFBFA;
+  --bg-2: #F3F4F2;
+  --card: #FFFFFF;
+  --edge: #E4E6E1;
+  --edge-2: #D3D6D0;
+  --tx: #0A141E;
+  --tx-2: #4A5766;
+  --tx-3: #78848F;
+  --accent: #0F6FD6;
+  --accent-2: #2E93F5;
+}
+
+.lp[data-theme='light'] .theme-knob {
+  transform: translateX(20px);
+  background: linear-gradient(180deg, #FFD88A, #F0A01C);
+  box-shadow: 0 0 10px rgba(240, 160, 28, 0.45);
+}
+.lp[data-theme='light'] .theme-flip { background: #fff; }
+.lp[data-theme='light'] .theme-flip:hover { border-color: #AEB3AB; }
+
+/* The grain stops dark panels banding. On paper it is dirt. */
+.lp[data-theme='light'] .lp-grain { opacity: 0; }
+
+.lp[data-theme='light'] .lp-nav[data-stuck='true'] {
+  background: rgba(251, 251, 250, 0.82);
+  border-bottom-color: var(--edge);
+}
+
+/* Two lights at dark-page strength turn a white page grey, so these are
+   weaker and warmer than their dark counterparts. */
+.lp[data-theme='light'] .hero-glow {
+  background:
+    radial-gradient(42% 46% at 18% 22%, rgba(30, 140, 250, 0.15), transparent 70%),
+    radial-gradient(38% 44% at 82% 32%, rgba(104, 92, 255, 0.11), transparent 70%);
+}
+.lp[data-theme='light'] .hero-mesh {
+  background-image:
+    linear-gradient(rgba(10, 20, 30, 0.065) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(10, 20, 30, 0.065) 1px, transparent 1px);
+}
+.lp[data-theme='light'] .closer-glow {
+  background: radial-gradient(52% 70% at 50% 108%, rgba(30, 140, 250, 0.15), transparent 72%);
+}
+
+/* A white film over white is not a hover. These go the other way. */
+.lp[data-theme='light'] .btn-ghost,
+.lp[data-theme='light'] .cta.ghost.small,
+.lp[data-theme='light'] .show-arrows button { background: #fff; }
+.lp[data-theme='light'] .btn-ghost:hover,
+.lp[data-theme='light'] .cta.ghost.small:hover,
+.lp[data-theme='light'] .show-arrows button:hover,
+.lp[data-theme='light'] .acct-btn:hover { background: var(--bg-2); border-color: #AEB3AB; }
+.lp[data-theme='light'] .acct-avatar { color: #fff; }
+
+/* Panels that were lighter than the page have to become darker than it. */
+.lp[data-theme='light'] .tile,
+.lp[data-theme='light'] .frame,
+.lp[data-theme='light'] .mq-chip,
+.lp[data-theme='light'] .orbit-node { background: #fff; }
+.lp[data-theme='light'] .closer { background: var(--bg-2); }
+.lp[data-theme='light'] .frame-bar { background: linear-gradient(180deg, #F7F8F6, #EDEFEB); }
+.lp[data-theme='light'] .frame-bar i { background: #D0D4CE; }
+.lp[data-theme='light'] .frame { box-shadow: 0 30px 70px rgba(10, 20, 30, 0.13); }
+.lp[data-theme='light'] .show-stage { box-shadow: 0 30px 70px rgba(10, 20, 30, 0.13); }
+.lp[data-theme='light'] .tile:hover {
+  box-shadow: 0 24px 60px rgba(10, 20, 30, 0.11), 0 0 0 1px rgba(15, 111, 214, 0.18);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-knob { transition: none; }
+}

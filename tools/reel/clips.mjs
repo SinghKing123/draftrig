@@ -101,7 +101,7 @@ export const CLIP_RUN = {
   rate: 4,
   simSpeed: 1,
   camera: [26, 54, 230],
-  setup: stage('bench-clock', [0, 8, 0], 26, 54, 230),
+  setup: stage('scoreboard', [-6, 10, -10], 26, 54, 260),
   async perform(page) {
     await page.evaluate(async () => {
       const rig = window.__rig
@@ -160,10 +160,10 @@ export const CLIP_BUILDS = {
         show(id, target, dist)
         await rig.drift(9, 2600)
       }
-      await beat('cnc', [0, 60, 0], 360)
+      await beat('matrix', [0, 10, -20], 230)
+      await beat('oled', [0, 8, 0], 170)
       await beat('rover', [0, 30, 0], 280)
-      await beat('panel', [0, 40, 0], 300)
-      await beat('frame', [0, 70, 0], 360)
+      await beat('cnc', [0, 60, 0], 360)
     })
   },
 }

@@ -183,9 +183,29 @@ describe('wires and the things in their way', () => {
      * the spline brushing a surface it runs along. What was worth fixing was
      * a wire crossing clean through a board, and the worst of those was 4.5
      * millimetres deep. Chasing the last tenth means a real routing solver.
+     *
+     * Raised from half a millimetre to three quarters when the bow was given
+     * an absolute ceiling. Without one a wire could arch 445 mm to find a
+     * clear path and leave the picture entirely; the ceiling costs a quarter
+     * of a millimetre of depth on twelve wires of the rover, and buys that.
+     * The trade is deliberate, and this number is what it cost.
      */
-    expect(deepest.mm).toBeLessThan(0.5)
-    expect(through).toBeLessThan(wires.length * 0.06)
+    expect(deepest.mm).toBeLessThan(0.75)
+
+    /*
+     * And how many touch anything at all, as a fraction.
+     *
+     * Also raised with the ceiling, from six per cent to eleven. The wires it
+     * admits are the ones that used to clear a panel by going a very long way
+     * over it and now brush its edge instead — every one of them inside the
+     * depth checked above, which is to say under a millimetre, inside a hull
+     * already given 1.2 mm of grace.
+     *
+     * More bow directions were tried before loosening this, including the
+     * up-and-over diagonals, and made it slightly worse rather than better:
+     * these are not wires that a cleverer direction saves.
+     */
+    expect(through).toBeLessThan(wires.length * 0.11)
   })
 
   it('leaves a wire with nothing in the way alone', () => {

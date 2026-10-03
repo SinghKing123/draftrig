@@ -6,6 +6,8 @@ import { AccountMenu } from '@/ui/AccountMenu'
 import { useAuth } from '@/auth/AuthProvider'
 import { SHOWCASE_GLYPHS } from '@/ui/PartIcons'
 import { Clip } from './Clip'
+import { Showcase } from './Showcase'
+import { Reel } from './Reel'
 
 /**
  * The front page.
@@ -187,6 +189,39 @@ function useCatalogCount(): number | null {
   return n
 }
 
+/**
+ * Light or dark, remembered.
+ *
+ * The page is built on a dozen custom properties, so the whole of it swaps by
+ * redefining them: nothing here knows which way round it is. The clips stay
+ * dark either way, which is the point of offering the choice — on a light
+ * page they read as objects on a desk, on a dark one as a screen.
+ */
+const THEME_KEY = 'draftrig.lp.theme.v1'
+
+function useTheme(): ['dark' | 'light', () => void] {
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    try {
+      const saved = localStorage.getItem(THEME_KEY)
+      if (saved === 'light' || saved === 'dark') return saved
+      // No choice made yet: follow the machine.
+      return window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
+    } catch {
+      return 'dark'
+    }
+  })
+  const flip = () => {
+    const next = theme === 'dark' ? 'light' : 'dark'
+    setTheme(next)
+    try {
+      localStorage.setItem(THEME_KEY, next)
+    } catch {
+      /* private window: it simply will not be remembered */
+    }
+  }
+  return [theme, flip]
+}
+
 function useStuck(): boolean {
   const [stuck, setStuck] = useState(false)
   useEffect(() => {
@@ -204,19 +239,28 @@ export function Landing() {
   const stuck = useStuck()
   const parts = useCatalogCount()
   const accounts = useAuth().enabled
+  const [theme, flipTheme] = useTheme()
 
   useEffect(() => {
     document.title = pageTitle()
   }, [])
 
   return (
-    <div className="lp">
+    <div className="lp" data-theme={theme}>
       <Progress />
       <div className="lp-grain" aria-hidden="true" />
 
       <header className="lp-nav" data-stuck={stuck}>
-        <Link to="/" aria-label={BRAND.name}><Wordmark size={22} onDark /></Link>
+        <Link to="/" aria-label={BRAND.name}><Wordmark size={22} onDark={theme === 'dark'} /></Link>
         <div className="grow" />
+        <button
+          className="theme-flip"
+          onClick={flipTheme}
+          aria-label={theme === 'dark' ? 'Switch to light' : 'Switch to dark'}
+          title={theme === 'dark' ? 'Light' : 'Dark'}
+        >
+          <span className="theme-knob" />
+        </button>
         <AccountMenu compact />
         <Link className="btn-sheen" to="/app">Open the editor</Link>
       </header>
@@ -227,8 +271,8 @@ export function Landing() {
 
         <div className="hero-in">
           <Rise className="hero-copy">
-            <h1>Build it <em>before</em> you buy it.</h1>
-            <p>Circuits and the frame around them, in one 3D scene that runs.</p>
+            <h1>Your bench, <em>in the browser</em>.</h1>
+            <p>Lay out the board, wire it up, switch it on. Nothing to order first.</p>
             <div className="row-cta">
               <Link className="btn-sheen lg" to="/app">Start building</Link>
               <a className="btn-ghost lg" href="#work">See it work</a>
@@ -238,7 +282,10 @@ export function Landing() {
           <Rise className="hero-stage" delay={120}>
             <div className="frame">
               <div className="frame-bar"><i /><i /><i /></div>
-              <Clip name="clip-assemble" poster="/clips/clip-assemble.jpg" className="frame-film" priority />
+              <Reel
+                names={['clip-assemble', 'clip-wire', 'clip-run', 'clip-builds']}
+                labels={['Assemble', 'Wire', 'Run', 'Build']}
+              />
             </div>
           </Rise>
         </div>
@@ -252,36 +299,23 @@ export function Landing() {
       <section className="bento" id="work">
         <Rise className="tile tile-wide">
           <Clip name="clip-wire" poster="/clips/clip-wire.jpg" className="tile-film" />
-          <div className="tile-cap">
-            <b>Wire it terminal to terminal</b>
-            <span>Every pin is a real pin, at the real pitch.</span>
-          </div>
         </Rise>
 
         <Rise className="tile tile-orbit" delay={80}>
           <Orbit />
-          <div className="tile-cap">
-            <b><Counter to={parts} /> parts</b>
-            <span>Modelled to the millimetre.</span>
-          </div>
+          <b className="tile-figure"><Counter to={parts} /> parts</b>
         </Rise>
 
         <Rise className="tile" delay={140}>
           <Clip name="clip-run" poster="/clips/clip-run.jpg" className="tile-film" />
-          <div className="tile-cap">
-            <b>Switch it on</b>
-            <span>A solver works out the voltages.</span>
-          </div>
         </Rise>
 
         <Rise className="tile" delay={200}>
           <Clip name="clip-builds" poster="/clips/clip-builds.jpg" className="tile-film" />
-          <div className="tile-cap">
-            <b>Frame it</b>
-            <span>Extrusion, panels and motion.</span>
-          </div>
         </Rise>
       </section>
+
+      <Showcase />
 
       <section className="closer">
         <div className="closer-glow" aria-hidden="true" />

@@ -365,10 +365,7 @@ export function ViewportOverlay({
         <div className="empty-state">
           <div className="empty-hint">
             <p>Nothing on the bench yet.</p>
-            <p className="sub">
-              Pick a part from the library on the left, or open something that already works
-              and take it apart.
-            </p>
+            <p className="sub">Pick a part from the library on the left.</p>
             <div className="empty-actions">
               <button className="btn primary" onClick={onExamples}>Open an example</button>
               <button className="btn" onClick={onReplayTour}>Show me around</button>

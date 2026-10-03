@@ -386,3 +386,143 @@ export function benchClock(): Doc {
 
   return b.doc
 }
+
+/* ================================================================== */
+/* LED matrix                                                          */
+/* ================================================================== */
+
+/**
+ * Thirty LEDs on perfboard, driven in rows by a microcontroller.
+ *
+ * The densest thing in the catalog and the one that photographs best: six by
+ * five on a three-hole pitch, each row's anodes chained and taken through a
+ * resistor to a pin, each row's cathodes chained and returned to ground.
+ * Sixty-five wires, which is why it is written rather than placed by hand.
+ */
+export function ledMatrix(): Doc {
+  const b = new Builder('LED matrix')
+  const P = 2.54
+  const COLS = 6
+  const ROWS = 5
+  const DX = P * 3
+  const DZ = P * 3
+  const DECK = 1.75
+
+  b.add('perfboard', [0, 0, 0], { cols: 24, rows: 18, mask: 'fr4-blue', layout: 'pads' }, [0, 0, 0], 'Perfboard')
+
+  /* Behind the display rather than beside it: side by side the pair is 150 mm
+     wide and neither reads. Turned around so the digital header faces the
+     matrix, or every wire has to go the long way round the outside. */
+  const mcu = b.add(
+    'mcu-board',
+    [0, 0, -64],
+    { program: 'chase', interval: 0.05, mask: 'fr4-blue' },
+    [0, 180, 0],
+    'Controller',
+  )
+
+  const x0 = -((COLS - 1) / 2) * DX
+  const z0 = -((ROWS - 1) / 2) * DZ
+  const led: string[][] = []
+  for (let r = 0; r < ROWS; r++) {
+    led[r] = []
+    for (let c = 0; c < COLS; c++) {
+      /* Turned a quarter so the leads run across the strips rather than along
+         one: dropped in unturned, both legs land in the same row of holes. */
+      led[r][c] = b.add(
+        'led-5mm',
+        [x0 + c * DX, DECK, z0 + r * DZ],
+        { color: 'red', diffused: true },
+        [0, 90, 0],
+        `LED ${r + 1}-${c + 1}`,
+      )
+    }
+  }
+
+  // One resistor per row, inboard of the edge: a 10.16 mm lead pitch needs
+  // 5 mm of board either side of where it sits.
+  const res: string[] = []
+  for (let r = 0; r < ROWS; r++) {
+    res[r] = b.add('resistor-axial', [26, DECK, z0 + r * DZ], { value: 150, watt: '0.25' }, [0, 0, 0], `R${r + 1}`)
+  }
+
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS - 1; c++) {
+      b.wire([led[r][c], 'a'], [led[r][c + 1], 'a'], RED)
+      b.wire([led[r][c], 'c'], [led[r][c + 1], 'c'], BLACK)
+    }
+    b.wire([led[r][COLS - 1], 'a'], [res[r], '1'], RED)
+    b.wire([res[r], '2'], [mcu, `d${r + 2}`], BLUE)
+    b.wire([led[r][0], 'c'], [mcu, 'gnd'], BLACK)
+  }
+
+  return b.doc
+}
+
+/* ================================================================== */
+/* Scoreboard                                                          */
+/* ================================================================== */
+
+/**
+ * A character panel, a contrast pot and a board to drive them.
+ *
+ * The wiring a 1602 actually needs, which is more than people expect: power,
+ * a backlight, R/W tied down, a divider on V0 and four data lines. The pot
+ * really sets the contrast — the module reads that pin — so turning it down
+ * blanks the screen exactly as it does on a bench.
+ */
+export function scoreboard(): Doc {
+  const b = new Builder('Scoreboard')
+  const DECK = 1.75
+  const AMBER = '#E8A33D'
+
+  b.add('perfboard', [0, 0, 0], { cols: 40, rows: 26, mask: 'fr4-blue', layout: 'pads' }, [0, 0, 0], 'Perfboard')
+
+  const lcd = b.add(
+    'display-lcd-character',
+    [-6, DECK, 8],
+    { format: '1602', mask: 'fr4-blue', contrastSource: 'pin' },
+    [0, 0, 0],
+    'Character LCD',
+  )
+
+  /* Beside pins 1 to 3, not across the glass. The header is at the back left
+     of the module, so a pot on the right has to run its three wires over the
+     face of the panel to reach it. */
+  const pot = b.add(
+    'potentiometer',
+    [-56, DECK, -6],
+    { value: 10000, taper: 'lin', pos: 8, knob: true },
+    [0, 0, 0],
+    'Contrast',
+  )
+
+  const mcu = b.add(
+    'mcu-board',
+    [0, 0, -56],
+    { program: 'lcd-text', text1: 'DRAFTRIG', text2: 'Scoreboard', mask: 'fr4-blue' },
+    [0, 180, 0],
+    'Controller',
+  )
+
+  b.wire([mcu, 'v5'], [lcd, 'vdd'], RED)
+  b.wire([mcu, 'gnd'], [lcd, 'vss'], BLACK)
+  b.wire([mcu, 'v5'], [lcd, 'a'], RED)
+  b.wire([mcu, 'gnd2'], [lcd, 'k'], BLACK)
+  // R/W to ground: this module is only ever written to.
+  b.wire([mcu, 'gnd3'], [lcd, 'rw'], BLACK)
+
+  // The contrast divider, taken off the module's own supply pins.
+  b.wire([lcd, 'vdd'], [pot, 'b'], RED)
+  b.wire([lcd, 'vss'], [pot, 'a'], BLACK)
+  b.wire([pot, 'w'], [lcd, 'v0'], AMBER)
+
+  b.wire([mcu, 'd12'], [lcd, 'rs'], GREEN)
+  b.wire([mcu, 'd11'], [lcd, 'e'], GREEN)
+  b.wire([mcu, 'd5'], [lcd, 'd4'], BLUE)
+  b.wire([mcu, 'd4'], [lcd, 'd5'], BLUE)
+  b.wire([mcu, 'd3'], [lcd, 'd6'], BLUE)
+  b.wire([mcu, 'd2'], [lcd, 'd7'], BLUE)
+
+  return b.doc
+}

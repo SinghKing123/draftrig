@@ -45,20 +45,19 @@ export function Welcome({
           <LogoMark size={44} onDark />
           <h2>Welcome to {BRAND.name}</h2>
           <p>
-            This is a workbench. You put a build together in 3D, wire it up, and switch it on.
-            If something is wrong, you find out here instead of after the parts arrive.
+            Put a build together in 3D, wire it up, and switch it on.
           </p>
           <div className="welcome-actions">
             <button className="btn primary lg" onClick={onTour}>
               <IconPlay size={12} /> Show me around
             </button>
             <button className="btn lg" onClick={onSkip}>
-              I'll explore on my own
+              Skip
             </button>
           </div>
           <p className="welcome-fine">
-            Takes about thirty seconds, and you can skip at any point. Or{' '}
-            <button className="inline-link" onClick={onExamples}>open an example build</button> instead.
+            About thirty seconds. Or{' '}
+            <button className="inline-link" onClick={onExamples}>open an example</button> instead.
           </p>
         </div>
       </div>
@@ -69,10 +68,6 @@ export function Welcome({
     <div className="welcome-scrim">
       <div className="welcome starters">
         <h2>Start with something that already works</h2>
-        <p>
-          Open one of these and take it apart. Every one of them runs, so you can switch the power
-          on straight away and see what changes when you edit it.
-        </p>
 
         <div className="starter-list">
           {STARTERS.map((s) => (
@@ -87,7 +82,7 @@ export function Welcome({
         </div>
 
         <button className="btn lg wide" onClick={onClose}>
-          No thanks, start from an empty bench
+          Start from an empty bench
         </button>
       </div>
     </div>
