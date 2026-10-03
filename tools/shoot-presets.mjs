@@ -58,6 +58,12 @@ const SETTLE = {
 const SHOTS = [
   ['matrix', 0.70, 32, 54],
   ['scoreboard', 0.64, 26, 52],
+  ['logic-bench', 0.52, 34, 52],
+  ['esp-weather', 0.62, 32, 56],
+  ['thrust-rig', 0.62, 38, 54],
+  ['rfid-lock', 0.5, 30, 56],
+  ['sound-bench', 0.54, 36, 54],
+  ['servo-arm', 0.44, 34, 48],
   ['led', 0.5, 52, 48],
   ['blink555', 0.5, 28, 56],
   ['mcu', 0.42, 40, 52],

@@ -62,6 +62,17 @@ export interface SketchPins {
    * nobody writing for one uses the GPIO numbers, so both have to work.
    */
   readonly aliases?: Readonly<Record<string, string>>
+  /**
+   * True when a bare number means a GPIO number rather than an Arduino pin.
+   *
+   * On an Uno the analogue pins are also numbered from 14 on the digital
+   * scale, so `digitalWrite(14)` means A0. On an ESP a bare number is the
+   * GPIO, and 14, 25 and 34 are all real pins that have nothing to do with
+   * the ADC channels — applying the Arduino rule there silently resolved
+   * `digitalWrite(25)` to some unrelated analogue pin, so a sketch wrote to
+   * a pin the person had not wired and the circuit looked miswired.
+   */
+  readonly gpioNumbers?: boolean
 }
 
 /** What the sketch is allowed to do to the world, supplied per timestep. */
@@ -165,13 +176,83 @@ const CONSTANTS = {
 /**
  * Guard a loop body against never returning.
  *
- * Crude on purpose: it counts the back-edge of every `for`, `while` and
- * `do` by rewriting the keyword into a call. It is not a parser, so it will
- * also rewrite the word inside a string literal — which costs nothing, since
- * the call it inserts is a no-op that returns true.
+ * It counts the back-edge of a loop by folding a call into the condition the
+ * loop already tests, so a runaway trips the step limit rather than hanging
+ * the tab.
+ *
+ * `while` is easy: everything inside its parentheses is the condition. `for`
+ * is not, and the first version of this treated it as though it were —
+ *
+ *     for (let i = 0; i < 8; i++)  ->  for ($tick() && let i = 0; i < 8; i++)
+ *
+ * which is not valid JavaScript. Every sketch containing a `for` loop of any
+ * kind failed to compile, and a sketch that fails to compile does nothing at
+ * all: the board sits there and the circuit around it reads as a wiring
+ * mistake. So the condition is now found properly, between the two semicolons
+ * at the top level of the header.
+ *
+ * `for (x of y)` and `for (x in y)` have no condition to fold into and are
+ * left alone. They end with the thing they are walking, and whatever the body
+ * calls is counted anyway.
  */
 function instrument(src: string): string {
-  return src.replace(/\b(while|for)\s*\(/g, '$1 ($$tick() && ')
+  let out = ''
+  let i = 0
+  while (i < src.length) {
+    const m = /\b(while|for)\s*\(/.exec(src.slice(i))
+    if (!m) { out += src.slice(i); break }
+
+    const at = i + (m.index ?? 0)
+    const open = at + m[0].length - 1
+    out += src.slice(i, open + 1)
+
+    if (m[1] === 'while') {
+      out += '$tick() && '
+      i = open + 1
+      continue
+    }
+
+    const close = matchParen(src, open)
+    if (close < 0) { i = open + 1; continue }
+    const semis = topLevelSemicolons(src, open + 1, close)
+    if (semis.length !== 2) {
+      // for-of, for-in, or a header this is not clever enough to read.
+      out += src.slice(open + 1, close)
+    } else {
+      out += src.slice(open + 1, semis[0] + 1)
+      out += '$tick() && ('
+      out += src.slice(semis[0] + 1, semis[1])
+      out += ')'
+      out += src.slice(semis[1], close)
+    }
+    out += ')'
+    i = close + 1
+  }
+  return out
+}
+
+/** The index of the `)` matching the `(` at `open`, or -1. */
+function matchParen(src: string, open: number): number {
+  let depth = 0
+  for (let i = open; i < src.length; i++) {
+    const c = src[i]
+    if (c === '(') depth++
+    else if (c === ')') { if (--depth === 0) return i }
+  }
+  return -1
+}
+
+/** Semicolon positions directly inside `(a; b; c)`, ignoring nested ones. */
+function topLevelSemicolons(src: string, from: number, to: number): number[] {
+  const out: number[] = []
+  let depth = 0
+  for (let i = from; i < to; i++) {
+    const c = src[i]
+    if (c === '(' || c === '[' || c === '{') depth++
+    else if (c === ')' || c === ']' || c === '}') depth--
+    else if (c === ';' && depth === 0) out.push(i)
+  }
+  return out
 }
 
 /** Resolve a pin as a sketch names it: 13, 'd13', 'A0', 0 for A0 on analogRead. */
@@ -179,7 +260,13 @@ function pinId(pins: SketchPins, v: unknown, analogue = false): string | null {
   if (typeof v === 'number' && Number.isFinite(v)) {
     const list = analogue ? pins.analog : pins.digital
     // Arduino numbers the analogue pins from 14 on the digital scale too.
-    if (!analogue && v >= 14 && v - 14 < pins.analog.length) return pins.analog[v - 14]
+    // Boards numbered by GPIO are exempt: see `gpioNumbers`.
+    if (!analogue && !pins.gpioNumbers && v >= 14 && v - 14 < pins.analog.length) {
+      return pins.analog[v - 14]
+    }
+    // And on those boards an analogue read names the GPIO, not the channel,
+    // because that is the number printed on the board and in every guide.
+    if (analogue && pins.gpioNumbers) return pins.digital[v] ?? pins.analog[v] ?? null
     return list[v] ?? null
   }
   if (typeof v !== 'string') return null

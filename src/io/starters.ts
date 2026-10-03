@@ -2,7 +2,7 @@ import type { Doc } from '@/state/doc'
 import { emptyDoc } from '@/state/doc'
 import type { Instance, Params, Vec3 } from '@/parts/kernel/types'
 import { defaultParams, requirePart } from '@/parts/kernel/registry'
-import { benchClock, cncRouter, controlPanel, ledMatrix, rover, scoreboard } from './builds'
+import { benchClock, cncRouter, controlPanel, espWeather, ledMatrix, logicBench, rfidLock, rover, scoreboard, servoArm, soundBench, thrustRig } from './builds'
 
 /**
  * Starter builds. These are ordinary documents constructed in code, which
@@ -308,6 +308,54 @@ export const STARTERS: Starter[] = [
     kind: 'circuit',
     tags: ['lcd', '1602', 'display', 'arduino', 'potentiometer', 'contrast', 'perfboard'],
     build: scoreboard,
+  },
+  {
+    id: 'logic-bench',
+    title: 'Shift register on a breadboard',
+    blurb: 'Eight outputs from three pins, and a bar that climbs',
+    kind: 'circuit',
+    tags: ['breadboard', '595', 'shift register', 'logic', 'bargraph', 'nano', 'jumpers', 'digital'],
+    build: logicBench,
+  },
+  {
+    id: 'esp-weather',
+    title: 'ESP32 sensor node',
+    blurb: 'A 3.3 V board reading two sensors and driving a bar',
+    kind: 'circuit',
+    tags: ['esp32', 'esp', 'wifi', 'oled', 'i2c', 'sensor', 'temperature', 'humidity', 'gas', 'perfboard'],
+    build: espWeather,
+  },
+  {
+    id: 'thrust-rig',
+    title: 'Brushless thrust rig',
+    blurb: 'A motor, a propeller and a load cell to weigh what it pulls',
+    kind: 'build',
+    tags: ['brushless', 'motor', 'esc', 'propeller', 'drone', 'load cell', 'hx711', 'thrust', 'extrusion', 'test'],
+    build: thrustRig,
+  },
+  {
+    id: 'rfid-lock',
+    title: 'RFID door lock',
+    blurb: 'A card reader, a keypad and the solenoid that moves the bolt',
+    kind: 'build',
+    tags: ['rfid', 'rc522', 'keypad', 'relay', 'solenoid', 'lock', 'door', 'access', 'spi', 'panel'],
+    build: rfidLock,
+  },
+  {
+    id: 'sound-bench',
+    title: '555 audio oscillator',
+    blurb: 'The same chip as the blinker, four decades faster, into a speaker',
+    kind: 'circuit',
+    tags: ['555', 'ne555', 'audio', 'tone', 'oscillator', 'speaker', 'breadboard', 'potentiometer', 'analogue'],
+    build: soundBench,
+  },
+  {
+    id: 'servo-arm',
+    title: 'Servo arm',
+    blurb: 'Three servos on one driver, off a pack of their own',
+    kind: 'build',
+    tags: ['servo', 'arm', 'robot', 'pca9685', 'driver', 'i2c', 'motion', 'bracket', 'extrusion'],
+    build: servoArm,
   },
   { id: 'led', title: 'LED on a breadboard', blurb: 'Supply, resistor and LED, see the current arrive', kind: 'circuit', tags: ["led","breadboard","resistor","ohms law","first","beginner","current"], build: ledCircuit },
   { id: 'blink555', title: '555 blinker', blurb: 'The classic astable, flashing at one hertz', kind: 'circuit', tags: ["555","ne555","timer","astable","oscillator","blink","flash","capacitor"], build: blinker555 },

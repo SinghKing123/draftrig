@@ -16,15 +16,28 @@ import { STARTERS } from '@/io/starters'
  */
 
 /*
- * Which builds are worth showing, in the order they look best.
+ * Which builds to show, and in what order.
  *
- * No two the same. The 1602 text demo came out of this list because the
- * scoreboard is the same panel doing something more interesting, and two
- * slides of the same yellow display is the carousel telling you it has run
- * out of things to say. What is left is an LED array, a finished perfboard,
- * a character display, a graphic one, a machine and a robot.
+ * Ordered so no two next to each other look alike. The set used to be seven
+ * boards, five of which were a microcontroller on perfboard with a display
+ * beside it, and a carousel of near-identical pictures says the editor does
+ * one thing well. These alternate: an LED array, a machine, a breadboard, a
+ * character display, a pile of modules, a 3.3 V board, and so on.
+ *
+ * Every one of them is a starter, so whatever is here can be opened.
  */
-const SHOWN = ['matrix', 'bench-clock', 'scoreboard', 'oled', 'panel', 'rover', 'cnc']
+const SHOWN = [
+  'matrix',
+  'thrust-rig',
+  'logic-bench',
+  'scoreboard',
+  'rfid-lock',
+  'esp-weather',
+  'cnc',
+  'sound-bench',
+  'servo-arm',
+  'rover',
+]
 
 /** How long each slide holds, ms. */
 const HOLD = 4200

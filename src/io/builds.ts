@@ -2,6 +2,7 @@ import type { Doc } from '@/state/doc'
 import { emptyDoc } from '@/state/doc'
 import type { Instance, Params, Vec3 } from '@/parts/kernel/types'
 import { defaultParams, requirePart } from '@/parts/kernel/registry'
+import { espGroundId, espRailIds } from '@/parts/catalog/esp'
 
 /**
  * The larger builds.
@@ -110,7 +111,7 @@ export function cncRouter(): Doc {
     b.add('rail-linear', [sx * (W / 2 - 10), 20, 0], { size: 'MGN12', length: 400, carriage: 58 }, [0, 90, 0], 'Y rail')
   }
   b.add('motor-stepper', [-W / 2 - 20, 22, D / 2 - 40], { model: '17-48', shaftLen: 22 }, [0, 90, 0], 'Y motor')
-  b.add('leadscrew-t8', [-W / 2 + 10, 44, 20], { length: 380, lead: 8, nut: true, nutAt: 58 }, [0, 90, 0], 'Y screw')
+  b.add('leadscrew-t8', [-W / 2 + 10, 44, 20], { length: 380, lead: '8', nut: true, nutAt: 58 }, [0, 90, 0], 'Y screw')
 
   /* --- Gantry: two uprights and a beam, with the X rail on its face. */
   const gz = 40
@@ -126,7 +127,7 @@ export function cncRouter(): Doc {
   b.add('panel-sheet', [zx, 250, gz - 46], { material: 'alu-5052', width: 90, depth: 130, thickness: 6, corner: 6 }, [90, 0, 0], 'Z plate')
   b.add('motor-stepper', [zx - 24, 356, gz - 70], { model: '17-40', shaftLen: 20 }, [0, 0, -90], 'Z motor')
   b.add('shaft-coupler', [zx, 322, gz - 70], { boreA: 5, boreB: 8, style: 'flexible' }, [0, 0, 90], 'Z coupler')
-  b.add('leadscrew-t8', [zx, 170, gz - 70], { length: 180, lead: 8, nut: true, nutAt: 60 }, [0, 0, 90], 'Z screw')
+  b.add('leadscrew-t8', [zx, 170, gz - 70], { length: 180, lead: '8', nut: true, nutAt: 60 }, [0, 0, 90], 'Z screw')
   b.add('rail-linear', [zx - 40, 160, gz - 70], { size: 'MGN9', length: 180, carriage: 60 }, [0, 0, 90], 'Z rail')
   b.add('motor-dc', [zx, 150, gz - 110], { vnom: 24, rpm: 12000, rwind: 1.2, shaft: 6 }, [0, 0, 90], 'Spindle')
 
@@ -523,6 +524,416 @@ export function scoreboard(): Doc {
   b.wire([mcu, 'd4'], [lcd, 'd5'], BLUE)
   b.wire([mcu, 'd3'], [lcd, 'd6'], BLUE)
   b.wire([mcu, 'd2'], [lcd, 'd7'], BLUE)
+
+  return b.doc
+}
+
+/* ================================================================== */
+/* Shift register on a breadboard                                      */
+/* ================================================================== */
+
+/**
+ * A 595 driving a bargraph, on a breadboard.
+ *
+ * Here because everything else in the set is a finished board, and a
+ * breadboard with jumpers across it is what most of this actually looks like
+ * on the way there. The register is solved rather than drawn: the board
+ * clocks it, the outputs move, and the bar climbs.
+ *
+ * Breadboard coordinates are `a<col>_<row>` and `b<col>_<row>` — `a` is the
+ * near bank, `b` the far one, five holes to a strip — with the power rails as
+ * `pos-near-<n>` and friends.
+ */
+export function logicBench(): Doc {
+  const b = new Builder('Shift register on a breadboard')
+
+  const bb = b.add('breadboard', [0, 0, 0], {}, [0, 0, 0], 'Breadboard')
+
+  /* The nano straddles the channel, which is the one thing a board this shape
+     is made to do, so it goes across the gap rather than beside it. */
+  const nano = b.add('arduino-nano', [-52, 9, 0], { program: 'chase', interval: 0.12 }, [0, 90, 0], 'Nano')
+
+  const reg = b.add('shift-register-595', [6, 9, 0], {}, [0, 90, 0], 'Shift register')
+  const bar = b.add('led-bargraph', [44, 9, -8], { color: 'red' }, [0, 0, 0], 'Bargraph')
+
+  // One resistor per segment, because a bargraph is ten bare LEDs in a block.
+  const res: string[] = []
+  for (let i = 0; i < 8; i++) {
+    res.push(b.add('resistor-axial', [28, 9, -8.9 + i * 2.54], { value: 330, watt: '0.25' }, [0, 0, 0], `R${i + 1}`))
+  }
+
+  /* The supply goes to the rails and everything else comes off them, each
+     from the hole beside it. A rail is one node, so the index is free to
+     choose — but choosing the far end of the board sends the jumper back
+     across everything in between, which is how two of these first shipped
+     passing straight through a part. */
+  b.wire([nano, 'v5'], [bb, 'pos-near-7'], RED)
+  b.wire([nano, 'gnd'], [bb, 'neg-near-7'], BLACK)
+  b.wire([bb, 'pos-near-26'], [reg, 'vcc'], RED, 0.16)
+  b.wire([bb, 'neg-far-26'], [reg, 'gnd'], BLACK, 0.16)
+  b.wire([bb, 'pos-near-27'], [reg, 'mr'], RED, 0.16)
+  b.wire([bb, 'neg-far-27'], [reg, 'oe'], BLACK, 0.16)
+
+  // The three lines that actually drive it.
+  b.wire([nano, 'd11'], [reg, 'ds'], BLUE, 0.16)
+  b.wire([nano, 'd13'], [reg, 'shcp'], GREEN, 0.16)
+  b.wire([nano, 'd10'], [reg, 'stcp'], YELLOW, 0.16)
+
+  const q = ['q0', 'q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7']
+  for (let i = 0; i < 8; i++) {
+    b.wire([reg, q[i]], [res[i], '1'], BLUE, 0.16)
+    b.wire([res[i], '2'], [bar, `a${i + 1}`], RED, 0.16)
+    b.wire([bar, `c${i + 1}`], [bb, `neg-far-${34 + i}`], BLACK, 0.16)
+  }
+
+  return b.doc
+}
+
+/* ================================================================== */
+/* 555 audio oscillator                                                */
+/* ================================================================== */
+
+/**
+ * A 555 astable into a speaker, with the pitch on a knob.
+ *
+ * The same chip as the blinker preset running four decades faster, which is
+ * why both are here: one flashes an LED and one makes a tone, and the only
+ * difference between them is the timing network. That network is solved, so
+ * turning the pot really does move the frequency.
+ */
+export function soundBench(): Doc {
+  const b = new Builder('555 audio oscillator')
+
+  const bb = b.add('breadboard', [0, 0, 0], {}, [0, 0, 0], 'Breadboard')
+  const ic = b.add('ne555', [-14, 9, 0], {}, [0, 90, 0], 'NE555')
+
+  /* The pot sits in the field on the near side, not out at z = -24: that is
+     past the far rail, so every jumper reaching that rail had to climb over
+     the knob to get there. */
+  const pot = b.add('potentiometer', [-50, 9, 10], { value: 100000 }, [0, 0, 0], 'Pitch')
+  const r1 = b.add('resistor-axial', [-30, 9, -10], { value: 1000, watt: '0.25' }, [0, 0, 0], 'R1')
+  const ct = b.add('capacitor-ceramic', [-2, 9, -12], { value: 1e-8 }, [0, 0, 0], 'Timing cap')
+  const cc = b.add('capacitor-ceramic', [10, 9, -12], { value: 1e-8 }, [0, 0, 0], 'Control cap')
+  const co = b.add('capacitor-electrolytic', [26, 9, 10], { value: 1e-5, vmax: 16 }, [0, 0, 0], 'Output cap')
+
+  const spk = b.add('speaker-cone', [78, 0, 0], { diameter: 66, power: 3 }, [0, 0, 0], 'Speaker')
+  const bat = b.add('battery-holder', [-10, 0, 66], { cell: '18650', count: 2 }, [0, 0, 0], 'Cells')
+
+  // Supply onto the rails, chip across them.
+  b.wire([bat, 'p'], [bb, 'pos-near-21'], RED)
+  b.wire([bat, 'n'], [bb, 'neg-near-21'], BLACK)
+  b.wire([bb, 'pos-near-20'], [ic, 'vcc'], RED, 0.16)
+  b.wire([bb, 'neg-far-20'], [ic, 'gnd'], BLACK, 0.16)
+  b.wire([bb, 'pos-near-22'], [ic, 'reset'], RED, 0.16)
+
+  /* The astable proper: the pot and R1 charge the cap, the chip discharges
+     it, and trigger tied to threshold is what makes it run on its own. */
+  b.wire([bb, 'pos-near-8'], [pot, 'a'], RED, 0.16)
+  b.wire([pot, 'w'], [ic, 'disch'], YELLOW, 0.16)
+  b.wire([ic, 'disch'], [r1, '1'], YELLOW, 0.16)
+  b.wire([r1, '2'], [ic, 'thresh'], GREEN, 0.16)
+  b.wire([ic, 'thresh'], [ic, 'trig'], GREEN, 0.16)
+  b.wire([ic, 'trig'], [ct, '1'], GREEN, 0.16)
+  b.wire([ct, '2'], [bb, 'neg-far-23'], BLACK, 0.16)
+  b.wire([ic, 'ctrl'], [cc, '1'], BLUE, 0.16)
+  b.wire([cc, '2'], [bb, 'neg-far-27'], BLACK, 0.16)
+
+  // Out through a coupling cap, so the cone sees no standing current.
+  b.wire([ic, 'out'], [co, 'p'], BLUE, 0.16)
+  b.wire([co, 'n'], [spk, 'p'], RED)
+  b.wire([spk, 'n'], [bb, 'neg-far-48'], BLACK)
+
+  return b.doc
+}
+
+/* ================================================================== */
+/* ESP32 weather station                                               */
+/* ================================================================== */
+
+/**
+ * An ESP32, a screen and two sensors on perfboard.
+ *
+ * A 3.3 V board rather than another Uno, because the set already had four of
+ * those and because the ESP is what people reach for the moment a project
+ * wants to be on a network. The panel runs over I2C, decoded, so what is on
+ * the screen is what the sketch put there.
+ */
+export function espWeather(): Doc {
+  const b = new Builder('ESP32 sensor node')
+
+  // Green, because the devkit is black and vanished against a black board.
+  b.add('perfboard', [0, 0, 0], { cols: 42, rows: 30, mask: 'fr4-green', layout: 'pads' }, [0, 0, 0], 'Perfboard')
+
+  /*
+   * The bar is driven by the sketch, not decorated.
+   *
+   * An OLED would have been the obvious readout and is the one thing this
+   * board cannot do here: the panel decodes real I2C traffic off its two
+   * pins, and bit-banging an SSD1306 through its init is a page of sketch
+   * rather than a build. Six GPIOs and a bargraph say the same thing, and
+   * every segment is lit by the solver reading the gas sensor.
+   */
+  const BARS = [25, 26, 27, 14, 12, 13]
+
+  const esp = b.add(
+    'esp-board',
+    [-34, 1.75, 2],
+    {
+      board: 'devkitc-38',
+      program: 'custom',
+      code: `// Reads the gas sensor and shows it on the bar.
+const BARS = [${BARS.join(', ')}]
+
+function setup() {
+  for (const p of BARS) pinMode(p, OUTPUT)
+}
+
+function* loop() {
+  const raw = analogRead(34)
+  const lit = Math.round((raw / 1023) * BARS.length)
+  for (let i = 0; i < BARS.length; i++) {
+    digitalWrite(BARS[i], i < lit ? HIGH : LOW)
+  }
+  yield delay(120)
+}`,
+    },
+    [0, 0, 0],
+    'ESP32',
+  )
+
+  const bar = b.add('led-bargraph', [40, 1.75, -26], { color: 'red', segments: 10 }, [0, 0, 0], 'Level')
+  const dht = b.add('sensor-dht', [40, 1.75, 24], {}, [0, 0, 0], 'Temp and humidity')
+  // Seventy per cent, so four of the six segments are lit in the picture; at
+  // the default of forty it reads two and looks like a bar that is not working.
+  const gas = b.add('sensor-gas-mq2', [-2, 1.75, -30], { reading: 70 }, [0, 0, 0], 'Gas')
+
+  /* Asked for rather than written down.
+     A port id on these boards is side plus index plus label, so it moves when
+     the board does: the DevKitC calls its 3.3 V pin something a NodeMCU does
+     not. Hard-coding one is how this build first shipped with three wires
+     attached to a pin that did not exist, which is silent — the rail simply
+     reads zero. */
+  const espParams = b.doc.instances[esp].params
+  const V33 = espRailIds(espParams).v33[0]
+  const GND = espGroundId(espParams)
+
+  // The two sensors, each on its own pin.
+  b.wire([esp, V33], [dht, 'vcc'], RED, 0.16)
+  b.wire([esp, GND], [dht, 'gnd'], BLACK, 0.16)
+  b.wire([esp, 'io15'], [dht, 'data'], BLUE, 0.16)
+
+  b.wire([esp, V33], [gas, 'vcc'], RED, 0.16)
+  b.wire([esp, GND], [gas, 'gnd'], BLACK, 0.16)
+  b.wire([esp, 'io34'], [gas, 'out'], GREEN, 0.16)
+
+  // Six outputs, each through its own resistor into a segment.
+  for (let i = 0; i < BARS.length; i++) {
+    const r = b.add(
+      'resistor-axial',
+      [16, 1.75, -29 + i * 2.54],
+      { value: 220, watt: '0.25' },
+      [0, 0, 0],
+      `R${i + 1}`,
+    )
+    b.wire([esp, `io${BARS[i]}`], [r, '1'], YELLOW, 0.16)
+    b.wire([r, '2'], [bar, `a${i + 1}`], RED, 0.16)
+    b.wire([bar, `c${i + 1}`], [esp, GND], BLACK, 0.16)
+  }
+
+  return b.doc
+}
+
+/* ================================================================== */
+/* Brushless thrust rig                                                */
+/* ================================================================== */
+
+/**
+ * A motor, a propeller and a load cell to find out what it pulls.
+ *
+ * The one build in the set with a spinning thing on it, and that is the
+ * reason it is here: a page of circuit boards reads as one product, and this
+ * says the same editor holds the frame as well as what is bolted to it.
+ *
+ * Extrusion convention is the one at the top of this file — authored along X,
+ * seated at y = 0, and `post` stands one up.
+ */
+export function thrustRig(): Doc {
+  const b = new Builder('Brushless thrust rig')
+
+  const W = 260
+  const H = 170
+
+  // A base that stays put, and a mast to carry the motor.
+  b.beamX(0, 0, -70, W)
+  b.beamX(0, 0, 70, W)
+  b.beamZ(-W / 2 + 10, 0, 0, 160)
+  b.beamZ(W / 2 - 10, 0, 0, 160)
+  b.post(-W / 2 + 10, 20, 0, H)
+  b.post(W / 2 - 30, 20, 0, H)
+
+  /* Stacked, because that is how these parts are authored: a beam is seated
+     at y = 0 and a motor stands on its own base with the shaft on top. The
+     first version hung the motor under the beam and left the propeller in
+     mid-air beside it, nowhere near the shaft. */
+  const TOP = 20 + H
+  b.beamX(0, TOP, 0, W - 20)
+
+  /* The cell carries the motor and the beam carries the cell, so what it
+     weighs is thrust rather than the motor. */
+  const cell = b.add('load-cell', [-20, TOP + 20, 0], { capacity: '5' }, [0, 0, 0], 'Load cell')
+  const hx = b.add('amp-hx711', [66, TOP + 20, 46], {}, [0, 0, 0], 'HX711')
+
+  const motor = b.add('motor-brushless', [0, TOP + 34, 0], { kv: 1000 }, [0, 0, 0], 'Motor')
+  // The bore sits on the shaft, which is 38 mm above the motor's own base.
+  b.add('propeller', [0, TOP + 72, 0], { dia: 10, pitch: 4.5, blades: '2', color: 'orange' }, [0, 0, 0], 'Propeller')
+
+  /* The ESC rides up on the mast beside the motor, not down on the base.
+     Three phase wires from the floor to the top have to climb past the cross
+     beam the motor is standing on, and they clipped it; up here they are the
+     short leads they are in life, and only the battery runs the height of the
+     frame. */
+  const esc = b.add('esc-brushless', [70, TOP + 22, 30], { amps: '40' }, [0, 90, 0], 'ESC')
+  const uno = b.add('mcu-board', [-74, 22, 48], { program: 'pwm', duty: 62 }, [0, 0, 0], 'Controller')
+  const pack = b.add('battery-holder', [92, 22, -44], { cell: '18650', count: 4 }, [0, 0, 0], 'Pack')
+
+  // Three phases, and they are interchangeable: swap any two and it reverses.
+  b.wire([esc, 'ma'], [motor, 'a'], '#C9CDD4', 0.6)
+  b.wire([esc, 'mb'], [motor, 'b'], '#C9CDD4', 0.6)
+  b.wire([esc, 'mc'], [motor, 'c'], '#C9CDD4', 0.6)
+
+  b.wire([pack, 'p'], [esc, 'bp'], RED, 0.6)
+  b.wire([pack, 'n'], [esc, 'bn'], BLACK, 0.6)
+
+  // Throttle in, and the regulator inside the ESC runs the board.
+  b.wire([uno, 'd5'], [esc, 'sig'], YELLOW, 0.16)
+  b.wire([esc, 'becp'], [uno, 'v5'], RED, 0.16)
+  b.wire([esc, 'becn'], [uno, 'gnd'], BLACK, 0.16)
+
+  // A load cell is a bridge; the amplifier is what makes it readable.
+  b.wire([cell, 'ep'], [hx, 'ep'], RED, 0.16)
+  b.wire([cell, 'en'], [hx, 'en'], BLACK, 0.16)
+  b.wire([cell, 'ap'], [hx, 'ap'], GREEN, 0.16)
+  b.wire([cell, 'am'], [hx, 'am'], BLUE, 0.16)
+  b.wire([hx, 'vcc'], [uno, 'v5'], RED, 0.16)
+  b.wire([hx, 'gnd'], [uno, 'gnd'], BLACK, 0.16)
+  b.wire([hx, 'dt'], [uno, 'd3'], GREEN, 0.16)
+  b.wire([hx, 'sck'], [uno, 'd2'], YELLOW, 0.16)
+
+  return b.doc
+}
+
+/* ================================================================== */
+/* RFID door lock                                                      */
+/* ================================================================== */
+
+/**
+ * A card reader, a keypad and the thing that actually moves the bolt.
+ *
+ * On a panel rather than lying on a bench, because that is where these end
+ * up, and because it puts a reader and a solenoid in the set — two shapes
+ * nothing else here has.
+ */
+export function rfidLock(): Doc {
+  const b = new Builder('RFID door lock')
+
+  /*
+   * Laid out on the bench rather than mounted behind a face.
+   *
+   * It was a panel build first, and a panel is the wrong thing to photograph:
+   * standing a 220 mm sheet up puts a white rectangle between the camera and
+   * everything that makes it interesting. Flat, the reader, the keypad and
+   * the bolt are all visible at once, which is the whole reason this build is
+   * in the set.
+   */
+  const pad = b.add('keypad-matrix', [72, 0, 0], { layout: '4x4' }, [0, 0, 0], 'Keypad')
+  const rfid = b.add('rfid-rc522', [-62, 0, -44], {}, [0, 0, 0], 'Card reader')
+  const uno = b.add('mcu-board', [-60, 0, 52], { program: 'button' }, [0, 0, 0], 'Controller')
+  const relay = b.add('relay-module', [18, 0, 62], {}, [0, 0, 0], 'Relay')
+  const bolt = b.add('solenoid-linear', [18, 0, -62], { size: 'medium', voltage: '12' }, [0, 0, 0], 'Door bolt')
+  /* Off to the corner, not in line behind the relay: the bolt's return runs
+     the length of the build to get here, and straight back past the relay is
+     the one path it cannot take. */
+  const psu = b.add('battery-holder', [92, 0, 96], { cell: '18650', count: 3 }, [0, 0, 0], 'Supply')
+
+  const ok = b.add('led-5mm', [70, 0, -62], { color: 'green', diffused: true }, [0, 90, 0], 'Unlocked')
+  const rl = b.add('resistor-axial', [70, 0, -50], { value: 330, watt: '0.25' }, [0, 0, 0], 'R1')
+
+  // The reader is SPI, so four lines, plus a reset it wants held high.
+  b.wire([uno, 'd13'], [rfid, 'sck'], YELLOW, 0.16)
+  b.wire([uno, 'd11'], [rfid, 'mosi'], BLUE, 0.16)
+  b.wire([uno, 'd12'], [rfid, 'miso'], GREEN, 0.16)
+  b.wire([uno, 'd10'], [rfid, 'sda'], '#C77DFF', 0.16)
+  b.wire([uno, 'd9'], [rfid, 'rst'], '#FF9E4A', 0.16)
+  b.wire([uno, 'v33'], [rfid, 'vcc'], RED, 0.16)
+  b.wire([uno, 'gnd'], [rfid, 'gnd'], BLACK, 0.16)
+
+  // Four rows, four columns, eight pins and no decoding anywhere.
+  const rows = ['r1', 'r2', 'r3', 'r4']
+  const cols = ['c1', 'c2', 'c3', 'c4']
+  for (let i = 0; i < 4; i++) b.wire([uno, `d${i + 2}`], [pad, rows[i]], BLUE, 0.16)
+  for (let i = 0; i < 4; i++) b.wire([uno, `a${i}`], [pad, cols[i]], GREEN, 0.16)
+
+  // A board pin cannot pull a bolt, so it closes a relay that can.
+  b.wire([uno, 'd6'], [relay, 'in'], YELLOW, 0.16)
+  b.wire([uno, 'v5'], [relay, 'vcc'], RED, 0.16)
+  b.wire([uno, 'gnd'], [relay, 'gnd'], BLACK, 0.16)
+  b.wire([psu, 'p'], [relay, 'com'], RED, 0.33)
+  b.wire([relay, 'no'], [bolt, 'a'], RED, 0.33)
+  b.wire([bolt, 'b'], [psu, 'n'], BLACK, 0.33)
+
+  b.wire([uno, 'd7'], [rl, '1'], GREEN, 0.16)
+  b.wire([rl, '2'], [ok, 'a'], GREEN, 0.16)
+  b.wire([ok, 'c'], [uno, 'gnd2'], BLACK, 0.16)
+
+  return b.doc
+}
+
+/* ================================================================== */
+/* Servo arm                                                           */
+/* ================================================================== */
+
+/**
+ * Three servos on a driver, which is how a limb gets built.
+ *
+ * The driver is here rather than three pins on the board because that is the
+ * real answer once there is more than a couple of them: one address on the
+ * bus, its own supply for the motors, and the board left with two wires to
+ * do. Servos are solved, so the horns sit where the sketch puts them.
+ */
+export function servoArm(): Doc {
+  const b = new Builder('Servo arm')
+
+  b.beamX(0, 0, 0, 180)
+  b.beamX(0, 0, -60, 180)
+  b.beamZ(-80, 0, -30, 80)
+  b.beamZ(80, 0, -30, 80)
+
+  b.add('bracket-l', [-50, 20, 4], {}, [0, 0, 0], 'Shoulder bracket')
+  b.add('bracket-l', [0, 20, 4], {}, [0, 0, 0], 'Elbow bracket')
+  b.add('bracket-l', [50, 20, 4], {}, [0, 0, 0], 'Wrist bracket')
+
+  const s1 = b.add('servo-hobby', [-50, 44, 26], { size: 'mg996' }, [0, 0, 0], 'Shoulder')
+  const s2 = b.add('servo-hobby', [0, 44, 26], { size: 'mg996' }, [0, 0, 0], 'Elbow')
+  const s3 = b.add('servo-hobby', [50, 44, 26], { size: 'mg996' }, [0, 0, 0], 'Wrist')
+
+  const drv = b.add('servo-driver-pca9685', [0, 20, -64], {}, [0, 0, 0], 'Servo driver')
+  const uno = b.add('mcu-board', [-74, 20, -80], { program: 'pwm', duty: 50 }, [0, 90, 0], 'Controller')
+  const psu = b.add('battery-holder', [82, 14, -80], { cell: '18650', count: 2 }, [0, 0, 0], 'Servo supply')
+
+  // Two wires to the board, and the motors fed from their own pack.
+  b.wire([uno, 'sda'], [drv, 'sda'], GREEN, 0.16)
+  b.wire([uno, 'scl'], [drv, 'scl'], YELLOW, 0.16)
+  b.wire([uno, 'v5'], [drv, 'vcc'], RED, 0.16)
+  b.wire([uno, 'gnd'], [drv, 'gnd'], BLACK, 0.16)
+  b.wire([psu, 'p'], [drv, 'vp'], RED, 0.33)
+  b.wire([psu, 'n'], [drv, 'gterm'], BLACK, 0.33)
+
+  const arms = [s1, s2, s3]
+  for (let i = 0; i < arms.length; i++) {
+    b.wire([drv, `pwm${i}`], [arms[i], 'sig'], YELLOW, 0.16)
+    b.wire([drv, 'vterm'], [arms[i], 'vcc'], RED, 0.16)
+    b.wire([drv, 'gterm'], [arms[i], 'gnd'], BLACK, 0.16)
+  }
 
   return b.doc
 }

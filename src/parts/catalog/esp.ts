@@ -411,6 +411,7 @@ export function espSketchPins(p: Params): {
   digital: string[]
   analog: string[]
   aliases: Record<string, string>
+  gpioNumbers: boolean
 } {
   const b = board(p)
   const digital: string[] = []
@@ -425,7 +426,10 @@ export function espSketchPins(p: Params): {
       if (pin.alias) aliases[pin.alias] = id
     })
   }
-  return { digital, analog, aliases }
+  // A bare number in a sketch for one of these is a GPIO number, not an
+  // Arduino pin number. Without this the runtime applies the Uno's rule that
+  // 14 and up mean the analogue pins, and digitalWrite(25) lands elsewhere.
+  return { digital, analog, aliases, gpioNumbers: true }
 }
 
 const espBoard: PartDef = {
