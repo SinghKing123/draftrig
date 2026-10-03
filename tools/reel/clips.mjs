@@ -138,8 +138,8 @@ export const CLIP_BUILDS = {
   id: 'clip-builds',
   rate: 4,
   simSpeed: 1,
-  camera: [30, 58, 420],
-  setup: stage('cnc', [0, 60, 0], 30, 58, 420),
+  camera: [30, 56, 300],
+  setup: stage('rfid-lock', [0, 10, 0], 30, 56, 300),
   async perform(page) {
     await page.evaluate(async () => {
       const rig = window.__rig
@@ -160,10 +160,14 @@ export const CLIP_BUILDS = {
         show(id, target, dist)
         await rig.drift(9, 2600)
       }
+      /* Four circuits, and no machines.
+         The rover and the router were two of these until motion turned out
+         to be the one thing the simulator does not do; a clip is an advert,
+         and those two were advertising it. */
       await beat('matrix', [0, 10, -20], 230)
-      await beat('oled', [0, 8, 0], 170)
-      await beat('rover', [0, 30, 0], 280)
-      await beat('cnc', [0, 60, 0], 360)
+      await beat('logic-bench', [0, 10, 0], 230)
+      await beat('rfid-lock', [0, 10, 0], 300)
+      await beat('esp-weather', [0, 8, 0], 200)
     })
   },
 }

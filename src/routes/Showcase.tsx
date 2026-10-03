@@ -18,25 +18,26 @@ import { STARTERS } from '@/io/starters'
 /*
  * Which builds to show, and in what order.
  *
- * Ordered so no two next to each other look alike. The set used to be seven
- * boards, five of which were a microcontroller on perfboard with a display
- * beside it, and a carousel of near-identical pictures says the editor does
- * one thing well. These alternate: an LED array, a machine, a breadboard, a
- * character display, a pile of modules, a 3.3 V board, and so on.
+ * Ordered so no two next to each other look alike: an LED array, a
+ * breadboard, a character display, a pile of modules, a 3.3 V board, and so
+ * on round again.
+ *
+ * Circuits only. The router and the thrust rig were here and came out with
+ * the rest of the motor builds — a front page is a promise, and those were
+ * promising motion the simulator does not do yet.
  *
  * Every one of them is a starter, so whatever is here can be opened.
  */
 const SHOWN = [
   'matrix',
-  'thrust-rig',
   'logic-bench',
   'scoreboard',
   'rfid-lock',
   'esp-weather',
-  'cnc',
+  'bench-clock',
   'sound-bench',
-  'servo-arm',
-  'rover',
+  'panel',
+  'oled',
 ]
 
 /** How long each slide holds, ms. */

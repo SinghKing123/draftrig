@@ -7,6 +7,7 @@ import { useAuth } from '@/auth/AuthProvider'
 import { SHOWCASE_GLYPHS } from '@/ui/PartIcons'
 import { Clip } from './Clip'
 import { Showcase } from './Showcase'
+import { Trace } from './Trace'
 import { Reel } from './Reel'
 
 /**
@@ -222,6 +223,97 @@ function useTheme(): ['dark' | 'light', () => void] {
   return [theme, flip]
 }
 
+/**
+ * Where the pointer is over the hero, as a fraction of it.
+ *
+ * Written to CSS custom properties on the section rather than to React
+ * state: the glow and the frame both read it, this fires on every pointer
+ * move, and re-rendering the hero sixty times a second to move a highlight
+ * is how a page that looks expensive comes to feel cheap.
+ *
+ * Nothing is attached on a touch screen — there is no pointer to follow, and
+ * the listener would only cost battery.
+ */
+function usePointer(): React.RefObject<HTMLElement> {
+  const ref = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    if (!window.matchMedia?.('(hover: hover) and (pointer: fine)').matches) return
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+
+    let frame = 0
+    const move = (e: PointerEvent) => {
+      if (frame) return
+      frame = requestAnimationFrame(() => {
+        frame = 0
+        const r = el.getBoundingClientRect()
+        const x = (e.clientX - r.left) / r.width
+        const y = (e.clientY - r.top) / r.height
+        el.style.setProperty('--px', x.toFixed(4))
+        el.style.setProperty('--py', y.toFixed(4))
+        // Signed, for anything that wants to lean rather than glow.
+        el.style.setProperty('--dx', (x - 0.5).toFixed(4))
+        el.style.setProperty('--dy', (y - 0.5).toFixed(4))
+      })
+    }
+    const leave = () => {
+      el.style.setProperty('--dx', '0')
+      el.style.setProperty('--dy', '0')
+    }
+
+    el.addEventListener('pointermove', move)
+    el.addEventListener('pointerleave', leave)
+    return () => {
+      if (frame) cancelAnimationFrame(frame)
+      el.removeEventListener('pointermove', move)
+      el.removeEventListener('pointerleave', leave)
+    }
+  }, [])
+
+  return ref
+}
+
+/**
+ * Lights the edge of whichever tile the pointer is over.
+ *
+ * One listener on the grid rather than one per tile, and it writes straight
+ * to the element: five tiles each re-rendering on pointermove to move a
+ * highlight is the kind of thing that makes a page stutter on a laptop.
+ */
+function useTileGlow(): React.RefObject<HTMLDivElement> {
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    if (!window.matchMedia?.('(hover: hover) and (pointer: fine)').matches) return
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+
+    let frame = 0
+    const move = (e: PointerEvent) => {
+      if (frame) return
+      frame = requestAnimationFrame(() => {
+        frame = 0
+        const tile = (e.target as Element | null)?.closest?.('.tile') as HTMLElement | null
+        if (!tile) return
+        const r = tile.getBoundingClientRect()
+        tile.style.setProperty('--mx', `${(e.clientX - r.left).toFixed(0)}px`)
+        tile.style.setProperty('--my', `${(e.clientY - r.top).toFixed(0)}px`)
+      })
+    }
+
+    el.addEventListener('pointermove', move)
+    return () => {
+      if (frame) cancelAnimationFrame(frame)
+      el.removeEventListener('pointermove', move)
+    }
+  }, [])
+
+  return ref
+}
+
 function useStuck(): boolean {
   const [stuck, setStuck] = useState(false)
   useEffect(() => {
@@ -240,6 +332,8 @@ export function Landing() {
   const parts = useCatalogCount()
   const accounts = useAuth().enabled
   const [theme, flipTheme] = useTheme()
+  const hero = usePointer()
+  const bento = useTileGlow()
 
   useEffect(() => {
     document.title = pageTitle()
@@ -262,12 +356,17 @@ export function Landing() {
           <span className="theme-knob" />
         </button>
         <AccountMenu compact />
-        <Link className="btn-sheen" to="/app">Open the editor</Link>
+        <Link className="btn-sheen" to="/app">
+          <span className="say-long">Open the editor</span>
+          <span className="say-short">Open</span>
+        </Link>
       </header>
 
-      <section className="hero">
+      <section className="hero" ref={hero as React.RefObject<HTMLElement>}>
         <div className="hero-glow" aria-hidden="true" />
         <div className="hero-mesh" aria-hidden="true" />
+        {/* Follows the pointer. One element, moved by two custom properties. */}
+        <div className="hero-spot" aria-hidden="true" />
 
         <div className="hero-in">
           <Rise className="hero-copy">
@@ -280,7 +379,7 @@ export function Landing() {
           </Rise>
 
           <Rise className="hero-stage" delay={120}>
-            <div className="frame">
+            <div className="frame tilt">
               <div className="frame-bar"><i /><i /><i /></div>
               <Reel
                 names={['clip-assemble', 'clip-wire', 'clip-run', 'clip-builds']}
@@ -296,7 +395,7 @@ export function Landing() {
         </div>
       </section>
 
-      <section className="bento" id="work">
+      <section className="bento" id="work" ref={bento}>
         <Rise className="tile tile-wide">
           <Clip name="clip-wire" poster="/clips/clip-wire.jpg" className="tile-film" />
         </Rise>
@@ -314,6 +413,8 @@ export function Landing() {
           <Clip name="clip-builds" poster="/clips/clip-builds.jpg" className="tile-film" />
         </Rise>
       </section>
+
+      <Trace />
 
       <Showcase />
 

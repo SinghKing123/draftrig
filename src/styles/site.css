@@ -2498,3 +2498,269 @@
 @media (prefers-reduced-motion: reduce) {
   .theme-knob { transition: none; }
 }
+
+/* ==================================================================
+   The self-drawing circuit
+   ------------------------------------------------------------------
+   Line art on the page's own background, so it has no edge and does
+   not read as another picture in a frame. Everything is stroked in
+   the accent and the ink colours, which means it follows the theme
+   switch without a second set of rules.
+   ================================================================== */
+
+.trace {
+  position: relative;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: clamp(40px, 7vh, 90px) clamp(18px, 4vw, 44px) clamp(20px, 4vh, 50px);
+}
+
+.trace-head { margin-bottom: clamp(14px, 3vh, 34px); }
+.trace-head h2 {
+  font-size: clamp(1.5rem, 3vw, 2.3rem);
+  margin: 0 0 8px;
+}
+.trace-head p {
+  margin: 0;
+  max-width: 48ch;
+  color: var(--tx-2);
+  font-size: clamp(0.95rem, 1.4vw, 1.05rem);
+}
+
+.trace-art {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* ---- the wires ---- */
+
+.trace-wires .seg {
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition-property: stroke-dashoffset;
+  transition-timing-function: cubic-bezier(0.33, 0.9, 0.32, 1);
+}
+.seg.pos { stroke: var(--accent); }
+.seg.neg { stroke: var(--tx-3); }
+.seg.sense { stroke: color-mix(in srgb, var(--accent-2) 60%, transparent); stroke-dasharray: 6 5 !important; }
+
+/* The sense lines are dashed in their own right, so their draw-in is a fade
+   rather than a dash offset: two dash patterns on one stroke fight. */
+.trace[data-on='false'] .seg.sense { opacity: 0; }
+.trace[data-on='true'] .seg.sense { opacity: 1; transition: opacity 700ms var(--ease) 1500ms; }
+
+/* ---- the current ---- */
+
+.trace-flow { opacity: 0; transition: opacity 500ms var(--ease); }
+.trace[data-on='true'] .trace-flow { opacity: 1; }
+
+.flow {
+  fill: none;
+  stroke: var(--accent-2);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent-2) 70%, transparent));
+  animation: trace-run 2.6s linear infinite;
+  animation-play-state: paused;
+}
+.trace[data-on='true'] .flow { animation-play-state: running; }
+
+/*
+ * Travel is driven by dash offset rather than by moving a dot along the
+ * path: offsetPath would need a second length measurement per branch and
+ * does not animate in older Safari, and a dash already follows the curve
+ * exactly. The offset runs one full path length, so the dash leaves one end
+ * as the next one enters.
+ */
+@keyframes trace-run {
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: -600; }
+}
+
+/* ---- the parts ---- */
+
+/*
+ * Opacity only, and deliberately no transform.
+ *
+ * Each part carries its position in an SVG `transform` attribute, and a CSS
+ * `transform` on the same element replaces it outright rather than adding to
+ * it — so a `translateY(0)` here, meant as a starting point to animate from,
+ * silently moved all five symbols to the origin and stacked them in the
+ * corner. Anything that wants to move them has to compose the translate
+ * itself.
+ */
+.trace-parts .part {
+  opacity: 0;
+  transition: opacity 520ms var(--ease);
+}
+.trace[data-on='true'] .trace-parts .part { opacity: 1; }
+
+.trace-parts g {
+  fill: none;
+  stroke: var(--tx);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.trace-parts .fill { fill: var(--tx); stroke: var(--tx); }
+.trace-parts .ray { stroke: var(--accent-2); stroke-width: 1.6; }
+.trace-parts text {
+  fill: var(--tx-3);
+  stroke: none;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-anchor: middle;
+}
+
+@media (max-width: 720px) {
+  .trace-parts text { font-size: 15px; }
+  .trace-head p { max-width: 36ch; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trace-wires .seg { transition: none; stroke-dashoffset: 0 !important; }
+  .trace-parts .part { transition: none; opacity: 1; }
+  .trace .flow { animation: none; opacity: 0.9; }
+  .trace[data-on='false'] .seg.sense { opacity: 1; }
+}
+
+/* ==================================================================
+   Pointer
+   ------------------------------------------------------------------
+   `--px`/`--py` are where the pointer is over the hero, 0 to 1, and
+   `--dx`/`--dy` the same signed from the centre. They are written by
+   a rAF-throttled listener straight onto the element, so nothing
+   below costs a React render.
+
+   Both default to the middle, so the hero looks deliberate on a
+   phone and before the pointer has ever entered.
+   ================================================================== */
+
+.hero { --px: 0.5; --py: 0.4; --dx: 0; --dy: 0; }
+
+.hero-spot {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    420px 420px at calc(var(--px) * 100%) calc(var(--py) * 100%),
+    color-mix(in srgb, var(--accent) 30%, transparent),
+    color-mix(in srgb, var(--accent) 8%, transparent) 42%,
+    transparent 72%
+  );
+  opacity: 0;
+  transition: opacity 500ms var(--ease);
+}
+.hero:hover .hero-spot { opacity: 1; }
+
+/* A lean, not a swing. Past about a degree and a half the frame stops
+   reading as a screen on a desk and starts reading as a card trick. */
+.tilt {
+  transform: perspective(1200px)
+             rotateX(calc(var(--dy) * -3deg))
+             rotateY(calc(var(--dx) * 4deg));
+  transition: transform 400ms var(--ease);
+  will-change: transform;
+}
+
+@media (hover: none), (prefers-reduced-motion: reduce) {
+  .hero-spot { display: none; }
+  .tilt { transform: none; }
+}
+
+/* ==================================================================
+   The edge the pointer lights
+   ------------------------------------------------------------------
+   A tile's border brightens where the cursor is near it. One listener
+   on the grid writes `--mx`/`--my` onto whichever tile is under the
+   pointer, in pixels relative to that tile.
+
+   The ring is a gradient-filled overlay masked to the border, which
+   is the only way to get a gradient on a border: `border-image`
+   cannot be a radial gradient, and a second absolutely-positioned
+   box would have to track the radius by hand.
+   ================================================================== */
+
+.tile { --mx: 50%; --my: 50%; }
+
+.tile::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  /* 1px reads as nothing against a photograph; 1.6 is a lit edge. */
+  padding: 1.6px;
+  background: radial-gradient(
+    280px 280px at var(--mx) var(--my),
+    var(--accent-2),
+    color-mix(in srgb, var(--accent) 55%, transparent) 38%,
+    transparent 70%
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 320ms var(--ease);
+  pointer-events: none;
+}
+.tile:hover::after { opacity: 1; }
+
+@media (hover: none), (prefers-reduced-motion: reduce) {
+  .tile::after { display: none; }
+}
+
+.lp[data-theme='light'] .tile::after {
+  background: radial-gradient(
+    280px 280px at var(--mx) var(--my),
+    var(--accent),
+    color-mix(in srgb, var(--accent) 35%, transparent) 40%,
+    transparent 70%
+  );
+}
+
+/* ==================================================================
+   The nav, on a phone
+   ------------------------------------------------------------------
+   Wordmark, a theme switch, an account control and a call to action
+   do not fit across 390 px, and the last of them was running off the
+   right edge with its label cut in half.
+
+   The call to action stays — it is the only reason the bar is there —
+   so it loses its wording rather than its place, and the switch and
+   the account control give up their gap.
+   ================================================================== */
+
+@media (max-width: 560px) {
+  .lp-nav { gap: 8px; padding-left: 16px; padding-right: 16px; }
+  .lp-nav .btn-sheen { padding-left: 14px; padding-right: 14px; font-size: 0.86rem; }
+  .theme-flip { width: 40px; height: 23px; }
+  .theme-knob { width: 15px; height: 15px; }
+  .lp[data-theme='light'] .theme-knob { transform: translateX(17px); }
+}
+
+/*
+ * Below this the words themselves are what does not fit, so the button says
+ * less. Two spans rather than a pseudo-element: `::after` on this button is
+ * already the sheen that gives it its name, and borrowing it for a label
+ * both killed the animation and produced an empty button — it is absolutely
+ * positioned, so whatever it contains adds no width.
+ */
+@media (max-width: 420px) {
+  .lp-nav .btn-sheen .say-long { display: none; }
+  .lp-nav .btn-sheen .say-short { display: inline; }
+}
+.btn-sheen .say-short { display: none; }
+
+/* The circuit sits closer to what is above it on a narrow page, where the
+   grid is one column and there is already a lot of vertical travel. */
+@media (max-width: 720px) {
+  .trace { padding-top: clamp(22px, 4vh, 44px); }
+}

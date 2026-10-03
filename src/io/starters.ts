@@ -2,7 +2,7 @@ import type { Doc } from '@/state/doc'
 import { emptyDoc } from '@/state/doc'
 import type { Instance, Params, Vec3 } from '@/parts/kernel/types'
 import { defaultParams, requirePart } from '@/parts/kernel/registry'
-import { benchClock, cncRouter, controlPanel, espWeather, ledMatrix, logicBench, rfidLock, rover, scoreboard, servoArm, soundBench, thrustRig } from './builds'
+import { benchClock, controlPanel, espWeather, ledMatrix, logicBench, rfidLock, scoreboard, soundBench } from './builds'
 
 /**
  * Starter builds. These are ordinary documents constructed in code, which
@@ -76,8 +76,13 @@ function ledCircuit(): Doc {
   return b.doc
 }
 
-/** A 2020 frame, the mechanical half of the tool, in one click. */
-function frameCube(): Doc {
+/**
+ * A 2020 frame, the mechanical half of the tool, in one click.
+ *
+ * Exported but not listed: see the note on STARTERS. It is kept whole so it
+ * can go back in the moment the mechanical side is worth showing.
+ */
+export function frameCube(): Doc {
   const b = new DocBuilder('2020 frame, 300 mm cube')
   const L = 300
   const params = { size: '2020', length: L, finish: 'alu-anod-black' }
@@ -111,8 +116,8 @@ function frameCube(): Doc {
   return b.doc
 }
 
-/** Motor, switch and supply, the smallest thing that moves. */
-function motorRig(): Doc {
+/** Motor, switch and supply. Exported but not listed; see STARTERS. */
+export function motorRig(): Doc {
   const b = new DocBuilder('Motor test rig')
   const psu = b.add('bench-supply', [-190, 0, 0], { voltage: 6, ilimit: 2 }, [0, 0, 0], 'Bench supply')
   const sw = b.add('switch-toggle', [-20, 12, 40], { poles: 'spst', on: false }, [0, 0, 0], 'Power switch')
@@ -291,6 +296,15 @@ export interface Starter {
  * a sheet of wood and a grey box are the two things in the catalog that
  * photograph worst, and leading with them made the whole set look like the
  * back room of a hardware shop.
+ *
+ * Circuits only, for now.
+ *
+ * The router, the rover, the thrust rig, the servo arm, the motor bench and
+ * the bare frame are all still in builds.ts and all still open; they are not
+ * offered here because every one of them is really a demonstration of a
+ * motor, and motion is not simulated yet. A starter is a promise about what
+ * the editor does, and these were promising the one thing it does not. Put
+ * them back when the motors turn.
  */
 export const STARTERS: Starter[] = [
   {
@@ -326,14 +340,6 @@ export const STARTERS: Starter[] = [
     build: espWeather,
   },
   {
-    id: 'thrust-rig',
-    title: 'Brushless thrust rig',
-    blurb: 'A motor, a propeller and a load cell to weigh what it pulls',
-    kind: 'build',
-    tags: ['brushless', 'motor', 'esc', 'propeller', 'drone', 'load cell', 'hx711', 'thrust', 'extrusion', 'test'],
-    build: thrustRig,
-  },
-  {
     id: 'rfid-lock',
     title: 'RFID door lock',
     blurb: 'A card reader, a keypad and the solenoid that moves the bolt',
@@ -349,14 +355,6 @@ export const STARTERS: Starter[] = [
     tags: ['555', 'ne555', 'audio', 'tone', 'oscillator', 'speaker', 'breadboard', 'potentiometer', 'analogue'],
     build: soundBench,
   },
-  {
-    id: 'servo-arm',
-    title: 'Servo arm',
-    blurb: 'Three servos on one driver, off a pack of their own',
-    kind: 'build',
-    tags: ['servo', 'arm', 'robot', 'pca9685', 'driver', 'i2c', 'motion', 'bracket', 'extrusion'],
-    build: servoArm,
-  },
   { id: 'led', title: 'LED on a breadboard', blurb: 'Supply, resistor and LED, see the current arrive', kind: 'circuit', tags: ["led","breadboard","resistor","ohms law","first","beginner","current"], build: ledCircuit },
   { id: 'blink555', title: '555 blinker', blurb: 'The classic astable, flashing at one hertz', kind: 'circuit', tags: ["555","ne555","timer","astable","oscillator","blink","flash","capacitor"], build: blinker555 },
   { id: 'mcu', title: 'Microcontroller blink', blurb: 'A board running a sketch, driving a real LED', kind: 'circuit', tags: ["arduino","uno","microcontroller","sketch","code","blink","firmware"], build: mcuBlink },
@@ -370,9 +368,5 @@ export const STARTERS: Starter[] = [
     tags: ["clock","rtc","perfboard","sensor","buttons","alarm","project","finished"],
     build: benchClock,
   },
-  { id: 'frame', title: '2020 frame cube', blurb: 'A 300 mm extrusion frame with a plywood deck', kind: 'build', tags: ["2020","extrusion","aluminium","frame","plywood","enclosure","mechanical"], build: frameCube },
-  { id: 'motor', title: 'Motor test rig', blurb: 'Bench supply through a switch into a DC motor', kind: 'circuit', tags: ["motor","dc","switch","bench supply","power","test"], build: motorRig },
-  { id: 'cnc', title: 'CNC router', blurb: 'Three axes, a moving gantry and the drivers for it', kind: 'build', tags: ["cnc","router","gantry","stepper","axis","machine","driver","motion"], build: cncRouter },
-  { id: 'rover', title: 'Four-wheel rover', blurb: 'Motors, a driver, a range finder and a display', kind: 'build', tags: ["rover","robot","wheels","motor driver","ultrasonic","range","display"], build: rover },
   { id: 'panel', title: 'Control panel', blurb: 'Everything a hand touches, on one aluminium face', kind: 'build', tags: ["panel","enclosure","switches","aluminium","front","controls","knobs"], build: controlPanel },
 ]
