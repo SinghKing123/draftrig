@@ -35,7 +35,6 @@
   --rule: #17181C;
   --rule-2: #BFB6A2;
   --spot: #0050DC;
-  --spot-2: #1E8CFA;
   --sunk: rgba(22, 23, 27, 0.14);
   /* The dark behind a photograph, which is dark on either stock. */
   --plate-dark: #0E1014;
@@ -86,7 +85,6 @@
   --rule: #E8F1FA;
   --rule-2: #3A6A9E;
   --spot: #BFE4FF;
-  --spot-2: #EAF6FF;
   --sunk: rgba(3, 20, 40, 0.55);
   --plate-dark: #07233F;
 }
@@ -130,27 +128,12 @@
 .mn .mn-fig-no,
 .mn .mn-sheet,
 .mn .mn-index-no,
-.mn .mn-qty,
 .mn figcaption b,
 .mn .mn-field-tag,
 .mn .mn-try button {
   font-family: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum' 1;
-}
-
-/* ---- the gauge across the top ---- */
-
-.mn-gauge {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 60;
-  width: 100%;
-  height: 2px;
-  background: var(--spot);
-  transform-origin: 0 50%;
-  pointer-events: none;
 }
 
 /* ==================================================================
@@ -335,29 +318,6 @@
 
 .mn-do:hover .mn-box { border-color: var(--spot); }
 
-/*
- * The last step is the primary action, so it is weighted as one: the box is
- * filled with the spot colour and the whole row carries an arrow. It never
- * ticks on its own, because it is the step the visitor performs.
- */
-.mn-step[data-act='true'] .mn-box {
-  border-color: var(--spot);
-  background: var(--spot);
-}
-.mn-step[data-act='true'] .mn-box::after {
-  content: '';
-  position: absolute;
-  left: 6px;
-  top: 50%;
-  width: 9px;
-  height: 9px;
-  border-top: 2px solid var(--mount);
-  border-right: 2px solid var(--mount);
-  transform: translateY(-50%) rotate(45deg);
-  transition: transform 220ms var(--ease);
-}
-.mn-step[data-act='true'] .mn-say b { color: var(--spot); }
-.mn-step[data-act='true']:hover .mn-box::after { transform: translate(3px, -50%) rotate(45deg); }
 
 /* ==================================================================
    Plates
@@ -447,6 +407,8 @@
 .mn-sect {
   grid-row: 1 / span 2;
   grid-column: 1;
+  font-family: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  font-variant-numeric: tabular-nums;
   padding-top: 0.5em;
   font-size: 0.72rem;
   color: var(--spot);
@@ -678,15 +640,6 @@
 button.mn-tr:hover { background: var(--stock-2); }
 button.mn-tr:hover .mn-name { color: var(--spot); }
 
-.mn-qty {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 0.8rem;
-  color: var(--ink-3);
-}
-.mn-qty i { display: grid; place-items: center; color: var(--ink-2); }
-button.mn-tr:hover .mn-qty i { color: var(--spot); }
 
 .mn-name {
   display: flex;
@@ -931,7 +884,7 @@ button.mn-tr:hover .mn-name i { color: var(--spot); }
   .mn-sym .sym { transition: none; opacity: 1; }
   .mn .flow { animation: none; }
   .mn-box svg { animation: none; stroke-dashoffset: 0; }
-  .mn-slide, .mn-nav a::after, .mn-act, .mn-alt { transition: none; }
+  .mn-slide, .mn-nav a::after, .mn-end-do, .mn-plate-nav button { transition: none; }
 }
 
 /* ==================================================================

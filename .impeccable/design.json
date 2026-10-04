@@ -1,0 +1,193 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-03T00:00:00.000Z",
+  "title": "Design System: Draftrig",
+  "extensions": {
+    "colorMeta": {
+      "stock": { "role": "neutral", "displayName": "Warm Stock", "canonical": "#F2EEE4", "tonalRamp": ["#2A2620", "#443E34", "#5F574A", "#7B7263", "#9A9181", "#BBB2A1", "#DAD2C2", "#F7F4EC"] },
+      "stock-2": { "role": "neutral", "displayName": "Stock, Second Pull", "canonical": "#EAE4D6", "tonalRamp": ["#28241B", "#413B2E", "#5C5443", "#786F5A", "#978C73", "#B6AB91", "#D4CAB3", "#F2ECDC"] },
+      "mount": { "role": "neutral", "displayName": "Mount", "canonical": "#FBF9F4", "tonalRamp": ["#2B2823", "#454138", "#605B4F", "#7C7668", "#9C9484", "#BDB5A4", "#DDD7C7", "#FCFAF6"] },
+      "ink": { "role": "neutral", "displayName": "Line Ink", "canonical": "#16171B", "tonalRamp": ["#0B0C0E", "#16171B", "#2C2E34", "#45474F", "#62646D", "#85878F", "#AFB1B8", "#DEDFE3"] },
+      "ink-2": { "role": "neutral", "displayName": "Secondary Ink", "canonical": "#55564E", "tonalRamp": ["#15150F", "#24241D", "#36362D", "#45453C", "#55564E", "#787A6F", "#A5A79B", "#D6D8CD"] },
+      "ink-3": { "role": "neutral", "displayName": "Tertiary Ink", "canonical": "#6B6A5E", "tonalRamp": ["#1A1914", "#2A2922", "#3D3C33", "#515045", "#6B6A5E", "#8D8C7F", "#B4B3A6", "#DEDDD2"] },
+      "rule": { "role": "neutral", "displayName": "Structural Rule", "canonical": "#17181C", "tonalRamp": ["#0B0C0F", "#17181C", "#2D2F35", "#464850", "#63656E", "#868890", "#B0B2B9", "#DFE0E4"] },
+      "rule-2": { "role": "neutral", "displayName": "Hairline Rule", "canonical": "#BFB6A2", "tonalRamp": ["#2A2619", "#433D2A", "#5E563D", "#7A7152", "#998F6C", "#BFB6A2", "#D8D2C3", "#F0EDE4"] },
+      "spot": { "role": "primary", "displayName": "Live Blue", "canonical": "#0050DC", "tonalRamp": ["#001233", "#001E55", "#002D7E", "#003EA8", "#0050DC", "#3B78F0", "#7BA6F7", "#C2D6FC"] },
+      "sunk": { "role": "neutral", "displayName": "Sunk", "canonical": "rgba(22, 23, 27, 0.14)", "tonalRamp": [] },
+      "plate-dark": { "role": "neutral", "displayName": "Plate Dark", "canonical": "#0E1014", "tonalRamp": ["#060709", "#0E1014", "#1C1F26", "#2D313B", "#424854", "#5D6472", "#8F96A3", "#C9CDD5"] },
+      "blueprint-stock": { "role": "neutral", "displayName": "Blueprint Stock", "canonical": "#0E3A6B", "tonalRamp": ["#04142A", "#071F42", "#0A2B5A", "#0E3A6B", "#17528F", "#2A72BC", "#6AA3DC", "#BFD9F2"] },
+      "blueprint-stock-2": { "role": "neutral", "displayName": "Blueprint Stock, Second Pull", "canonical": "#11447C", "tonalRamp": ["#05172F", "#082347", "#0C3160", "#11447C", "#1A5CA2", "#2F7CC9", "#70AAE1", "#C3DCF4"] },
+      "blueprint-mount": { "role": "neutral", "displayName": "Blueprint Mount", "canonical": "#0B3260", "tonalRamp": ["#031026", "#05193A", "#08244E", "#0B3260", "#124888", "#2167B4", "#629CD8", "#BAD6F0"] },
+      "blueprint-ink": { "role": "neutral", "displayName": "Blueprint Line", "canonical": "#F2F7FD", "tonalRamp": ["#0C1823", "#15293B", "#1F3C57", "#2E5679", "#4A7CA6", "#7AA8CE", "#B6D2EA", "#F2F7FD"] },
+      "blueprint-ink-2": { "role": "neutral", "displayName": "Blueprint Secondary", "canonical": "#BFD6EE", "tonalRamp": ["#0A1724", "#12283C", "#1C3C58", "#2A5680", "#3F76AD", "#6C9ECE", "#9CBDE2", "#BFD6EE"] },
+      "blueprint-ink-3": { "role": "neutral", "displayName": "Blueprint Tertiary", "canonical": "#9CBCDE", "tonalRamp": ["#081421", "#102537", "#193750", "#264F74", "#38709F", "#5E94C3", "#7FA8D1", "#9CBCDE"] },
+      "blueprint-rule": { "role": "neutral", "displayName": "Blueprint Structural Rule", "canonical": "#E8F1FA", "tonalRamp": ["#0B1721", "#142838", "#1E3B54", "#2C5576", "#487AA3", "#78A5CB", "#B3CEE6", "#E8F1FA"] },
+      "blueprint-rule-2": { "role": "neutral", "displayName": "Blueprint Hairline", "canonical": "#3A6A9E", "tonalRamp": ["#061120", "#0A1E36", "#0F2D4F", "#17426F", "#235C94", "#3A6A9E", "#6D99C4", "#B4CDE5"] },
+      "blueprint-spot": { "role": "primary", "displayName": "Blueprint Live", "canonical": "#BFE4FF", "tonalRamp": ["#071B2A", "#0C2E47", "#114466", "#175E8D", "#2080BD", "#54AADF", "#8FCCF4", "#BFE4FF"] },
+      "blueprint-sunk": { "role": "neutral", "displayName": "Blueprint Sunk", "canonical": "rgba(3, 20, 40, 0.55)", "tonalRamp": [] },
+      "blueprint-plate-dark": { "role": "neutral", "displayName": "Blueprint Plate Dark", "canonical": "#07233F", "tonalRamp": ["#020B14", "#041423", "#07233F", "#0B3660", "#114E89", "#1E6CB6", "#5F9FD9", "#B8D7F0"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "The page's single h1. An <em> inside it is set in the spot colour, not italicised." },
+      "headline": { "displayName": "Headline", "purpose": "Section headings inside a ruled head block, column 2 beside the margin designator." },
+      "title": { "displayName": "Instruction", "purpose": "Step instructions and the end-of-procedure line. Archivo Narrow sets anything that tells the reader to do something." },
+      "lede": { "displayName": "Lede", "purpose": "The one paragraph under the display line. Max 34ch, opening to 48ch below 1040px." },
+      "body": { "displayName": "Body", "purpose": "Step notes, captions, section sub-lines, part descriptions, index entries." },
+      "label": { "displayName": "Label", "purpose": "Functional uppercase labels: field tags, table headers, plate tags, the document line. Never a kicker above a heading." },
+      "designator": { "displayName": "Designator", "purpose": "JetBrains Mono, tabular. Reference designators, values with units, figure and sheet numbers, counts. Never a texture for 'technical'." }
+    },
+    "shadows": [
+      { "name": "plate-lift", "value": "0 10px 26px -14px var(--sunk)", "purpose": "The only shadow in the system. Lifts a mounted figure plate off the stock, which is what a mounted plate physically does. No other component gets a shadow." }
+    ],
+    "motion": [
+      { "name": "ease", "value": "cubic-bezier(0.22, 0.61, 0.36, 1)", "purpose": "The system's only easing curve. Exponential ease-out from an already-visible default." },
+      { "name": "trace-ease", "value": "cubic-bezier(0.33, 0.9, 0.32, 1)", "purpose": "Used only by the schematic's wire trace, where a line draws itself in the order a person would wire it." },
+      { "name": "state", "value": "150ms", "purpose": "Hover colour and background changes on rows, chips and buttons." },
+      { "name": "link", "value": "220ms", "purpose": "Nav underline wipe and the action-row chevron nudge." },
+      { "name": "stock-flip", "value": "300ms", "purpose": "The stock switch's corner turning over." },
+      { "name": "tick", "value": "340ms", "purpose": "The checkbox tick struck in left to right via stroke-dashoffset." },
+      { "name": "cut", "value": "420ms", "purpose": "A clip crossfading inside the lead plate." },
+      { "name": "slide", "value": "560ms", "purpose": "A completed assembly crossfading inside the wide plate." },
+      { "name": "trace", "value": "1900ms total, 380ms per segment", "purpose": "The full schematic trace, started once on intersection." },
+      { "name": "current", "value": "2.6s linear infinite", "purpose": "The only looping motion sanctioned anywhere in the system: current running in the schematic, as a dash offset." },
+      { "name": "plate-hold", "value": "4600ms", "purpose": "How long one completed assembly holds before advancing. Stops permanently on first pointer contact." }
+    ],
+    "breakpoints": [
+      { "name": "spread", "value": "1040px" },
+      { "name": "narrow", "value": "760px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Step Row",
+      "kind": "custom",
+      "refersTo": "step-box",
+      "description": "A numbered instruction in the margin column with a drawn checkbox. The signature control of the page: ticking it scrubs the film, and the running film ticks it.",
+      "html": "<ul class=\"ds-steps\"><li class=\"ds-step\" data-here=\"true\"><button class=\"ds-do\"><span class=\"ds-no\">01</span><span class=\"ds-box\"><svg viewBox=\"0 0 16 16\"><path d=\"M3 8.4 L6.3 11.8 L13 4.6\"/></svg></span><span class=\"ds-say\"><b>Place the board.</b><i>Parts drop onto the bench and snap to the holes.</i></span></button></li><li class=\"ds-step\"><button class=\"ds-do\"><span class=\"ds-no\">02</span><span class=\"ds-box\"></span><span class=\"ds-say\"><b>Run the wires.</b><i>Pin to pin, routed around whatever is in the way.</i></span></button></li></ul>",
+      "css": ".ds-steps { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--rule-2, #BFB6A2); } .ds-step { border-bottom: 1px solid var(--rule-2, #BFB6A2); } .ds-do { display: grid; grid-template-columns: 28px 22px 1fr; align-items: start; gap: 14px; width: 100%; padding: 15px 0; text-align: left; background: none; border: 0; cursor: pointer; font: inherit; color: inherit; } .ds-no { padding-top: 3px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 0.74rem; color: var(--ink-3, #6B6A5E); transition: color 200ms cubic-bezier(0.22,0.61,0.36,1); } .ds-box { position: relative; width: 22px; height: 22px; border: 1.5px solid var(--rule, #17181C); background: var(--mount, #FBF9F4); } .ds-box svg { position: absolute; inset: 2px; width: calc(100% - 4px); height: calc(100% - 4px); fill: none; stroke: var(--spot, #0050DC); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; } .ds-say { display: grid; gap: 3px; min-width: 0; } .ds-say b { font-family: 'Archivo Narrow', Archivo, sans-serif; font-size: 1.3rem; font-weight: 600; letter-spacing: -0.012em; } .ds-say i { font-style: normal; font-size: 0.86rem; line-height: 1.45; color: var(--ink-3, #6B6A5E); } .ds-step[data-here='true'] .ds-no { color: var(--spot, #0050DC); } .ds-step[data-here='true'] .ds-box { border-color: var(--spot, #0050DC); } .ds-do:hover .ds-box { border-color: var(--spot, #0050DC); } .ds-do:focus-visible { outline: 2px solid var(--spot, #0050DC); outline-offset: 3px; }"
+    },
+    {
+      "name": "Action Row",
+      "kind": "button",
+      "refersTo": "action-row",
+      "description": "The primary action, continuing the step list rather than sitting in a band. Unnumbered, an arrow in the margin column, a filled box as its hit target. It never ticks.",
+      "html": "<a class=\"ds-act\" href=\"#\"><span class=\"ds-act-no\">&#8594;</span><span class=\"ds-act-box\"></span><span class=\"ds-act-say\"><b>Open the editor.</b><i>No account needed to try it.</i></span></a>",
+      "css": ".ds-act { display: grid; grid-template-columns: 28px 22px 1fr; align-items: start; gap: 14px; padding: 15px 0; text-decoration: none; color: inherit; } .ds-act-no { padding-top: 3px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.95rem; color: var(--spot, #0050DC); } .ds-act-box { position: relative; width: 22px; height: 22px; border: 1.5px solid var(--spot, #0050DC); background: var(--spot, #0050DC); } .ds-act-box::after { content: ''; position: absolute; left: 6px; top: 50%; width: 9px; height: 9px; border-top: 2px solid var(--mount, #FBF9F4); border-right: 2px solid var(--mount, #FBF9F4); transform: translateY(-50%) rotate(45deg); transition: transform 220ms cubic-bezier(0.22,0.61,0.36,1); } .ds-act:hover .ds-act-box::after { transform: translate(3px, -50%) rotate(45deg); } .ds-act-say { display: grid; gap: 3px; } .ds-act-say b { font-family: 'Archivo Narrow', Archivo, sans-serif; font-size: 1.3rem; font-weight: 600; letter-spacing: -0.012em; color: var(--spot, #0050DC); } .ds-act-say i { font-style: normal; font-size: 0.86rem; color: var(--ink-3, #6B6A5E); } .ds-act:focus-visible { outline: 2px solid var(--spot, #0050DC); outline-offset: 3px; }"
+    },
+    {
+      "name": "Figure Plate",
+      "kind": "card",
+      "refersTo": "plate-mount",
+      "description": "The load-bearing device of the system: mount, 1.5px frame, 10px inset, caption rule, mono figure number in the spot colour. It is what lets a dark render sit on warm paper.",
+      "html": "<figure class=\"ds-plate\"><div class=\"ds-mount\"><div class=\"ds-art\"></div></div><figcaption><b>Fig.&nbsp;2&#8209;1</b><span>One supply, one resistor, one LED &mdash; as drawn, and as built.</span></figcaption></figure>",
+      "css": ".ds-plate { margin: 0; } .ds-mount { position: relative; padding: 10px; background: var(--mount, #FBF9F4); border: 1.5px solid var(--rule, #17181C); box-shadow: 0 10px 26px -14px var(--sunk, rgba(22,23,27,0.14)); } .ds-art { aspect-ratio: 16 / 10; background: var(--plate-dark, #0E1014); } .ds-plate figcaption { display: flex; align-items: center; gap: 12px; margin-top: 9px; padding-top: 8px; border-top: 1px solid var(--rule-2, #BFB6A2); font-size: 0.82rem; line-height: 1.4; color: var(--ink-2, #55564E); } .ds-plate figcaption b { flex: none; font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 0.74rem; font-weight: 500; letter-spacing: 0.02em; color: var(--spot, #0050DC); }"
+    },
+    {
+      "name": "Locate Field",
+      "kind": "input",
+      "refersTo": "input-locate",
+      "description": "The parts-list search. A square ruled box on mount with a mono uppercase tag fused to its left edge.",
+      "html": "<label class=\"ds-field\"><span class=\"ds-field-tag\">Locate</span><input placeholder=\"name, part number, or a value\" spellcheck=\"false\" autocomplete=\"off\"><button class=\"ds-clear\" aria-label=\"Clear\">&times;</button></label>",
+      "css": ".ds-field { display: flex; align-items: center; flex: 1 1 320px; max-width: 460px; border: 1.5px solid var(--rule, #17181C); background: var(--mount, #FBF9F4); } .ds-field:focus-within { border-color: var(--spot, #0050DC); box-shadow: 0 0 0 3px color-mix(in srgb, var(--spot, #0050DC) 20%, transparent); } .ds-field-tag { flex: none; align-self: stretch; display: grid; place-items: center; padding: 0 11px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3, #6B6A5E); border-right: 1px solid var(--rule-2, #BFB6A2); } .ds-field input { flex: 1; min-width: 0; padding: 11px 12px; border: 0; background: none; color: var(--ink, #16171B); font: inherit; font-size: 0.96rem; outline: none; caret-color: var(--spot, #0050DC); } .ds-field input::placeholder { color: var(--ink-3, #6B6A5E); } .ds-clear { padding: 0 11px; font-size: 1.1rem; color: var(--ink-3, #6B6A5E); background: none; border: 0; cursor: pointer; } .ds-clear:hover { color: var(--ink, #16171B); }"
+    },
+    {
+      "name": "Try Chip",
+      "kind": "chip",
+      "refersTo": "chip-try",
+      "description": "A suggested search value. Set in mono because its label is a value, not a word. Never filled at any state; selection moves text and border to the spot colour.",
+      "html": "<div class=\"ds-try\"><button>555</button><button data-on=\"true\">10k</button><button>oled</button></div>",
+      "css": ".ds-try { display: flex; flex-wrap: wrap; gap: 6px; } .ds-try button { padding: 5px 10px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 0.74rem; color: var(--ink-2, #55564E); background: none; border: 1px solid var(--rule-2, #BFB6A2); border-radius: 0; cursor: pointer; transition: color 160ms cubic-bezier(0.22,0.61,0.36,1), border-color 160ms cubic-bezier(0.22,0.61,0.36,1); } .ds-try button:hover { color: var(--ink, #16171B); border-color: var(--ink-3, #6B6A5E); } .ds-try button[data-on='true'] { color: var(--spot, #0050DC); border-color: var(--spot, #0050DC); } .ds-try button:focus-visible { outline: 2px solid var(--spot, #0050DC); outline-offset: 3px; }"
+    },
+    {
+      "name": "Ruled Table Row",
+      "kind": "custom",
+      "refersTo": "table-row",
+      "description": "A row of the parts list. A list of buttons, not a table: each row is a thing you press. The header carries the only 1.5px rule in the block.",
+      "html": "<div class=\"ds-table\"><div class=\"ds-th\"><span>Part</span><span>Description</span></div><ul><li><button class=\"ds-tr\"><span class=\"ds-name\"><i><svg viewBox=\"0 0 16 16\" width=\"15\" height=\"15\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\"><path d=\"M1 8 h3 l1.5 -4 l3 8 l3 -8 l1.5 4 h2\"/></svg></i><span>Resistor</span></span><span class=\"ds-desc\">Axial metal-film, colour-coded from its value</span></button></li></ul></div>",
+      "css": ".ds-th { display: grid; grid-template-columns: minmax(0, 15rem) minmax(0, 1fr); gap: 26px; padding: 0 0 7px; border-bottom: 1.5px solid var(--rule, #17181C); font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3, #6B6A5E); } .ds-table ul { list-style: none; margin: 0; padding: 0; } .ds-tr { display: grid; grid-template-columns: minmax(0, 15rem) minmax(0, 1fr); align-items: center; gap: 26px; width: 100%; padding: 10px 0; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--rule-2, #BFB6A2); cursor: pointer; font: inherit; color: inherit; transition: background 150ms cubic-bezier(0.22,0.61,0.36,1); } .ds-name { display: flex; align-items: center; gap: 9px; min-width: 0; font-weight: 600; font-size: 0.95rem; letter-spacing: -0.008em; transition: color 150ms cubic-bezier(0.22,0.61,0.36,1); } .ds-name i { flex: none; display: grid; place-items: center; color: var(--ink-2, #55564E); } .ds-name span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .ds-desc { font-size: 0.86rem; color: var(--ink-3, #6B6A5E); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .ds-tr:hover { background: var(--stock-2, #EAE4D6); } .ds-tr:hover .ds-name, .ds-tr:hover .ds-name i { color: var(--spot, #0050DC); } .ds-tr:focus-visible { outline: 2px solid var(--spot, #0050DC); outline-offset: 3px; }"
+    },
+    {
+      "name": "Section Head",
+      "kind": "nav",
+      "refersTo": "",
+      "description": "A ruled head block with its designator in the margin column. Without the designator in the gutter the section is a hero band with manual decoration on it.",
+      "html": "<div class=\"ds-head\"><span class=\"ds-sect\">3</span><h2>Parts list</h2><p><b class=\"ds-fig-no\">172</b> in the catalog<span class=\"ds-dot\"></span>searched the way the editor searches</p></div>",
+      "css": ".ds-head { display: grid; grid-template-columns: 28px minmax(0, 1fr); align-items: baseline; column-gap: 14px; row-gap: 8px; padding-bottom: 26px; border-bottom: 1.5px solid var(--rule, #17181C); } .ds-head h2 { grid-column: 2; margin: 0; font-family: 'Archivo Narrow', Archivo, sans-serif; font-weight: 700; font-size: 2.3rem; line-height: 1.04; letter-spacing: -0.022em; } .ds-head p { grid-column: 2; margin: 0; display: flex; align-items: center; gap: 10px; font-size: 0.86rem; color: var(--ink-3, #6B6A5E); } .ds-sect { grid-row: 1 / span 2; grid-column: 1; padding-top: 0.5em; font-size: 0.72rem; letter-spacing: 0.02em; color: var(--spot, #0050DC); } .ds-fig-no { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 0.92rem; font-weight: 400; color: var(--spot, #0050DC); } .ds-dot { width: 3px; height: 3px; background: var(--rule-2, #BFB6A2); }"
+    },
+    {
+      "name": "Stock Switch",
+      "kind": "button",
+      "refersTo": "",
+      "description": "Flips between paper and the blueprint negative. A sheet corner that turns over, not an icon and not a toggle track.",
+      "html": "<button class=\"ds-stock\" aria-label=\"Print on blueprint\"><span></span></button>",
+      "css": ".ds-stock { position: relative; width: 30px; height: 22px; border: 1.5px solid var(--rule, #17181C); background: var(--mount, #FBF9F4); border-radius: 0; cursor: pointer; padding: 0; } .ds-stock span { position: absolute; inset: 0; background: var(--rule, #17181C); clip-path: polygon(100% 0, 100% 100%, 0 100%); transition: clip-path 300ms cubic-bezier(0.22,0.61,0.36,1); } .ds-stock:hover span { clip-path: polygon(100% 0, 0 0, 0 100%); } .ds-stock:focus-visible { outline: 2px solid var(--spot, #0050DC); outline-offset: 3px; }"
+    },
+    {
+      "name": "Account Button",
+      "kind": "button",
+      "refersTo": "button-account",
+      "description": "The app shell's rounded pill, restyled rather than forked, so it reads as a drawn control like every other box on the sheet.",
+      "html": "<button class=\"ds-acct\">Sign in</button>",
+      "css": ".ds-acct { height: 34px; padding: 0 14px; border: 1.5px solid var(--rule, #17181C); border-radius: 0; background: var(--mount, #FBF9F4); color: var(--ink, #16171B); font-family: 'Archivo Narrow', Archivo, sans-serif; font-size: 0.92rem; font-weight: 600; letter-spacing: 0; cursor: pointer; transition: background 150ms cubic-bezier(0.22,0.61,0.36,1), color 150ms cubic-bezier(0.22,0.61,0.36,1); } .ds-acct:hover { background: var(--spot, #0050DC); border-color: var(--spot, #0050DC); color: var(--mount, #FBF9F4); } .ds-acct:focus-visible { outline: 2px solid var(--spot, #0050DC); outline-offset: 3px; }"
+    },
+    {
+      "name": "Nav Link",
+      "kind": "nav",
+      "refersTo": "",
+      "description": "Plain ruled links in the title block. Hover wipes a 1.5px spot underline in from the left.",
+      "html": "<nav class=\"ds-nav\"><a href=\"#\">Figures</a><a href=\"#\">Parts</a><a href=\"#\">Built</a></nav>",
+      "css": ".ds-nav { display: flex; gap: 20px; } .ds-nav a { position: relative; padding: 2px 0; font-size: 0.86rem; color: var(--ink-2, #55564E); text-decoration: none; transition: color 160ms cubic-bezier(0.22,0.61,0.36,1); } .ds-nav a::after { content: ''; position: absolute; left: 0; right: 0; bottom: -2px; height: 1.5px; background: var(--spot, #0050DC); transform: scaleX(0); transform-origin: 0 50%; transition: transform 220ms cubic-bezier(0.22,0.61,0.36,1); } .ds-nav a:hover { color: var(--ink, #16171B); } .ds-nav a:hover::after { transform: scaleX(1); } .ds-nav a:focus-visible { outline: 2px solid var(--spot, #0050DC); outline-offset: 3px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Kit Assembly Manual",
+    "overview": "This is the printed manual that comes in the box with a kit of parts — the Heathkit/Dynaco register, not a nostalgic pastiche of it. The page does not describe a procedure, it is one: a title block with a sheet number, numbered steps with real checkboxes down a ruled margin, figure plates with caption rules, a parts list with a header row, and a final instruction at the end of the procedure. Every surface built in this world should be legible as a page of the same document.\n\nThe material is warm stock, not white and not grey. There is one ink — a near-black line — and one spot colour, carried by the brand blue. Structure is drawn: two rule weights, a frame around every plate, a strict margin column down the left. Nothing is shaded, gradient, blurred or glassy; depth comes from rules and from the mount a plate sits on. Density is close: a 1px rule between list rows, 10px of mount around a photograph, 14px between the margin column and the text it labels.\n\nThe two stocks are the one genuinely unusual move, and the one most likely to be misread. data-sheet='paper' and data-sheet='blue' are not a light theme and a dark theme. They are one drawing printed two ways: paper, and the blueprint negative. The geometry, the rule weights, the stroke widths, the spacing and every component are byte-identical between them; only the ink and the ground swap. That is why they are one attribute on a root element rather than a second set of components, and any new surface must work the same way — if you find yourself writing a rule that applies only to one stock, the rule is wrong.",
+    "keyCharacteristics": [
+      "Warm paper ground (#F2EEE4), near-black line, one spot colour, nothing else",
+      "Spot colour rationed to what is live; never decorative",
+      "Flat ink only: no gradient, no glass, no soft card, no tint fill for mood",
+      "Structure drawn with rules at exactly two weights (1px and 1.5px)",
+      "Zero corner radius everywhere, including on controls borrowed from the app shell",
+      "A strict 28px margin column that every designator sits in",
+      "One shadow in the entire system, and it lifts a mounted plate",
+      "Monospace reserved for designations and measurements"
+    ],
+    "rules": [
+      { "name": "The Live-Ink Rule", "body": "The spot colour marks something that is live: current flowing, a control that acts, a step not yet done, a designator. Nothing is spot-coloured for emphasis, for mood, for a section accent, or to make a page feel branded. If you cannot name what is live about the element, it is not blue. This is the hardest rule in the system and the easiest to erode; audit test — point at any blue pixel and say what it is live about in four words.", "section": "colors" },
+      { "name": "The Two-Stocks Rule", "body": "paper and blue are one drawing printed twice. Ink and ground swap; geometry, rules, weights and spacing never do. No component may have a stock-specific layout, size, shadow or extra element. The only sanctioned per-stock divergence already in the build is --plate-dark, which stays dark on both because the photograph it backs is dark on both.", "section": "colors" },
+      { "name": "The Two-Inks Rule", "body": "There are two inks and no more. A third hue — a warning amber, a success green, a second accent — is outside the system. State that needs to be distinguished is distinguished by weight, by rule, by strike-through or by position in the margin column.", "section": "colors" },
+      { "name": "The Designator Rule", "body": "Monospace is for designations and measurements only — reference designators, values with units, figure and sheet numbers, quantities, counts. It is never a texture applied to make something feel technical. Prose in mono, a heading in mono, or a button label in mono is a violation; the one button set in mono is the try-this chip, and it is set that way because its label is a search value (555, 10k), not a word.", "section": "typography" },
+      { "name": "The Narrow-Instructs Rule", "body": "Archivo Narrow sets instructions and headings. Anything that tells the reader to do something is Narrow; anything that explains is Archivo. Do not reach for Narrow to tighten a long paragraph.", "section": "typography" },
+      { "name": "The Margin Column Rule", "body": "Every designator — step number, section number, figure number, action arrow — sits in the 28px margin column, and every body element on the page starts at calc(var(--gut) + var(--marg) + 14px). A section head without a designator in the gutter is a hero band with manual decoration on it; the designator is what makes the rest of the sheet part of the same document. Never express the column in ch.", "section": "layout" },
+      { "name": "The One-Shadow Rule", "body": "The plate lift is the system's whole shadow vocabulary. A new component does not get a shadow. If something needs to read as separate, rule it or mount it.", "section": "elevation" },
+      { "name": "The Flat-Ink Rule", "body": "Nothing is a gradient and nothing is glass. No tinted overlay for mood, no frosted chip floated over artwork, no soft card. Flat ink on stock.", "section": "elevation" },
+      { "name": "The Two-Weights Rule", "body": "1px for division, 1.5px for structure. A third rule weight is not available; if a boundary needs more presence, it is structural and takes 1.5px.", "section": "shapes" },
+      { "name": "The Mounted-Plate Rule", "body": "Every photograph and every render on this page goes inside a plate: mount, 1.5px frame, 10px inset, caption rule, mono figure number in the spot colour. A dark image placed directly on the stock splits the page in two. Never paint the plate dark over the mount; the dark goes inside the mount.", "section": "components" },
+      { "name": "The Drawn-Control Rule", "body": "Controls are drawn with the sheet's own line: a square, a 1.5px frame, a mount fill, and a stroked SVG mark where a mark is needed. No icon font, no glyph character standing in for a control, no filled pill, no rounded corner.", "section": "components" }
+    ],
+    "dos": [
+      "Do ration the spot colour to what is live — current, a control that acts, a step not yet done, a designator — and nothing else.",
+      "Do put every designator in the 28px margin column and start every body element at calc(var(--gut) + var(--marg) + 14px).",
+      "Do mount every photograph or render in a figure plate with its caption rule and a mono figure number in the spot colour.",
+      "Do use exactly two rule weights: 1px hairline for division, 1.5px for structure.",
+      "Do keep geometry, weights and spacing identical across the two stocks, and swap only ink and ground.",
+      "Do set designations and measurements in JetBrains Mono with tabular figures, and nothing else in mono.",
+      "Do draw state — a strike-through, a stroked tick, a filled box, a rule — rather than tinting a surface to signal it.",
+      "Do keep a single looping motion on any page (current in the schematic) and give everything else one authored moment from an already-visible default, eased on cubic-bezier(0.22, 0.61, 0.36, 1).",
+      "Do restyle a borrowed app-shell control to the sheet's square, ruled form rather than forking a second component."
+    ],
+    "donts": [
+      "Don't use the spot colour for decoration, section accents, or to make a surface feel branded. If you cannot name what is live, it is not blue.",
+      "Don't introduce a third ink, a third rule weight, or a corner radius.",
+      "Don't add a gradient, a glass or frosted panel, a blurred overlay, or a chip floated over artwork.",
+      "Don't add a second box-shadow. The plate lift is the whole vocabulary.",
+      "Don't treat data-sheet='blue' as a dark mode: no stock-specific layout, size, extra element, or softened weight.",
+      "Don't express the margin column in ch — it resolves against each element's own font and the column comes apart.",
+      "Don't set prose, headings or button labels in monospace to make them feel technical.",
+      "Don't stack a label above a heading. The labels in this system name a field, head a column, or identify a half of a figure; a kicker over a headline is not part of this world.",
+      "Don't use a glyph character or an icon font where a control's mark belongs; marks are stroked SVG on the sheet's own line.",
+      "Don't paint --plate-dark over a mount; the dark backing goes inside it.",
+      "Don't let a checkbox tick itself for something the visitor has not done."
+    ]
+  }
+}
