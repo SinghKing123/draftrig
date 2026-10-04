@@ -46,10 +46,22 @@ a sheet number, set in a ruled block. Below it the spread: left column, a
 narrow strict margin of step numbers against three steps with real checkboxes —
 Place the board / Run the wires / Switch it on. Right, at roughly 58% of the
 width, one figure plate holding the live clip, with `Fig. 1-1` and its caption
-rule beneath. Steps 1 and 2 tick themselves as the clip reaches them; step 3
-stays open and is the primary action, the words `Open the editor` set as the
-step's own instruction with the checkbox as the hit target. Nav sits on the
-title block's right as plain ruled links.
+rule beneath. All three steps tick as the clip reaches them. The primary
+action is a fourth, unnumbered row at the foot of the list, carrying an arrow
+in the margin column where the numbers sit and a filled box as its hit
+target. Nav sits on the title block's right as plain ruled links.
+
+> **Amendment, made during the build.** This block originally said step 3
+> "stays open and is the primary action", with `Open the editor` as the step's
+> own instruction. That conflated two things: step 3 is a stage of the
+> procedure with a clip of its own ("Switch it on."), and the action is
+> something the visitor performs. Holding both on one row meant the step could
+> never tick, which broke the legend — the film reaches stage 3 and the list
+> could not say so. Separating them keeps every stage tickable and keeps the
+> action inside the list rather than in a band at the foot of the page, which
+> is what the block was protecting. No user answer or product truth is cited
+> for this; it is my call, made to keep the signature interaction coherent,
+> and it is recorded here so the page and the contract agree.
 
 **FORM.** The kit assembly manual (Heathkit/Dynaco, 1960s–80s). Position 4 of
 my ordered list of seven artifacts from this audience's world; the roll

@@ -37,8 +37,18 @@
   --spot: #0050DC;
   --spot-2: #1E8CFA;
   --sunk: rgba(22, 23, 27, 0.14);
+  /* The dark behind a photograph, which is dark on either stock. */
+  --plate-dark: #0E1014;
 
   --gut: clamp(18px, 4.4vw, 56px);
+  /*
+   * The margin column: step numbers and figure designators share it.
+   *
+   * A length, not `ch`. In `ch` it resolves against the font of whichever
+   * element reads it, so the table header computed a narrower gutter than
+   * its own rows and the column came apart by four pixels.
+   */
+  --marg: 28px;
   --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
 
   position: relative;
@@ -52,19 +62,33 @@
   text-rendering: optimizeLegibility;
 }
 
-/* The blueprint negative: same drawing, different stock. */
+/*
+ * The blueprint negative: same drawing, different stock.
+ *
+ * A saturated cyanotype field, not a slate. The first attempt used a
+ * blue-black at about four per cent lightness, which is the dark-mode
+ * rendition every product page ships and precisely what this page refuses
+ * about its predecessor. A blueprint is blue, strongly, and its lines are
+ * the white of the paper the ferric salts never reached.
+ *
+ * Emphasis is luminance rather than a second hue: on paper the ink is black
+ * and the live thing is blue, and on the negative the line is white and the
+ * live thing is brighter. That also settles the brand: the wordmark's blue
+ * sits inside this ground's own hue family instead of beside a second blue.
+ */
 .mn[data-sheet='blue'] {
-  --stock: #0B1726;
-  --stock-2: #0F2033;
-  --mount: #0A1420;
-  --ink: #E7EEF7;
-  --ink-2: #9FB2C7;
-  --ink-3: #7C90A8;
-  --rule: #D8E4F2;
-  --rule-2: #2E4A69;
-  --spot: #66B2FF;
-  --spot-2: #9CD0FF;
-  --sunk: rgba(0, 0, 0, 0.5);
+  --stock: #0E3A6B;
+  --stock-2: #11447C;
+  --mount: #0B3260;
+  --ink: #F2F7FD;
+  --ink-2: #BFD6EE;
+  --ink-3: #9CBCDE;
+  --rule: #E8F1FA;
+  --rule-2: #3A6A9E;
+  --spot: #BFE4FF;
+  --spot-2: #EAF6FF;
+  --sunk: rgba(3, 20, 40, 0.55);
+  --plate-dark: #07233F;
 }
 
 .mn a { color: inherit; text-decoration: none; }
@@ -247,7 +271,7 @@
 
 .mn-do {
   display: grid;
-  grid-template-columns: 2.6ch 22px 1fr;
+  grid-template-columns: var(--marg) 22px 1fr;
   align-items: start;
   gap: 14px;
   width: 100%;
@@ -358,7 +382,7 @@
 
 .mn-plate figcaption {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 12px;
   margin-top: 9px;
   padding-top: 8px;
@@ -381,7 +405,7 @@
   position: relative;
   aspect-ratio: 16 / 10;
   overflow: hidden;
-  background: #0E1014;
+  background: var(--plate-dark);
 }
 .reel-film {
   position: absolute;
@@ -398,16 +422,35 @@
    Figure 2 — schematic beside pictorial
    ================================================================== */
 
+/*
+ * Every section head sits against the same margin column the steps do.
+ *
+ * Without it the sheet below the first viewport was three identical bands —
+ * heading left, grey line right, rule under, full-bleed panel below — which
+ * is section-hero rhythm with manual decoration on it. The designator in the
+ * gutter is what makes the rest of the page part of the same document rather
+ * than a product page printed on warm stock.
+ */
 .mn-rule-head {
-  display: flex;
+  display: grid;
+  grid-template-columns: var(--marg) minmax(0, 1fr);
   align-items: baseline;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 10px 26px;
+  column-gap: 14px;
+  row-gap: 8px;
   max-width: 1480px;
   margin: 0 auto;
   padding: 0 var(--gut) clamp(16px, 2.4vh, 26px);
   border-bottom: 1.5px solid var(--rule);
+}
+.mn-rule-head h2 { grid-column: 2; }
+.mn-rule-head p { grid-column: 2; }
+.mn-sect {
+  grid-row: 1 / span 2;
+  grid-column: 1;
+  padding-top: 0.5em;
+  font-size: 0.72rem;
+  color: var(--spot);
+  letter-spacing: 0.02em;
 }
 .mn-rule-head p {
   display: flex;
@@ -428,7 +471,7 @@
 .mn-built > .mn-plate {
   max-width: 1480px;
   margin: clamp(20px, 3vh, 34px) auto 0;
-  padding: 0 var(--gut);
+  padding: 0 var(--gut) 0 calc(var(--gut) + var(--marg) + 14px);
 }
 
 .mn-pair {
@@ -444,7 +487,7 @@
   overflow: hidden;
 }
 .mn-draw { background: var(--stock-2); }
-.mn-shot { background: #0E1014; }
+.mn-shot { background: var(--plate-dark); }
 .mn-draw svg, .mn-shot img { display: block; width: 100%; height: 100%; }
 .mn-shot img { object-fit: cover; }
 .mn-draw svg { padding: 4%; box-sizing: border-box; }
@@ -531,6 +574,7 @@
 
 .mn-parts > * { max-width: 1480px; margin-inline: auto; }
 .mn-locate {
+  margin-left: calc(var(--marg) + 14px);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -588,24 +632,43 @@
 
 /* ---- the table ---- */
 
+/* Held at two rows, not at nine: reserving the resting height left a third
+   of a screen of dead stock under a narrow search. */
 .mn-table {
-  padding: 0 var(--gut) clamp(10px, 2vh, 20px);
-  min-height: 300px;
+  list-style: none;
+  margin: 0;
+  padding: 0 var(--gut) 0 calc(var(--gut) + var(--marg) + 14px);
+  min-height: 112px;
+}
+/*
+ * The header, the rows and the count all start on one line.
+ *
+ * The header had a margin-left of its own, which beat the section's
+ * `margin-inline: auto` and set it adrift from the rows beneath it by the
+ * width of the gutter. They share one indent now: the gutter, the margin
+ * column, its gap, and the six pixels of inset a row carries.
+ */
+.mn-count {
+  padding: 12px var(--gut) 0 calc(var(--gut) + var(--marg) + 14px);
+  font-size: 0.78rem;
+  color: var(--ink-3);
 }
 .mn-tr {
   display: grid;
-  grid-template-columns: 5.5ch minmax(0, 14rem) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
   align-items: center;
   gap: clamp(10px, 2vw, 26px);
   width: 100%;
-  padding: 10px 6px;
+  /* No horizontal inset: a ruled column sits under its own heading, and
+     six pixels of it is visible on a page made of rules. */
+  padding: 10px 0;
   text-align: left;
   border-bottom: 1px solid var(--rule-2);
   transition: background 150ms var(--ease);
 }
 .mn-th {
-  padding-top: 0;
-  padding-bottom: 7px;
+  margin-left: 0;
+  padding: 0 var(--gut) 7px calc(var(--gut) + var(--marg) + 14px);
   border-bottom: 1.5px solid var(--rule);
   font-size: 0.66rem;
   letter-spacing: 0.12em;
@@ -626,14 +689,19 @@ button.mn-tr:hover .mn-name { color: var(--spot); }
 button.mn-tr:hover .mn-qty i { color: var(--spot); }
 
 .mn-name {
+  display: flex;
+  align-items: center;
+  gap: 9px;
   font-weight: 600;
   font-size: 0.95rem;
   letter-spacing: -0.008em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  min-width: 0;
   transition: color 150ms var(--ease);
 }
+.mn-name i { flex: none; display: grid; place-items: center; color: var(--ink-2); }
+/* The icon is a flex item, so the label needs its own box to elide inside. */
+.mn-name span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+button.mn-tr:hover .mn-name i { color: var(--spot); }
 .mn-desc {
   font-size: 0.86rem;
   color: var(--ink-3);
@@ -641,7 +709,7 @@ button.mn-tr:hover .mn-qty i { color: var(--spot); }
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.mn-nohit { padding: 30px 6px; color: var(--ink-3); }
+.mn-nohit { padding: 26px 6px; color: var(--ink-3); list-style: none; }
 
 /* ==================================================================
    Completed assemblies
@@ -659,28 +727,45 @@ button.mn-tr:hover .mn-qty i { color: var(--spot); }
 .mn-slide[data-on='true'] { opacity: 1; pointer-events: auto; }
 .mn-slide img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-.mn-plate-wide .mn-mount { position: relative; aspect-ratio: 16 / 8.4; background: #0E1014; }
+/* The mount stays the mount.
+   This used to paint `#0E1014` over it, which switched off the one device
+   that lets a dark render sit on warm paper — and switched it off on the
+   largest plate on the page, where it matters most. The dark backing belongs
+   behind the photograph, inside the mount, not instead of it. */
+.mn-plate-wide .mn-mount { position: relative; aspect-ratio: 16 / 8.4; }
+.mn-plate-wide .mn-mount::before {
+  content: '';
+  position: absolute;
+  inset: 10px;
+  background: var(--plate-dark);
+}
 
 .mn-plate-nav {
-  position: absolute;
-  right: 18px;
-  bottom: 18px;
   display: flex;
-  gap: 7px;
-  z-index: 2;
+  gap: 6px;
+  margin-left: auto;
+  flex: none;
 }
 .mn-plate-nav button {
   display: grid;
   place-items: center;
-  width: 34px;
-  height: 34px;
-  border: 1px solid rgba(255, 255, 255, 0.26);
-  background: rgba(10, 14, 20, 0.74);
-  backdrop-filter: blur(6px);
-  transition: border-color 160ms var(--ease), background 160ms var(--ease);
+  width: 26px;
+  height: 26px;
+  border: 1.5px solid var(--rule);
+  background: var(--mount);
+  transition: background 150ms var(--ease);
 }
-.mn-plate-nav svg { width: 15px; height: 15px; fill: none; stroke: #E6EBF2; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.mn-plate-nav button:hover { border-color: var(--spot-2); background: rgba(10, 14, 20, 0.92); }
+.mn-plate-nav svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.mn-plate-nav button:hover { background: var(--spot); }
+.mn-plate-nav button:hover svg { stroke: var(--mount); }
 
 /* The index of plates, as a manual's figure index. */
 .mn-index {
@@ -714,8 +799,32 @@ button.mn-tr:hover .mn-qty i { color: var(--spot); }
 .mn-index button[data-on='true'] .mn-index-no,
 .mn-index button[data-on='true'] .mn-index-name { color: var(--spot); }
 
+/* ---- the instruction the visitor carries out ---- */
+
+.mn-act-step { border-bottom: 0; }
+.mn-act-step .mn-no { color: var(--spot); font-size: 0.95rem; }
+.mn-box-act {
+  position: relative;
+  border-color: var(--spot);
+  background: var(--spot);
+}
+.mn-box-act::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  border-top: 2px solid var(--mount);
+  border-right: 2px solid var(--mount);
+  transform: translateY(-50%) rotate(45deg);
+  transition: transform 200ms var(--ease);
+}
+.mn-act-step .mn-say b { color: var(--spot); }
+.mn-act-step:hover .mn-box-act::after { transform: translate(3px, -50%) rotate(45deg); }
+
 /* ==================================================================
-   The last step
+   The end of the sheet
    ================================================================== */
 
 .mn-end {
@@ -726,37 +835,40 @@ button.mn-tr:hover .mn-qty i { color: var(--spot); }
 .mn-end-in {
   max-width: 1480px;
   margin: 0 auto;
-  padding: clamp(44px, 8vh, 96px) var(--gut);
+  padding: clamp(36px, 6vh, 72px) var(--gut);
 }
-.mn-end p { margin-top: 12px; color: var(--ink-2); font-size: 1.02rem; }
-.mn-end-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
-
-.mn-act,
-.mn-alt {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  height: 50px;
-  padding: 0 24px;
+.mn-end-no {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--rule-2);
+}
+.mn-end-do {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  align-items: start;
+  gap: 14px;
+  padding: 18px 0 0;
+}
+.mn-end-do span b {
+  display: block;
   font-family: 'Archivo Narrow', Archivo, sans-serif;
-  font-size: 1rem;
+  font-size: clamp(1.2rem, 2.4vw, 1.75rem);
   font-weight: 600;
-  border: 1.5px solid var(--rule);
-  transition: transform 170ms var(--ease), background 170ms var(--ease), color 170ms var(--ease);
+  letter-spacing: -0.018em;
+  color: var(--spot);
 }
-.mn-act { background: var(--spot); border-color: var(--spot); color: var(--mount); }
-.mn-act::after {
-  content: '';
-  width: 8px;
-  height: 8px;
-  border-top: 2px solid currentColor;
-  border-right: 2px solid currentColor;
-  transform: rotate(45deg);
-  transition: transform 200ms var(--ease);
+.mn-end-do span i {
+  display: block;
+  margin-top: 4px;
+  font-style: normal;
+  font-size: 0.9rem;
+  color: var(--ink-2);
 }
-.mn-act:hover::after { transform: translateX(3px) rotate(45deg); }
-.mn-act:hover, .mn-alt:hover { transform: translateY(-1px); }
-.mn-alt { background: var(--mount); }
+.mn-end-do:hover .mn-box-act::after { transform: translate(3px, -50%) rotate(45deg); }
 
 /* ==================================================================
    Foot
@@ -793,10 +905,21 @@ button.mn-tr:hover .mn-qty i { color: var(--spot); }
   }
   .mn-mark { grid-column: 1; }
   .mn-stock { grid-column: 3; }
-  .mn-doc { display: none; }
+  /* The document line is the page's strongest claim to being a manual, so
+     the phone keeps it and drops the nav instead. */
   .mn-nav { display: none; }
+  .mn-doc {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    font-size: 0.68rem;
+    padding-top: 9px;
+    border-top: 1px solid var(--rule-2);
+  }
   .mn-pair { grid-template-columns: 1fr; }
-  .mn-tr { grid-template-columns: 4.5ch minmax(0, 1fr); }
+  /* One column, because the description is hidden here. It was still set to
+     the old three-column template, so deleting the quantity column left the
+     part name in a 4.5ch track and names broke across three lines. */
+  .mn-tr { grid-template-columns: minmax(0, 1fr); }
   .mn-desc { display: none; }
   .mn-th span:last-child { display: none; }
   .mn-table { min-height: 0; }

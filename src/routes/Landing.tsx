@@ -28,11 +28,12 @@ import { Showcase } from './Showcase'
 /* ------------------------------------------------------------------ */
 
 /**
- * The three steps, their clips, and what each one is.
+ * The three stages of the procedure, and the clip of each.
  *
- * Step three is the primary action. It never ticks on its own, because it is
- * the one the visitor performs rather than watches, and a checkbox that fills
- * itself in front of them is a control lying about who did it.
+ * All three tick, because all three are things the film shows being done.
+ * The instruction after them is the one the visitor performs, so it is not a
+ * numbered step and has no box to fill: a checkbox that ticks itself in front
+ * of somebody is a control lying about who did it.
  */
 const STEPS = [
   {
@@ -51,28 +52,19 @@ const STEPS = [
     n: 3,
     say: 'Switch it on.',
     clip: 'clip-run',
-    note: 'Solved from here, not played back.',
+    note: 'The circuit is solved from here.',
   },
 ] as const
 
-/** Fills across the top as the page is worked through. */
-function Progress() {
-  const [pct, setPct] = useState(0)
-  useEffect(() => {
-    const on = () => {
-      const h = document.documentElement.scrollHeight - window.innerHeight
-      setPct(h > 0 ? Math.min(1, window.scrollY / h) : 0)
-    }
-    on()
-    window.addEventListener('scroll', on, { passive: true })
-    window.addEventListener('resize', on)
-    return () => {
-      window.removeEventListener('scroll', on)
-      window.removeEventListener('resize', on)
-    }
-  }, [])
-  return <div className="mn-gauge" style={{ transform: `scaleX(${pct})` }} aria-hidden="true" />
-}
+/*
+ * There is no reading-progress bar.
+ *
+ * One was here. It is the web's generic ornament rather than anything this
+ * document does, it is a second channel of looping motion in a grammar that
+ * sanctions exactly one (current, in the schematic), and because its state
+ * lived on this component it re-rendered the reel, the figure, the parts
+ * list and the plates on every scroll event.
+ */
 
 /**
  * Paper or the blueprint negative, remembered.
@@ -139,16 +131,33 @@ export function Landing() {
   const [seen, setSeen] = useState(false)
 
   const onSeen = useCallback(() => setSeen(true), [])
-  const onEnded = useCallback(() => setStage((s) => (s + 1) % STEPS.length), [])
+
+  /*
+   * The film runs the procedure once and stops on the last stage.
+   *
+   * It used to wrap with `% STEPS.length`, which sent the reel back to the
+   * start and silently emptied two boxes the visitor had watched fill. A
+   * checkbox that un-ticks itself in front of somebody is the same lie as one
+   * that ticks itself; the sheet stays worked once it has been worked.
+   */
+  const onEnded = useCallback(
+    () => setStage((s) => Math.min(s + 1, STEPS.length - 1)),
+    [],
+  )
 
   useEffect(() => {
     document.title = pageTitle()
   }, [])
 
+  /* The browser paints its own chrome from this, so a sheet printed on
+     blueprint with a cream status bar above it is two documents. */
+  useEffect(() => {
+    const tag = document.querySelector('meta[name="theme-color"]')
+    tag?.setAttribute('content', sheet === 'paper' ? '#F2EEE4' : '#0E3A6B')
+  }, [sheet])
+
   return (
     <div className="mn" data-sheet={sheet}>
-      <Progress />
-
       <header className="mn-head">
         <Link className="mn-mark" to="/" aria-label={BRAND.name}>
           <Wordmark size={21} onDark={sheet === 'blue'} />
@@ -190,39 +199,43 @@ export function Landing() {
 
           <ol className="mn-steps">
             {STEPS.map((s, i) => {
-              const done = i < stage
+              /* Reached, not passed. `i < stage` ticked the step *before* the
+                 one you clicked and left your own box empty, so the control
+                 contradicted itself at the only moment anyone touches it. */
+              const done = i <= stage
               const here = i === stage
-              const act = i === STEPS.length - 1
-              const body = (
-                <>
-                  <span className="mn-no">{String(s.n).padStart(2, '0')}</span>
-                  <span className="mn-box" aria-hidden="true">
-                    {done && (
-                      <svg viewBox="0 0 16 16">
-                        <path d="M3 8.4 L6.3 11.8 L13 4.6" />
-                      </svg>
-                    )}
-                  </span>
-                  <span className="mn-say">
-                    <b>{act ? 'Open the editor.' : s.say}</b>
-                    <i>{s.note}</i>
-                  </span>
-                </>
-              )
               return (
-                <li key={s.n} className="mn-step" data-done={done} data-here={here} data-act={act}>
-                  {act ? (
-                    <Link className="mn-do" to="/app">
-                      {body}
-                    </Link>
-                  ) : (
-                    <button className="mn-do" onClick={() => setStage(i)} aria-pressed={here}>
-                      {body}
-                    </button>
-                  )}
+                <li key={s.n} className="mn-step" data-done={done} data-here={here}>
+                  <button className="mn-do" onClick={() => setStage(i)} aria-pressed={here}>
+                    <span className="mn-no">{String(s.n).padStart(2, '0')}</span>
+                    <span className="mn-box" aria-hidden="true">
+                      {done && (
+                        <svg viewBox="0 0 16 16">
+                          <path d="M3 8.4 L6.3 11.8 L13 4.6" />
+                        </svg>
+                      )}
+                    </span>
+                    <span className="mn-say">
+                      <b>{s.say}</b>
+                      <i>{s.note}</i>
+                    </span>
+                  </button>
                 </li>
               )
             })}
+
+            {/* The instruction the visitor carries out, continuing the list
+                rather than waiting in a band at the foot of the page. */}
+            <li className="mn-step mn-act-step">
+              <Link className="mn-do" to="/app">
+                <span className="mn-no" aria-hidden="true">&#8594;</span>
+                <span className="mn-box mn-box-act" aria-hidden="true" />
+                <span className="mn-say">
+                  <b>Open the editor.</b>
+                  <i>No account needed to try it.</i>
+                </span>
+              </Link>
+            </li>
           </ol>
         </div>
 
@@ -249,20 +262,26 @@ export function Landing() {
 
       <Showcase />
 
+      {/*
+        * The sheet ends the way a manual ends: one more instruction on the
+        * same ruled grid. The centred headline over a filled button and an
+        * outlined button is the outro every page in this category ships, and
+        * the procedure's own last line does the job without it.
+        */}
       <section className="mn-end">
         <div className="mn-end-in">
-          <h2>That is the whole procedure.</h2>
-          <p>Open a build, take it apart, run it. No account needed to try it.</p>
-          <div className="mn-end-row">
-            <Link className="mn-act" to="/app">
-              Open the editor
-            </Link>
-            {accounts && (
-              <Link className="mn-alt" to="/signin">
-                Sign in
-              </Link>
-            )}
-          </div>
+          <p className="mn-end-no">End of procedure</p>
+          <Link className="mn-end-do" to="/app">
+            <span className="mn-box mn-box-act" aria-hidden="true" />
+            <span>
+              <b>Open the editor and begin.</b>
+              <i>
+                {accounts
+                  ? 'Nothing to install. An account only keeps what you build.'
+                  : 'Nothing to install, and nothing to order first.'}
+              </i>
+            </span>
+          </Link>
         </div>
       </section>
 

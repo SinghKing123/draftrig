@@ -1,3 +1,39 @@
+/* ==================================================================
+   Faces
+   ------------------------------------------------------------------
+   Self-hosted, not pulled from a CDN at render time. Three variable
+   files, 88 kB in total, each serving its whole weight range: Google
+   returns one variable woff2 per family and the request for four
+   weights of Archivo was fetching the same bytes four times.
+
+   `swap` keeps text painted while they load, and the three families
+   carry the document's three jobs — Narrow sets the instructions and
+   the headings, Archivo sets prose, and the mono is for designators
+   and measurements only.
+   ================================================================== */
+
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/archivo.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Archivo Narrow';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/archivo-narrow.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  src: url('/fonts/jetbrains-mono.woff2') format('woff2');
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 /* The document scrolls normally, which is what the marketing pages need. The

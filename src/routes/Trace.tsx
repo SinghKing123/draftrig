@@ -97,11 +97,14 @@ export function Trace() {
   return (
     <section className="mn-fig" id="figure-2" ref={root} data-on={on}>
       <div className="mn-rule-head">
+        <span className="mn-sect" aria-hidden="true">2</span>
         <h2>Drawn and built are one document.</h2>
         <p>
-          The panel on the right is a photograph of this circuit in the editor
+          {/* "on the right" was false at 390px, where the photograph sits
+              below; and "solved, not animated" argues with a sceptic. */}
+          The photograph is this circuit in the editor
           <span className="mn-dot" aria-hidden="true" />
-          every part solved, not animated
+          every part of it solved
         </p>
       </div>
 

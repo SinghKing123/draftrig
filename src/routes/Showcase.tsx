@@ -84,6 +84,7 @@ export function Showcase() {
   return (
     <section className="mn-built" ref={root} id="built">
       <div className="mn-rule-head">
+        <span className="mn-sect" aria-hidden="true">4</span>
         <h2>Completed assemblies</h2>
         <p>
           <b className="mn-fig-no">{items.length}</b> of the builds that ship with it
@@ -114,7 +115,17 @@ export function Showcase() {
             </button>
           ))}
 
-          <div className="mn-plate-nav">
+        </div>
+
+        {/* Set beside the caption as ruled designators, not floated over the
+            photograph: a blurred glass chip on the artwork is the one thing
+            this world does not do. */}
+        <figcaption>
+          <b>Fig.&nbsp;4&#8209;{at + 1}</b>
+          <span>
+            {here.title}. {here.blurb}.
+          </span>
+          <span className="mn-plate-nav">
             <button
               onClick={() => {
                 stop()
@@ -133,13 +144,6 @@ export function Showcase() {
             >
               <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 2 L12 8 L6 14" /></svg>
             </button>
-          </div>
-        </div>
-
-        <figcaption>
-          <b>Fig.&nbsp;4&#8209;{at + 1}</b>
-          <span>
-            {here.title}. {here.blurb}.
           </span>
         </figcaption>
       </figure>

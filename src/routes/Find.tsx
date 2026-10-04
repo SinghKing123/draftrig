@@ -103,6 +103,7 @@ export function Find({ total }: { total: number | null }) {
   return (
     <section className="mn-parts" id="parts" ref={box as React.RefObject<HTMLDivElement>}>
       <div className="mn-rule-head">
+        <span className="mn-sect" aria-hidden="true">3</span>
         <h2>Parts list</h2>
         <p>
           {count === null ? 'Loading' : <><b className="mn-fig-no">{count}</b> in the catalog</>}
@@ -139,32 +140,64 @@ export function Find({ total }: { total: number | null }) {
         </div>
       </div>
 
-      <div className="mn-table" role="table" aria-label="Parts">
-        <div className="mn-tr mn-th" role="row">
-          <span role="columnheader">Qty</span>
-          <span role="columnheader">Part</span>
-          <span role="columnheader">Description</span>
-        </div>
-
-        {none && <p className="mn-nohit">No part matches “{q}”.</p>}
-
-        {hits.map((def) => (
-          <button className="mn-tr" role="row" key={def.id} onClick={() => open(def)}>
-            <span className="mn-qty" role="cell">
-              <i aria-hidden="true">
-                <PartIcon def={def} size={15} />
-              </i>
-              1
-            </span>
-            <span className="mn-name" role="cell">
-              {def.name}
-            </span>
-            <span className="mn-desc" role="cell">
-              {def.blurb}
-            </span>
-          </button>
-        ))}
+      {/*
+        * A list of controls, not a table.
+        *
+        * It was marked up with `role="table"` over `<button role="row">`,
+        * which strips the buttons' own semantics and leaves a screen reader
+        * with a table it cannot operate. Each row is a thing you press, so it
+        * says so, and the ruled columns are the manual's layout rather than a
+        * claim about the data.
+        *
+        * There is no quantity column. A catalog search has no quantities, and
+        * printing a hardcoded 1 beside every part was manual costume over a
+        * listing — invented data in a product whose whole argument is that
+        * what it shows you is real.
+        */}
+      <div className="mn-tr mn-th" aria-hidden="true">
+        <span>Part</span>
+        <span>Description</span>
       </div>
+
+      <ul className="mn-table">
+        {hits.map((def) => (
+          <li key={def.id}>
+            <button className="mn-tr" onClick={() => open(def)}>
+              <span className="mn-name">
+                <i aria-hidden="true">
+                  <PartIcon def={def} size={15} />
+                </i>
+                <span>{def.name}</span>
+              </span>
+              <span className="mn-desc">{def.blurb}</span>
+            </button>
+          </li>
+        ))}
+        {/*
+          * The visible message IS the live region.
+          *
+          * It was announced twice before — once here and once in the count
+          * below, in two different spellings — on the one screen whose whole
+          * job is to be the single clear thing on it.
+          */}
+        {none && (
+          <li className="mn-nohit" role="status" aria-live="polite">
+            No part matches “{q}”.
+          </li>
+        )}
+      </ul>
+
+      {/* Typing replaces the rows silently; this is what says so. It stands
+          down when the list is empty, because that state speaks for itself. */}
+      {!none && (
+        <p className="mn-count" role="status" aria-live="polite">
+          {!cat
+            ? 'Loading the catalog'
+            : q.trim()
+              ? `${hits.length} ${hits.length === 1 ? 'part' : 'parts'} match ${q}`
+              : `Showing ${hits.length} of ${count ?? hits.length}`}
+        </p>
+      )}
     </section>
   )
 }
