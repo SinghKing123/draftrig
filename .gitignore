@@ -57,3 +57,7 @@ broll
 # an underscore is a one-off probe written to answer a single question while
 # clicking through a dashboard, not something the project builds on.
 tools/_*.mjs
+
+# Impeccable working captures; the briefs and config are kept.
+.impeccable/review
+.impeccable/mocks

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { IconChevron, IconSearch, IconX } from './Icons'
 import { CategoryIcon, PartIcon } from './PartIcons'
-import { allParts, CATEGORY_META, searchParts, valueTargetFor } from '@/parts/kernel/registry'
+import { allParts, CATEGORY_META, getPart, searchParts, valueTargetFor } from '@/parts/kernel/registry'
 import type { PartCategory, PartDef } from '@/parts/kernel/types'
 import { useDoc } from '@/state/doc'
 
@@ -28,8 +28,29 @@ function readOpen(): Record<string, boolean> {
   }
 }
 
+/**
+ * A part named in the URL, so a link can open the library on one.
+ *
+ * The front page searches the same catalog and sends people here; without
+ * this it would send them to an editor that looks exactly as it would have
+ * anyway, which is a link that lies about what it does.
+ *
+ * Read once, at mount, and then forgotten: it seeds the field rather than
+ * controlling it, so the first keystroke is not fighting the address bar.
+ */
+function askedFor(): string {
+  try {
+    const want = new URLSearchParams(window.location.search).get('part')
+    if (!want) return ''
+    const def = getPart(want)
+    return def ? def.name : want
+  } catch {
+    return ''
+  }
+}
+
 export function Library() {
-  const [query, setQuery] = useState('')
+  const [query, setQuery] = useState(askedFor)
   const [open, setOpen] = useState<Record<string, boolean>>(readOpen)
   const addPart = useDoc((s) => s.addPart)
   const setMode = useDoc((s) => s.setMode)

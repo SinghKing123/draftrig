@@ -1,44 +1,61 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { BRAND, pageTitle } from '@/brand'
 import { Wordmark } from '@/ui/Logo'
 import { AccountMenu } from '@/ui/AccountMenu'
 import { useAuth } from '@/auth/AuthProvider'
-import { SHOWCASE_GLYPHS } from '@/ui/PartIcons'
-import { Clip } from './Clip'
-import { Showcase } from './Showcase'
-import { Trace } from './Trace'
 import { Reel } from './Reel'
+import { Trace } from './Trace'
+import { Find } from './Find'
+import { Showcase } from './Showcase'
 
 /**
- * The front page.
+ * The front page, as the manual that comes in the box.
  *
- * Dark, because everything it is showing is dark: the editor, the boards, the
- * clips. A light page wrapped around a dark picture is a page with a hole in
- * the middle of it.
+ * Draftrig's promise is that you put a build together and switch it on, which
+ * is what an assembly manual is for, so the page performs that promise rather
+ * than describing it: a title block, numbered steps with checkboxes down a
+ * ruled margin, and figure plates carrying the product running.
  *
- * Shown rather than described. Every claim is a moving picture of the thing
- * doing it, and the words are labels — a paragraph on a landing page is read
- * by nobody and makes the page longer and less convincing at the same time.
- *
- * What moves, and what each one is for:
- *
- *   the bar at the top   where you are in the page
- *   the glow behind      depth, so the hero is not a flat rectangle
- *   the clips            the product, working
- *   the marquee          how much is in the catalog, without a number
- *   the ring             the same thing again, as a shape
- *   the counter          the number, once somebody is looking at it
- *
- * Nothing else animates. Decoration that moves for its own sake is what makes
- * a site feel cheap rather than alive.
+ * The one thing to preserve if this is ever rewritten again: the step list is
+ * the film's control and its legend. Ticking a step scrubs the clip to that
+ * stage, and the running clip ticks the steps. That is the page's argument —
+ * the visitor is operating the thing on their first scroll rather than
+ * watching it — and the moment those two are separated it becomes a tab row
+ * beside a video, which is the arrangement this page exists to refuse.
  */
 
 /* ------------------------------------------------------------------ */
-/* Motion                                                              */
-/* ------------------------------------------------------------------ */
 
-/** Fills across the top as the page scrolls. */
+/**
+ * The three steps, their clips, and what each one is.
+ *
+ * Step three is the primary action. It never ticks on its own, because it is
+ * the one the visitor performs rather than watches, and a checkbox that fills
+ * itself in front of them is a control lying about who did it.
+ */
+const STEPS = [
+  {
+    n: 1,
+    say: 'Place the board.',
+    clip: 'clip-assemble',
+    note: 'Parts drop onto the bench and snap to the holes.',
+  },
+  {
+    n: 2,
+    say: 'Run the wires.',
+    clip: 'clip-wire',
+    note: 'Pin to pin, routed around whatever is in the way.',
+  },
+  {
+    n: 3,
+    say: 'Switch it on.',
+    clip: 'clip-run',
+    note: 'Solved from here, not played back.',
+  },
+] as const
+
+/** Fills across the top as the page is worked through. */
 function Progress() {
   const [pct, setPct] = useState(0)
   useEffect(() => {
@@ -54,133 +71,46 @@ function Progress() {
       window.removeEventListener('resize', on)
     }
   }, [])
-  return <div className="xp" style={{ transform: `scaleX(${pct})` }} aria-hidden="true" />
-}
-
-/** Reveals its child once, the first time it comes near the viewport. */
-function Rise({ children, delay = 0, className = '' }: {
-  children: React.ReactNode
-  delay?: number
-  className?: string
-}) {
-  const ref = useRef<HTMLDivElement>(null)
-  const [on, setOn] = useState(false)
-  useEffect(() => {
-    const el = ref.current
-    if (!el || typeof IntersectionObserver === 'undefined') return setOn(true)
-    const io = new IntersectionObserver(([e]) => e.isIntersecting && setOn(true), { rootMargin: '-6%' })
-    io.observe(el)
-    return () => io.disconnect()
-  }, [])
-  return (
-    <div ref={ref} className={`rise ${className}`} data-on={on} style={{ transitionDelay: `${delay}ms` }}>
-      {children}
-    </div>
-  )
+  return <div className="mn-gauge" style={{ transform: `scaleX(${pct})` }} aria-hidden="true" />
 }
 
 /**
- * Counts up when it is looked at.
+ * Paper or the blueprint negative, remembered.
  *
- * On a scroll listener rather than an observer: the number arrives from a
- * dynamic import, so anything armed on mount has nothing to count to and
- * leaves a zero on the page for ever. Not hypothetical — that is what the
- * first version of this did.
+ * Not a light and a dark theme of one design: two ways the same drawing is
+ * printed. The geometry, the rules and the line weights are identical and
+ * only the stock changes, which is why this is one attribute on the root
+ * rather than a second set of components.
  */
-function Counter({ to }: { to: number | null }) {
-  const [shown, setShown] = useState(0)
-  const ref = useRef<HTMLSpanElement>(null)
-  const done = useRef(false)
+const SHEET_KEY = 'draftrig.sheet.v1'
 
-  useEffect(() => {
-    if (to === null) return
-    const el = ref.current
-    if (!el) return
-    const start = () => {
-      if (done.current) return
-      done.current = true
-      const t0 = performance.now()
-      const step = () => {
-        const k = Math.min(1, (performance.now() - t0) / 1100)
-        setShown(Math.round(to * (1 - Math.pow(1 - k, 3))))
-        if (k < 1) requestAnimationFrame(step)
-      }
-      requestAnimationFrame(step)
+function useSheet(): ['paper' | 'blue', () => void] {
+  const [sheet, setSheet] = useState<'paper' | 'blue'>(() => {
+    try {
+      const saved = localStorage.getItem(SHEET_KEY)
+      if (saved === 'paper' || saved === 'blue') return saved
+      return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'blue' : 'paper'
+    } catch {
+      return 'paper'
     }
-    const check = () => {
-      const r = el.getBoundingClientRect()
-      if (r.top < window.innerHeight * 0.92 && r.bottom > 0) start()
+  })
+  const flip = () => {
+    const next = sheet === 'paper' ? 'blue' : 'paper'
+    setSheet(next)
+    try {
+      localStorage.setItem(SHEET_KEY, next)
+    } catch {
+      /* private window: it simply will not be remembered */
     }
-    check()
-    window.addEventListener('scroll', check, { passive: true })
-    return () => window.removeEventListener('scroll', check)
-  }, [to])
-
-  return <span ref={ref}>{to === null ? '—' : shown}</span>
+  }
+  return [sheet, flip]
 }
-
-/**
- * The catalog, running past.
- *
- * Two rows in opposite directions: one row reads as a banner, two read as a
- * quantity of things. Each row holds its list twice and slides by exactly
- * half its own width, which is what makes the loop seamless without any
- * measuring.
- */
-function Marquee({ reverse = false, from = 0 }: { reverse?: boolean; from?: number }) {
-  const row = SHOWCASE_GLYPHS.slice(from).concat(SHOWCASE_GLYPHS.slice(0, from))
-  const twice = [...row, ...row]
-  return (
-    <div className="mq" data-reverse={reverse} aria-hidden="true">
-      <div className="mq-run">
-        {twice.map(({ Glyph, label }, i) => (
-          <span className="mq-chip" key={`${label}-${i}`}>
-            <Glyph size={15} />
-            {label}
-          </span>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-/**
- * A ring of parts, turning.
- *
- * The ring rotates and every glyph rotates back by the same amount, so the
- * symbols stay upright while the ring moves: a resistor lying on its side at
- * the bottom of a circle reads as a mistake rather than as motion. Both are
- * CSS animations of the same duration, so they cannot drift apart.
- */
-function Orbit() {
-  const picks = [0, 3, 6, 9, 12, 15, 18, 21, 24, 2, 5, 8]
-  return (
-    <div className="orbit" aria-hidden="true">
-      <div className="orbit-ring">
-        {picks.map((p, i) => {
-          const { Glyph } = SHOWCASE_GLYPHS[p % SHOWCASE_GLYPHS.length]
-          return (
-            <span
-              className="orbit-node"
-              key={i}
-              style={{ transform: `rotate(${(360 / picks.length) * i}deg) translateY(-102px)` }}
-            >
-              <span className="orbit-flip"><Glyph size={17} /></span>
-            </span>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-/* ------------------------------------------------------------------ */
 
 function useCatalogCount(): number | null {
   const [n, setN] = useState<number | null>(null)
   useEffect(() => {
     let live = true
-    import('@/parts/catalog').then((m) => {
+    void import('@/parts/catalog').then((m) => {
       if (live) setN(m.allParts().length)
     })
     return () => {
@@ -190,251 +120,157 @@ function useCatalogCount(): number | null {
   return n
 }
 
-/**
- * Light or dark, remembered.
- *
- * The page is built on a dozen custom properties, so the whole of it swaps by
- * redefining them: nothing here knows which way round it is. The clips stay
- * dark either way, which is the point of offering the choice — on a light
- * page they read as objects on a desk, on a dark one as a screen.
- */
-const THEME_KEY = 'draftrig.lp.theme.v1'
-
-function useTheme(): ['dark' | 'light', () => void] {
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    try {
-      const saved = localStorage.getItem(THEME_KEY)
-      if (saved === 'light' || saved === 'dark') return saved
-      // No choice made yet: follow the machine.
-      return window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
-    } catch {
-      return 'dark'
-    }
-  })
-  const flip = () => {
-    const next = theme === 'dark' ? 'light' : 'dark'
-    setTheme(next)
-    try {
-      localStorage.setItem(THEME_KEY, next)
-    } catch {
-      /* private window: it simply will not be remembered */
-    }
-  }
-  return [theme, flip]
-}
-
-/**
- * Where the pointer is over the hero, as a fraction of it.
- *
- * Written to CSS custom properties on the section rather than to React
- * state: the glow and the frame both read it, this fires on every pointer
- * move, and re-rendering the hero sixty times a second to move a highlight
- * is how a page that looks expensive comes to feel cheap.
- *
- * Nothing is attached on a touch screen — there is no pointer to follow, and
- * the listener would only cost battery.
- */
-function usePointer(): React.RefObject<HTMLElement> {
-  const ref = useRef<HTMLElement>(null)
-
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    if (!window.matchMedia?.('(hover: hover) and (pointer: fine)').matches) return
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
-
-    let frame = 0
-    const move = (e: PointerEvent) => {
-      if (frame) return
-      frame = requestAnimationFrame(() => {
-        frame = 0
-        const r = el.getBoundingClientRect()
-        const x = (e.clientX - r.left) / r.width
-        const y = (e.clientY - r.top) / r.height
-        el.style.setProperty('--px', x.toFixed(4))
-        el.style.setProperty('--py', y.toFixed(4))
-        // Signed, for anything that wants to lean rather than glow.
-        el.style.setProperty('--dx', (x - 0.5).toFixed(4))
-        el.style.setProperty('--dy', (y - 0.5).toFixed(4))
-      })
-    }
-    const leave = () => {
-      el.style.setProperty('--dx', '0')
-      el.style.setProperty('--dy', '0')
-    }
-
-    el.addEventListener('pointermove', move)
-    el.addEventListener('pointerleave', leave)
-    return () => {
-      if (frame) cancelAnimationFrame(frame)
-      el.removeEventListener('pointermove', move)
-      el.removeEventListener('pointerleave', leave)
-    }
-  }, [])
-
-  return ref
-}
-
-/**
- * Lights the edge of whichever tile the pointer is over.
- *
- * One listener on the grid rather than one per tile, and it writes straight
- * to the element: five tiles each re-rendering on pointermove to move a
- * highlight is the kind of thing that makes a page stutter on a laptop.
- */
-function useTileGlow(): React.RefObject<HTMLDivElement> {
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    if (!window.matchMedia?.('(hover: hover) and (pointer: fine)').matches) return
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
-
-    let frame = 0
-    const move = (e: PointerEvent) => {
-      if (frame) return
-      frame = requestAnimationFrame(() => {
-        frame = 0
-        const tile = (e.target as Element | null)?.closest?.('.tile') as HTMLElement | null
-        if (!tile) return
-        const r = tile.getBoundingClientRect()
-        tile.style.setProperty('--mx', `${(e.clientX - r.left).toFixed(0)}px`)
-        tile.style.setProperty('--my', `${(e.clientY - r.top).toFixed(0)}px`)
-      })
-    }
-
-    el.addEventListener('pointermove', move)
-    return () => {
-      if (frame) cancelAnimationFrame(frame)
-      el.removeEventListener('pointermove', move)
-    }
-  }, [])
-
-  return ref
-}
-
-function useStuck(): boolean {
-  const [stuck, setStuck] = useState(false)
-  useEffect(() => {
-    const on = () => setStuck(window.scrollY > 8)
-    on()
-    window.addEventListener('scroll', on, { passive: true })
-    return () => window.removeEventListener('scroll', on)
-  }, [])
-  return stuck
-}
-
 /* ------------------------------------------------------------------ */
 
 export function Landing() {
-  const stuck = useStuck()
-  const parts = useCatalogCount()
   const accounts = useAuth().enabled
-  const [theme, flipTheme] = useTheme()
-  const hero = usePointer()
-  const bento = useTileGlow()
+  const [sheet, flipSheet] = useSheet()
+  const parts = useCatalogCount()
+
+  /*
+   * `stage` is the one piece of state the spread shares.
+   *
+   * It is the clip on screen and the step struck through, and it is written
+   * from both ends: the film advances it when a clip finishes, the step list
+   * sets it when somebody ticks a box. Holding it here is what stops those
+   * two fighting over it.
+   */
+  const [stage, setStage] = useState(0)
+  const [seen, setSeen] = useState(false)
+
+  const onSeen = useCallback(() => setSeen(true), [])
+  const onEnded = useCallback(() => setStage((s) => (s + 1) % STEPS.length), [])
 
   useEffect(() => {
     document.title = pageTitle()
   }, [])
 
   return (
-    <div className="lp" data-theme={theme}>
+    <div className="mn" data-sheet={sheet}>
       <Progress />
-      <div className="lp-grain" aria-hidden="true" />
 
-      <header className="lp-nav" data-stuck={stuck}>
-        <Link to="/" aria-label={BRAND.name}><Wordmark size={22} onDark={theme === 'dark'} /></Link>
-        <div className="grow" />
-        <button
-          className="theme-flip"
-          onClick={flipTheme}
-          aria-label={theme === 'dark' ? 'Switch to light' : 'Switch to dark'}
-          title={theme === 'dark' ? 'Light' : 'Dark'}
-        >
-          <span className="theme-knob" />
-        </button>
-        <AccountMenu compact />
-        <Link className="btn-sheen" to="/app">
-          <span className="say-long">Open the editor</span>
-          <span className="say-short">Open</span>
+      <header className="mn-head">
+        <Link className="mn-mark" to="/" aria-label={BRAND.name}>
+          <Wordmark size={21} onDark={sheet === 'blue'} />
         </Link>
+
+        <p className="mn-doc">
+          Assembly and operation
+          <span className="mn-sheet">Sheet 1 of 5</span>
+        </p>
+
+        <nav className="mn-nav">
+          <a href="#figure-2">Figures</a>
+          <a href="#parts">Parts</a>
+          <a href="#built">Built</a>
+        </nav>
+
+        <button
+          className="mn-stock"
+          onClick={flipSheet}
+          aria-label={sheet === 'paper' ? 'Print on blueprint' : 'Print on paper'}
+          title={sheet === 'paper' ? 'Blueprint' : 'Paper'}
+        >
+          <span />
+        </button>
+
+        <AccountMenu compact />
       </header>
 
-      <section className="hero" ref={hero as React.RefObject<HTMLElement>}>
-        <div className="hero-glow" aria-hidden="true" />
-        <div className="hero-mesh" aria-hidden="true" />
-        {/* Follows the pointer. One element, moved by two custom properties. */}
-        <div className="hero-spot" aria-hidden="true" />
+      <section className="mn-spread">
+        <div className="mn-copy">
+          <h1>
+            A bench that runs,
+            <br />
+            in a browser tab.
+          </h1>
+          <p className="mn-lede">
+            Lay out the board, wire it up, switch it on. Nothing to order first.
+          </p>
 
-        <div className="hero-in">
-          <Rise className="hero-copy">
-            <h1>Your bench, <em>in the browser</em>.</h1>
-            <p>Lay out the board, wire it up, switch it on. Nothing to order first.</p>
-            <div className="row-cta">
-              <Link className="btn-sheen lg" to="/app">Start building</Link>
-              <a className="btn-ghost lg" href="#work">See it work</a>
-            </div>
-          </Rise>
-
-          <Rise className="hero-stage" delay={120}>
-            <div className="frame tilt">
-              <div className="frame-bar"><i /><i /><i /></div>
-              <Reel
-                names={['clip-assemble', 'clip-wire', 'clip-run', 'clip-builds']}
-                labels={['Assemble', 'Wire', 'Run', 'Build']}
-              />
-            </div>
-          </Rise>
+          <ol className="mn-steps">
+            {STEPS.map((s, i) => {
+              const done = i < stage
+              const here = i === stage
+              const act = i === STEPS.length - 1
+              const body = (
+                <>
+                  <span className="mn-no">{String(s.n).padStart(2, '0')}</span>
+                  <span className="mn-box" aria-hidden="true">
+                    {done && (
+                      <svg viewBox="0 0 16 16">
+                        <path d="M3 8.4 L6.3 11.8 L13 4.6" />
+                      </svg>
+                    )}
+                  </span>
+                  <span className="mn-say">
+                    <b>{act ? 'Open the editor.' : s.say}</b>
+                    <i>{s.note}</i>
+                  </span>
+                </>
+              )
+              return (
+                <li key={s.n} className="mn-step" data-done={done} data-here={here} data-act={act}>
+                  {act ? (
+                    <Link className="mn-do" to="/app">
+                      {body}
+                    </Link>
+                  ) : (
+                    <button className="mn-do" onClick={() => setStage(i)} aria-pressed={here}>
+                      {body}
+                    </button>
+                  )}
+                </li>
+              )
+            })}
+          </ol>
         </div>
 
-        <div className="mq-wrap">
-          <Marquee />
-          <Marquee reverse from={13} />
-        </div>
+        <figure className="mn-plate mn-lead">
+          <div className="mn-mount">
+            <Reel
+              names={STEPS.map((s) => s.clip)}
+              at={stage}
+              onEnded={onEnded}
+              seen={seen}
+              onSeen={onSeen}
+            />
+          </div>
+          <figcaption>
+            <b>Fig.&nbsp;1&#8209;{stage + 1}</b>
+            <span>{STEPS[stage].say.replace(/\.$/, '')}, in the editor</span>
+          </figcaption>
+        </figure>
       </section>
 
-      {/* The drawing leads, the pictures follow. It is the one thing on the
-          page that is drawn rather than filmed, so it is also the one thing
-          that rewards arriving at it, and "See it work" lands here. */}
       <Trace />
 
-      <section className="bento" ref={bento}>
-        <Rise className="tile tile-wide">
-          <Clip name="clip-wire" poster="/clips/clip-wire.jpg" className="tile-film" />
-        </Rise>
-
-        <Rise className="tile tile-orbit" delay={80}>
-          <Orbit />
-          <b className="tile-figure"><Counter to={parts} /> parts</b>
-        </Rise>
-
-        <Rise className="tile" delay={140}>
-          <Clip name="clip-run" poster="/clips/clip-run.jpg" className="tile-film" />
-        </Rise>
-
-        <Rise className="tile" delay={200}>
-          <Clip name="clip-builds" poster="/clips/clip-builds.jpg" className="tile-film" />
-        </Rise>
-      </section>
+      <Find total={parts} />
 
       <Showcase />
 
-      <section className="closer">
-        <div className="closer-glow" aria-hidden="true" />
-        <Rise>
-          <h2>Open it and put something together.</h2>
-          <div className="row-cta center">
-            <Link className="btn-sheen lg" to="/app">Open the editor</Link>
-            {accounts && <Link className="btn-ghost lg" to="/signin">Sign in</Link>}
+      <section className="mn-end">
+        <div className="mn-end-in">
+          <h2>That is the whole procedure.</h2>
+          <p>Open a build, take it apart, run it. No account needed to try it.</p>
+          <div className="mn-end-row">
+            <Link className="mn-act" to="/app">
+              Open the editor
+            </Link>
+            {accounts && (
+              <Link className="mn-alt" to="/signin">
+                Sign in
+              </Link>
+            )}
           </div>
-        </Rise>
+        </div>
       </section>
 
-      <footer className="lp-foot">
-        <span>© {new Date().getFullYear()} {BRAND.name}</span>
-        <div className="grow" />
+      <footer className="mn-foot">
+        <span>
+          © {new Date().getFullYear()} {BRAND.name}
+        </span>
+        <span className="mn-foot-doc">DR&#8209;1 · Assembly and operation</span>
         <a href={`mailto:${BRAND.support}`}>Contact</a>
       </footer>
     </div>

@@ -42,9 +42,24 @@ const only = process.argv.slice(2)
  * Fit settles 806 units out for the rover against 262 for the LED matrix, so
  * the same factor frames one and loses the other.
  *
- * Azimuth 0 is the camera on +z looking back along it, so 30-ish is the usual
- * three-quarter. The flat things — the control panel, the frame — are shot
- * from higher up, because at 56 degrees they are a line.
+ * Azimuth 0 is the camera on +z looking back along it. Polar is measured
+ * down from straight up, so it runs the opposite way to the way it reads:
+ * 20 puts the camera high and looking down, 70 puts it nearly level with the
+ * bench. Past about 72 the lit floor runs out and a black band appears
+ * across the top of the frame.
+ *
+ * No two of these are framed alike, and that is the point of the table.
+ * Every shot used to sit between 24 and 52 of azimuth and 48 and 66 of
+ * polar, which is one camera position with a wobble: thirteen photographs
+ * that read as the same photograph of thirteen subjects. So the set is now
+ * deliberately mixed —
+ *
+ *   20 to 30 polar   along the bench, so tall parts stand against the dark
+ *   70 to 82 polar   flat on, for things whose face is the whole subject
+ *   around 55        the three-quarter, for boards with depth to show
+ *
+ * and azimuth swings right round, so a board lit from the left in one frame
+ * is lit from the right in the next.
  */
 /* Builds with a display that has to be clocked up before it reads. */
 const SETTLE = {
@@ -56,25 +71,32 @@ const SETTLE = {
 }
 
 const SHOTS = [
-  ['matrix', 0.70, 32, 54],
-  ['scoreboard', 0.64, 26, 52],
-  ['logic-bench', 0.52, 34, 52],
-  ['esp-weather', 0.62, 32, 56],
-  ['thrust-rig', 0.62, 38, 54],
-  ['rfid-lock', 0.5, 30, 56],
-  ['sound-bench', 0.54, 36, 54],
-  ['servo-arm', 0.44, 34, 48],
-  ['led', 0.5, 52, 48],
-  ['blink555', 0.5, 28, 56],
-  ['mcu', 0.42, 40, 52],
-  ['lcd', 0.5, 30, 58],
-  ['oled', 0.5, 26, 56],
-  ['bench-clock', 0.5, 24, 54],
-  ['frame', 0.58, 36, 62],
-  ['motor', 0.52, 34, 58],
-  ['cnc', 0.6, 34, 64],
-  ['rover', 0.27, 46, 58],
-  ['panel', 0.46, 30, 66],
+  // High, down onto the grid: thirty lit LEDs read as a grid from here.
+  ['matrix', 0.62, 14, 26],
+  // Low, so the panel faces the camera instead of foreshortening away.
+  ['scoreboard', 0.58, 8, 66],
+  // Along the breadboard, so the jumpers arch over the channel.
+  ['logic-bench', 0.34, 74, 70],
+  // Round the back, lit from the other side.
+  ['esp-weather', 0.6, 212, 48],
+  // Round the back, where the keypad and the bolt are both in shot.
+  ['rfid-lock', 0.36, 168, 56],
+  // Low and across, facing the cone.
+  ['sound-bench', 0.36, 122, 68],
+  // Close and almost level: one LED, one resistor, one supply.
+  ['led', 0.3, 58, 58],
+  ['blink555', 0.55, 286, 44],
+  ['mcu', 0.25, 150, 66],
+  // Square to the display, which is what the build is for.
+  ['lcd', 0.46, 2, 62],
+  ['oled', 0.25, 330, 40],
+  ['bench-clock', 0.52, 44, 62],
+  // A vertical face, so the camera comes down to meet it.
+  ['panel', 1.08, 352, 70],
+
+  /* The motor builds are not here because they cannot be: this tool loads a
+     build by asking the running app for the starter, and they are not
+     offered any more. Their angles are kept in git, not in this list. */
 ].filter((s) => only.length === 0 || only.includes(s[0]))
 
 mkdirSync('public/presets', { recursive: true })
@@ -84,6 +106,7 @@ const b = await chromium.launch({ channel: 'msedge' })
    is wasted: these are 250 pixels wide in the grid. */
 const page = await b.newPage({ viewport: { width: 860, height: 538 }, deviceScaleFactor: 2 })
 const errors = []
+const empty = []
 page.on('pageerror', (e) => errors.push(e.message))
 
 await page.goto(base + '/app', { waitUntil: 'domcontentloaded' })
@@ -187,8 +210,45 @@ for (const [id, fill, az, pol] of SHOTS) {
   await page.locator('canvas').first().screenshot({
     path: `public/presets/${id}.jpg`, type: 'jpeg', quality: 90,
   })
-  console.log('wrote public/presets/' + id + '.jpg')
+
+  /* How much of the frame is the build, rather than the bench behind it.
+     Measured against the background colour, not against black: the first
+     version of this counted bright pixels, which reads a dark blue board
+     filling the whole frame as an empty one — it flagged the Uno shot as
+     empty while the camera was in fact inside the board. The bench is a
+     flat colour, so anything that is not that colour is the subject. */
+  const lit = await page.evaluate(() => {
+    const c = document.querySelector('canvas')
+    const s = document.createElement('canvas')
+    s.width = 96
+    s.height = 60
+    const x = s.getContext('2d')
+    x.drawImage(c, 0, 0, 96, 60)
+    const d = x.getImageData(0, 0, 96, 60).data
+    const at = (i) => [d[i * 4], d[i * 4 + 1], d[i * 4 + 2]]
+    // The top two corners are bench in every sane framing.
+    const [ar, ag, ab] = at(0)
+    const [br, bg, bb] = at(95)
+    const bg0 = [(ar + br) / 2, (ag + bg) / 2, (ab + bb) / 2]
+    let subject = 0
+    for (let i = 0; i < 96 * 60; i++) {
+      const [r, g, b] = at(i)
+      const dist = Math.abs(r - bg0[0]) + Math.abs(g - bg0[1]) + Math.abs(b - bg0[2])
+      if (dist > 26) subject++
+    }
+    return (100 * subject) / (96 * 60)
+  })
+
+  console.log(
+    'wrote public/presets/' + id + '.jpg',
+    `${lit.toFixed(0)}%`.padStart(4),
+    lit < 1.5 ? ' EMPTY FRAME' : lit < 12 ? ' loose' : lit > 42 ? ' tight' : '',
+  )
 }
 
 console.log('errors:', errors.length ? errors.slice(0, 4) : 'none')
+if (empty.length) {
+  console.log('EMPTY:', empty.join(' '), '— check the angle, the camera is seeing nothing')
+  process.exitCode = 1
+}
 await b.close()

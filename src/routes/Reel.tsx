@@ -1,29 +1,42 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 
 /**
- * Several clips through one frame, one after another.
+ * Several clips through one frame, driven from outside.
  *
- * A single loop of one build says the editor can do one thing. The same frame
- * cutting between four says it can do four, and costs no more space.
+ * It owns no selection of its own. The step list beside it is both the
+ * control and the legend: ticking a step scrubs the film to that stage, and
+ * the film ticks the steps as it reaches them. Two components arguing over
+ * one index is how that relationship breaks, so the index lives in the page
+ * and this only reports when a clip has finished.
  *
- * It advances when a clip ends rather than on a timer, so a cut never lands
- * halfway through a camera move. Only the clip on screen is loaded and only
- * the one playing is decoded; the rest are a poster each until their turn.
+ * It advances on `ended` rather than on a timer, so a cut never lands halfway
+ * through a camera move. Only the clip on screen is loaded and only the one
+ * playing is decoded; the rest are a poster each until their turn.
  */
-export function Reel({ names, labels }: { names: string[]; labels?: string[] }) {
-  const [at, setAt] = useState(0)
-  const [seen, setSeen] = useState(false)
+export function Reel({
+  names,
+  at,
+  onEnded,
+  seen,
+  onSeen,
+}: {
+  names: string[]
+  at: number
+  onEnded: () => void
+  seen: boolean
+  onSeen: () => void
+}) {
   const root = useRef<HTMLDivElement>(null)
   const vids = useRef<(HTMLVideoElement | null)[]>([])
 
-  // Nothing is fetched until the frame is near, and nothing plays while it
-  // is away: four decoders behind the fold cost the same as four in front.
+  // Nothing is fetched until the frame is near, and nothing plays while it is
+  // away: four decoders behind the fold cost the same as four in front.
   useEffect(() => {
     const el = root.current
-    if (!el || typeof IntersectionObserver === 'undefined') return setSeen(true)
+    if (!el || typeof IntersectionObserver === 'undefined') return onSeen()
     const io = new IntersectionObserver(
       ([e]) => {
-        setSeen((was) => was || e.isIntersecting)
+        if (e.isIntersecting) onSeen()
         const v = vids.current[at]
         if (!v) return
         if (e.isIntersecting) void v.play().catch(() => {})
@@ -33,7 +46,7 @@ export function Reel({ names, labels }: { names: string[]; labels?: string[] }) 
     )
     io.observe(el)
     return () => io.disconnect()
-  }, [at])
+  }, [at, onSeen])
 
   useEffect(() => {
     if (!seen) return
@@ -57,22 +70,12 @@ export function Reel({ names, labels }: { names: string[]; labels?: string[] }) 
           disablePictureInPicture
           preload={i === 0 ? 'auto' : 'none'}
           aria-hidden="true"
-          onEnded={() => setAt((k) => (k + 1) % names.length)}
+          onEnded={onEnded}
         >
           {(seen || i === 0) && <source src={`/clips/${n}.webm`} type="video/webm" />}
           {(seen || i === 0) && <source src={`/clips/${n}.mp4`} type="video/mp4" />}
         </video>
       ))}
-
-      {labels && (
-        <div className="reel-tabs" aria-hidden="true">
-          {labels.map((l, i) => (
-            <button key={l} data-on={i === at} onClick={() => setAt(i)}>
-              <i /><span>{l}</span>
-            </button>
-          ))}
-        </div>
-      )}
     </div>
   )
 }
