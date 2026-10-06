@@ -95,38 +95,32 @@ export function Trace() {
   }, [])
 
   return (
-    <section className="mn-fig" id="figure-2" ref={root} data-on={on}>
-      <div className="mn-rule-head">
-        <span className="mn-sect" aria-hidden="true">2</span>
-        <h2>Drawn and built are one document.</h2>
-        <p>
-          {/* "on the right" was false at 390px, where the photograph sits
-              below; and "solved, not animated" argues with a sceptic. */}
-          The photograph is this circuit in the editor
-          <span className="mn-dot" aria-hidden="true" />
-          every part of it solved
-        </p>
-      </div>
+    <section className="sec sec-alt" ref={root} data-on={on}>
+      <div className="lpw">
+        <div className="sec-head center">
+          <h2>One circuit, two views</h2>
+          <p>One supply, one resistor, one LED — drawn, and built.</p>
+        </div>
 
-      <figure className="mn-plate mn-plate-pair">
-        <div className="mn-mount">
-          <div className="mn-pair">
-          <div className="mn-draw">
+        <div className="row" style={{ marginTop: 'clamp(30px, 5vh, 56px)' }}>
+          <div className="art" style={{ background: 'var(--bg)' }}>
             <svg
+              className="trace-art"
               viewBox={VIEW}
+              style={{ aspectRatio: '16 / 10', padding: '4%', boxSizing: 'border-box' }}
               role="img"
               aria-label="A 5 volt supply, a 330 ohm resistor and a red LED wired in one loop"
             >
-              <g className="mn-wires">
-                {SEGS.map((s) => (
+              <g>
+                {SEGS.map((sg) => (
                   <path
-                    key={s.d}
-                    d={s.d}
-                    className={`seg ${s.cls}`}
+                    key={sg.d}
+                    d={sg.d}
+                    className={`seg ${sg.cls}`}
                     style={{
-                      strokeDasharray: s.len,
-                      strokeDashoffset: on ? 0 : s.len,
-                      transitionDelay: `${s.at * STEP}ms`,
+                      strokeDasharray: sg.len,
+                      strokeDashoffset: on ? 0 : sg.len,
+                      transitionDelay: `${sg.at * STEP}ms`,
                       transitionDuration: `${STEP * 1.7}ms`,
                     }}
                   />
@@ -135,53 +129,47 @@ export function Trace() {
 
               {/* The current, once the loop is closed. One dash per branch, so
                   it reads as flow rather than as a marquee round a border. */}
-              <g className="mn-flow">
-                {SEGS.map((s, i) => (
+              <g className="trace-flow">
+                {SEGS.map((sg, i) => (
                   <path
-                    key={s.d}
-                    d={s.d}
+                    key={sg.d}
+                    d={sg.d}
                     className="flow"
-                    style={{
-                      animationDelay: `${DRAW + i * 150}ms`,
-                      strokeDasharray: `30 ${s.len}`,
-                    }}
+                    style={{ animationDelay: `${DRAW + i * 150}ms`, strokeDasharray: `30 ${sg.len}` }}
                   />
                 ))}
               </g>
 
-              <g className="mn-sym">
-                {PARTS.map((p) => (
+              <g className="trace-sym">
+                {PARTS.map((pt) => (
                   <g
-                    key={p.ref}
-                    transform={`translate(${p.x} ${p.y})`}
+                    key={pt.ref}
+                    transform={`translate(${pt.x} ${pt.y})`}
                     className="sym"
-                    style={{ transitionDelay: `${p.at * STEP + STEP * 0.6}ms` }}
+                    style={{ transitionDelay: `${pt.at * STEP + STEP * 0.6}ms` }}
                   >
-                    <Glyph kind={p.kind} />
+                    <Glyph kind={pt.kind} />
                     <text
-                      className="ref"
-                      x={p.kind === 'cell' ? 30 : 0}
-                      y={p.kind === 'cell' ? -4 : -30}
-                      style={{ textAnchor: p.kind === 'cell' ? 'start' : 'middle' }}
+                      x={pt.kind === 'cell' ? 30 : 0}
+                      y={pt.kind === 'cell' ? -4 : -30}
+                      style={{ textAnchor: pt.kind === 'cell' ? 'start' : 'middle' }}
                     >
-                      {p.ref}
+                      {pt.ref}
                     </text>
                     <text
-                      className="val"
-                      x={p.kind === 'cell' ? 30 : 0}
-                      y={p.kind === 'cell' ? 13 : 34}
-                      style={{ textAnchor: p.kind === 'cell' ? 'start' : 'middle' }}
+                      x={pt.kind === 'cell' ? 30 : 0}
+                      y={pt.kind === 'cell' ? 13 : 34}
+                      style={{ textAnchor: pt.kind === 'cell' ? 'start' : 'middle' }}
                     >
-                      {p.val}
+                      {pt.val}
                     </text>
                   </g>
                 ))}
               </g>
             </svg>
-            <span className="mn-pair-tag">Schematic</span>
           </div>
 
-          <div className="mn-shot">
+          <div className="art">
             <img
               src="/presets/led.jpg"
               alt="The same circuit built on a breadboard in the editor"
@@ -189,16 +177,9 @@ export function Trace() {
               width={860}
               height={538}
             />
-            <span className="mn-pair-tag">Pictorial</span>
-            </div>
           </div>
         </div>
-
-        <figcaption>
-          <b>Fig.&nbsp;2&#8209;1</b>
-          <span>One supply, one resistor, one LED — as drawn, and as built.</span>
-        </figcaption>
-      </figure>
+      </div>
     </section>
   )
 }

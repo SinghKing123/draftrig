@@ -2,7 +2,7 @@ import type { Doc } from '@/state/doc'
 import { emptyDoc } from '@/state/doc'
 import type { Instance, Params, Vec3 } from '@/parts/kernel/types'
 import { defaultParams, requirePart } from '@/parts/kernel/registry'
-import { benchClock, controlPanel, espWeather, ledMatrix, logicBench, rfidLock, scoreboard, soundBench } from './builds'
+import { benchClock, controlPanel, eightBit, espWeather, ledMatrix, logicBench, rfidLock, scoreboard, soundBench } from './builds'
 import { lab10Buzzer, lab9Blinker } from './labs'
 
 /**
@@ -308,6 +308,14 @@ export interface Starter {
  * them back when the motors turn.
  */
 export const STARTERS: Starter[] = [
+  {
+    id: 'eight-bit',
+    title: 'Eight-bit machine',
+    blurb: 'Four breadboards, a clock, six chained registers and thirty-two lamps',
+    kind: 'circuit',
+    tags: ['logic', '595', 'shift register', 'breadboard', 'computer', 'register', '555', 'clock', 'ttl', 'lamps', 'bus', 'dense'],
+    build: eightBit,
+  },
   {
     id: 'matrix',
     title: 'LED matrix',

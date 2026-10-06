@@ -177,7 +177,7 @@ export function lab10Buzzer(): Doc {
   const r3 = b.add('resistor-axial', [12, 9, -14], { value: 5600, watt: '0.25' }, [0, 0, 0], 'R3 5.6k')
   const c3 = b.add('capacitor-electrolytic', [30, 9, 10], { value: 1e-4, vmax: 16 }, [0, 0, 0], 'C3 100uF')
 
-  const spk = b.add('speaker-cone', [122, 0, 26], { diameter: 66, impedance: '8', power: 3 }, [0, 0, 0], 'Speaker')
+  const spk = b.add('speaker-cone', [104, 0, 22], { diameter: 66, impedance: '8', power: 3 }, [0, 0, 0], 'Speaker')
   const bat = b.add('battery-9v', [-16, 0, 80], { chem: 'alkaline' }, [0, 0, 0], '9 V battery')
 
   // Supply, and the reservoir across it.

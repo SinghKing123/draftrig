@@ -29,6 +29,7 @@ import { STARTERS } from '@/io/starters'
  * Every one of them is a starter, so whatever is here can be opened.
  */
 const SHOWN = [
+  'eight-bit',
   'matrix',
   'logic-bench',
   'scoreboard',
@@ -82,88 +83,52 @@ export function Showcase() {
   const here = items[at]
 
   return (
-    <section className="mn-built" ref={root} id="built">
-      <div className="mn-rule-head">
-        <span className="mn-sect" aria-hidden="true">4</span>
-        <h2>Completed assemblies</h2>
-        <p>
-          <b className="mn-fig-no">{items.length}</b> of the builds that ship with it
-          <span className="mn-dot" aria-hidden="true" />
-          every one opens
-        </p>
-      </div>
-
-      <figure className="mn-plate mn-plate-wide">
-        <div className="mn-mount">
-          {items.map((s, i) => (
-            <button
-              key={s.id}
-              className="mn-slide"
-              data-on={i === at}
-              tabIndex={i === at ? 0 : -1}
-              aria-hidden={i !== at}
-              onClick={() => navigate(`/app?start=${s.id}`)}
-              onPointerEnter={stop}
-            >
-              <img
-                src={`/presets/${s.id}.jpg`}
-                alt={s.title}
-                loading={i === 0 ? 'eager' : 'lazy'}
-                width={860}
-                height={538}
-              />
-            </button>
-          ))}
-
+    <section className="sec sec-alt" ref={root} id="builds">
+      <div className="lpw">
+        <div className="sec-head center">
+          <h2>Example builds</h2>
         </div>
 
-        {/* Set beside the caption as ruled designators, not floated over the
-            photograph: a blurred glass chip on the artwork is the one thing
-            this world does not do. */}
-        <figcaption>
-          <b>Fig.&nbsp;4&#8209;{at + 1}</b>
-          <span>
-            {here.title}. {here.blurb}.
-          </span>
-          <span className="mn-plate-nav">
-            <button
-              onClick={() => {
-                stop()
-                go(at - 1)
-              }}
-              aria-label="Previous assembly"
-            >
-              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 2 L4 8 L10 14" /></svg>
-            </button>
-            <button
-              onClick={() => {
-                stop()
-                go(at + 1)
-              }}
-              aria-label="Next assembly"
-            >
-              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 2 L12 8 L6 14" /></svg>
-            </button>
-          </span>
-        </figcaption>
-      </figure>
+        <div className="gal">
+          <div className="gal-stage">
+            {items.map((s2, i) => (
+              <button
+                key={s2.id}
+                className="gal-slide"
+                data-on={i === at}
+                tabIndex={i === at ? 0 : -1}
+                aria-hidden={i !== at}
+                onClick={() => navigate(`/app?start=${s2.id}`)}
+                onPointerEnter={stop}
+                aria-label={`Open ${s2.title}`}
+              >
+                <img
+                  src={`/presets/${s2.id}.jpg`}
+                  alt={s2.title}
+                  loading={i === 0 ? 'eager' : 'lazy'}
+                  width={860}
+                  height={538}
+                />
+              </button>
+            ))}
+            <span className="gal-name">{here.title}</span>
+          </div>
 
-      <ol className="mn-index">
-        {items.map((s, i) => (
-          <li key={s.id}>
-            <button
-              data-on={i === at}
-              onClick={() => {
-                stop()
-                go(i)
-              }}
-            >
-              <span className="mn-index-no">4&#8209;{i + 1}</span>
-              <span className="mn-index-name">{s.title}</span>
-            </button>
-          </li>
-        ))}
-      </ol>
+          <div className="gal-rail">
+            {items.map((s2, i) => (
+              <button
+                key={s2.id}
+                className="gal-pip"
+                data-on={i === at}
+                onClick={() => { stop(); go(i) }}
+                aria-label={s2.title}
+              >
+                <img src={`/presets/${s2.id}.jpg`} alt="" loading="lazy" />
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
     </section>
   )
 }

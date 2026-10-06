@@ -1845,3 +1845,86 @@ kbd {
   color: var(--tx-3);
 }
 .wall-x:hover { background: var(--bg-2); color: var(--tx-0); }
+
+/* ==================================================================
+   The editor sting
+   ------------------------------------------------------------------
+   A trace draws in from both edges, the vias light as it passes, and
+   the mark powers up where the halves meet.
+
+   Nothing here holds the editor up: the overlay sits above a route
+   that is loading underneath it and takes itself away, so the sting
+   and the download spend the same seconds rather than consecutive
+   ones. Total run is well under two seconds, because this is in front
+   of somebody's work rather than in front of a film.
+   ================================================================== */
+
+.sting {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: grid;
+  place-items: center;
+  background: var(--bg-0);
+  transition: opacity 320ms ease, visibility 0s linear 320ms;
+}
+.sting[data-gone='true'] { opacity: 0; visibility: hidden; pointer-events: none; }
+
+.sting-art { position: relative; display: grid; place-items: center; }
+
+.sting-trace {
+  position: absolute;
+  color: var(--ac-1, #2F6FED);
+  opacity: 0.85;
+  max-width: 92vw;
+  height: auto;
+}
+
+/* The trace arrives rather than appears. 760 is comfortably longer than
+   either path, so the dash clears the whole run. */
+.sting-trace .t {
+  stroke-dasharray: 760;
+  stroke-dashoffset: 760;
+  animation: sting-draw 700ms cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+.sting-trace .t-r { animation-delay: 60ms; }
+@keyframes sting-draw { to { stroke-dashoffset: 0; } }
+
+.sting-trace .vias circle {
+  opacity: 0;
+  animation: sting-via 520ms ease-out forwards;
+}
+@keyframes sting-via {
+  0% { opacity: 0; transform: scale(0.4); }
+  40% { opacity: 1; transform: scale(1.5); }
+  100% { opacity: 0.55; transform: scale(1); }
+}
+
+/* The mark powers up where the two halves meet. */
+.sting-mark {
+  position: relative;
+  opacity: 0;
+  animation: sting-on 560ms cubic-bezier(0.2, 0.9, 0.3, 1.2) 620ms forwards;
+}
+@keyframes sting-on {
+  0% { opacity: 0; transform: scale(0.72); filter: brightness(2.4); }
+  45% { opacity: 1; filter: brightness(1.7); }
+  100% { opacity: 1; transform: scale(1); filter: none; }
+}
+
+.sting-word {
+  margin-top: 16px;
+  opacity: 0;
+  animation: sting-word 520ms ease-out 900ms forwards;
+}
+@keyframes sting-word {
+  0% { opacity: 0; transform: translateY(7px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sting-trace .t,
+  .sting-trace .vias circle,
+  .sting-mark,
+  .sting-word { animation: none; opacity: 1; stroke-dashoffset: 0; }
+}

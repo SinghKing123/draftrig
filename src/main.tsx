@@ -5,13 +5,14 @@ import '@/styles/tokens.css'
 import '@/styles/base.css'
 import '@/styles/app.css'
 import '@/styles/site.css'
-import '@/styles/manual.css'
+import '@/styles/site-lp.css'
 import { AuthProvider } from '@/auth/AuthProvider'
 import { Root } from '@/routes/Root'
 import { SignIn } from '@/routes/SignIn'
 import { AuthCallback } from '@/routes/AuthCallback'
 import { Dashboard } from '@/routes/Dashboard'
 import { LogoMark } from '@/ui/Logo'
+import { Sting, useSting } from '@/ui/Sting'
 
 /**
  * The editor is the only route that needs three.js, the solver and the part
@@ -25,20 +26,38 @@ const Editor = lazy(() => import('@/app/App').then((m) => ({ default: m.Editor }
  * app through this rather than through fragile UI clicks.
  */
 /** Holding screen while the editor chunk arrives. */
-function EditorLoading() {
+function EditorLoading({ quiet = false }: { quiet?: boolean }) {
+  // Behind the sting this would be a second logo showing through the first,
+  // so while that is running the holding screen is just the background.
   return (
     <div style={{ display: 'grid', placeItems: 'center', height: '100%', background: 'var(--bg-0)', gap: 14 }}>
-      <LogoMark size={40} />
-      <span style={{ color: 'var(--tx-3)', fontSize: 'var(--fs-lg)' }}>Loading the editor…</span>
+      {!quiet && (
+        <>
+          <LogoMark size={40} />
+          <span style={{ color: 'var(--tx-3)', fontSize: 'var(--fs-lg)' }}>Loading the editor…</span>
+        </>
+      )}
     </div>
   )
 }
 
 function EditorRoute() {
+  /*
+   * The sting plays over the editor, not instead of it. The chunk downloads
+   * underneath the whole time it runs, so opening the editor costs whichever
+   * of the two is slower rather than both one after the other. Once it has
+   * taken itself away the route underneath is usually already mounted.
+   */
+  const sting = useSting()
+  const [stung, setStung] = React.useState(!sting)
+
   return (
-    <Suspense fallback={<EditorLoading />}>
-      <Editor />
-    </Suspense>
+    <>
+      <Suspense fallback={<EditorLoading quiet={!stung} />}>
+        <Editor />
+      </Suspense>
+      {sting && <Sting onDone={() => setStung(true)} />}
+    </>
   )
 }
 

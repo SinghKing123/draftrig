@@ -101,103 +101,62 @@ export function Find({ total }: { total: number | null }) {
   const count = total ?? cat?.all.length ?? null
 
   return (
-    <section className="mn-parts" id="parts" ref={box as React.RefObject<HTMLDivElement>}>
-      <div className="mn-rule-head">
-        <span className="mn-sect" aria-hidden="true">3</span>
-        <h2>Parts list</h2>
-        <p>
-          {count === null ? 'Loading' : <><b className="mn-fig-no">{count}</b> in the catalog</>}
-          <span className="mn-dot" aria-hidden="true" />
-          searched the way the editor searches
-        </p>
-      </div>
+    <section className="sec" id="parts" ref={box as React.RefObject<HTMLDivElement>}>
+      <div className="lpw">
+        <div className="sec-head center">
+          <h2>Search the catalog</h2>
+          <p>
+            Type a value and it answers from what each part accepts, so{' '}
+            <span className="mono">10k</span> finds the resistor and the pots.
+          </p>
+        </div>
 
-      <div className="mn-locate">
-        <label className="mn-field">
-          <span className="mn-field-tag">Locate</span>
+        <label className="find-bar">
+          <svg width="17" height="17" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.6" />
+            <path d="M10.8 10.8 14.5 14.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          </svg>
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder={cat ? 'name, part number, or a value' : 'loading…'}
+            placeholder={cat ? 'Search parts, values, part numbers' : 'Loading the catalog…'}
             disabled={!cat}
-            aria-label="Search the parts list"
+            aria-label="Search parts"
             spellCheck={false}
             autoComplete="off"
           />
-          {q && (
-            <button className="mn-clear" onClick={() => setQ('')} aria-label="Clear">
-              ×
-            </button>
-          )}
+          {q && <button className="find-x" onClick={() => setQ('')} aria-label="Clear">×</button>}
         </label>
 
-        <div className="mn-try">
+        <div className="find-try">
           {TRY.map((t) => (
-            <button key={t} onClick={() => setQ(t)} data-on={q === t}>
-              {t}
-            </button>
+            <button key={t} onClick={() => setQ(t)} data-on={q === t}>{t}</button>
           ))}
         </div>
-      </div>
 
-      {/*
-        * A list of controls, not a table.
-        *
-        * It was marked up with `role="table"` over `<button role="row">`,
-        * which strips the buttons' own semantics and leaves a screen reader
-        * with a table it cannot operate. Each row is a thing you press, so it
-        * says so, and the ruled columns are the manual's layout rather than a
-        * claim about the data.
-        *
-        * There is no quantity column. A catalog search has no quantities, and
-        * printing a hardcoded 1 beside every part was manual costume over a
-        * listing — invented data in a product whose whole argument is that
-        * what it shows you is real.
-        */}
-      <div className="mn-tr mn-th" aria-hidden="true">
-        <span>Part</span>
-        <span>Description</span>
-      </div>
-
-      <ul className="mn-table">
-        {hits.map((def) => (
-          <li key={def.id}>
-            <button className="mn-tr" onClick={() => open(def)}>
-              <span className="mn-name">
-                <i aria-hidden="true">
-                  <PartIcon def={def} size={15} />
-                </i>
-                <span>{def.name}</span>
+        <div className="find-grid">
+          {hits.map((def) => (
+            <button className="hit" key={def.id} onClick={() => open(def)}>
+              <span className="hit-ico"><PartIcon def={def} size={17} /></span>
+              <span className="hit-txt">
+                <b>{def.name}</b>
+                <span>{def.blurb}</span>
               </span>
-              <span className="mn-desc">{def.blurb}</span>
             </button>
-          </li>
-        ))}
-        {/*
-          * The visible message IS the live region.
-          *
-          * It was announced twice before — once here and once in the count
-          * below, in two different spellings — on the one screen whose whole
-          * job is to be the single clear thing on it.
-          */}
-        {none && (
-          <li className="mn-nohit" role="status" aria-live="polite">
-            No part matches “{q}”.
-          </li>
-        )}
-      </ul>
+          ))}
+          {none && <p className="find-none">No part matches “{q}”.</p>}
+        </div>
 
-      {/* Typing replaces the rows silently; this is what says so. It stands
-          down when the list is empty, because that state speaks for itself. */}
-      {!none && (
-        <p className="mn-count" role="status" aria-live="polite">
+        <p className="find-count" role="status" aria-live="polite">
           {!cat
             ? 'Loading the catalog'
-            : q.trim()
-              ? `${hits.length} ${hits.length === 1 ? 'part' : 'parts'} match ${q}`
-              : `Showing ${hits.length} of ${count ?? hits.length}`}
+            : none
+              ? `No part matches ${q}`
+              : q.trim()
+                ? `${hits.length} ${hits.length === 1 ? 'part' : 'parts'} match ${q}`
+                : `Showing ${hits.length} of ${count ?? hits.length}`}
         </p>
-      )}
+      </div>
     </section>
   )
 }

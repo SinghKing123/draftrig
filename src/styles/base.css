@@ -1,17 +1,35 @@
 /* ==================================================================
    Faces
    ------------------------------------------------------------------
-   Self-hosted, not pulled from a CDN at render time. Three variable
-   files, 88 kB in total, each serving its whole weight range: Google
-   returns one variable woff2 per family and the request for four
-   weights of Archivo was fetching the same bytes four times.
+   Self-hosted, not pulled from a CDN at render time. Geist for the
+   front page, Archivo for the editor's own chrome, and two monos:
+   Geist Mono beside Geist, JetBrains Mono beside Archivo.
 
-   `swap` keeps text painted while they load, and the three families
-   carry the document's three jobs — Narrow sets the instructions and
-   the headings, Archivo sets prose, and the mono is for designators
-   and measurements only.
+   Each is one variable file serving its whole weight range, because
+   Google returns the same bytes for every weight of a variable
+   family and asking for four of them fetches it four times.
    ================================================================== */
 
+/*
+ * Instrument Sans rather than Geist.
+ *
+ * Geist is what the references use and it would have been the closer match,
+ * but it is also the face every AI-generated interface has converged on, and
+ * this page exists because the last two did not look distinctive enough.
+ * Instrument Sans is the same register — a clean neo-grotesque that sets a
+ * headline tightly — with slightly narrower apertures and more going on in
+ * the letterforms, so it reads as a deliberate choice rather than a default.
+ *
+ * Reverting is two lines here and two in site-lp.css; geist.woff2 is kept in
+ * public/fonts for exactly that.
+ */
+@font-face {
+  font-family: 'Instrument Sans';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/instrument-sans.woff2') format('woff2');
+}
 @font-face {
   font-family: 'Archivo';
   font-style: normal;

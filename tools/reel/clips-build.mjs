@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { existsSync, mkdirSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 /**
@@ -35,6 +35,31 @@ const OUT = 'public/clips'
 const SECONDS = 6
 const FPS = 24
 
+/**
+ * Clips that get the whole take rather than the first six seconds of it.
+ *
+ * Cutting at a fixed length suits a clip that shows one action: whatever it
+ * was doing at six seconds, it was still doing. It does not suit the breadth
+ * clip, which is four different builds one after another — truncating that
+ * one threw away three of the four and left a long look at the first.
+ *
+ * For these the frames are fed in fast enough that the entire recording lands
+ * inside the given span, so the take plays complete and quick instead of
+ * whole and cut short. The number is a ceiling on weight as much as on time.
+ */
+const WHOLE = { 'clip-builds': 9, 'clip-bg': 12 }
+
+/**
+ * Clips that are never looked at directly.
+ *
+ * The hero background plays blurred, at about a sixth opacity, behind the
+ * headline. Detail it will never show is bytes on a page whose whole point
+ * is that it loads, so it goes out small and coarsely compressed — the blur
+ * hides what the quantiser does, and the file lands a fraction of the size a
+ * clip meant to be watched would.
+ */
+const SOFT = { 'clip-bg': { width: 540, crf: 52 } }
+
 /** The hero is shown full width; the cards never exceed about 420 CSS pixels. */
 const SIZE = { hero: 1280, card: 960 }
 const HERO = 'clip-assemble'
@@ -47,7 +72,25 @@ if (!clips.length) {
   process.exit(0)
 }
 
+const NL = String.fromCharCode(10)
+const SEP = String.fromCharCode(92)
 const kb = (f) => Math.round(statSync(f).size / 1024)
+
+/**
+ * Frames the capture dropped on the floor.
+ *
+ * The screencast occasionally hands back a blank frame under load — always
+ * byte-identical, always a single frame with ordinary ones either side. Left
+ * in, each one is a black flash in the middle of a shot.
+ *
+ * Size alone cannot find them, because the brand animation at the head of the
+ * breadth clip is legitimately small and dark for a second at a time. What
+ * separates a dropout from a dark shot is that a dropout is isolated: far
+ * smaller than the frame before it and the frame after it, both. A run of
+ * dark frames is content; one dark frame between two bright ones is not.
+ */
+const isDropout = (sz, i) =>
+  i > 0 && i < sz.length - 1 && sz[i] < 0.3 * Math.min(sz[i - 1], sz[i + 1])
 let total = 0
 
 for (const id of clips) {
@@ -58,8 +101,12 @@ for (const id of clips) {
     continue
   }
 
-  const width = id === HERO ? SIZE.hero : SIZE.card
-  const pattern = join(dir, 'f%05d.jpg')
+  const sizes = frames.map((f) => statSync(join(dir, f)).size)
+  const kept = frames.filter((_, i) => !isDropout(sizes, i))
+  const lost = frames.length - kept.length
+
+  const soft = SOFT[id]
+  const width = soft?.width ?? (id === HERO ? SIZE.hero : SIZE.card)
   const run = (args) => execFileSync(FFMPEG, ['-y', '-loglevel', 'error', ...args], { stdio: 'inherit' })
 
   /*
@@ -68,27 +115,49 @@ for (const id of clips) {
    * shot definitions — so playing every frame would be a very long clip of
    * a very slow camera.
    */
-  const span = Math.min(SECONDS, frames.length / FPS)
+  const whole = WHOLE[id]
+  const span = whole ?? Math.min(SECONDS, kept.length / FPS)
+  // Fast enough that the whole take lands inside the span; otherwise the rate
+  // the shot was captured at.
+  const inRate = whole ? Math.max(FPS, kept.length / whole) : FPS
   const scale = `scale=${width}:-2:flags=lanczos`
+
+  /* A concat list rather than a numbered pattern, because dropping a frame
+     leaves a hole in the numbering and ffmpeg stops at the first gap. It is
+     written beside the frames, which are already ignored by git, rather than
+     into the output folder, which ships. The captures are left alone. */
+  const list = join(dir, 'frames.ffconcat')
+  /* Windows hands back backslashes; the concat demuxer wants forward. */
+  const abs = (f) => join(process.cwd(), dir, f).split(SEP).join('/')
+  const dur = (1 / inRate).toFixed(6)
+  writeFileSync(
+    list,
+    ['ffconcat version 1.0']
+      .concat(kept.map((f) => `file '${abs(f)}'` + NL + `duration ${dur}`))
+      .concat(`file '${abs(kept[kept.length - 1])}'`)
+      .join(NL),
+  )
 
   const webm = join(OUT, `${id}.webm`)
   const mp4 = join(OUT, `${id}.mp4`)
   const jpg = join(OUT, `${id}.jpg`)
 
-  run(['-framerate', String(FPS), '-i', pattern, '-t', String(span),
-    '-vf', scale, '-c:v', 'libvpx-vp9', '-crf', '42', '-b:v', '0',
+  run(['-f', 'concat', '-safe', '0', '-i', list, '-t', String(span), '-r', '30',
+    '-vf', scale, '-c:v', 'libvpx-vp9', '-crf', String(soft?.crf ?? 42), '-b:v', '0',
     '-row-mt', '1', '-deadline', 'good', '-cpu-used', '2', '-an',
     '-pix_fmt', 'yuv420p', webm])
 
-  run(['-framerate', String(FPS), '-i', pattern, '-t', String(span),
-    '-vf', scale, '-c:v', 'libx264', '-crf', '31', '-preset', 'slow', '-an',
+  run(['-f', 'concat', '-safe', '0', '-i', list, '-t', String(span), '-r', '30',
+    '-vf', scale, '-c:v', 'libx264', '-crf', String(soft ? soft.crf - 8 : 31), '-preset', 'slow', '-an',
     '-pix_fmt', 'yuv420p', '-movflags', '+faststart', mp4])
 
-  // A real frame from a second in, so the poster is the build rather than the
-  // empty bench the clip opens on.
-  run(['-i', join(dir, frames[Math.min(frames.length - 1, Math.round(frames.length * 0.6))]),
+  /* A real frame from well into the take, so the poster is a build rather
+     than the empty bench the clip opens on — or, for the breadth clip, the
+     brand animation it now opens on, which as a still is a black rectangle. */
+  run(['-i', join(dir, kept[Math.min(kept.length - 1, Math.round(kept.length * 0.6))]),
     '-vf', scale, '-q:v', '6', jpg])
 
+  if (lost) console.log(`  ${id}: dropped ${lost} blank frame${lost === 1 ? '' : 's'}`)
   total += kb(webm) + kb(jpg)
   console.log(`${id.padEnd(14)} ${span.toFixed(1)}s  webm ${kb(webm)}K  mp4 ${kb(mp4)}K  poster ${kb(jpg)}K`)
 }

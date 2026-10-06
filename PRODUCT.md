@@ -91,6 +91,27 @@ value, and run it. Work is kept in the browser unless they sign in.
   imagined sceptic, no copy that exists to fill a card. Text nobody reads should
   be deleted rather than shortened.
 
+## Visual Direction
+
+**Standing preference, set by the user on 2026-10-05 and binding until they
+change it.** The site follows the category convention, played straight: a
+clean, light, modern product page. The named references are **plyxl.com** and
+**nootles.com**, and their craft level is the bar.
+
+What that means concretely, from those two:
+
+- Near-white ground, charcoal text, one restrained accent.
+- A modern geometric grotesque, generous letter-spacing, bold headline weights.
+- Single column, centred hero, 60–100 px of air between sections.
+- Soft shadows rather than borders; one moderate corner radius throughout.
+- Imagery is interface, not photography — which for Draftrig means its own
+  dark 3D renders, carried in rounded containers on the light ground.
+
+This replaced an own-world concept (a kit assembly manual) that the user did
+not want. No irony, no smuggled quirk, no second concept wearing this one's
+clothes: future work executes the convention well rather than looking for a
+way out of it.
+
 ## Evidence on Hand
 
 Real, in the repository:

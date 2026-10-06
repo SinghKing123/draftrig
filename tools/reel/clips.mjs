@@ -132,18 +132,96 @@ export const CLIP_WIRE = {
   },
 }
 
-/** Breadth: four different builds, each turning, cut together. */
+/**
+ * Breadth: the sting, then four builds, each with the camera moving.
+ *
+ * It opens on the brand animation the editor opens on — the same markup and
+ * the same stylesheet, injected into the page so the recorder picks it up as
+ * part of the capture rather than as a segment glued on afterwards. The loop
+ * then has a head, which is what stops four cuts of circuits from reading as
+ * four unrelated photographs.
+ *
+ * Every beat moves. They used to be a slow orbit from a fixed distance, which
+ * is the same shot four times with different objects in it; now each one
+ * starts wide and flies somewhere, so the cut has somewhere to cut from.
+ */
 export const CLIP_BUILDS = {
   ...base,
   id: 'clip-builds',
   rate: 4,
   simSpeed: 1,
-  camera: [30, 56, 300],
-  setup: stage('rfid-lock', [0, 10, 0], 30, 56, 300),
+  camera: [10, 32, 470],
+  /*
+   * The sting goes up in setup, paused, not at the top of perform.
+   * Recording starts the instant perform does, so raising it there put two
+   * frames of bare bench on the front of the loop before the logo covered it.
+   */
+  async setup(page) {
+    await stage('eight-bit', [0, 10, 0], 10, 32, 470)(page)
+    await page.evaluate((vias) => {
+      const sting = document.createElement('div')
+      sting.className = 'sting'
+      sting.innerHTML = `
+        <div class="sting-art">
+          <svg viewBox="0 0 620 120" width="620" height="120" class="sting-trace">
+            <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path class="t t-l" d="M0 60h72l26-26h60l26 26h46" />
+              <path class="t t-r" d="M620 60h-72l-26 26h-60l-26-26h-46" />
+            </g>
+            <g class="vias" fill="currentColor">
+              ${vias
+                .map((x, i) => `<circle cx="${x}" cy="${i % 2 ? 86 : 34}" r="3" style="animation-delay:${180 + i * 52}ms" />`)
+                .join('')}
+            </g>
+          </svg>
+          <div class="sting-mark"><img src="/mark-dark-bg.png" height="54" alt="" /></div>
+          <div class="sting-word"><img src="/logo-dark-bg.png" height="26" alt="" /></div>
+        </div>`
+
+      /*
+       * Half the length it runs at in the editor. There it plays once when
+       * somebody opens the tool; here it heads a loop that repeats for as
+       * long as the page is open, and at full length it stops being an
+       * opening and becomes an interruption.
+       *
+       * Held paused, so it begins on the first recorded frame rather than
+       * partway through.
+       */
+      const fast = document.createElement('style')
+      fast.id = 'sting-speed'
+      fast.textContent = `
+        .sting-trace .t { animation-duration: 440ms !important; }
+        .sting-trace .vias circle { animation-duration: 320ms !important; }
+        .sting-mark { animation-delay: 380ms !important; animation-duration: 360ms !important; }
+        .sting-word { animation-delay: 560ms !important; animation-duration: 320ms !important; }
+        .sting { transition-duration: 220ms !important; }`
+      const hold = document.createElement('style')
+      hold.id = 'sting-hold'
+      hold.textContent = `
+        .sting-trace .t, .sting-trace .vias circle, .sting-mark, .sting-word {
+          animation-play-state: paused !important;
+        }`
+      document.head.appendChild(fast)
+      document.head.appendChild(hold)
+      document.body.appendChild(sting)
+    }, [72, 158, 230, 390, 462, 548])
+  },
   async perform(page) {
     await page.evaluate(async () => {
       const rig = window.__rig
-      const show = (id, target, dist) => {
+
+      // Release the sting setup raised, let it run, then take it away.
+      const hold = document.getElementById('sting-hold')
+      const fast = document.getElementById('sting-speed')
+      const sting = document.querySelector('.sting')
+      hold.remove()
+      await new Promise((r) => setTimeout(r, 1020))
+      sting.setAttribute('data-gone', 'true')
+      await new Promise((r) => setTimeout(r, 240))
+      sting.remove()
+      fast.remove()
+
+      const show = (id, target) => {
         const s = window.draftrig.starters.find((x) => x.id === id)
         const doc = window.draftrig.doc.getState()
         if (s) doc.loadDoc(s.build())
@@ -152,24 +230,90 @@ export const CLIP_BUILDS = {
         window.draftrig.sim.getState().setRunning(true)
         const c = window.draftrig.camera.controls
         c.target.set(target[0], target[1], target[2])
-        c.object.position.set(target[0] + dist * 0.5, target[1] + dist * 0.6, target[2] + dist * 0.75)
-        c.object.lookAt(c.target)
         c.update()
       }
-      const beat = async (id, target, dist) => {
-        show(id, target, dist)
-        await rig.drift(9, 2600)
+
+      /** Load, snap to the opening framing, then fly to the closing one. */
+      const beat = async (id, target, from, to, ms = 2900) => {
+        show(id, target)
+        await rig.fly(from[0], from[1], from[2], 1)
+        /*
+         * Let the document land before moving the camera.
+         *
+         * Building a heavy one blocks the main thread while its geometry and
+         * wire routing are made, and the fly's clock keeps running through
+         * the stall — so the move was over before the first frame of it was
+         * drawn. The eight-bit machine has two hundred and thirty-eight
+         * wires and came out as four tenths of a second in a nine-second
+         * clip; the others, being lighter, looked fine and hid it.
+         */
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
+        await new Promise((r) => setTimeout(r, 450))
+        await rig.fly(to[0], to[1], to[2], ms)
       }
-      /* Four circuits, and no machines.
-         The rover and the router were two of these until motion turned out
-         to be the one thing the simulator does not do; a clip is an advert,
-         and those two were advertising it. */
-      await beat('matrix', [0, 10, -20], 230)
-      await beat('logic-bench', [0, 10, 0], 230)
-      await beat('rfid-lock', [0, 10, 0], 300)
-      await beat('esp-weather', [0, 8, 0], 200)
+
+      /*
+       * Circuits, and no machines. The rover and the router were two of these
+       * until motion turned out to be the one thing the simulator does not
+       * do; a clip is an advert, and those two were advertising it.
+       *
+       * The first beat runs five times as long as the others, and gets about
+       * the same share of the clip for it. Frames are kept as they are drawn
+       * rather than on a clock, so a scene's weight decides how many it
+       * leaves behind: the eight-bit machine draws at roughly three a second
+       * against fifteen for the rest, and at an equal number of seconds it
+       * came out as half a second of a nine-second clip. Length here buys
+       * frames, not screen time.
+       */
+      await beat('eight-bit', [0, 10, 0], [10, 32, 470], [44, 46, 365], 14000)
+      await beat('matrix', [0, 10, -20], [-24, 38, 272], [18, 58, 205])
+      await beat('rfid-lock', [0, 10, 0], [46, 40, 344], [8, 54, 268])
+      await beat('esp-weather', [0, 8, 0], [-10, 36, 242], [30, 52, 180])
     })
   },
 }
 
-export const CLIPS = [CLIP_ASSEMBLE, CLIP_RUN, CLIP_WIRE, CLIP_BUILDS]
+/**
+ * The hero's background: one slow turn around a lit board, no cuts.
+ *
+ * It plays behind live text at low opacity, so it is built to be ignored.
+ * A single continuous orbit, no cutting between builds and no brand
+ * animation, because anything that changes sharply behind a headline pulls
+ * the eye off the headline.
+ *
+ * The turn is a whole 360°, which is what lets the loop close on itself: the
+ * last frame is the first frame from the other side, so the repeat has no
+ * seam to notice.
+ */
+export const CLIP_BG = {
+  ...base,
+  id: 'clip-bg',
+  rate: 4,
+  simSpeed: 1,
+  camera: [0, 52, 104],
+  /*
+   * Close enough that the board fills the frame.
+   *
+   * This plays faded behind a light page, and the bench is a near-black
+   * mesh: with it in shot, fading the footage over white produces a flat
+   * grey wash and no circuit anyone can make out. Framing it out is what
+   * fixes that — at this distance the board is most of the picture, so what
+   * comes through the fade is board and wires rather than bench.
+   *
+   * Repainting the bench instead does not work. The colour that reads as
+   * the background is a ground mesh, not `scene.background`, so setting the
+   * latter changes a value that nothing on screen is drawn from.
+   */
+  setup: stage('matrix', [0, 10, -20], 0, 52, 104),
+  async perform(page) {
+    await page.evaluate(async () => {
+      const rig = window.__rig
+      window.draftrig.engine.reset()
+      window.draftrig.sim.getState().setRunning(true)
+
+      await rig.drift(18, 20000)
+    })
+  },
+}
+
+export const CLIPS = [CLIP_ASSEMBLE, CLIP_RUN, CLIP_WIRE, CLIP_BUILDS, CLIP_BG]

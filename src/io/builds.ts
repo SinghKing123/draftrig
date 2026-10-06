@@ -79,6 +79,20 @@ const BLUE = '#4C8DFF'
 const GREEN = '#3DD68C'
 const YELLOW = '#F2C14E'
 
+/*
+ * The rest of the bag of jumpers.
+ *
+ * Power and ground keep their colours everywhere, because that convention is
+ * worth more than variety. Signal wires do not: a build whose every data line
+ * is blue looks like the last build whose every data line was blue, and a
+ * real harness is whatever was in the drawer.
+ */
+const ORANGE = '#F08A3C'
+const VIOLET = '#C77DFF'
+const TEAL = '#2ED3C6'
+const PINK = '#F472B6'
+const WHITE = '#D8DEE9'
+
 
 /* ================================================================== */
 /* CNC router                                                          */
@@ -290,7 +304,10 @@ export function benchClock(): Doc {
    * back to front: the board and the bus parts at the back, the things a hand
    * touches through the middle, the display along the front edge.
    */
-  b.add('perfboard', [0, 0, 0], { cols: 52, rows: 50, mask: 'fr4-blue', layout: 'pads' }, [0, 0, 0], 'Perfboard')
+  /* Not blue. The gallery was three blue perfboards in a row, which from a
+     distance is one picture repeated; four soldermask colours exist and the
+     set now uses all of them. */
+  b.add('perfboard', [0, 0, 0], { cols: 52, rows: 50, mask: 'fr4-black', layout: 'pads' }, [0, 0, 0], 'Perfboard')
 
   const mcu = b.add('mcu-board', [-24, DECK, -36], {
     program: 'lcd-clock',
@@ -422,6 +439,8 @@ export function ledMatrix(): Doc {
     'Controller',
   )
 
+  const ROWC = [BLUE, ORANGE, VIOLET, TEAL, PINK]
+
   const x0 = -((COLS - 1) / 2) * DX
   const z0 = -((ROWS - 1) / 2) * DZ
   const led: string[][] = []
@@ -453,7 +472,8 @@ export function ledMatrix(): Doc {
       b.wire([led[r][c], 'c'], [led[r][c + 1], 'c'], BLACK)
     }
     b.wire([led[r][COLS - 1], 'a'], [res[r], '1'], RED)
-    b.wire([res[r], '2'], [mcu, `d${r + 2}`], BLUE)
+    // One colour per row, so the five drives can be told apart on sight.
+    b.wire([res[r], '2'], [mcu, `d${r + 2}`], ROWC[r % ROWC.length])
     b.wire([led[r][0], 'c'], [mcu, 'gnd'], BLACK)
   }
 
@@ -477,7 +497,7 @@ export function scoreboard(): Doc {
   const DECK = 1.75
   const AMBER = '#E8A33D'
 
-  b.add('perfboard', [0, 0, 0], { cols: 40, rows: 26, mask: 'fr4-blue', layout: 'pads' }, [0, 0, 0], 'Perfboard')
+  b.add('perfboard', [0, 0, 0], { cols: 40, rows: 26, mask: 'fr4-green', layout: 'pads' }, [0, 0, 0], 'Perfboard')
 
   const lcd = b.add(
     'display-lcd-character',
@@ -520,10 +540,13 @@ export function scoreboard(): Doc {
 
   b.wire([mcu, 'd12'], [lcd, 'rs'], GREEN)
   b.wire([mcu, 'd11'], [lcd, 'e'], GREEN)
+  /* Four colours on the four-bit bus. On a real board these are whatever
+     came off the reel, and four identical blues is the one thing a ribbon
+     never looks like. */
   b.wire([mcu, 'd5'], [lcd, 'd4'], BLUE)
-  b.wire([mcu, 'd4'], [lcd, 'd5'], BLUE)
-  b.wire([mcu, 'd3'], [lcd, 'd6'], BLUE)
-  b.wire([mcu, 'd2'], [lcd, 'd7'], BLUE)
+  b.wire([mcu, 'd4'], [lcd, 'd5'], ORANGE)
+  b.wire([mcu, 'd3'], [lcd, 'd6'], VIOLET)
+  b.wire([mcu, 'd2'], [lcd, 'd7'], TEAL)
 
   return b.doc
 }
@@ -580,8 +603,9 @@ export function logicBench(): Doc {
   b.wire([nano, 'd10'], [reg, 'stcp'], YELLOW, 0.16)
 
   const q = ['q0', 'q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7']
+  const QC = [BLUE, ORANGE, VIOLET, TEAL, PINK, YELLOW, GREEN, WHITE]
   for (let i = 0; i < 8; i++) {
-    b.wire([reg, q[i]], [res[i], '1'], BLUE, 0.16)
+    b.wire([reg, q[i]], [res[i], '1'], QC[i % QC.length], 0.16)
     b.wire([res[i], '2'], [bar, `a${i + 1}`], RED, 0.16)
     b.wire([bar, `c${i + 1}`], [bb, `neg-far-${34 + i}`], BLACK, 0.16)
   }
@@ -662,7 +686,7 @@ export function espWeather(): Doc {
   const b = new Builder('ESP32 sensor node')
 
   // Green, because the devkit is black and vanished against a black board.
-  b.add('perfboard', [0, 0, 0], { cols: 42, rows: 30, mask: 'fr4-green', layout: 'pads' }, [0, 0, 0], 'Perfboard')
+  b.add('perfboard', [0, 0, 0], { cols: 42, rows: 30, mask: 'fr4-red', layout: 'pads' }, [0, 0, 0], 'Perfboard')
 
   /*
    * The bar is driven by the sketch, not decorated.
@@ -674,6 +698,7 @@ export function espWeather(): Doc {
    * every segment is lit by the solver reading the gas sensor.
    */
   const BARS = [25, 26, 27, 14, 12, 13]
+  const BARC = [BLUE, ORANGE, VIOLET, TEAL, PINK, YELLOW]
 
   const esp = b.add(
     'esp-board',
@@ -735,7 +760,7 @@ function* loop() {
       [0, 0, 0],
       `R${i + 1}`,
     )
-    b.wire([esp, `io${BARS[i]}`], [r, '1'], YELLOW, 0.16)
+    b.wire([esp, `io${BARS[i]}`], [r, '1'], BARC[i % BARC.length], 0.16)
     b.wire([r, '2'], [bar, `a${i + 1}`], RED, 0.16)
     b.wire([bar, `c${i + 1}`], [esp, GND], BLACK, 0.16)
   }
@@ -870,8 +895,10 @@ export function rfidLock(): Doc {
   // Four rows, four columns, eight pins and no decoding anywhere.
   const rows = ['r1', 'r2', 'r3', 'r4']
   const cols = ['c1', 'c2', 'c3', 'c4']
-  for (let i = 0; i < 4; i++) b.wire([uno, `d${i + 2}`], [pad, rows[i]], BLUE, 0.16)
-  for (let i = 0; i < 4; i++) b.wire([uno, `a${i}`], [pad, cols[i]], GREEN, 0.16)
+  const ROWC = [BLUE, ORANGE, VIOLET, TEAL]
+  const COLC = [GREEN, PINK, YELLOW, WHITE]
+  for (let i = 0; i < 4; i++) b.wire([uno, `d${i + 2}`], [pad, rows[i]], ROWC[i], 0.16)
+  for (let i = 0; i < 4; i++) b.wire([uno, `a${i}`], [pad, cols[i]], COLC[i], 0.16)
 
   // A board pin cannot pull a bolt, so it closes a relay that can.
   b.wire([uno, 'd6'], [relay, 'in'], YELLOW, 0.16)
@@ -934,6 +961,204 @@ export function servoArm(): Doc {
     b.wire([drv, 'vterm'], [arms[i], 'vcc'], RED, 0.16)
     b.wire([drv, 'gterm'], [arms[i], 'gnd'], BLACK, 0.16)
   }
+
+  return b.doc
+}
+
+
+/* ================================================================== */
+/* Eight-bit machine                                                   */
+/* ================================================================== */
+
+/**
+ * Four breadboards, a clock, a chain of registers and thirty-two lamps.
+ *
+ * The thing people in this hobby actually build when they get serious: a
+ * machine made of logic chips, wired by hand, with its state on the front in
+ * lights. Nothing else in the set is this dense, and density is the point —
+ * a hundred and sixty jumpers across four boards is what the real article
+ * looks like.
+ *
+ * It genuinely runs. A 555 clocks a chain of six shift registers, each one
+ * handing its overflow to the next, so a bit entered at the input walks the
+ * whole width of the machine and the lamps follow it. That is the solver
+ * doing it, not a loop: stop the clock and the pattern stops where it is.
+ *
+ * What it is not is a CPU. It has no instruction set and decodes nothing —
+ * it is a register file and a clock, built the way one is built. Calling it
+ * an eight-bit computer would be claiming something the circuit does not do.
+ */
+export function eightBit(): Doc {
+  const b = new Builder('Eight-bit machine')
+
+  /* Four boards in a block, the way they get taped down on a bench: two
+     rows, the gap between them just wide enough for the bus jumpers. */
+  const BW = 176
+  const BD = 76
+  const boards: string[] = []
+  const at: [number, number][] = [[-BW / 2, -BD / 2], [BW / 2, -BD / 2], [-BW / 2, BD / 2], [BW / 2, BD / 2]]
+  for (const [x, z] of at) boards.push(b.add('breadboard', [x, 0, z], {}, [0, 0, 0], 'Breadboard'))
+
+  /** The rail hole nearest an x, in a given board's own coordinates. */
+  const rail = (bx: number, x: number): number =>
+    Math.max(0, Math.min(49, Math.round((x - bx + 74.8) / 3.1)))
+
+  // Link every board's rails to its neighbours, which is the first thing you
+  // do with four boards and the thing that is invisible once it is done.
+  /* Side by side, the link goes from one board's right end to the next
+     board's left end. Front to back it goes between the same position on
+     both, because the far-end-to-near-end pairing sent a jumper diagonally
+     across the whole machine. */
+  for (const [i, j] of [[0, 1], [2, 3]] as const) {
+    b.wire([boards[i], 'pos-near-47'], [boards[j], 'pos-near-2'], RED)
+    b.wire([boards[i], 'neg-near-47'], [boards[j], 'neg-near-2'], BLACK)
+  }
+  for (const [i, j] of [[0, 2], [1, 3]] as const) {
+    b.wire([boards[i], 'pos-near-4'], [boards[j], 'pos-near-4'], RED)
+    b.wire([boards[i], 'neg-near-4'], [boards[j], 'neg-near-4'], BLACK)
+  }
+  for (const bb of boards) b.wire([bb, 'neg-near-6'], [bb, 'neg-far-6'], BLACK)
+
+  const supply = b.add('battery-holder', [6, 0, -104], { cell: 'aa', count: 4 }, [0, 0, 0], 'Supply')
+  b.wire([supply, 'p'], [boards[0], 'pos-near-40'], RED, 0.33)
+  b.wire([supply, 'n'], [boards[0], 'neg-near-40'], BLACK, 0.33)
+
+  const gnd = b.add('ground', [-140, 9, -84], {}, [0, 0, 0], 'Ground')
+  b.wire([gnd, 'gnd'], [boards[0], 'neg-near-8'], BLACK)
+
+  /* ---- the clock ---- */
+
+  const clkX = -BW / 2 - 56
+  const clk = b.add('ne555', [clkX, 9, -BD / 2], {}, [0, 90, 0], 'Clock')
+  const r1 = b.add('resistor-axial', [clkX - 22, 9, -BD / 2 - 14], { value: 10000, watt: '0.25' }, [0, 0, 0], 'R1 10k')
+  const r2 = b.add('resistor-axial', [clkX - 22, 9, -BD / 2 + 12], { value: 68000, watt: '0.25' }, [0, 0, 0], 'R2 68k')
+  const ct = b.add('capacitor-ceramic', [clkX + 16, 9, -BD / 2 - 14], { value: 1e-6 }, [0, 0, 0], 'C1 1uF')
+
+  const b0 = boards[0]
+  b.wire([b0, `pos-near-${rail(-BW / 2, clkX + 2)}`], [clk, 'vcc'], RED)
+  b.wire([b0, `pos-near-${rail(-BW / 2, clkX + 8)}`], [clk, 'reset'], RED)
+  b.wire([b0, `neg-far-${rail(-BW / 2, clkX + 2)}`], [clk, 'gnd'], BLACK)
+  b.wire([b0, `pos-near-${rail(-BW / 2, clkX - 22)}`], [r1, '1'], RED)
+  b.wire([r1, '2'], [clk, 'disch'], YELLOW)
+  b.wire([clk, 'disch'], [r2, '1'], YELLOW)
+  b.wire([r2, '2'], [clk, 'thresh'], GREEN)
+  b.wire([clk, 'thresh'], [clk, 'trig'], GREEN)
+  b.wire([clk, 'thresh'], [ct, '1'], GREEN)
+  b.wire([ct, '2'], [b0, `neg-far-${rail(-BW / 2, clkX + 16)}`], BLACK)
+
+  /*
+   * A second, slower oscillator feeding the chain its data.
+   *
+   * The input was tied high, which works for about a second: after eight
+   * clocks every stage holds a one, every lamp is lit and nothing moves
+   * again. Something has to change at the input for anything to travel, so
+   * this runs at about a seventh of the clock and the chain fills with
+   * alternating runs that march across all six registers.
+   */
+  const dataX = clkX
+  const data = b.add('ne555', [dataX, 9, BD / 2 - 6], {}, [0, 90, 0], 'Data')
+  const d1 = b.add('resistor-axial', [dataX - 22, 9, BD / 2 - 20], { value: 10000, watt: '0.25' }, [0, 0, 0], 'R3 10k')
+  const d2 = b.add('resistor-axial', [dataX - 22, 9, BD / 2 + 6], { value: 47000, watt: '0.25' }, [0, 0, 0], 'R4 47k')
+  const dc = b.add('capacitor-electrolytic', [dataX + 18, 9, BD / 2 - 20], { value: 1e-5, vmax: 16 }, [0, 0, 0], 'C2 10uF')
+
+  const b2 = boards[2]
+  b.wire([b2, `pos-near-${rail(-BW / 2, dataX + 2)}`], [data, 'vcc'], RED)
+  b.wire([b2, `pos-near-${rail(-BW / 2, dataX + 8)}`], [data, 'reset'], RED)
+  b.wire([b2, `neg-far-${rail(-BW / 2, dataX + 2)}`], [data, 'gnd'], BLACK)
+  b.wire([b2, `pos-near-${rail(-BW / 2, dataX - 22)}`], [d1, '1'], RED)
+  b.wire([d1, '2'], [data, 'disch'], YELLOW)
+  b.wire([data, 'disch'], [d2, '1'], YELLOW)
+  b.wire([d2, '2'], [data, 'thresh'], GREEN)
+  b.wire([data, 'thresh'], [data, 'trig'], GREEN)
+  b.wire([data, 'thresh'], [dc, 'p'], GREEN)
+  b.wire([dc, 'n'], [b2, `neg-far-${rail(-BW / 2, dataX + 18)}`], BLACK)
+
+  /* ---- six registers, chained, with their lamps ---- */
+
+  /*
+   * Two registers to a board on the top row, one to a board underneath, each
+   * with a bargraph above it. The overflow of one is the input of the next,
+   * so the whole machine is a single shift register eight lamps wide and six
+   * deep, and a bit put in at one end arrives at the other.
+   */
+  const SPOTS: { board: number; x: number; z: number }[] = [
+    { board: 0, x: -42, z: -4 },
+    { board: 0, x: 36, z: -4 },
+    { board: 1, x: -42, z: -4 },
+    { board: 1, x: 36, z: -4 },
+    { board: 2, x: -42, z: -4 },
+    { board: 3, x: 36, z: -4 },
+  ]
+  const LAMPC = [BLUE, ORANGE, VIOLET, TEAL, PINK, GREEN, YELLOW, WHITE]
+
+  let prev: string | null = null
+  const regs: string[] = []
+  for (const [n, spot] of SPOTS.entries()) {
+    const bb = boards[spot.board]
+    const bx = at[spot.board][0]
+    const bz = at[spot.board][1]
+    const x = bx + spot.x
+    const z = bz + spot.z
+
+    const reg = b.add('shift-register-595', [x, 9, z], {}, [0, 90, 0], `Register ${n + 1}`)
+    const bar = b.add('led-bargraph', [x + 6, 9, bz - 20], { color: n % 2 ? 'red' : 'green' }, [0, 0, 0], `Lamps ${n + 1}`)
+    regs.push(reg)
+
+    b.wire([bb, `pos-near-${rail(bx, x - 6)}`], [reg, 'vcc'], RED)
+    b.wire([bb, `neg-far-${rail(bx, x - 6)}`], [reg, 'gnd'], BLACK)
+    b.wire([bb, `pos-near-${rail(bx, x + 2)}`], [reg, 'mr'], RED, 0.14)
+    b.wire([bb, `neg-far-${rail(bx, x + 2)}`], [reg, 'oe'], BLACK, 0.14)
+
+    /*
+     * The clock is passed along the row rather than fanned out from the 555.
+     * Electrically it is one net either way, but six separate runs back to a
+     * chip at the far end means every one of them crosses the registers in
+     * between; hop to hop, nothing is in the way.
+     */
+    if (prev === null) b.wire([clk, 'out'], [reg, 'shcp'], YELLOW, 0.14)
+    else b.wire([prev, 'shcp'], [reg, 'shcp'], YELLOW, 0.14)
+    b.wire([reg, 'shcp'], [reg, 'stcp'], YELLOW, 0.14)
+
+    // The first takes a steady high; the rest take the one before them.
+    if (prev === null) b.wire([data, 'out'], [reg, 'ds'], '#9AE6B4', 0.14)
+    else b.wire([prev, 'q7s'], [reg, 'ds'], '#9AE6B4', 0.14)
+    prev = reg
+
+    const q = ['q0', 'q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7']
+    for (let i = 0; i < 8; i++) {
+      const res = b.add(
+        'resistor-axial',
+        [x - 9 + i * 2.54, 9, bz - 31],
+        { value: 470, watt: '0.25' },
+        [0, 0, 0],
+        `R${n + 1}-${i + 1}`,
+      )
+      b.wire([reg, q[i]], [res, '1'], LAMPC[i], 0.14)
+      b.wire([res, '2'], [bar, `a${i + 1}`], LAMPC[i], 0.14)
+      b.wire([bar, `c${i + 1}`], [bb, `neg-far-${rail(bx, x + 8 + i)}`], BLACK, 0.14)
+    }
+  }
+
+  /* ---- the front panel: what you set, and what it reads out ---- */
+
+  const dip = b.add('switch-dip', [-BW / 2 - 56, 9, BD / 2 + 4], { ways: 8 }, [0, 90, 0], 'Program switches')
+  b.wire([boards[2], `pos-near-${rail(-BW / 2, -BW / 2 - 56)}`], [dip, 'a1'], RED, 0.14)
+  b.wire([dip, 'b1'], [boards[2], `neg-far-${rail(-BW / 2, -BW / 2 - 50)}`], BLACK, 0.14)
+
+  const seg = b.add('display-seven-seg', [BW / 2 + 64, 9, BD / 2], { digits: 2 }, [0, 0, 0], 'Readout')
+  const segc = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
+  for (const [i, s] of segc.entries()) {
+    const res = b.add(
+      'resistor-axial',
+      [BW / 2 + 30, 9, BD / 2 - 9 + i * 2.54],
+      { value: 330, watt: '0.25' },
+      [0, 0, 0],
+      `RS${i + 1}`,
+    )
+    b.wire([regs[5], ['q0', 'q1', 'q2', 'q3', 'q4', 'q5', 'q6'][i]], [res, '1'], LAMPC[i], 0.14)
+    b.wire([res, '2'], [seg, s], LAMPC[i], 0.14)
+  }
+  b.wire([seg, 'd1'], [boards[3], 'neg-far-44'], BLACK, 0.14)
 
   return b.doc
 }

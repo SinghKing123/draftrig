@@ -71,6 +71,8 @@ const SETTLE = {
 }
 
 const SHOTS = [
+  // The machine, from high enough that all four boards are in one frame.
+  ['eight-bit', 0.58, 24, 38],
   // High, down onto the grid: thirty lit LEDs read as a grid from here.
   ['matrix', 0.62, 14, 26],
   // Low, so the panel faces the camera instead of foreshortening away.
@@ -89,10 +91,10 @@ const SHOTS = [
   ['mcu', 0.25, 150, 66],
   // Square to the display, which is what the build is for.
   ['lcd', 0.46, 2, 62],
-  ['oled', 0.25, 330, 40],
+  ['oled', 0.46, 330, 48],
   ['bench-clock', 0.52, 44, 62],
   // A vertical face, so the camera comes down to meet it.
-  ['panel', 1.08, 352, 70],
+  ['panel', 0.46, 352, 62],
 
   /* The motor builds are not here because they cannot be: this tool loads a
      build by asking the running app for the starter, and they are not
@@ -207,8 +209,15 @@ for (const [id, fill, az, pol] of SHOTS) {
    */
   await page.waitForTimeout(SETTLE[id] ?? 700)
 
+  /*
+   * A generous shutter timeout. The default eighteen seconds is plenty for a
+   * breadboard with a dozen parts on it, and not enough for the eight-bit
+   * machine: eighty-three parts and two hundred and thirty-eight wires draw
+   * at about a frame a second, and the stability check ran out before the
+   * page could answer it.
+   */
   await page.locator('canvas').first().screenshot({
-    path: `public/presets/${id}.jpg`, type: 'jpeg', quality: 90,
+    path: `public/presets/${id}.jpg`, type: 'jpeg', quality: 90, timeout: 90_000,
   })
 
   /* How much of the frame is the build, rather than the bench behind it.
