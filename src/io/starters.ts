@@ -3,6 +3,7 @@ import { emptyDoc } from '@/state/doc'
 import type { Instance, Params, Vec3 } from '@/parts/kernel/types'
 import { defaultParams, requirePart } from '@/parts/kernel/registry'
 import { benchClock, controlPanel, espWeather, ledMatrix, logicBench, rfidLock, scoreboard, soundBench } from './builds'
+import { lab10Buzzer, lab9Blinker } from './labs'
 
 /**
  * Starter builds. These are ordinary documents constructed in code, which
@@ -354,6 +355,22 @@ export const STARTERS: Starter[] = [
     kind: 'circuit',
     tags: ['555', 'ne555', 'audio', 'tone', 'oscillator', 'speaker', 'breadboard', 'potentiometer', 'analogue'],
     build: soundBench,
+  },
+  {
+    id: 'lab9-blinker',
+    title: 'Blinking light, 555',
+    blurb: 'The astable every lab sheet starts with: 1k, 10k, 100uF and a lamp',
+    kind: 'circuit',
+    tags: ['555', 'ne555', 'astable', 'blink', 'led', 'breadboard', 'lab', '9v', 'timer', 'oscillator'],
+    build: lab9Blinker,
+  },
+  {
+    id: 'lab10-buzzer',
+    title: 'What the buzz, 555',
+    blurb: 'The same chip four decades faster, into a speaker, pitch on a knob',
+    kind: 'circuit',
+    tags: ['555', 'ne555', 'astable', 'buzzer', 'speaker', 'tone', 'audio', 'potentiometer', 'breadboard', 'lab', '9v'],
+    build: lab10Buzzer,
   },
   { id: 'led', title: 'LED on a breadboard', blurb: 'Supply, resistor and LED, see the current arrive', kind: 'circuit', tags: ["led","breadboard","resistor","ohms law","first","beginner","current"], build: ledCircuit },
   { id: 'blink555', title: '555 blinker', blurb: 'The classic astable, flashing at one hertz', kind: 'circuit', tags: ["555","ne555","timer","astable","oscillator","blink","flash","capacitor"], build: blinker555 },

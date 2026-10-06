@@ -423,6 +423,124 @@ const groundRef: PartDef = {
   electrical: { devices: () => [] },
 }
 
-registerParts([batteryHolder, benchSupply, pushbutton, toggleSwitch, potentiometer, buzzer, dcMotor, groundRef])
+/* ================================================================== */
+/* 9 V block                                                           */
+/* ================================================================== */
+
+/**
+ * A PP3, the rectangular 9 V block with the snap on top.
+ *
+ * Its own part rather than a count of cells in the holder, because that is
+ * not what it is: six flat cells stacked inside one case, with a much higher
+ * internal resistance than the same voltage made from AAs. Every 555 lab
+ * sheet in the world specifies this battery, and the holder could only
+ * approximate it with a row of six AA cells that looks nothing like it.
+ *
+ * The high internal resistance is the point of modelling it honestly. A PP3
+ * sags hard: it is a terrible choice for anything drawing much current, and
+ * a circuit that behaves on the bench supply and misbehaves on one of these
+ * should misbehave here too.
+ */
+const battery9v: PartDef = {
+  id: 'battery-9v',
+  name: '9 V battery',
+  category: 'power',
+  blurb: 'The PP3 block, with the snap connector',
+  tags: ['9v', 'pp3', 'battery', 'block', 'snap', 'transistor radio', 'power', 'supply', '6lr61'],
+  doc: {
+    mpn: '6LR61',
+    price: 2.5,
+    description:
+      'Six flat 1.5 V cells in one rectangular case. Nominal 9 V, around 1.7 ohms internal when fresh, and roughly 550 mAh — enough for a timer and an LED, not for a motor.',
+  },
+  params: [
+    {
+      key: 'chem', label: 'Chemistry', type: 'enum', default: 'alkaline', group: 'Power',
+      options: [
+        { value: 'alkaline', label: 'Alkaline (9 V, 550 mAh)' },
+        { value: 'carbon', label: 'Carbon zinc (9 V, 400 mAh)' },
+        { value: 'lithium', label: 'Lithium (9 V, 1200 mAh)' },
+      ],
+    },
+    { key: 'soc', label: 'State of charge', type: 'number', unit: '%', default: 100, min: 0, max: 100, step: 1, group: 'Control' },
+    { key: 'leads', label: 'Snap leads', type: 'bool', default: true, group: 'Power' },
+  ],
+  solids: (p) => {
+    const W = 26.5
+    const D = 17.5
+    const H = 48.5
+    const leads = bool(p, 'leads', true)
+    const out: Solid[] = [
+      // The case, and the wrap that makes it read as a battery rather than a brick.
+      { kind: 'box', mat: { color: '#1C1F24', rough: 0.42, density: 2.2 }, size: [W, H, D], at: [0, H / 2, 0], bevel: 1.2 },
+      { kind: 'box', mat: { color: '#2A2E35', rough: 0.3, density: 2.2 }, size: [W + 0.1, H * 0.34, D + 0.1], at: [0, H * 0.4, 0], bevel: 0.4 },
+      // The crimped seam around the top.
+      { kind: 'box', mat: 'nickel', size: [W + 0.3, 1.1, D + 0.3], at: [0, H - 1.6, 0], bevel: 0.3 },
+    ]
+    // The two studs: the hex socket is positive, the smaller nub negative.
+    out.push({ kind: 'cyl', mat: 'nickel', r: 3.4, h: 3.2, at: [-5.1, H + 1.6, 0], seg: 6 })
+    out.push({ kind: 'cyl', mat: { color: '#1C1F24', rough: 0.5, density: 2 }, r: 2.0, h: 3.4, at: [-5.1, H + 1.7, 0], seg: 6 })
+    out.push({ kind: 'cyl', mat: 'nickel', r: 2.6, h: 3.2, at: [5.1, H + 1.6, 0] })
+
+    if (leads) {
+      // The snap cap and its flying leads, which is how one of these is used.
+      out.push({ kind: 'box', mat: { color: '#17191D', rough: 0.55, density: 1.4 }, size: [W - 2, 6, D - 2], at: [0, H + 6.2, 0], bevel: 0.8 })
+      out.push({
+        kind: 'tube', mat: { color: '#B01A1A', rough: 0.6, density: 1.4 }, r: 0.9, seg: 8,
+        path: [[-5.1, H + 9, 0], [-9, H + 15, 2], [-15, H + 13, 6], [-19, H + 4, 8]],
+      })
+      out.push({
+        kind: 'tube', mat: { color: '#1A1C1E', rough: 0.6, density: 1.4 }, r: 0.9, seg: 8,
+        path: [[5.1, H + 9, 0], [9, H + 15, 2], [15, H + 13, 6], [19, H + 4, 8]],
+      })
+    }
+    return out
+  },
+  ports: (p) => {
+    const H = 48.5
+    const leads = bool(p, 'leads', true)
+    // With the snap on, the terminals are the ends of the flying leads; bare,
+    // they are the studs themselves.
+    return leads
+      ? [
+          { id: 'p', label: 'Positive (+)', kind: 'electrical', pos: [-19, H + 4, 8], dir: [-1, 0, 0], role: 'power', imax: 1 },
+          { id: 'n', label: 'Negative (−)', kind: 'electrical', pos: [19, H + 4, 8], dir: [1, 0, 0], role: 'gnd', imax: 1 },
+          { id: 'base', label: 'Underside', kind: 'mechanical', pos: [0, 0, 0], dir: [0, -1, 0], mate: { type: 'face' } },
+        ]
+      : [
+          { id: 'p', label: 'Positive (+)', kind: 'electrical', pos: [-5.1, H + 3.2, 0], dir: [0, 1, 0], role: 'power', imax: 1 },
+          { id: 'n', label: 'Negative (−)', kind: 'electrical', pos: [5.1, H + 3.2, 0], dir: [0, 1, 0], role: 'gnd', imax: 1 },
+          { id: 'base', label: 'Underside', kind: 'mechanical', pos: [0, 0, 0], dir: [0, -1, 0], mate: { type: 'face' } },
+        ]
+  },
+  electrical: {
+    devices: (p) => {
+      const k = CHEM_9V[str(p, 'chem', 'alkaline')] ?? CHEM_9V.alkaline
+      const soc = num(p, 'soc', 100) / 100
+      const v = k.v * (0.76 + 0.24 * Math.pow(Math.max(soc, 0), 0.35))
+      return [{ type: 'vsource', v, a: 'p', b: 'n', rint: k.r }]
+    },
+  },
+  readouts: (p) => {
+    const k = CHEM_9V[str(p, 'chem', 'alkaline')] ?? CHEM_9V.alkaline
+    const soc = num(p, 'soc', 100) / 100
+    const v = k.v * (0.76 + 0.24 * Math.pow(Math.max(soc, 0), 0.35))
+    return [
+      { label: 'Open-circuit voltage', value: `${v.toFixed(2)} V` },
+      { label: 'Internal resistance', value: eng(k.r, '\u03A9') },
+      { label: 'Capacity', value: `${k.mah} mAh` },
+      { label: 'Energy', value: `${((v * k.mah) / 1000).toFixed(1)} Wh` },
+    ]
+  },
+}
+
+/* A PP3 is six cells in series, so its internal resistance is high. */
+const CHEM_9V: Record<string, { v: number; r: number; mah: number }> = {
+  alkaline: { v: 9, r: 1.7, mah: 550 },
+  carbon: { v: 9, r: 3.5, mah: 400 },
+  lithium: { v: 9, r: 1.2, mah: 1200 },
+}
+
+registerParts([batteryHolder, battery9v, benchSupply, pushbutton, toggleSwitch, potentiometer, buzzer, dcMotor, groundRef])
 
 export const P_PITCH = P
