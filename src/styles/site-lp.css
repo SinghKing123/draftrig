@@ -27,6 +27,7 @@
   --bg-2: #FAFAFA;
   --bg-3: #F4F4F5;
   --ink: #18181B;
+  --ink-on: #FFFFFF;
   --ink-2: #52525B;
   --ink-3: #71717A;
   --line: #E4E4E7;
@@ -61,6 +62,7 @@
   --bg-2: #0E0E11;
   --bg-3: #18181B;
   --ink: #FAFAFA;
+  --ink-on: #18181B;
   --ink-2: #A1A1AA;
   --ink-3: #8B8B94;
   --line: #27272A;

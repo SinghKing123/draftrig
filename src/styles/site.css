@@ -22,6 +22,7 @@
 .lib-page {
   /* Ink, from the logo's own navy down to a readable grey. */
   --ink: #0a141e;
+  --ink-on: #FFFFFF;
   --ink-2: #44505f;
   --ink-3: #78848f;
   --ink-4: #9aa4ae;
@@ -156,8 +157,8 @@
 
 .band { padding: clamp(72px, 9vw, 132px) 0; }
 .band.sand { background: var(--sand); }
-.band.ink { background: var(--ink); color: #fff; }
-.band.ink h2, .band.ink h3 { color: #fff; }
+.band.ink { background: var(--ink); color: var(--ink-on); }
+.band.ink h2, .band.ink h3 { color: var(--ink-on); }
 .band.ink p { color: #b9c2cc; }
 .band.tight { padding-top: 0; }
 
@@ -187,7 +188,7 @@
 }
 .cta:active { transform: translateY(1px); }
 
-.cta.primary { background: var(--ink); color: #fff; }
+.cta.primary { background: var(--ink); color: var(--ink-on); }
 .cta.primary:hover { background: #1d2c3d; }
 
 .cta.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
@@ -428,7 +429,7 @@
 .closer {
   border-radius: var(--r-xl);
   background: var(--ink);
-  color: #fff;
+  color: var(--ink-on);
   padding: clamp(44px, 6vw, 76px);
   text-align: center;
 }
@@ -733,7 +734,7 @@
   gap: 40px;
   padding: clamp(32px, 4vw, 54px);
   background: var(--ink);
-  color: #fff;
+  color: var(--ink-on);
   overflow: hidden;
 }
 
@@ -841,7 +842,7 @@
   margin-top: 16px;
   background: var(--ink);
   border-color: var(--ink);
-  color: #fff;
+  color: var(--ink-on);
 }
 .auth-btn.primary:hover { background: #1d2c3d; border-color: #1d2c3d; }
 
@@ -923,6 +924,12 @@
    Initials rather than a photo: see initials() in AuthProvider for
    why. Two letters on ink, at the same 34px as the nav's other
    controls so the row keeps one height.
+
+   The letters take --ink-on, not white. The circle is painted with
+   --ink, and --ink is not one colour: the landing page redefines it
+   near-white for its dark theme, which left white letters on a white
+   disc and nothing to read. Every place that defines --ink defines
+   the colour that reads on it, so the two cannot drift apart.
    ================================================================== */
 
 .acct { position: relative; }
@@ -949,7 +956,7 @@
   flex: none;
   border-radius: 50%;
   background: var(--ink);
-  color: #fff;
+  color: var(--ink-on);
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -1358,7 +1365,7 @@
   margin-bottom: 12px;
   border-radius: var(--pill);
   background: var(--ink);
-  color: #fff;
+  color: var(--ink-on);
   font-size: 0.94rem;
   font-weight: 650;
   transition: background 140ms var(--ease);
@@ -1445,7 +1452,7 @@
   color: var(--ink-3);
 }
 .dseg button:hover { color: var(--ink); }
-.dseg button[data-on='true'] { background: var(--ink); color: #fff; }
+.dseg button[data-on='true'] { background: var(--ink); color: var(--ink-on); }
 .dseg.icons button { display: grid; place-items: center; width: 30px; padding: 5px 0; }
 
 /* ---- templates ---- */
