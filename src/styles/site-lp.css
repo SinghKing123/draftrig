@@ -220,7 +220,17 @@
   color: var(--ink-3);
 }
 
-.lp .hero h1 { max-width: 16ch; margin: 0 auto; }
+/*
+ * Let the browser even the lines out.
+ *
+ * A width in `ch` picks the break by counting characters, which does not
+ * know the difference between a good break and a bad one: "Run it before you
+ * build" sat on one line and left "it." alone on the next. `balance` chooses
+ * the split that evens the lines, so a headline can be rewritten without
+ * also retuning the width it is allowed.
+ */
+.lp .hero h1 { max-width: 18ch; margin: 0 auto; text-wrap: balance; }
+.lp .hero-sub, .lp .sec-head p { text-wrap: pretty; }
 .lp .hero h1 em { font-style: normal; color: var(--ink-3); }
 .lp .hero-sub {
   max-width: 54ch;

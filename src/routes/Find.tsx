@@ -106,8 +106,7 @@ export function Find({ total }: { total: number | null }) {
         <div className="sec-head center">
           <h2>Search the catalog</h2>
           <p>
-            Type a value and it answers from what each part accepts, so{' '}
-            <span className="mono">10k</span> finds the resistor and the pots.
+            Type <span className="mono">10k</span> and it finds the resistor and the pots.
           </p>
         </div>
 

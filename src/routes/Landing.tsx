@@ -243,7 +243,7 @@ export function Landing() {
               <span className="chev" aria-hidden="true">›</span>
             </Link>
 
-            <h1>Build the circuit <em>before</em> you buy the parts.</h1>
+            <h1>Run it <em>before you build it.</em></h1>
             <p className="hero-sub">
               Lay out a board in 3D, wire it pin to pin, and switch it on.
             </p>
@@ -286,7 +286,7 @@ export function Landing() {
       <section className="sec sec-alt" id="features">
         <div className="lpw">
           <Rise className="sec-head center">
-            <h2>How it works</h2>
+            <h2>What it does</h2>
           </Rise>
 
           <div className="feats">
@@ -313,7 +313,7 @@ export function Landing() {
               <h2>Point-to-point wiring</h2>
               <p>Click a pin, click another. The route finds its own way around.</p>
               <ul className="row-list">
-                <li><Check /> Every pin is a real terminal with a real position</li>
+                <li><Check /> Pins sit where they do on the real part</li>
                 <li><Check /> Parts snap into breadboards and perfboard holes</li>
                 <li><Check /> Current shows on the wire that is carrying it</li>
               </ul>
