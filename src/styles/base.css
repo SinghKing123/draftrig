@@ -11,24 +11,31 @@
    ================================================================== */
 
 /*
- * Instrument Sans rather than Geist.
+ * Schibsted Grotesk, after two faces that were not distinctive enough.
  *
- * Geist is what the references use and it would have been the closer match,
- * but it is also the face every AI-generated interface has converged on, and
- * this page exists because the last two did not look distinctive enough.
- * Instrument Sans is the same register — a clean neo-grotesque that sets a
- * headline tightly — with slightly narrower apertures and more going on in
- * the letterforms, so it reads as a deliberate choice rather than a default.
+ * Geist went first because it is the face every AI-generated interface has
+ * converged on, and this page exists because the last two designs read that
+ * way. Instrument Sans replaced it and turned out to be on the same list.
  *
- * Reverting is two lines here and two in site-lp.css; geist.woff2 is kept in
- * public/fonts for exactly that.
+ * Schibsted Grotesk is the same register — a neo-grotesque that sets a
+ * headline tightly — but it is drawn for a newspaper rather than a product
+ * page: a little more contrast between thick and thin, a narrower 'e' and
+ * 'a', and a 'g' with some character in the tail. It is on nobody's list of
+ * overused faces.
+ *
+ * The latin subset, not latin-ext. The site's copy needs the em dash and the
+ * middot; both are inside it, and latin-ext costs another file for coverage
+ * nothing here sets.
+ *
+ * Reverting is two lines here and one in site-lp.css. geist.woff2 and
+ * instrument-sans.woff2 are kept in public/fonts for exactly that.
  */
 @font-face {
-  font-family: 'Instrument Sans';
+  font-family: 'Schibsted Grotesk';
   font-style: normal;
   font-weight: 400 700;
   font-display: swap;
-  src: url('/fonts/instrument-sans.woff2') format('woff2');
+  src: url('/fonts/schibsted-grotesk.woff2') format('woff2');
 }
 @font-face {
   font-family: 'Archivo';
@@ -64,7 +71,24 @@ body {
   color: var(--tx-0);
   font-family: var(--font);
   font-size: var(--fs-md);
-  font-feature-settings: "cv02","cv03","cv04","ss01","tnum";
+  /*
+   * No font features here.
+   *
+   * This asked for "cv02","cv03","cv04","ss01","tnum" on every element on
+   * every page. The first four are character variants and a stylistic set
+   * picked for a face the site no longer sets, and a feature tag means
+   * whatever the current font says it means — in Schibsted Grotesk they do
+   * something else entirely.
+   *
+   * "tnum" was the one that looked defensible and was the one that did the
+   * damage: tabular figures widen the full stop and comma to a figure's
+   * width too, so they line up in a column of decimals. Across a headline
+   * that reads as a gap, and the hero said "buy the parts ." for it.
+   *
+   * Everything that genuinely wants figures in columns — the bill of
+   * materials, the status bar, the inspector — asks for tabular-nums where
+   * it is needed, which is where the decision belongs.
+   */
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   user-select: none;
