@@ -231,7 +231,6 @@
  */
 .lp .hero h1 { max-width: 18ch; margin: 0 auto; text-wrap: balance; }
 .lp .hero-sub, .lp .sec-head p { text-wrap: pretty; }
-.lp .hero h1 em { font-style: normal; color: var(--ink-3); }
 .lp .hero-sub {
   max-width: 54ch;
   margin: 22px auto 0;

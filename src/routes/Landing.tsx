@@ -243,7 +243,7 @@ export function Landing() {
               <span className="chev" aria-hidden="true">›</span>
             </Link>
 
-            <h1>Run it <em>before you build it.</em></h1>
+            <h1>Run it before you build it.</h1>
             <p className="hero-sub">
               Lay out a board in 3D, wire it pin to pin, and switch it on.
             </p>
