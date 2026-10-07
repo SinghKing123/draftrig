@@ -9,48 +9,31 @@ import { LogoMark, Wordmark } from './Logo'
  * drawing tool, so the sting is a circuit being drawn and switched on rather
  * than a logo that slides in from somewhere.
  *
- * It plays once a session, not once a load. A sting in front of a film is
- * seen once an evening; the editor is a tool somebody opens and reopens all
- * day, and the fourth time in ten minutes it is an obstacle between them and
- * their work. `sessionStorage` is what draws that line — first open of a tab
- * gets it, every later one goes straight in.
+ * It plays every time the editor is opened, from wherever it was opened:
+ * the landing page, a tile on the dashboard, the account menu, straight in
+ * off a link. It was once a session for a while, on the reasoning that a
+ * tool somebody reopens all day should not make them watch a logo each
+ * time — but that put it in front of the one route people arrive at cold
+ * and nowhere else, and arriving from the dashboard got nothing.
+ *
+ * Opening a different project from inside the editor is not opening the
+ * editor, and does not replay it: both routes render the same component, so
+ * moving between them leaves it mounted.
  *
  * It never holds anything up. The editor chunk downloads underneath it the
  * whole time, and whichever finishes last is what the person waits for.
+ * Where it does cost something is the trip back from the dashboard with the
+ * chunk already cached — that navigation would otherwise be instant, and
+ * now it takes the length of the sting.
  */
 
-const SEEN = 'draftrig.sting'
 const RUN = 1750
 
-/** Whether to play it: once a session, and never against the motion setting. */
+/** Whether to play it. Only the motion setting can say no. */
 export function useSting(): boolean {
-  /*
-   * The decision is read here and recorded in an effect, never both in the
-   * initialiser. Writing from inside useState made the answer depend on how
-   * many times React chose to call it: under StrictMode the first call set
-   * the flag and the second read it straight back, so the sting marked
-   * itself as already seen and never played once.
-   */
-  const [on] = useState(() => {
-    if (typeof window === 'undefined') return false
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return false
-    try {
-      return !sessionStorage.getItem(SEEN)
-    } catch {
-      // Private windows throw on access. A sting is not worth a crash.
-      return false
-    }
-  })
-
-  useEffect(() => {
-    if (!on) return
-    try {
-      sessionStorage.setItem(SEEN, '1')
-    } catch {
-      /* nothing to do; it simply plays again next time */
-    }
-  }, [on])
-
+  const [on] = useState(
+    () => typeof window !== 'undefined' && !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches,
+  )
   return on
 }
 
