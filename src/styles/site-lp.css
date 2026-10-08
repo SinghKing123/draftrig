@@ -897,47 +897,108 @@
   .lp .bw-code code { animation: none; }
 }
 
-/* ==================================================================
-   Paging the product panel
-   ------------------------------------------------------------------
-   Under the frame, not over it. The first panel already has four
-   tabs inside the frame, and a second set of controls laid on top of
-   those is two things to work out before anything happens.
-
-   Named, not dotted. A row of dots has to be clicked to find out
-   what it holds, which is a worse deal than three short words.
-   ================================================================== */
-
-.lp .lp-slides {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  margin-top: 14px;
-}
-.lp .lp-slides button {
-  padding: 6px 13px;
-  border-radius: var(--pill, 999px);
-  font-size: 0.82rem;
-  font-weight: 500;
-  color: var(--ink-3);
-  background: transparent;
-  border: 1px solid transparent;
-  transition: color 140ms var(--ease), background 140ms var(--ease), border-color 140ms var(--ease);
-}
-.lp .lp-slides button:hover { color: var(--ink); background: var(--bg-3); }
-.lp .lp-slides button[data-on='true'] {
-  color: var(--ink);
-  background: var(--bg);
-  border-color: var(--line);
-  box-shadow: var(--lift-1, 0 1px 2px rgba(0, 0, 0, 0.05));
-}
-.lp .lp-slide-arrow { font-size: 1.1rem; line-height: 1; padding: 6px 10px; }
-
 /* The stills stand in for the clip, so they take the same frame. */
 .lp .lp-shot-body img {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+/* ==================================================================
+   The product deck
+   ------------------------------------------------------------------
+   One thing per panel, with the two either side of it smaller and
+   behind, so it reads as a deck rather than a slideshow.
+
+   The panels are absolutely positioned and pushed apart by a
+   multiple of their own width, which is why the offsets are in
+   percent of the panel and not of the stage: a percentage in
+   translate resolves against the element being moved.
+   ================================================================== */
+
+.lp .lp-car { margin-top: 4px; }
+
+.lp .lp-car-stage {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  touch-action: pan-y;
+  outline: none;
+}
+.lp .lp-car-stage:focus-visible { outline: 2px solid var(--accent); outline-offset: 6px; border-radius: var(--r-lg); }
+
+.lp .lp-car-panel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 70%;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--lift-3, 0 24px 50px rgba(9, 9, 11, 0.16));
+  overflow: hidden;
+  /* --d is how many places this panel sits from the front. */
+  transform: translate(-50%, -50%) translateX(calc(var(--d) * 66%)) scale(0.8);
+  opacity: 0;
+  z-index: 0;
+  pointer-events: none;
+  transition:
+    transform 540ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    opacity 380ms ease;
+}
+/* The two neighbours show; anything further round the ring does not. */
+.lp .lp-car-panel[style*='--d: 1'],
+.lp .lp-car-panel[style*='--d: -1'] { opacity: 0.5; z-index: 1; }
+.lp .lp-car-panel[data-at='true'] {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+  z-index: 2;
+  pointer-events: auto;
+}
+
+.lp .lp-car-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 18px;
+}
+.lp .lp-car-arrow {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-size: 1.15rem;
+  line-height: 1;
+  color: var(--ink-2);
+  border: 1px solid var(--line);
+  background: var(--bg);
+  transition: color 140ms var(--ease), border-color 140ms var(--ease);
+}
+.lp .lp-car-arrow:hover { color: var(--ink); border-color: var(--line-2); }
+
+.lp .lp-car-dots { display: flex; align-items: center; gap: 8px; }
+.lp .lp-car-dots button {
+  width: 7px;
+  height: 7px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--line-2);
+  transition: background 160ms var(--ease), transform 160ms var(--ease);
+}
+.lp .lp-car-dots button:hover { background: var(--ink-3); }
+.lp .lp-car-dots button[data-on='true'] { background: var(--ink); transform: scale(1.4); }
+
+@media (max-width: 720px) {
+  /* No room for neighbours on a phone; the front panel takes the width. */
+  .lp .lp-car-panel { width: 92%; }
+  .lp .lp-car-panel[style*='--d: 1'],
+  .lp .lp-car-panel[style*='--d: -1'] { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp .lp-car-panel { transition: opacity 200ms ease; }
 }
