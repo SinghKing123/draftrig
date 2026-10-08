@@ -33,6 +33,21 @@ const TABS = [
   { label: 'Build', clip: 'clip-builds' },
 ] as const
 
+/**
+ * What the panel can be turned to.
+ *
+ * The first is the clip reel that was there before, with its own four tabs
+ * inside it. The others are the two parts of the editor the clips never
+ * show, because neither is a thing that moves: the code beside the board
+ * running it, and the bill with prices on it. Both are screenshots of the
+ * real editor rather than drawings of it.
+ */
+const SLIDES = [
+  { label: 'In 3D', src: '', alt: '' },
+  { label: 'Code', src: '/slides/sketch.jpg', alt: 'A sketch open beside the board running it' },
+  { label: 'Costed', src: '/slides/bom.jpg', alt: 'The bill of materials, priced by part' },
+] as const
+
 /** Reveals its child once, the first time it comes near the viewport. */
 function Rise({ children, delay = 0, className = '' }: {
   children: React.ReactNode
@@ -177,6 +192,7 @@ export function Landing() {
   const parts = useCatalogCount()
 
   const [tab, setTab] = useState(0)
+  const [slide, setSlide] = useState(0)
   const [seen, setSeen] = useState(false)
   const onSeen = useCallback(() => setSeen(true), [])
   const onEnded = useCallback(() => setTab((t) => (t + 1) % TABS.length), [])
@@ -259,20 +275,63 @@ export function Landing() {
             <div className="lp-shot">
               <div className="lp-shot-bar" aria-hidden="true"><i /><i /><i /></div>
               <div className="lp-shot-body">
-                <Reel
-                  names={TABS.map((t) => t.clip)}
-                  at={tab}
-                  onEnded={onEnded}
-                  seen={seen}
-                  onSeen={onSeen}
-                />
-                <div className="lp-shot-tabs">
-                  {TABS.map((t, i) => (
-                    <button key={t.label} data-on={i === tab} onClick={() => setTab(i)}>
-                      {t.label}
-                    </button>
-                  ))}
-                </div>
+                {slide === 0 ? (
+                  <>
+                    <Reel
+                      names={TABS.map((t) => t.clip)}
+                      at={tab}
+                      onEnded={onEnded}
+                      seen={seen}
+                      onSeen={onSeen}
+                    />
+                    <div className="lp-shot-tabs">
+                      {TABS.map((t, i) => (
+                        <button key={t.label} data-on={i === tab} onClick={() => setTab(i)}>
+                          {t.label}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <img src={SLIDES[slide].src} alt={SLIDES[slide].alt} />
+                )}
+              </div>
+
+              {/*
+                * Paging, outside the frame rather than over it.
+                *
+                * The first panel has its own four tabs inside the frame, and
+                * a second set of controls on top of those is two things to
+                * work out before anything happens. These sit under it, and
+                * say what each panel is rather than showing a row of dots
+                * that have to be clicked to find out.
+                */}
+              <div className="lp-slides" role="tablist" aria-label="What the editor does">
+                <button
+                  className="lp-slide-arrow"
+                  onClick={() => setSlide((n) => (n + SLIDES.length - 1) % SLIDES.length)}
+                  aria-label="Previous"
+                >
+                  ‹
+                </button>
+                {SLIDES.map((s, i) => (
+                  <button
+                    key={s.label}
+                    role="tab"
+                    aria-selected={i === slide}
+                    data-on={i === slide}
+                    onClick={() => setSlide(i)}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+                <button
+                  className="lp-slide-arrow"
+                  onClick={() => setSlide((n) => (n + 1) % SLIDES.length)}
+                  aria-label="Next"
+                >
+                  ›
+                </button>
               </div>
             </div>
           </Rise>
