@@ -5,6 +5,7 @@ import { FileMenu, type FileActions } from './FileMenu'
 import {
   IconCursor, IconPause, IconPlay, IconRedo, IconReset, IconSave, IconUndo, IconWire, IconZap,
 } from './Icons'
+import { useMayKeep } from '@/auth/gate'
 import { useDoc, type EditorMode } from '@/state/doc'
 import { useSim } from '@/state/sim'
 import { engine } from '@/sim/engine'
@@ -34,6 +35,16 @@ const SAVE_LABEL: Record<SaveState, string> = {
 }
 
 export function TopBar({ saveState = 'idle', file }: { saveState?: SaveState; file: FileActions }) {
+  /*
+   * Signed out, none of the save states are true.
+   *
+   * "Unsaved changes" and a tooltip reading "Press Ctrl+S" describe a thing
+   * that will not happen: the shortcut raises the sign-in prompt, and
+   * nothing is written anywhere. Someone reading the top bar should be able
+   * to tell that their work is going nowhere without first trying to save
+   * it and being refused.
+   */
+  const mayKeep = useMayKeep()
   const mode = useDoc((s) => s.mode)
   const setMode = useDoc((s) => s.setMode)
   const name = useDoc((s) => s.doc.name)
@@ -88,16 +99,18 @@ export function TopBar({ saveState = 'idle', file }: { saveState?: SaveState; fi
       />
       <span
         className="save-state"
-        data-state={saveState}
+        data-state={mayKeep ? saveState : 'dirty'}
         title={
-          saveState === 'error'
-            ? 'Could not save. Your work is still in the window; try Save again in a moment.'
-            : saveState === 'dirty'
-              ? 'Not saved yet. Press Ctrl+S, or the button beside this.'
-              : undefined
+          !mayKeep
+            ? 'Nothing here is being saved. Sign in to keep this build.'
+            : saveState === 'error'
+              ? 'Could not save. Your work is still in the window; try Save again in a moment.'
+              : saveState === 'dirty'
+                ? 'Not saved yet. Press Ctrl+S, or the button beside this.'
+                : undefined
         }
       >
-        {SAVE_LABEL[saveState]}
+        {mayKeep ? SAVE_LABEL[saveState] : 'Not signed in'}
       </span>
 
       <button className="btn ghost icon" title="Save (Ctrl+S)" onClick={file.onSave}>

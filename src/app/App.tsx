@@ -10,7 +10,7 @@ import { BomPanel, BomTab } from '@/ui/Bom'
 import { SketchEditor, SketchTab } from '@/ui/SketchEditor'
 import { MobileBar, MobileSheetHead } from '@/ui/MobileBar'
 import { SignInWall } from '@/ui/SignInWall'
-import { useAuth } from '@/auth/AuthProvider'
+import { useGuard, useMayKeep, useWall } from '@/auth/gate'
 import { useMobile } from '@/state/mobile'
 import { useSketchPanel } from '@/state/sketch'
 import { StatusBar } from '@/ui/StatusBar'
@@ -130,16 +130,15 @@ export function Editor() {
   const sheet = useMobile((s) => s.sheet)
 
   /*
-   * The bench is open to everybody; keeping things is not.
-   *
-   * Anyone can build, wire and run without an account, because a tool nobody
-   * can try is a tool nobody adopts. What needs one is anything that outlives
-   * the tab: saving a build, and the list those builds live in. The ask comes
-   * at the moment somebody wants the thing rather than at the door.
+   * The bench is open to everybody; keeping things is not. What counts as
+   * keeping, and the prompt that asks, both live in auth/gate — see there
+   * for why they are not three copies in three files any more.
    */
-  const { user, enabled: accountsOn } = useAuth()
-  const [wall, setWall] = useState<string | null>(null)
-  const mayKeep = Boolean(user) || !accountsOn
+  const mayKeep = useMayKeep()
+  const guard = useGuard()
+  const wall = useWall((w) => w.reason)
+  const ask = useWall((w) => w.ask)
+  const closeWall = useWall((w) => w.close)
 
   /**
    * Put the bench somewhere before leaving for the sign-in page.
@@ -272,7 +271,7 @@ export function Editor() {
     const d = useDoc.getState().doc
     if (isEmpty(d)) return
     if (!mayKeep) {
-      setWall('Sign in to save this build')
+      ask('Sign in to save this build')
       return
     }
     void persist(id, d)
@@ -324,13 +323,19 @@ export function Editor() {
     window.history.replaceState(null, '', '/app')
   }, [])
 
+  /*
+   * Everything that keeps work goes through the guard; nothing else does.
+   *
+   * Starting a new bench and opening an example are the two that stay free,
+   * because neither of them leaves the tab.
+   */
   const file: FileActions = {
     onNew,
-    onOpen: () => fileInput.current?.click(),
+    onOpen: () => guard('Sign in to open a file', () => fileInput.current?.click()),
     onSave,
-    onSaveAs: () => (mayKeep ? setPrompt('saveAs') : setWall('Sign in to save a copy')),
-    onDuplicate: () => (mayKeep ? setPrompt('duplicate') : setWall('Sign in to duplicate this build')),
-    onDownload: () => downloadProject(useDoc.getState().doc),
+    onSaveAs: () => guard('Sign in to save a copy', () => setPrompt('saveAs')),
+    onDuplicate: () => guard('Sign in to duplicate this build', () => setPrompt('duplicate')),
+    onDownload: () => guard('Sign in to download a copy', () => downloadProject(useDoc.getState().doc)),
     onExamples: () => setOnboarding('starters'),
   }
 
@@ -345,11 +350,14 @@ export function Editor() {
       const k = e.key.toLowerCase()
       if (k === 's') {
         e.preventDefault()
-        if (e.shiftKey) setPrompt('saveAs')
+        // Through the same guard as the menu item each one duplicates. These
+        // called setPrompt and the file input straight out, so the shortcuts
+        // did what the menu refused to.
+        if (e.shiftKey) file.onSaveAs()
         else onSave()
       } else if (k === 'o') {
         e.preventDefault()
-        fileInput.current?.click()
+        file.onOpen()
       } else if (k === 'n' && !e.shiftKey) {
         // Ctrl+N is the browser's new-window in some builds and ours in others.
         // Where the page gets it at all, it should mean a new build.
@@ -359,7 +367,7 @@ export function Editor() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [onSave, onNew])
+  }, [onSave, onNew, file])
 
   /*
    * Closing the tab, reloading, or following a link off the page.
@@ -403,7 +411,7 @@ export function Editor() {
       <MobileBar />
 
       {wall && (
-        <SignInWall reason={wall} onClose={() => setWall(null)} onContinue={stashForSignIn} />
+        <SignInWall reason={wall} onClose={closeWall} onContinue={stashForSignIn} />
       )}
       <BomTab />
       <SketchTab />
