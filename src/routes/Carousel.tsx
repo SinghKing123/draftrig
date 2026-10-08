@@ -22,16 +22,27 @@ type Panel =
   | { kind: 'clip'; name: string }
   | { kind: 'still'; src: string; alt: string }
 
+/*
+ * The two editor stills lead, then the clips in the order they were in.
+ *
+ * The deck used to open on the assembly clip with these two at the back,
+ * four and five presses to the right. They are the panels that show what
+ * the thing actually is — code beside the board running it, and a bill with
+ * prices on it — so they go first and the rest keeps its order behind them.
+ */
 const PANELS: Panel[] = [
+  { kind: 'still', src: '/slides/sketch.jpg', alt: 'A sketch open beside the board running it' },
+  { kind: 'still', src: '/slides/bom.jpg', alt: 'The bill of materials, priced by part' },
   { kind: 'clip', name: 'clip-assemble' },
   { kind: 'clip', name: 'clip-wire' },
   { kind: 'clip', name: 'clip-run' },
   { kind: 'clip', name: 'clip-builds' },
-  { kind: 'still', src: '/slides/sketch.jpg', alt: 'A sketch open beside the board running it' },
-  { kind: 'still', src: '/slides/bom.jpg', alt: 'The bill of materials, priced by part' },
 ]
 
 const N = PANELS.length
+
+/** How long a still holds the front before the deck moves on. */
+const DWELL = 6500
 
 /** How far panel `i` sits from the front, the short way round the ring. */
 function offset(i: number, at: number): number {
@@ -46,17 +57,51 @@ export function Carousel() {
   const vids = useRef<(HTMLVideoElement | null)[]>([])
   const drag = useRef<{ x: number; moved: boolean } | null>(null)
 
+  /*
+   * True while somebody is looking at this one on purpose.
+   *
+   * The deck moves itself along, which is fine until it takes a bill of
+   * materials off the screen while it is being read. Pointing at it or
+   * tabbing into it holds it until they leave.
+   */
+  const hold = useRef(false)
+
   const go = useCallback((step: number) => setAt((n) => (n + step + N) % N), [])
 
-  /* Only the panel in front plays. A deck of six all decoding at once is
-     six decoders for one thing anybody is looking at. */
+  /* Only the panel in front plays, and it plays from the top. A deck of six
+     all decoding at once is six decoders for one thing anybody is looking
+     at. */
   useEffect(() => {
     vids.current.forEach((v, i) => {
       if (!v) return
-      if (i === at) void v.play().catch(() => {})
-      else v.pause()
+      if (i === at) {
+        v.currentTime = 0
+        void v.play().catch(() => {})
+      } else {
+        v.pause()
+      }
     })
   }, [at])
+
+  /*
+   * A still has no end of its own, so it is given one.
+   *
+   * Counted down rather than set once, so that holding the deck pauses the
+   * dwell instead of only deferring the jump that was already scheduled.
+   */
+  useEffect(() => {
+    if (PANELS[at].kind !== 'still') return
+    let left = DWELL
+    const id = window.setInterval(() => {
+      if (hold.current) return
+      left -= 250
+      if (left <= 0) {
+        window.clearInterval(id)
+        go(1)
+      }
+    }, 250)
+    return () => window.clearInterval(id)
+  }, [at, go])
 
   const onKey = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowLeft') {
@@ -91,8 +136,18 @@ export function Carousel() {
         onPointerUp={() => {
           drag.current = null
         }}
+        onPointerEnter={() => {
+          hold.current = true
+        }}
         onPointerLeave={() => {
           drag.current = null
+          hold.current = false
+        }}
+        onFocus={() => {
+          hold.current = true
+        }}
+        onBlur={() => {
+          hold.current = false
         }}
       >
         {PANELS.map((p, i) => {
@@ -115,10 +170,22 @@ export function Carousel() {
                     }}
                     poster={`/clips/${p.name}.jpg`}
                     muted
-                    loop
                     playsInline
                     preload="none"
                     aria-hidden="true"
+                    onEnded={() => {
+                      /* Not looped: reaching the end is what moves the deck
+                         on. Held, it starts the same clip again rather than
+                         freezing on its last frame. */
+                      if (d !== 0) return
+                      const v = vids.current[i]
+                      if (hold.current && v) {
+                        v.currentTime = 0
+                        void v.play().catch(() => {})
+                      } else {
+                        go(1)
+                      }
+                    }}
                   >
                     {near && <source src={`/clips/${p.name}.webm`} type="video/webm" />}
                     {near && <source src={`/clips/${p.name}.mp4`} type="video/mp4" />}
