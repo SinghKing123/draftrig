@@ -681,8 +681,11 @@
   gap: clamp(30px, 6vh, 64px);
   overflow: hidden;
   pointer-events: none;
-  color: var(--ink);
-  opacity: 0.14;
+  /* Pure black and pure white rather than the text inks, which are a
+     shade short of both — at this opacity that shortfall is the difference
+     between notation you can read and a smudge. */
+  color: #000;
+  opacity: 0.2;
   /*
    * Weakest where the headline sits, strongest out towards the edges.
    *
@@ -697,7 +700,7 @@
   mask-composite: intersect;
   -webkit-mask-composite: source-in;
 }
-.lp[data-theme='dark'] .glyphs { opacity: 0.2; }
+.lp[data-theme='dark'] .glyphs { color: #FFF; opacity: 0.3; }
 
 .lp .glyph-row { overflow: hidden; }
 .lp .glyph-run {
