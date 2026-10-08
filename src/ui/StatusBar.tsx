@@ -36,7 +36,7 @@ export function StatusBar() {
       </span>
 
       {running && realtime < 0.9 && (
-        <span className="sb-item" title="The circuit is too heavy to solve at this speed. Lower the speed, or simplify it.">
+        <span className="sb-item" title="Solver cannot keep up at this speed. Lower the speed or reduce the node count.">
           <span className="sb-dot err" />
           Running at <b>{Math.round(realtime * 100)}%</b> of the selected speed
         </span>

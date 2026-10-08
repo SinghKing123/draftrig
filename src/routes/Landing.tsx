@@ -235,7 +235,7 @@ export function Landing() {
 
             <h1>Run it before you build it.</h1>
             <p className="hero-sub">
-              Lay out a board in 3D, wire it pin to pin, and switch it on.
+              3D layout, point-to-point wiring, and a modified nodal analysis solver.
             </p>
             <div className="hero-cta">
               <Link className="btn btn-primary btn-lg" to="/app">

@@ -70,7 +70,7 @@ const MCU_PROGRAMS = [
   { value: 'lcd-clock', label: 'LCD, running clock' },
   { value: 'oled-text', label: 'OLED, show two lines over I2C' },
   { value: 'oled-clock', label: 'OLED, running clock over I2C' },
-  { value: 'custom', label: 'Your own sketch' },
+  { value: 'custom', label: 'Custom' },
   { value: 'off', label: 'No program, all pins input' },
 ]
 

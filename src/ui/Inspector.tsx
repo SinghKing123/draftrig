@@ -194,9 +194,9 @@ export function Inspector() {
       <aside className="panel inspector">
         <div className="panel-head">Inspector</div>
         <div className="insp-empty">
-          Nothing selected.
+          No selection.
           <br />
-          Pick a part in the viewport, or add one from the library.
+          Select a part, or place one from the library.
           <br />
           <br />
           <span style={{ color: 'var(--tx-2)' }}>

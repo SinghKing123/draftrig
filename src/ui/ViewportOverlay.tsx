@@ -74,11 +74,11 @@ function PendingHint() {
 const NAV_SEEN = 'draftrig.nav.seen.v1'
 
 const NAV_ROWS: { how: React.ReactNode; what: string }[] = [
-  { how: <><b>Drag</b></>, what: 'Turn the view around the build' },
-  { how: <><b>Right-drag</b></>, what: 'Slide the view sideways' },
-  { how: <><b>Scroll</b></>, what: 'Zoom towards the pointer' },
-  { how: <kbd>F</kbd>, what: 'Fill the view with what is selected' },
-  { how: <span className="nav-axes"><i style={{ background: '#FF6B6B' }} /><i style={{ background: '#3DD68C' }} /><i style={{ background: '#4C8DFF' }} /></span>, what: 'Click a marker, bottom right, for a straight-on view' },
+  { how: <><b>Drag</b></>, what: 'Orbit' },
+  { how: <><b>Right-drag</b></>, what: 'Pan' },
+  { how: <><b>Scroll</b></>, what: 'Zoom to pointer' },
+  { how: <kbd>F</kbd>, what: 'Frame selection' },
+  { how: <span className="nav-axes"><i style={{ background: '#FF6B6B' }} /><i style={{ background: '#3DD68C' }} /><i style={{ background: '#4C8DFF' }} /></span>, what: 'Axis marker for an orthographic view' },
 ]
 
 function NavHelp({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -86,7 +86,7 @@ function NavHelp({ open, onClose }: { open: boolean; onClose: () => void }) {
   return (
     <div className="nav-help" role="dialog" aria-label="Moving around the view">
       <div className="nav-head">
-        Moving around
+        Navigation
         <button className="btn ghost icon sm" onClick={onClose} aria-label="Close">
           <IconX size={12} />
         </button>
@@ -237,7 +237,7 @@ export function ViewportOverlay({
         <button
           className="btn ghost icon"
           data-on={transformMode === 'move'}
-          title="Drag parts to move them (G)"
+          title="Translate (G)"
           onClick={() => setTransformMode('move')}
         >
           <IconMove />
@@ -245,7 +245,7 @@ export function ViewportOverlay({
         <button
           className="btn ghost icon"
           data-on={transformMode === 'rotate'}
-          title="Drag parts to turn them (R)"
+          title="Rotate (R)"
           onClick={() => setTransformMode('rotate')}
         >
           <IconRotate />
@@ -293,14 +293,14 @@ export function ViewportOverlay({
         <span className="vp-views" role="group" aria-label="Standard views">
           <button className="vp-view" title="Look straight down" onClick={() => setStandardView('top')}>Top</button>
           <button className="vp-view" title="Look at the front" onClick={() => setStandardView('front')}>Front</button>
-          <button className="vp-view" title="Look from the right" onClick={() => setStandardView('right')}>Side</button>
-          <button className="vp-view" title="Back to the three-quarter view" onClick={() => setStandardView('iso')}>3D</button>
+          <button className="vp-view" title="Right view" onClick={() => setStandardView('right')}>Side</button>
+          <button className="vp-view" title="Isometric view" onClick={() => setStandardView('iso')}>3D</button>
         </span>
 
         {/* Named rather than drawn. "Fit" is the control people look for by
             name when they have lost the build off the edge of the screen, and
             a glyph of a frame is not something anyone searches for. */}
-        <button className="btn ghost vp-text" title="Fit the whole build on screen (F)" onClick={() => requestFrame('all')}>
+        <button className="btn ghost vp-text" title="Frame all (F)" onClick={() => requestFrame('all')}>
           <IconFrame />
           Fit
         </button>
@@ -313,7 +313,7 @@ export function ViewportOverlay({
         <button className="btn ghost icon" data-on={view.ports} title="Show terminals (P)" onClick={() => setView({ ports: !view.ports })}>
           {view.ports ? <IconEye /> : <IconEyeOff />}
         </button>
-        <button className="btn ghost icon" data-on={view.xray} title="See through solid parts (X)" onClick={() => setView({ xray: !view.xray })}>
+        <button className="btn ghost icon" data-on={view.xray} title="X-ray (X)" onClick={() => setView({ xray: !view.xray })}>
           <IconXray />
         </button>
         {/*
@@ -364,8 +364,8 @@ export function ViewportOverlay({
       {empty && firstVisit && (
         <div className="empty-state">
           <div className="empty-hint">
-            <p>Nothing on the bench yet.</p>
-            <p className="sub">Pick a part from the library on the left.</p>
+            <p>Empty bench.</p>
+            <p className="sub">Place a part from the library.</p>
             <div className="empty-actions">
               <button className="btn primary" onClick={onExamples}>Open an example</button>
               <button className="btn" onClick={onReplayTour}>Show me around</button>

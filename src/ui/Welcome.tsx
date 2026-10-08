@@ -43,21 +43,21 @@ export function Welcome({
       <div className="welcome-scrim">
         <div className="welcome intro">
           <LogoMark size={44} onDark />
-          <h2>Welcome to {BRAND.name}</h2>
+          <h2>{BRAND.name}</h2>
           <p>
-            Put a build together in 3D, wire it up, and switch it on.
+            3D layout, point-to-point wiring, and a modified nodal analysis solver.
           </p>
           <div className="welcome-actions">
             <button className="btn primary lg" onClick={onTour}>
-              <IconPlay size={12} /> Show me around
+              <IconPlay size={12} /> Take the tour
             </button>
             <button className="btn lg" onClick={onSkip}>
               Skip
             </button>
           </div>
           <p className="welcome-fine">
-            About thirty seconds. Or{' '}
-            <button className="inline-link" onClick={onExamples}>open an example</button> instead.
+            Or{' '}
+            <button className="inline-link" onClick={onExamples}>open an example</button>.
           </p>
         </div>
       </div>

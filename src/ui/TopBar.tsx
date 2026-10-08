@@ -74,11 +74,11 @@ export function TopBar({ saveState = 'idle', file }: { saveState?: SaveState; fi
           it never fires on a route change inside the same page. */}
       <Link
         to="/projects"
-        title="Your projects"
+        title="Projects"
         style={{ textDecoration: 'none' }}
         onClick={(e) => {
           if (saveState !== 'dirty' && saveState !== 'error') return
-          if (!window.confirm('Leave this build? Your changes have not been saved and will be lost.')) {
+          if (!window.confirm('Unsaved changes will be lost. Leave this build?')) {
             e.preventDefault()
           }
         }}
@@ -104,9 +104,9 @@ export function TopBar({ saveState = 'idle', file }: { saveState?: SaveState; fi
           !mayKeep
             ? 'Nothing here is being saved. Sign in to keep this build.'
             : saveState === 'error'
-              ? 'Could not save. Your work is still in the window; try Save again in a moment.'
+              ? 'Save failed. The document is still open; retry.'
               : saveState === 'dirty'
-                ? 'Not saved yet. Press Ctrl+S, or the button beside this.'
+                ? 'Unsaved. Ctrl+S to save.'
                 : undefined
         }
       >

@@ -101,7 +101,7 @@ export function Library() {
         Parts
         <div className="grow" />
         {!searching && anyOpen && (
-          <button className="link-btn" onClick={() => setOpen({})} title="Close every category">
+          <button className="link-btn" onClick={() => setOpen({})} title="Collapse all">
             Collapse all
           </button>
         )}

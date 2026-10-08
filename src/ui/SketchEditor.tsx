@@ -164,7 +164,7 @@ export function SketchEditor() {
 
       {!running && (
         <p className="sketch-note">
-          This board is running a stock program. Set its <b>Sketch</b> to <b>Your own sketch</b> in
+          Running a stock program. Set <b>Sketch</b> to <b>Custom</b> in
           the inspector for this code to take effect.
         </p>
       )}
@@ -220,7 +220,7 @@ export function SketchEditor() {
         <div className="grow" />
         <button
           className="btn"
-          title="Run it from the beginning"
+          title="Restart"
           onClick={() => {
             if (editing && dirty) {
               setParam(editing, 'code', text, true)
@@ -254,7 +254,7 @@ export function SketchTab() {
       className="sketch-tab"
       data-open={editing === board.id}
       onClick={() => guard('Sign in to write a sketch', () => toggle(board.id))}
-      title="Write the program this board runs"
+      title="Edit sketch"
       aria-expanded={editing === board.id}
     >
       <span>{'{ }'}</span>

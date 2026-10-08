@@ -457,7 +457,7 @@ const espBoard: PartDef = {
       key: 'program', label: 'Sketch', type: 'enum', default: 'blink', group: 'Control',
       options: [
         { value: 'blink', label: 'Blink the on-board LED' },
-        { value: 'custom', label: 'Your own sketch' },
+        { value: 'custom', label: 'Custom' },
         { value: 'off', label: 'No program, all pins input' },
       ],
     },
