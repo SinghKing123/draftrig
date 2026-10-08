@@ -781,3 +781,118 @@
 @media (prefers-reduced-motion: reduce) {
   .lp .hero-vid { display: none; }
 }
+
+/* ==================================================================
+   The build wall
+   ------------------------------------------------------------------
+   Six builds assembling themselves, with code running over them.
+
+   Named bw- rather than wall-, because app.css already owns a bare
+   `.wall`: the sign-in panel. A bare class beats a scoped one it is
+   not competing with, so the section came out as a fixed, narrow,
+   near-black card in the top left corner of the page.
+
+   The tiles carry the weight, so the code is held well back: it is
+   there to say what the section is about, not to be read. It scrolls
+   over the grid rather than behind it, because behind six opaque
+   tiles it would only ever show in the gutters.
+   ================================================================== */
+
+.lp .bw-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-top: 34px;
+}
+
+.lp .bw-tile {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--r);
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  aspect-ratio: 4 / 3;
+}
+.lp .bw-tile video,
+.lp .bw-tile img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* The name sits on the tile, over a wash rather than a bar, so a dark
+   bench and a lit board both keep it readable. */
+.lp .bw-cap {
+  position: absolute;
+  inset: auto 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 26px 13px 11px;
+  background: linear-gradient(transparent, rgba(9, 9, 11, 0.82));
+  color: #fff;
+  pointer-events: none;
+}
+.lp .bw-cap b { font-size: 0.88rem; font-weight: 600; letter-spacing: -0.01em; }
+.lp .bw-cap span { font-size: 0.76rem; color: rgba(255, 255, 255, 0.66); }
+
+/*
+ * The code layer.
+ *
+ * Over the tiles, faint, and masked to nothing at both ends so it has no
+ * edge of its own. It is marked aria-hidden and takes no pointer events:
+ * it is texture, and a screen reader working through two hundred lines of
+ * someone else's sketch is being given nothing.
+ */
+.lp .bw-code {
+  position: absolute;
+  inset: -10% 0;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  gap: 2%;
+  margin: 0;
+  overflow: hidden;
+  pointer-events: none;
+  font-family: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 0.72rem;
+  line-height: 1.75;
+  white-space: pre;
+  /* Plain white over the tiles, which are dark whatever the page is doing.
+     An overlay blend made it strong on one tile and invisible on the next,
+     so the code read as a rendering fault rather than a layer. */
+  color: #fff;
+  opacity: 0.17;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  mask-image: linear-gradient(transparent, #000 14%, #000 86%, transparent);
+}
+.lp .bw-code pre {
+  flex: 0 1 auto;
+  margin: 0;
+  animation-name: bw-scroll;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+.lp .bw-code pre:nth-child(2) { animation-direction: reverse; }
+/* The text is its own content twice over, so sliding by exactly half
+   its height returns it to where it started with no seam. */
+@keyframes bw-scroll {
+  to { transform: translateY(-50%); }
+}
+
+.lp[data-theme='dark'] .bw-code { opacity: 0.26; }
+
+.lp .bw-cta { display: flex; justify-content: center; margin-top: 34px; }
+
+@media (max-width: 900px) {
+  .lp .bw-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 560px) {
+  .lp .bw-grid { grid-template-columns: 1fr; }
+  .lp .bw-code { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lp .bw-code code { animation: none; }
+}

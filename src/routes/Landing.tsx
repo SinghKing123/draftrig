@@ -7,7 +7,7 @@ import { useAuth } from '@/auth/AuthProvider'
 import { Reel } from './Reel'
 import { Trace } from './Trace'
 import { Find } from './Find'
-import { Showcase } from './Showcase'
+import { BuildWall } from './BuildWall'
 import { Glyphs } from './Glyphs'
 
 /**
@@ -280,7 +280,7 @@ export function Landing() {
       </section>
 
       {/* ---- builds ---- */}
-      <Showcase />
+      <BuildWall />
 
       {/* ---- features ---- */}
       <section className="sec sec-alt" id="features">

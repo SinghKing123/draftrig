@@ -4,6 +4,7 @@ import { DISPLAY_REEL } from './display.mjs'
 import { SCOREBOARD_REEL } from './scoreboard.mjs'
 import { CLIPS } from './clips.mjs'
 import { LAB_SHOTS } from './labs.mjs'
+import { GRID_SHOTS } from './grid.mjs'
 
 /**
  * The shots, and which reel each belongs to.
@@ -177,4 +178,4 @@ export const REELS = [
   SCOREBOARD_REEL,
 ]
 
-export const SHOTS = [...REELS.flatMap((r) => r.shots), ...CLIPS, ...LAB_SHOTS]
+export const SHOTS = [...REELS.flatMap((r) => r.shots), ...CLIPS, ...LAB_SHOTS, ...GRID_SHOTS]
