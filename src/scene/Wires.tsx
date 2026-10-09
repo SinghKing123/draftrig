@@ -86,10 +86,10 @@ function WireMesh({
   const setHovered = useDoc((s) => s.setHovered)
   const matRef = useRef<THREE.ShaderMaterial>(null)
 
-  const geometry = useMemo(() => {
+  const { geometry, pick } = useMemo(() => {
     const a = index.get(conn.a.instanceId, conn.a.portId)
     const b = index.get(conn.b.instanceId, conn.b.portId)
-    if (!a || !b) return null
+    if (!a || !b) return { geometry: null, pick: null }
     const curve = wireCurve(
       a,
       b,
@@ -99,7 +99,19 @@ function WireMesh({
       [conn.a.instanceId, conn.b.instanceId],
     )
     const radius = Math.sqrt((conn.gauge ?? 0.2) / Math.PI) + 0.55
-    return new THREE.TubeGeometry(curve, 44, radius, 8, false)
+    /*
+     * A second, fatter tube that is never drawn.
+     *
+     * A wire is about 1.6 mm across, which is right for a wire and far too
+     * small to hit with a pointer — on a laptop trackpad it is close to
+     * impossible. This one is wide enough to aim at and carries the pointer
+     * handlers; the thin one stays the thing you see, so wire clearance and
+     * every photograph are unchanged.
+     */
+    return {
+      geometry: new THREE.TubeGeometry(curve, 44, radius, 8, false),
+      pick: new THREE.TubeGeometry(curve, 24, Math.max(1.9, radius * 2.2), 6, false),
+    }
   }, [index, conn, obstacles])
 
   const uniforms = useMemo(
@@ -121,19 +133,10 @@ function WireMesh({
     mat.uniforms.uActive.value = sim.running ? 1 : 0
   })
 
-  if (!geometry) return null
+  if (!geometry || !pick) return null
 
   return (
-    <mesh
-      geometry={geometry}
-      castShadow
-      onPointerOver={(e) => {
-        e.stopPropagation()
-        setHovered(conn.id)
-      }}
-      onPointerOut={() => setHovered(null)}
-      userData={{ connectionId: conn.id }}
-    >
+    <mesh geometry={geometry} castShadow userData={{ connectionId: conn.id }}>
       <shaderMaterial
         ref={matRef}
         vertexShader={wireVertex}
@@ -146,6 +149,18 @@ function WireMesh({
           <meshBasicMaterial color="#4C8DFF" transparent opacity={0.28} depthWrite={false} />
         </mesh>
       )}
+      {/* What the pointer actually hits. Writes neither colour nor depth. */}
+      <mesh
+        geometry={pick}
+        onPointerOver={(e) => {
+          e.stopPropagation()
+          setHovered(conn.id)
+        }}
+        onPointerOut={() => setHovered(null)}
+        userData={{ connectionId: conn.id }}
+      >
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} colorWrite={false} />
+      </mesh>
     </mesh>
   )
 }

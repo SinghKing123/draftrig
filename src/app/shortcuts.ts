@@ -53,14 +53,9 @@ export function useShortcuts(): void {
           doc.setPendingWire(null)
           doc.clearSelection()
           break
-        case 'g':
-        case 'G':
-          doc.setTransformMode('move')
-          break
-        case 'r':
-        case 'R':
-          doc.setTransformMode('rotate')
-          break
+        /* G and R are the modal transform, handled in the viewport where the
+           camera and the pointer are. They used to switch which gizmo was
+           showing, which still left a handle to hit. */
         case '1':
           doc.setMode('build')
           break

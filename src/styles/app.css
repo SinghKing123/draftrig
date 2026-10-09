@@ -1928,3 +1928,50 @@ kbd {
   .sting-mark,
   .sting-word { animation: none; opacity: 1; stroke-dashoffset: 0; }
 }
+
+/* ==================================================================
+   The modal transform readout
+   ------------------------------------------------------------------
+   Shown only while G or R is running. Centred above the status bar
+   where the eye already is, because the part being moved is what is
+   being watched and this has to be read without looking away.
+   ================================================================== */
+
+.modal-readout {
+  position: absolute;
+  left: 50%;
+  bottom: 58px;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  transform: translateX(-50%);
+  border-radius: var(--r-sm, 8px);
+  background: var(--bg-2, #16181d);
+  border: 1px solid var(--ln-1, #272b33);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  font-size: var(--fs-sm, 12px);
+  color: var(--tx-1, #e6e8ec);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.modal-readout b { font-weight: 600; }
+
+/* The axis takes the colour it has on the gizmo and the axis marker, so
+   "locked to X" is the same red in all three places. */
+.modal-readout .mr-axis {
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+  color: #fff;
+}
+.modal-readout .mr-axis[data-axis='x'] { background: #FF6B6B; }
+.modal-readout .mr-axis[data-axis='y'] { background: #3DD68C; }
+.modal-readout .mr-axis[data-axis='z'] { background: #4C8DFF; }
+
+.modal-readout .mr-val {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+.modal-readout .mr-keys { color: var(--tx-3, #7d838f); }

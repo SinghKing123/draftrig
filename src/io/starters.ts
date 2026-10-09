@@ -2,7 +2,21 @@ import type { Doc } from '@/state/doc'
 import { emptyDoc } from '@/state/doc'
 import type { Instance, Params, Vec3 } from '@/parts/kernel/types'
 import { defaultParams, requirePart } from '@/parts/kernel/registry'
-import { benchClock, controlPanel, eightBit, espWeather, ledMatrix, logicBench, rfidLock, scoreboard, soundBench } from './builds'
+import {
+  benchClock,
+  cncRouter,
+  controlPanel,
+  eightBit,
+  espWeather,
+  ledMatrix,
+  logicBench,
+  rfidLock,
+  rover,
+  scoreboard,
+  servoArm,
+  soundBench,
+  thrustRig,
+} from './builds'
 import { lab10Buzzer, lab9Blinker } from './labs'
 
 /**
@@ -298,14 +312,18 @@ export interface Starter {
  * photograph worst, and leading with them made the whole set look like the
  * back room of a hardware shop.
  *
- * Circuits only, for now.
+ * Machines as well as circuits.
  *
- * The router, the rover, the thrust rig, the servo arm, the motor bench and
- * the bare frame are all still in builds.ts and all still open; they are not
- * offered here because every one of them is really a demonstration of a
- * motor, and motion is not simulated yet. A starter is a promise about what
- * the editor does, and these were promising the one thing it does not. Put
- * them back when the motors turn.
+ * These were held back for a while on the grounds that each is really a
+ * demonstration of a motor and motion is not simulated. That was the wrong
+ * call about what they are for: the editor lays out structure — extrusion,
+ * rails, bearings, panels, fasteners — and a gantry is a layout problem
+ * whether or not its axes move. Withholding them left the catalog looking
+ * like it did circuits and nothing else.
+ *
+ * What is still true is that nothing here turns, so the blurbs say frame,
+ * deck and assembly rather than anything about running. A starter is a
+ * promise about what the editor does.
  */
 export const STARTERS: Starter[] = [
   {
@@ -393,5 +411,9 @@ export const STARTERS: Starter[] = [
     tags: ["clock","rtc","perfboard","sensor","buttons","alarm","project","finished"],
     build: benchClock,
   },
+  { id: 'cnc-router', title: 'CNC router frame', blurb: 'Extrusion gantry, linear rails and leadscrews, laid out to size', kind: 'build', tags: ["cnc","router","gantry","extrusion","rail","leadscrew","stepper","frame","machine","2020"], build: cncRouter },
+  { id: 'rover', title: 'Four-wheel rover', blurb: 'Deck, gearmotors, wheels and the electronics riding on top', kind: 'build', tags: ["rover","robot","wheels","chassis","motor","deck","drive","four wheel"], build: rover },
+  { id: 'thrust-rig', title: 'Thrust test rig', blurb: 'A motor on a load cell, braced against a plywood deck', kind: 'build', tags: ["thrust","rig","test","load cell","brushless","motor","esc","bench","measurement"], build: thrustRig },
+  { id: 'servo-arm', title: 'Servo arm', blurb: 'Two jointed links, brackets and horns, on a weighted base', kind: 'build', tags: ["servo","arm","joint","linkage","bracket","horn","robot","mechanism"], build: servoArm },
   { id: 'panel', title: 'Control panel', blurb: 'Everything a hand touches, on one aluminium face', kind: 'build', tags: ["panel","enclosure","switches","aluminium","front","controls","knobs"], build: controlPanel },
 ]

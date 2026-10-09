@@ -16,6 +16,7 @@ import { installPointerTracker, wasClick } from './pointer'
 import { registerCanvas } from './capture'
 import { SnapSession, type SnapHit } from './snap'
 import { SnapIndicator, snapStore } from './SnapIndicator'
+import { ModalTransform } from './ModalTransform'
 import { SelectionCage } from './SelectionOutline'
 import { DiagnosticsProbe } from './DiagnosticsProbe'
 import { countGlErrors } from './diagnostics'
@@ -312,6 +313,8 @@ function SceneContents() {
     countGlErrors(gl.getContext())
   }, [gl, scene])
   const drag = useRef<DragState | null>(null)
+  /** Set when a press lands on one of several selected parts; see below. */
+  const collapseTo = useRef<string | null>(null)
 
   // Steps the render quality down if this machine cannot hold a usable frame
   // rate. Only ever downward, and only after a warm-up.
@@ -357,14 +360,22 @@ function SceneContents() {
         toggleSelect(id)
         ids = selectionSet.has(id) ? selection.filter((x) => x !== id) : [...selection, id]
       } else if (selectionSet.has(id)) {
-        // Grabbing one of several selected parts drags the whole set.
+        /*
+         * Grabbing one of several selected parts drags the whole set — but
+         * only if it turns into a drag. A plain click on one of them means
+         * "just this one", and without that the selection never got smaller:
+         * you would select three things, click one, drag it, and watch all
+         * three move. The release below collapses it.
+         */
         ids = selection
+        collapseTo.current = selection.length > 1 ? id : null
       } else {
         select([id])
         ids = [id]
       }
 
       if (mode !== 'build' || e.button !== 0) return
+      if (!(e.shiftKey || e.ctrlKey) && !selectionSet.has(id)) collapseTo.current = null
       /*
        * Take the gesture away from the orbit controls immediately, not once it
        * turns into a drag. They have no click threshold of their own, so a
@@ -405,6 +416,11 @@ function SceneContents() {
       setGrabbing(false)
       setMoving(false)
       endDrag(d, controls.current)
+      // A press on one of several selected parts that never became a drag
+      // meant that part, not the set. Read off the store, because this
+      // listener is bound once and would otherwise close over a stale one.
+      if (!d.live && collapseTo.current) useDoc.getState().select([collapseTo.current])
+      collapseTo.current = null
       // Let the click-versus-drag guard settle before deselection is live
       // again, or the release that ends a drag also clears the selection.
       if (d.live) requestAnimationFrame(() => { dragging.active = false })
@@ -460,6 +476,7 @@ function SceneContents() {
       <SelectionCage />
       <SelectionTransform controls={controls} suppressed={moving} />
       <SnapIndicator />
+      <ModalTransform />
       <CameraRig controls={controls} />
 
       <OrbitControls

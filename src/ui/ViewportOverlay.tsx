@@ -7,6 +7,7 @@ import { hasSeenTour } from './Tour'
 import { useDoc, WIRE_COLORS } from '@/state/doc'
 import { useSim } from '@/state/sim'
 import { usePortHover } from '@/scene/portHover'
+import { useModalHud } from '@/scene/ModalTransform'
 import { useDiagnostics } from '@/scene/diagnostics'
 import { getPart } from '@/parts/kernel/registry'
 
@@ -178,6 +179,28 @@ function DiagnosticsPanel() {
   )
 }
 
+/**
+ * What the modal transform is doing, while it does it.
+ *
+ * Without this the operator is invisible: the part moves and nothing says
+ * which axis it is locked to or what was typed. It also carries the keys,
+ * because an operator nobody can see is an operator nobody finds.
+ */
+function ModalReadout() {
+  const hud = useModalHud((h) => h.hud)
+  if (!hud) return null
+  const unit = hud.kind === 'move' ? 'mm' : '°'
+  const shown = hud.typed !== '' ? hud.typed : hud.value.toFixed(hud.kind === 'move' ? 2 : 1)
+  return (
+    <div className="modal-readout" role="status">
+      <b>{hud.kind === 'move' ? 'Move' : 'Rotate'}</b>
+      {hud.axis && <span className="mr-axis" data-axis={hud.axis}>{hud.axis.toUpperCase()}</span>}
+      <span className="mr-val">{shown} {unit}</span>
+      <span className="mr-keys">X Y Z axis · type a number · Enter confirm · Esc cancel</span>
+    </div>
+  )
+}
+
 export function ViewportOverlay({
   onReplayTour,
   onExamples,
@@ -233,6 +256,7 @@ export function ViewportOverlay({
   return (
     <>
       {mode === 'wire' && <WirePalette />}
+      <ModalReadout />
       <div className="vp-toolbar">
         <button
           className="btn ghost icon"
