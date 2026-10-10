@@ -20,13 +20,22 @@ import { Link } from 'react-router-dom'
  * paid by every visitor whether they ever see this or not.
  */
 
+/*
+ * Half of these are not circuits.
+ *
+ * Six boards in a grid says the editor does boards. It lays out structure
+ * too — extrusion, rails, bearings, panels, fasteners — and a wall that
+ * never showed any of it was describing a narrower tool than the one
+ * underneath. A router frame, a rover and a servo linkage sit alongside the
+ * dense board, the sensor node and the finished instrument.
+ */
 const TILES = [
+  { id: 'grid-cnc-router', name: 'CNC router frame', note: '2020 extrusion, rails, leadscrews' },
+  { id: 'grid-rover', name: 'Four-wheel rover', note: 'Acrylic deck, gearmotors, wheels' },
+  { id: 'grid-servo-arm', name: 'Servo arm', note: 'Three joints, brackets and horns' },
   { id: 'grid-eight-bit', name: 'Eight-bit machine', note: '83 parts, 238 wires' },
   { id: 'grid-esp-weather', name: 'Sensor node', note: 'ESP32, gas and humidity' },
   { id: 'grid-bench-clock', name: 'Bench clock', note: '16x2 LCD, decoded' },
-  { id: 'grid-rfid-lock', name: 'Keypad lock', note: 'Matrix keypad and relay' },
-  { id: 'grid-scoreboard', name: 'Scoreboard', note: 'Seven-segment, driven' },
-  { id: 'grid-matrix', name: 'LED matrix', note: '30 LEDs on a chase' },
 ]
 
 /** Taken from the sketches the boards in these clips are running. */

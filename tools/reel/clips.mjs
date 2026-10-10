@@ -159,7 +159,17 @@ export const CLIP_BUILDS = {
   async setup(page) {
     await stage('eight-bit', [0, 10, 0], 10, 32, 470)(page)
     await page.evaluate((vias) => {
+      /*
+       * The editor plays this animation itself on every open, so by the time
+       * a shot is set up there is already a `.sting` in the page — hidden,
+       * but still in the document. Removing "the" sting by class therefore
+       * took React's and left this one on screen for the whole take: every
+       * frame of a two-minute recording came out as the same frozen logo.
+       * This one gets an id, and the app's is cleared out first.
+       */
+      document.querySelectorAll('.sting').forEach((n) => n.remove())
       const sting = document.createElement('div')
+      sting.id = 'shot-sting'
       sting.className = 'sting'
       sting.innerHTML = `
         <div class="sting-art">
@@ -213,7 +223,7 @@ export const CLIP_BUILDS = {
       // Release the sting setup raised, let it run, then take it away.
       const hold = document.getElementById('sting-hold')
       const fast = document.getElementById('sting-speed')
-      const sting = document.querySelector('.sting')
+      const sting = document.getElementById('shot-sting')
       hold.remove()
       await new Promise((r) => setTimeout(r, 1020))
       sting.setAttribute('data-gone', 'true')
@@ -253,9 +263,12 @@ export const CLIP_BUILDS = {
       }
 
       /*
-       * Circuits, and no machines. The rover and the router were two of these
-       * until motion turned out to be the one thing the simulator does not
-       * do; a clip is an advert, and those two were advertising it.
+       * Two machines and two circuits. The router and the rover were pulled
+       * from here once, on the grounds that each is really a demonstration
+       * of a motor and motion is not simulated. What they actually show is
+       * layout — extrusion, rails, a deck, wheels on their axles — and
+       * leaving them out made the clip argue that the editor only does
+       * boards.
        *
        * The first beat runs five times as long as the others, and gets about
        * the same share of the clip for it. Frames are kept as they are drawn
@@ -266,8 +279,8 @@ export const CLIP_BUILDS = {
        * frames, not screen time.
        */
       await beat('eight-bit', [0, 10, 0], [10, 32, 470], [44, 46, 365], 14000)
-      await beat('matrix', [0, 10, -20], [-24, 38, 272], [18, 58, 205])
-      await beat('rfid-lock', [0, 10, 0], [46, 40, 344], [8, 54, 268])
+      await beat('cnc-router', [0, 160, 0], [8, 50, 1340], [40, 44, 1120], 9000)
+      await beat('rover', [0, 26, 0], [-30, 60, 400], [16, 68, 320])
       await beat('esp-weather', [0, 8, 0], [-10, 36, 242], [30, 52, 180])
     })
   },

@@ -9,11 +9,10 @@ import { BUILDUP } from './buildup.mjs'
  * through each take — enough that the tile is alive, not so much that six of
  * them moving at once is seasick.
  *
- * These are deliberately not the four on the front page. Those are one
- * circuit each, shown close. These are picked for range: a machine across
- * four breadboards, a sensor node, a clock, a lock with a keypad, a
- * scoreboard, a matrix. Different boards, different colours, different
- * shapes, so the wall reads as a catalog rather than a set.
+ * Picked for range, and half of them are not circuits at all: a router
+ * frame in extrusion, a four-wheel rover, a servo linkage, a machine across
+ * four breadboards, a sensor node and a finished clock. A wall of six boards
+ * says the editor does boards; this says what it actually does.
  *
  *   npm run dev
  *   BASE=http://localhost:5173 node tools/reel/run.mjs record grid-
@@ -51,43 +50,52 @@ const base = {
  * four times the room a weather station does — and the camera starts a
  * little off the final angle so the drift has somewhere to go.
  */
-const tile = (id, starter, target, dist, az) => ({
+const tile = (id, starter, target, dist, az, polar = 46) => ({
   ...base,
   id: `grid-${id}`,
-  camera: [az, 46, dist],
+  camera: [az, polar, dist],
   async setup(page) {
     await page.addScriptTag({ content: BUILDUP })
     await page.evaluate(
-      ([s, t, a, d]) => {
+      ([s, t, a, d, p]) => {
         window.__buildup.stage(s)
         const c = window.draftrig.camera.controls
         c.target.set(t[0], t[1], t[2])
         c.update()
-        return window.__rig.fly(a, 46, d, 1)
+        return window.__rig.fly(a, p, d, 1)
       },
-      [starter, target, az, dist],
+      [starter, target, az, dist, polar],
     )
   },
   async perform(page) {
     await page.evaluate(
-      async ([a, d]) => {
+      async ([a, d, polarEnd]) => {
         const rig = window.__rig
         await Promise.all([
           window.__buildup.play(34, 70),
-          rig.fly(a + 26, 40, d * 0.88, 9000),
+          rig.fly(a + 26, polarEnd, d * 0.9, 9000),
         ])
         await rig.drift(4, 1500)
       },
-      [az, dist],
+      [az, dist, Math.max(28, polar - 6)],
     )
   },
 })
 
 export const GRID_SHOTS = [
+  // Machines.
+  /* Distances are the frame's own size, not a guess: visible height is
+     2·d·tan(fov/2), and at 36° that is 0.65·d. The router is 520 wide and
+     420 tall, so 880 showed a corner of it. */
+  tile('cnc-router', 'cnc-router', [0, 160, 0], 1280, 24, 54),
+  tile('rover', 'rover', [0, 26, 0], 360, -18, 64),
+  tile('servo-arm', 'servo-arm', [0, 26, 0], 520, 34, 54),
+  // Circuits.
   tile('eight-bit', 'eight-bit', [0, 10, 0], 300, 16),
-  tile('matrix', 'matrix', [0, 10, -20], 190, -20),
   tile('esp-weather', 'esp-weather', [0, 8, 0], 165, 28),
   tile('bench-clock', 'bench-clock', [0, 8, 0], 175, -12),
+  // Kept for the catalog page even though the wall shows six.
+  tile('matrix', 'matrix', [0, 10, -20], 190, -20),
   tile('rfid-lock', 'rfid-lock', [0, 10, 0], 235, 40),
   tile('scoreboard', 'scoreboard', [-6, 10, -10], 195, 8),
 ]

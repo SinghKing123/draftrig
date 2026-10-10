@@ -92,9 +92,13 @@ export function motion(dir, frames, run) {
  * frames rather than vanishing, so a deliberate beat still reads as one
  * instead of becoming a jump cut.
  *
- * A shot that is nearly all still is handed back untouched: that is a shot
- * with a problem of its own, and returning four frames from it would hide
- * the problem rather than fix it.
+ * A shot that loses most of itself is handed back untouched. The threshold
+ * is a fraction of the shot's own median, which assumes the median frame is
+ * moving — true of a camera circling a board, false of one creeping around a
+ * half-metre machine from a metre and a half away, where a real frame moves
+ * less than a grey level at the size this samples. That shot came back as
+ * twelve frames of eleven hundred and a three-kilobyte clip. Losing more
+ * than two thirds means the measurement was wrong, not the footage.
  */
 export function trimStill(frames, diff) {
   const sorted = [...diff].slice(1).sort((a, b) => a - b)
@@ -117,5 +121,5 @@ export function trimStill(frames, diff) {
     }
     out.push(frames[i])
   }
-  return out.length > 8 ? out : frames
+  return out.length > 8 && out.length > frames.length * 0.33 ? out : frames
 }
