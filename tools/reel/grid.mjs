@@ -83,6 +83,10 @@ const tile = (id, starter, target, dist, az, polar = 46) => ({
 })
 
 export const GRID_SHOTS = [
+  // Assemblies: no circuit in them at all.
+  tile('pi-case', 'pi-case', [0, 14, -14], 320, 30, 50),
+  tile('workbench', 'workbench', [0, 380, 0], 2400, 26, 58),
+  tile('drawer-unit', 'drawer-unit', [0, 260, 0], 1500, 206, 54),
   // Machines.
   /* Distances are the frame's own size, not a guess: visible height is
      2·d·tan(fov/2), and at 36° that is 0.65·d. The router is 520 wide and

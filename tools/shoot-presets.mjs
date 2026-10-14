@@ -71,6 +71,11 @@ const SETTLE = {
 }
 
 const SHOTS = [
+  // The assemblies. Visible height is 0.65·d at this fov, so each distance
+  // is read off the build rather than guessed at.
+  ['pi-case', 0.34, 34, 46],
+  ['workbench', 0.52, 26, 56],
+  ['drawer-unit', 0.62, 206, 54],
   // The machine, from high enough that all four boards are in one frame.
   ['eight-bit', 0.58, 24, 38],
   // High, down onto the grid: thirty lit LEDs read as a grid from here.

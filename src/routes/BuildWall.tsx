@@ -21,15 +21,21 @@ import { Link } from 'react-router-dom'
  */
 
 /*
- * Half of these are not circuits.
+ * Three rows, and only the last is circuits.
  *
- * Six boards in a grid says the editor does boards. It lays out structure
- * too — extrusion, rails, bearings, panels, fasteners — and a wall that
- * never showed any of it was describing a narrower tool than the one
- * underneath. A router frame, a rover and a servo linkage sit alongside the
- * dense board, the sensor node and the finished instrument.
+ * A grid of boards says the editor does boards. It lays out enclosures and
+ * furniture and machines too — panels, inserts, extrusion, casters, rails,
+ * bearings, fasteners — and a wall that showed none of it was describing a
+ * narrower tool than the one underneath.
+ *
+ * So: a case with a computer bolted into it, a bench, and a cabinet; then a
+ * router frame, a rover and a servo linkage; then the dense board, the
+ * sensor node and the finished instrument.
  */
 const TILES = [
+  { id: 'grid-pi-case', name: 'Pi enclosure', note: 'Panels, standoffs, heat-set inserts' },
+  { id: 'grid-workbench', name: 'Workbench', note: 'Extrusion, casters, DIN rail' },
+  { id: 'grid-drawer-unit', name: 'Drawer unit', note: 'Plywood carcass, three fronts' },
   { id: 'grid-cnc-router', name: 'CNC router frame', note: '2020 extrusion, rails, leadscrews' },
   { id: 'grid-rover', name: 'Four-wheel rover', note: 'Acrylic deck, gearmotors, wheels' },
   { id: 'grid-servo-arm', name: 'Servo arm', note: 'Three joints, brackets and horns' },

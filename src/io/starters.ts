@@ -2,6 +2,7 @@ import type { Doc } from '@/state/doc'
 import { emptyDoc } from '@/state/doc'
 import type { Instance, Params, Vec3 } from '@/parts/kernel/types'
 import { defaultParams, requirePart } from '@/parts/kernel/registry'
+import { drawerUnit, piCase, workbench } from './assemblies'
 import {
   benchClock,
   cncRouter,
@@ -411,6 +412,9 @@ export const STARTERS: Starter[] = [
     tags: ["clock","rtc","perfboard","sensor","buttons","alarm","project","finished"],
     build: benchClock,
   },
+  { id: 'pi-case', title: 'Pi enclosure', blurb: 'A single-board computer bolted into a case, inserts and all', kind: 'build', tags: ["case","enclosure","raspberry pi","sbc","standoff","insert","panel","box","3d print"], build: piCase },
+  { id: 'workbench', title: 'Workbench', blurb: 'Extrusion frame on casters, worktop, and a rail of terminals', kind: 'build', tags: ["bench","desk","workbench","extrusion","caster","worktop","din rail","terminal","shop","space"], build: workbench },
+  { id: 'drawer-unit', title: 'Drawer unit', blurb: 'Three drawers in a plywood carcass, drawn closed', kind: 'build', tags: ["drawer","cabinet","storage","slide","plywood","carcass","knob","furniture"], build: drawerUnit },
   { id: 'cnc-router', title: 'CNC router frame', blurb: 'Extrusion gantry, linear rails and leadscrews, laid out to size', kind: 'build', tags: ["cnc","router","gantry","extrusion","rail","leadscrew","stepper","frame","machine","2020"], build: cncRouter },
   { id: 'rover', title: 'Four-wheel rover', blurb: 'Deck, gearmotors, wheels and the electronics riding on top', kind: 'build', tags: ["rover","robot","wheels","chassis","motor","deck","drive","four wheel"], build: rover },
   { id: 'thrust-rig', title: 'Thrust test rig', blurb: 'A motor on a load cell, braced against a plywood deck', kind: 'build', tags: ["thrust","rig","test","load cell","brushless","motor","esc","bench","measurement"], build: thrustRig },

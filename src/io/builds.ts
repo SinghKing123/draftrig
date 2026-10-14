@@ -19,7 +19,8 @@ import { espGroundId, espRailIds } from '@/parts/catalog/esp'
  * bottom of the post and needs half a profile of offset in X.
  */
 
-class Builder {
+/* Exported so assemblies.ts can build with the same conventions. */
+export class Builder {
   readonly doc: Doc = emptyDoc()
   private n = 0
 
