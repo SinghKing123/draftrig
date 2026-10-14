@@ -21,27 +21,27 @@ import { Link } from 'react-router-dom'
  */
 
 /*
- * Three rows, and only the last is circuits.
+ * Shuffled, so every row is a machine, a circuit and something built.
  *
- * A grid of boards says the editor does boards. It lays out enclosures and
- * furniture and machines too — panels, inserts, extrusion, casters, rails,
- * bearings, fasteners — and a wall that showed none of it was describing a
- * narrower tool than the one underneath.
+ * They were grouped by kind: assemblies along the top, machines in the
+ * middle, boards at the bottom. Read that way the wall is three claims in
+ * sequence, and the last row is still "and it does circuits" — which is the
+ * impression the whole section exists to correct.
  *
- * So: a case with a computer bolted into it, a bench, and a cabinet; then a
- * router frame, a rover and a servo linkage; then the dense board, the
- * sensor node and the finished instrument.
+ * Interleaved, no two neighbours are the same kind and no row can be read
+ * as a category. A router frame next to an eight-bit machine next to a case
+ * with a computer in it says one thing: all of this is the same editor.
  */
 const TILES = [
-  { id: 'grid-pi-case', name: 'Pi enclosure', note: 'Panels, standoffs, heat-set inserts' },
-  { id: 'grid-workbench', name: 'Workbench', note: 'Extrusion, casters, DIN rail' },
-  { id: 'grid-drawer-unit', name: 'Drawer unit', note: 'Plywood carcass, three fronts' },
   { id: 'grid-cnc-router', name: 'CNC router frame', note: '2020 extrusion, rails, leadscrews' },
-  { id: 'grid-rover', name: 'Four-wheel rover', note: 'Acrylic deck, gearmotors, wheels' },
-  { id: 'grid-servo-arm', name: 'Servo arm', note: 'Three joints, brackets and horns' },
   { id: 'grid-eight-bit', name: 'Eight-bit machine', note: '83 parts, 238 wires' },
+  { id: 'grid-pi-case', name: 'Pi enclosure', note: 'Panels, standoffs, heat-set inserts' },
   { id: 'grid-esp-weather', name: 'Sensor node', note: 'ESP32, gas and humidity' },
+  { id: 'grid-workbench', name: 'Workbench', note: 'Extrusion, casters, DIN rail' },
+  { id: 'grid-rover', name: 'Four-wheel rover', note: 'Acrylic deck, gearmotors, wheels' },
+  { id: 'grid-drawer-unit', name: 'Drawer unit', note: 'Plywood carcass, three fronts' },
   { id: 'grid-bench-clock', name: 'Bench clock', note: '16x2 LCD, decoded' },
+  { id: 'grid-servo-arm', name: 'Servo arm', note: 'Three joints, brackets and horns' },
 ]
 
 /** Taken from the sketches the boards in these clips are running. */
