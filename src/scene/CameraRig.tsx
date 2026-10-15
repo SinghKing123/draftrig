@@ -55,9 +55,21 @@ export function CameraRig({ controls }: { controls: React.MutableRefObject<Orbit
 
   const anim = useRef<{ from: THREE.Vector3; to: THREE.Vector3; fromT: THREE.Vector3; toT: THREE.Vector3; t: number } | null>(null)
 
+  /*
+   * What is selected, read but not depended on.
+   *
+   * Listing the selection as a dependency meant the camera reframed every
+   * time it changed, so once you had pressed F the view jumped on every
+   * click — select a resistor and the bench swung to it. Framing happens
+   * when it is asked for, which is what the token is.
+   */
+  const selRef = useRef(selection)
+  selRef.current = selection
+
   useEffect(() => {
     if (token === 0) return
-    const only = target === 'selection' && selection.length ? new Set(selection) : undefined
+    const sel = selRef.current
+    const only = target === 'selection' && sel.length ? new Set(sel) : undefined
     let box = documentBounds(only)
     if (box.isEmpty()) box = new THREE.Box3(new THREE.Vector3(-60, 0, -60), new THREE.Vector3(60, 60, 60))
 
@@ -85,7 +97,7 @@ export function CameraRig({ controls }: { controls: React.MutableRefObject<Orbit
     persp.near = Math.max(dist / 4000, 0.5)
     persp.far = dist * 12
     persp.updateProjectionMatrix()
-  }, [token, target, selection, camera, size, controls])
+  }, [token, target, camera, size, controls])
 
   /*
    * Standard views.
