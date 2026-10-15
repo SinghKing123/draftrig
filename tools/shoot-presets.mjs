@@ -71,6 +71,7 @@ const SETTLE = {
 }
 
 const SHOTS = [
+  ['arcade', 0.62, 198, 62],
   // The assemblies. Visible height is 0.65·d at this fov, so each distance
   // is read off the build rather than guessed at.
   ['pi-case', 0.34, 34, 46],

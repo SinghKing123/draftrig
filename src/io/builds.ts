@@ -57,6 +57,21 @@ export class Builder {
     this.doc.connectionOrder.push(id)
   }
 
+  /**
+   * A wire told where to go.
+   *
+   * The router takes the shortest clear path, which is right nearly always
+   * and wrong when the clear path is round the back of something: the
+   * cabinet's twelve-volt pair could not reach the panel's socket without
+   * detouring, and the detour went through the back panel. A waypoint says
+   * which side to pass, the way a hand-dressed loom does.
+   */
+  wireVia(a: [string, string], b: [string, string], via: Vec3[], color = '#E34B4B', gauge = 0.205): void {
+    this.wire(a, b, color, gauge)
+    const id = this.doc.connectionOrder[this.doc.connectionOrder.length - 1]
+    this.doc.connections[id].waypoints = via
+  }
+
   /** A beam lying along X, centred on `x`. */
   beamX(x: number, y: number, z: number, len: number, size = '2020', finish = 'alu-anod-black'): string {
     return this.add('extrusion-tslot', [x, y, z], { size, length: len, finish })
@@ -1160,6 +1175,150 @@ export function eightBit(): Doc {
     b.wire([res, '2'], [seg, s], LAMPC[i], 0.14)
   }
   b.wire([seg, 'd1'], [boards[3], 'neg-far-44'], BLACK, 0.14)
+
+  return b.doc
+}
+
+
+/* ================================================================== */
+/* Bartop arcade cabinet                                               */
+/* ================================================================== */
+
+/**
+ * A bartop cabinet: plywood, a panel, a stick and a computer.
+ *
+ * The build people actually make, and the one that shows what this editor
+ * is for. Cut six pieces of ply, stand them up, drop a monitor in the head,
+ * put a stick and six buttons in the deck, bolt a Pi behind it and run HDMI
+ * and power. None of those steps is a circuit, and the thing does not exist
+ * without all of them.
+ *
+ * The control panel is wired the way one is: every button and every stick
+ * direction is a momentary contact to one common return, daisy-chained from
+ * switch to switch rather than run back to a hub, because that is how a loom
+ * is made and it is half the wires.
+ *
+ * Bartop rather than full height. An upright is mostly empty air and nearly
+ * two metres of it, which photographs as a dark slab; a bartop is the same
+ * construction at a size that fits in a frame.
+ */
+export function arcadeCabinet(): Doc {
+  const b = new Builder('Bartop arcade cabinet')
+
+  const W = 420        // outside width
+  const D = 360        // depth
+  const H = 540        // height to the top of the head
+  const T = 15         // ply thickness
+  const DECK = 210     // height of the control deck
+  const PLY = { material: 'plywood', thickness: T } as const
+
+  /* ---- the carcass: six pieces of ply ---- */
+
+  b.add('panel-sheet', [0, 0, 0], { ...PLY, width: W - T * 2, depth: D }, [0, 0, 0], 'Base')
+  for (const sx of [-1, 1] as const) {
+    b.add(
+      'panel-sheet',
+      [sx * (W / 2 - T / 2), H / 2, 0],
+      { ...PLY, width: H, depth: D, corner: 10 },
+      [0, 0, 90],
+      sx < 0 ? 'Left side' : 'Right side',
+    )
+  }
+  b.add('panel-sheet', [0, H / 2 + 40, D / 2 - T / 2], { ...PLY, width: W - T * 2, depth: H - 80 }, [90, 0, 0], 'Back')
+  // The deck the hands rest on, and the shelf under the screen.
+  /* The deck stops short of the back, which is where the loom goes down to
+     the board. A deck run full depth is one a wire can only reach the Pi
+     through, and the clearance check reads that for what it is. */
+  b.add('panel-sheet', [0, DECK, -D / 2 + 105], { ...PLY, width: W - T * 2, depth: 150, corner: 6 }, [0, 0, 0], 'Control deck')
+  b.add('panel-sheet', [0, H, 0], { ...PLY, width: W - T * 2, depth: D, corner: 6 }, [0, 0, 0], 'Top')
+
+  /* ---- the head: monitor and marquee ---- */
+
+  /* Turned to face the player, who stands at -Z. Authored facing +Z, it was
+     showing its picture to the back panel. */
+  const mon = b.add('monitor-panel', [0, 395, -24], { diagonal: '15', bezel: 14, on: true }, [0, 180, 0], 'Monitor')
+  b.add(
+    'panel-sheet',
+    [0, 505, -D / 2 + 30],
+    { material: 'acrylic-clear', width: W - T * 2, depth: 70, thickness: 4 },
+    [78, 0, 0],
+    'Marquee',
+  )
+
+  /* ---- the control panel ---- */
+
+  const COMMON = '#1C1F24'
+  const stick = b.add('arcade-joystick', [-120, DECK + T, -D / 2 + 120], { ballColor: '#E8343C', gate: '8' }, [0, 0, 0], 'Joystick')
+
+  /* Six buttons in the usual two rows of three, the back row stepped up and
+     over the way a hand actually sits. */
+  const CAPS = ['#D93025', '#F2B01E', '#2E8B57', '#2F6FE0', '#8E44AD', '#E8743B']
+  const buttons = CAPS.map((cap, i) => {
+    const col = i % 3
+    const row = Math.floor(i / 3)
+    return b.add(
+      'arcade-button',
+      [20 + col * 46, DECK + T, -D / 2 + 96 + row * 46 - col * 6],
+      { capColor: cap, size: '30' },
+      [0, 0, 0],
+      `Button ${i + 1}`,
+    )
+  })
+
+  /* ---- the computer, its power and its picture ---- */
+
+  /*
+   * On the floor of the cabinet, on short standoffs.
+   *
+   * Hung under the control deck instead, its forty-millimetre standoffs sat
+   * exactly in the path the loom takes from the buttons, and the wires ran
+   * through them. Down here the standoffs are below everything by the time
+   * a wire arrives.
+   */
+  const pi = b.add('sbc-raspberry-pi', [-60, T + 10, -70], { model: 'pi5', ram: '8', cooler: true }, [0, 0, 0], 'Raspberry Pi 5')
+  for (const [x, z] of [[-99, -94.5], [-41, -94.5], [-99, -45.5], [-41, -45.5]] as const) {
+    b.add('standoff-hex', [x, T, z], { thread: 'M2.5', length: 10, ends: 'mf', material: 'brass' }, [0, 0, 0], 'Standoff')
+  }
+  b.add('cable-hdmi', [40, 70, 40], { length: 500 }, [0, 0, 0], 'HDMI to the panel')
+
+  /* Directly under the panel's input, with the panel far enough forward to
+     leave the column clear. Set back, the pair could not reach the socket
+     without going round the monitor, and round meant through the back. */
+  const psu = b.add('power-adapter', [16, T + 6, 18], { volts: '12', amps: 5, plug: 'uk' }, [0, 0, 0], '12 V supply')
+  /* Short, and behind. A real 1.8 m lead is a metre and a half of flex lying
+     across the bench, which is the largest thing in any picture of this. */
+  b.add('cable-power-cord', [185, T + 4, D / 2 + 70], { plug: 'uk', length: 600 }, [0, 90, 0], 'Mains lead')
+
+  // Sound, either side of the screen.
+  for (const sx of [-1, 1] as const) {
+    b.add('speaker-cone', [sx * 150, 470, -D / 2 + 70], { diameter: 57, impedance: '4' }, [90, 0, 0], 'Speaker')
+  }
+
+  /* ---- the loom ---- */
+
+  /*
+   * Every switch returns to the next one rather than to the board, so the
+   * common is a single chain that leaves the panel as one wire. Signals go
+   * to GPIO, one each.
+   */
+  const GPIO = ['gpio5', 'gpio6', 'gpio13', 'gpio19', 'gpio26', 'gpio21']
+  buttons.forEach((bt, i) => {
+    b.wire([bt, 'no'], [pi, GPIO[i]], CAPS[i], 0.14)
+    /* The long hop across to the stick, held down. The router bows a wire
+       upward by preference, and this one runs under the deck with twelve
+       millimetres of headroom. */
+    if (i === 0) b.wireVia([bt, 'com'], [stick, 'com'], [[-50, 176, -72]], COMMON, 0.14)
+    else b.wire([bt, 'com'], [buttons[i - 1], 'com'], COMMON, 0.14)
+  })
+  const DIRS = [['up', 'gpio17'], ['down', 'gpio27'], ['left', 'gpio22'], ['right', 'gpio23']] as const
+  for (const [dir, pin] of DIRS) b.wire([stick, dir], [pi, pin], '#D8DEE9', 0.14)
+  // Ground pins are named for their header position, not an index.
+  b.wire([stick, 'com'], [pi, 'gnd_39'], COMMON, 0.14)
+
+  // The panel takes its twelve volts from the brick.
+  /* Up the inside of the right-hand side, clear of the deck and the back. */
+  b.wireVia([psu, 'p'], [mon, 'v+'], [[130, 110, 34], [130, 300, 22], [50, 334, 14]], RED, 0.33)
+  b.wireVia([psu, 'n'], [mon, 'gnd'], [[146, 110, 34], [146, 300, 22], [44, 328, 14]], BLACK, 0.33)
 
   return b.doc
 }

@@ -32,9 +32,28 @@ const DOCS: { name: string; doc: Doc }[] = [
   { name: 'rover', doc: rover() },
 ]
 
-function obstaclesOf(doc: Doc): Obstacle[] {
+/**
+ * What each obstacle is called, by instance id.
+ *
+ * The failure said only "0.8mm in arcade", which for a build of two dozen
+ * parts and twenty wires is most of a morning's search. Naming the wire and
+ * the thing it is inside turns it into a one-line fix.
+ *
+ * Keyed by build as well as instance, because every Builder numbers its
+ * parts from b0: keyed by id alone, the last build loaded renamed everyone
+ * else's parts and the cabinet's panel was reported as a piece of
+ * extrusion from the router.
+ */
+const LABEL = new Map<string, string>()
+
+/** A position, short enough to read in a failure line. */
+const fmt = (v: THREE.Vector3): string =>
+  `${v.x.toFixed(0)},${v.y.toFixed(0)},${v.z.toFixed(0)}`
+
+function obstaclesOf(doc: Doc, build = ''): Obstacle[] {
   const out: Obstacle[] = []
   for (const inst of listInstances(doc)) {
+    LABEL.set(`${build}:${inst.id}`, `${inst.name} (${inst.defId})`)
     const def = getPart(inst.defId)
     if (!def) continue
     const built = buildPart(def, inst.params)
@@ -60,7 +79,7 @@ function everyWire(): Wire[] {
   const out: Wire[] = []
   for (const { name, doc } of DOCS) {
     const index = new PortIndex(listInstances(doc))
-    const obstacles = obstaclesOf(doc)
+    const obstacles = obstaclesOf(doc, name)
     for (const id of doc.connectionOrder) {
       const c = doc.connections[id]
       if (!c) continue
@@ -83,9 +102,14 @@ function everyWire(): Wire[] {
 /** Millimetres of a part's own box that a wire is allowed to graze. */
 const GRAZE = 1.2
 
-/** How deep the worst sample of this wire goes into something, in mm. */
+/** How deep the worst sample of this wire goes into something, and into what. */
 function worstIntrusion(w: Wire, curve: THREE.CatmullRomCurve3, samples = 64): number {
+  return worstHit(w, curve, samples).mm
+}
+
+function worstHit(w: Wire, curve: THREE.CatmullRomCurve3, samples = 64): { mm: number; into: string } {
   let worst = 0
+  let into = ''
   const p = new THREE.Vector3()
   for (const o of w.obstacles) {
     if (!avoidable(o, w.a.pos, w.b.pos, w.skip)) continue
@@ -100,10 +124,13 @@ function worstIntrusion(w: Wire, curve: THREE.CatmullRomCurve3, samples = 64): n
         p.y - box.min.y, box.max.y - p.y,
         p.z - box.min.z, box.max.z - p.z,
       )
-      worst = Math.max(worst, d)
+      if (d > worst) {
+        worst = d
+        into = LABEL.get(`${w.build}:${o.instanceId}`) ?? o.instanceId
+      }
     }
   }
-  return worst
+  return { mm: worst, into }
 }
 
 describe('wires and the things in their way', () => {
@@ -115,12 +142,14 @@ describe('wires and the things in their way', () => {
 
   it('does not run a wire through a part it is not attached to', () => {
     let through = 0
-    let deepest = { build: '', mm: 0 }
+    let deepest = { build: '', mm: 0, into: '', from: '' }
     const wires = everyWire()
     for (const w of wires) {
-      const d = worstIntrusion(w, wireCurve(w.a, w.b, w.waypoints, w.obstacles, w.skip))
-      if (d > 0) through++
-      if (d > deepest.mm) deepest = { build: w.build, mm: d }
+      const h = worstHit(w, wireCurve(w.a, w.b, w.waypoints, w.obstacles, w.skip))
+      if (h.mm > 0) through++
+      if (h.mm > deepest.mm) {
+        deepest = { build: w.build, mm: h.mm, into: h.into, from: `${fmt(w.a.pos)} -> ${fmt(w.b.pos)}` }
+      }
     }
     // What it was before the clearance pass, for comparison.
     let before = 0
@@ -131,7 +160,8 @@ describe('wires and the things in their way', () => {
       if (d > 0) perBuild.set(w.build, (perBuild.get(w.build) ?? 0) + 1)
     }
     console.log(`\n  through: ${before} before, ${through} after, of ${wires.length}`)
-    console.log(`  deepest: ${deepest.mm.toFixed(1)}mm in ${deepest.build}`)
+    console.log(`  deepest: ${deepest.mm.toFixed(2)}mm in ${deepest.build}, into ${deepest.into}`)
+    if (deepest.mm > 0.5) console.log(`           the wire runs ${deepest.from}`)
     console.log(`  by build: ${[...perBuild.entries()].map(([k, v]) => `${k}=${v}`).join(' ')}`)
     let withWaypoints = 0
     let vertical = 0

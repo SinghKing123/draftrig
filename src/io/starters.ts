@@ -4,6 +4,7 @@ import type { Instance, Params, Vec3 } from '@/parts/kernel/types'
 import { defaultParams, requirePart } from '@/parts/kernel/registry'
 import { drawerUnit, piCase, workbench } from './assemblies'
 import {
+  arcadeCabinet,
   benchClock,
   cncRouter,
   controlPanel,
@@ -412,6 +413,7 @@ export const STARTERS: Starter[] = [
     tags: ["clock","rtc","perfboard","sensor","buttons","alarm","project","finished"],
     build: benchClock,
   },
+  { id: 'arcade', title: 'Bartop arcade cabinet', blurb: 'Plywood carcass, 15-inch panel, stick and six buttons on a Pi', kind: 'build', tags: ["arcade","cabinet","bartop","joystick","buttons","raspberry pi","retro","monitor","plywood","hdmi","speakers"], build: arcadeCabinet },
   { id: 'pi-case', title: 'Pi enclosure', blurb: 'A single-board computer bolted into a case, inserts and all', kind: 'build', tags: ["case","enclosure","raspberry pi","sbc","standoff","insert","panel","box","3d print"], build: piCase },
   { id: 'workbench', title: 'Workbench', blurb: 'Extrusion frame on casters, worktop, and a rail of terminals', kind: 'build', tags: ["bench","desk","workbench","extrusion","caster","worktop","din rail","terminal","shop","space"], build: workbench },
   { id: 'drawer-unit', title: 'Drawer unit', blurb: 'Three drawers in a plywood carcass, drawn closed', kind: 'build', tags: ["drawer","cabinet","storage","slide","plywood","carcass","knob","furniture"], build: drawerUnit },
