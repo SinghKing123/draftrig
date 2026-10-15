@@ -83,6 +83,11 @@ const tile = (id, starter, target, dist, az, polar = 46) => ({
 })
 
 export const GRID_SHOTS = [
+  // Woodwork, a computer and a loom, which is most of what a project is.
+  /* Starts at 172 rather than 198 because the sweep adds 26 and then drifts:
+     from 198 it ended looking at the back of the cabinet, which for the one
+     build here with a screen on it is the wrong side. */
+  tile('arcade', 'arcade', [0, 250, 0], 1950, 172, 44),
   // Assemblies: no circuit in them at all.
   tile('pi-case', 'pi-case', [0, 14, -14], 320, 30, 50),
   tile('workbench', 'workbench', [0, 380, 0], 2400, 26, 58),

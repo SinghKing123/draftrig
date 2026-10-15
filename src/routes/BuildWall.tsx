@@ -33,14 +33,14 @@ import { Link } from 'react-router-dom'
  * with a computer in it says one thing: all of this is the same editor.
  */
 const TILES = [
-  { id: 'grid-cnc-router', name: 'CNC router frame', note: '2020 extrusion, rails, leadscrews' },
+  { id: 'grid-arcade', name: 'Bartop cabinet', note: '15mm ply, 15" panel, Pi 5, button loom' },
   { id: 'grid-eight-bit', name: 'Eight-bit machine', note: '83 parts, 238 wires' },
   { id: 'grid-pi-case', name: 'Pi enclosure', note: 'Panels, standoffs, heat-set inserts' },
   { id: 'grid-esp-weather', name: 'Sensor node', note: 'ESP32, gas and humidity' },
   { id: 'grid-workbench', name: 'Workbench', note: 'Extrusion, casters, DIN rail' },
   { id: 'grid-rover', name: 'Four-wheel rover', note: 'Acrylic deck, gearmotors, wheels' },
   { id: 'grid-drawer-unit', name: 'Drawer unit', note: 'Plywood carcass, three fronts' },
-  { id: 'grid-bench-clock', name: 'Bench clock', note: '16x2 LCD, decoded' },
+  { id: 'grid-cnc-router', name: 'CNC router frame', note: '2020 extrusion, rails, leadscrews' },
   { id: 'grid-servo-arm', name: 'Servo arm', note: 'Three joints, brackets and horns' },
 ]
 
