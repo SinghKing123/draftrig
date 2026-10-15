@@ -37,6 +37,16 @@ window.__buildup = (() => {
     return { ...full, order, instances, connectionOrder, connections }
   }
 
+  /*
+   * The document is written straight into the store, not through loadDoc.
+   *
+   * loadDoc bumps frameToken, and the camera rig re-frames the scene every
+   * time that changes — so a take with no camera move in it still had the
+   * build jumping size and position on every step as parts arrived. This
+   * sets the document and nothing else.
+   */
+  const put = (doc) => D.setState({ doc })
+
   return {
     /** Load the finished build, then clear the bench and remember it. */
     stage(starterId) {
@@ -57,25 +67,30 @@ window.__buildup = (() => {
     /**
      * Put it together. Parts across the first share of the steps, wiring
      * across the rest, weighted so neither phase is over before the camera
-     * has moved anywhere.
+     * has moved anywhere. Powers the finished thing up unless told not to.
      */
-    async play(steps, hold) {
+    async play(steps, hold, run = true) {
       const P = full.order.length
       const W = full.connectionOrder.length
       const partSteps = Math.max(1, Math.round(steps * (W ? 0.45 : 1)))
       const wireSteps = Math.max(0, steps - partSteps)
 
       for (let k = 1; k <= partSteps; k++) {
-        D.getState().loadDoc(upTo(Math.ceil((P * k) / partSteps), 0))
+        put(upTo(Math.ceil((P * k) / partSteps), 0))
         await new Promise((r) => setTimeout(r, hold))
       }
       for (let k = 1; k <= wireSteps; k++) {
-        D.getState().loadDoc(upTo(P, Math.ceil((W * k) / wireSteps)))
+        put(upTo(P, Math.ceil((W * k) / wireSteps)))
         await new Promise((r) => setTimeout(r, hold))
       }
       D.getState().select([])
-      window.draftrig.engine.reset()
-      window.draftrig.sim.getState().setRunning(true)
+      /* Powering up at the end unsettles the view for about a second, which
+         a drifting camera hides and a parked one does not. A take that is
+         only about the assembly ends on the assembly. */
+      if (run) {
+        window.draftrig.engine.reset()
+        window.draftrig.sim.getState().setRunning(true)
+      }
     },
   }
 })()
