@@ -31,17 +31,27 @@ import { Link } from 'react-router-dom'
  * Interleaved, no two neighbours are the same kind and no row can be read
  * as a category. A router frame next to an eight-bit machine next to a case
  * with a computer in it says one thing: all of this is the same editor.
+ *
+ * Twelve rather than nine, and half of them projects rather than frames or
+ * breadboards: a quadcopter, a stack of boards, a pot that waters itself, a
+ * thrust rig, a panel. The wall had been the same nine builds for a while
+ * and most of them were either furniture or a circuit, which answers the
+ * question "can it do a bench supply" and not the question "what would I
+ * make with this".
  */
 const TILES = [
-  { id: 'grid-arcade', name: 'Bartop cabinet', note: '15mm ply, 15" panel, Pi 5, button loom' },
+  { id: 'grid-quadcopter', name: 'Quadcopter', note: 'Ten-inch airframe, four ESCs, IMU and radio' },
   { id: 'grid-eight-bit', name: 'Eight-bit machine', note: '83 parts, 238 wires' },
   { id: 'grid-pi-case', name: 'Pi enclosure', note: 'Panels, standoffs, heat-set inserts' },
+  { id: 'grid-control-stack', name: 'Control stack', note: 'Three decks, shift register, 16x2 panel' },
+  { id: 'grid-arcade', name: 'Bartop cabinet', note: '15mm ply, 15" panel, Pi 5, button loom' },
+  { id: 'grid-thrust-rig', name: 'Thrust rig', note: 'Brushless motor on a load cell' },
+  { id: 'grid-plant-watering', name: 'Plant watering', note: 'Soil probe, relay and a pump on an ESP32' },
+  { id: 'grid-cnc-router', name: 'CNC router frame', note: '2020 extrusion, rails, leadscrews' },
+  { id: 'grid-panel', name: 'Control panel', note: 'LCD, keypad and switches on one face' },
   { id: 'grid-esp-weather', name: 'Sensor node', note: 'ESP32, gas and humidity' },
   { id: 'grid-workbench', name: 'Workbench', note: 'Extrusion, casters, DIN rail' },
   { id: 'grid-rover', name: 'Four-wheel rover', note: 'Acrylic deck, gearmotors, wheels' },
-  { id: 'grid-drawer-unit', name: 'Drawer unit', note: 'Plywood carcass, three fronts' },
-  { id: 'grid-cnc-router', name: 'CNC router frame', note: '2020 extrusion, rails, leadscrews' },
-  { id: 'grid-servo-arm', name: 'Servo arm', note: 'Three joints, brackets and horns' },
 ]
 
 /** Taken from the sketches the boards in these clips are running. */

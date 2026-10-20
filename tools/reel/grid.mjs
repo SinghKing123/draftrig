@@ -83,6 +83,14 @@ const tile = (id, starter, target, dist, az, polar = 46) => ({
 })
 
 export const GRID_SHOTS = [
+  /* Projects: a machine with an output on the end of it, which is what the
+     wall was short of. Distances are width-limited here, not height: a tile
+     is 760 by 570, so the frame is 0.867*d across and only 0.65*d tall. */
+  tile('quadcopter', 'quadcopter', [0, 21, 0], 1220, 38, 50),
+  tile('control-stack', 'control-stack', [0, 80, 0], 520, 36, 58),
+  tile('plant-watering', 'plant-watering', [0, 16, 0], 420, 28, 50),
+  tile('thrust-rig', 'thrust-rig', [10, 130, 26], 920, 34, 62),
+  tile('panel', 'panel', [0, 120, -43], 475, -40, 58),
   // Woodwork, a computer and a loom, which is most of what a project is.
   /* Starts at 172 rather than 198 because the sweep adds 26 and then drifts:
      from 198 it ended looking at the back of the cabinet, which for the one
