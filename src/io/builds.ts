@@ -89,11 +89,11 @@ export class Builder {
   }
 }
 
-const BLACK = '#1C1F24'
-const RED = '#E34B4B'
-const BLUE = '#4C8DFF'
-const GREEN = '#3DD68C'
-const YELLOW = '#F2C14E'
+export const BLACK = '#1C1F24'
+export const RED = '#E34B4B'
+export const BLUE = '#4C8DFF'
+export const GREEN = '#3DD68C'
+export const YELLOW = '#F2C14E'
 
 /*
  * The rest of the bag of jumpers.
@@ -103,11 +103,11 @@ const YELLOW = '#F2C14E'
  * is blue looks like the last build whose every data line was blue, and a
  * real harness is whatever was in the drawer.
  */
-const ORANGE = '#F08A3C'
+export const ORANGE = '#F08A3C'
 const VIOLET = '#C77DFF'
 const TEAL = '#2ED3C6'
 const PINK = '#F472B6'
-const WHITE = '#D8DEE9'
+export const WHITE = '#D8DEE9'
 
 
 /* ================================================================== */
@@ -1319,6 +1319,144 @@ export function arcadeCabinet(): Doc {
   /* Up the inside of the right-hand side, clear of the deck and the back. */
   b.wireVia([psu, 'p'], [mon, 'v+'], [[130, 110, 34], [130, 300, 22], [50, 334, 14]], RED, 0.33)
   b.wireVia([psu, 'n'], [mon, 'gnd'], [[146, 110, 34], [146, 300, 22], [44, 328, 14]], BLACK, 0.33)
+
+  return b.doc
+}
+
+/**
+ * Three decks of electronics on standoffs, with the loom up one side.
+ *
+ * Built for a tall frame. Nearly everything in the catalog of starters lies
+ * flat on the bench — a rover's deck is 363 across and 74 high — and in a
+ * nine-by-sixteen picture a flat thing is a band across the middle with the
+ * bench filling the rest. Stacking is how electronics gets tall without
+ * getting big: supply at the bottom, logic in the middle, the things a person
+ * reads and presses on top, which is also the order it makes sense in.
+ *
+ * The loom runs up the right-hand side rather than straight between decks,
+ * because a deck is in the way of anything going straight. Every wire that
+ * changes level is routed through one point outside the deck edge, which is
+ * both what keeps it out of the woodwork and what it would look like done by
+ * hand.
+ */
+export function controlStack(): Doc {
+  const b = new Builder('Three-tier control stack')
+
+  const W = 170
+  const D = 130
+  const T = 8
+  const RISE = 58
+  /* alu-5052, not 'aluminium': an enum parameter holds one of its option
+     strings, and anything else falls back to the default without complaint.
+     The decks came out of the first render in birch. */
+  const DECK = { material: 'alu-5052', width: W, depth: D, thickness: T, corner: 6 } as const
+
+  // Deck centres. A sheet is centred on its position, so its top is t/2 above.
+  const A = 0
+  const B = A + T / 2 + RISE + T / 2
+  const C = B + T / 2 + RISE + T / 2
+  const topOf = (y: number) => y + T / 2
+
+  const corners = [
+    [-W / 2 + 13, -D / 2 + 13],
+    [W / 2 - 13, -D / 2 + 13],
+    [-W / 2 + 13, D / 2 - 13],
+    [W / 2 - 13, D / 2 - 13],
+  ] as const
+
+  b.add('panel-sheet', [0, A, 0], { ...DECK }, [0, 0, 0], 'Base deck')
+  for (const [x, z] of corners) {
+    b.add('standoff-hex', [x, topOf(A), z], { thread: 'M3', length: RISE, ends: 'mf', material: 'stainless-304' }, [0, 0, 0], 'Standoff')
+  }
+
+  // Supply at the bottom, where the heavy things belong.
+  const pack = b.add('battery-holder', [-34, topOf(A), 6], { cell: '18650', count: 4 }, [0, 0, 0], 'Pack')
+  const buck = b.add('buck-converter', [52, topOf(A), -34], {}, [0, 0, 0], 'Buck converter')
+  const tb = b.add('terminal-block', [52, topOf(A), 34], { ways: 4 }, [0, 0, 0], 'Terminals')
+
+  b.add('panel-sheet', [0, B, 0], { ...DECK }, [0, 0, 0], 'Logic deck')
+  for (const [x, z] of corners) {
+    b.add('standoff-hex', [x, topOf(B), z], { thread: 'M3', length: RISE, ends: 'mf', material: 'stainless-304' }, [0, 0, 0], 'Standoff')
+  }
+
+  const mcu = b.add('mcu-board', [-26, topOf(B), -6], { program: 'chase', interval: 0.12 }, [0, 0, 0], 'Controller')
+  const sr = b.add('shift-register-595', [50, topOf(B), -28], {}, [0, 0, 0], 'Shift register')
+
+  /* Six indicators along the front edge of the logic deck, on the pitch the
+     register's outputs come out on, so the run from each output to its
+     resistor is the short diagonal it would really be. */
+  const led: string[] = []
+  const res: string[] = []
+  for (let i = 0; i < 6; i++) {
+    const x = 36 - i * 15
+    res.push(b.add('resistor-axial', [x, topOf(B), 30], { value: 330, watt: '0.25' }, [0, 90, 0], `R${i + 1}`))
+    led.push(b.add('led-5mm', [x, topOf(B), 50], { color: ['red', 'yellow', 'green', 'blue', 'white', 'red'][i] }, [0, 0, 0], `D${i + 1}`))
+  }
+
+  b.add('panel-sheet', [0, C, 0], { ...DECK }, [0, 0, 0], 'Front deck')
+
+  // What a person reads and what they press.
+  const lcd = b.add('display-lcd-character', [0, topOf(C), -22], { format: '1602' }, [0, 0, 0], 'Display')
+  const pot = b.add('potentiometer', [-62, topOf(C), 34], { value: 10000, taper: 'lin' }, [0, 0, 0], 'Contrast')
+  const btn = [0, 1, 2].map((i) =>
+    b.add('pushbutton-tactile', [-14 + i * 24, topOf(C), 40], {}, [0, 0, 0], `S${i + 1}`),
+  )
+
+  /*
+   * One waypoint per level change, outside the deck edge.
+   *
+   * Straight up from one deck to the next goes through the deck, which is the
+   * single thing that makes a render look wrong. Out past the corner and back
+   * in is both correct and what a dressed loom looks like.
+   */
+  const SIDE = W / 2 + 18
+  /* The upper waypoint sits above the deck it is arriving at, not below it:
+     coming in level with the deck, the wire crossed its edge on the way to
+     a terminal standing on top of it. */
+  const viaAB: Vec3[] = [[SIDE, topOf(A) + 16, -14], [SIDE, topOf(B) + 10, -14]]
+  const viaBC: Vec3[] = [[SIDE, topOf(B) + 16, 14], [SIDE, topOf(C) + 10, 14]]
+
+  // Pack to the converter, converter up to the board.
+  b.wire([pack, 'p'], [tb, 't1'], RED, 0.5)
+  b.wire([pack, 'n'], [tb, 't2'], BLACK, 0.5)
+  b.wire([tb, 't1'], [buck, 'in'], RED, 0.5)
+  b.wire([tb, 't2'], [buck, 'ing'], BLACK, 0.5)
+  b.wireVia([buck, 'out'], [mcu, 'vin'], viaAB, RED, 0.4)
+  b.wireVia([buck, 'outg'], [mcu, 'gnd'], viaAB, BLACK, 0.4)
+
+  // Three wires drive the register, and it drives six lamps.
+  b.wire([mcu, 'v5'], [sr, 'vcc'], RED, 0.16)
+  b.wire([mcu, 'gnd3'], [sr, 'gnd'], BLACK, 0.16)
+  b.wire([mcu, 'd2'], [sr, 'ds'], BLUE, 0.16)
+  b.wire([mcu, 'd3'], [sr, 'shcp'], YELLOW, 0.16)
+  b.wire([mcu, 'd4'], [sr, 'stcp'], GREEN, 0.16)
+  for (let i = 0; i < 6; i++) {
+    b.wire([sr, `q${i}`], [res[i], '1'], WHITE, 0.14)
+    b.wire([res[i], '2'], [led[i], 'a'], WHITE, 0.14)
+    // Cathodes chained along the row and returned once, as a row of lamps is.
+    if (i === 0) b.wire([led[i], 'c'], [mcu, 'gnd2'], BLACK, 0.14)
+    else b.wire([led[i], 'c'], [led[i - 1], 'c'], BLACK, 0.14)
+  }
+
+  // The panel on top, in four bits: power, contrast, bus, backlight.
+  b.wireVia([mcu, 'v5'], [lcd, 'vdd'], viaBC, RED, 0.16)
+  b.wireVia([mcu, 'gnd2'], [lcd, 'vss'], viaBC, BLACK, 0.16)
+  b.wire([lcd, 'rw'], [lcd, 'vss'], BLACK, 0.14)
+  b.wire([pot, 'a'], [lcd, 'vdd'], RED, 0.14)
+  b.wire([pot, 'b'], [lcd, 'vss'], BLACK, 0.14)
+  b.wire([pot, 'w'], [lcd, 'v0'], YELLOW, 0.14)
+  b.wire([lcd, 'a'], [lcd, 'vdd'], RED, 0.14)
+  b.wire([lcd, 'k'], [lcd, 'vss'], BLACK, 0.14)
+  for (const [pin, lp] of [['d7', 'rs'], ['d8', 'e'], ['d9', 'd4'], ['d10', 'd5'], ['d11', 'd6'], ['d12', 'd7']] as const) {
+    b.wireVia([mcu, pin], [lcd, lp], viaBC, BLUE, 0.14)
+  }
+
+  // Three buttons to three analogue pins, and one return between them.
+  for (let i = 0; i < 3; i++) {
+    b.wireVia([btn[i], 'a1'], [mcu, `a${i}`], viaBC, WHITE, 0.14)
+    if (i === 0) b.wireVia([btn[i], 'b1'], [lcd, 'vss'], [], BLACK, 0.14)
+    else b.wire([btn[i], 'b1'], [btn[i - 1], 'b1'], BLACK, 0.14)
+  }
 
   return b.doc
 }

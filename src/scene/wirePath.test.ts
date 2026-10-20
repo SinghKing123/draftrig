@@ -66,6 +66,11 @@ describe('wire path', () => {
      */
     const worst = { build: '', by: 0 }
     for (const w of everyWire()) {
+      /* Hand-routed wires are exempt, as they are in the dip test below: a
+         waypoint is somebody saying the wire goes round that way, and a loom
+         taken outside a deck edge to clear it reaches past both its ends on
+         purpose. What this measures is the router overshooting on its own. */
+      if (w.waypoints?.length) continue
       const by = overshoot(wireCurve(w.a, w.b, w.waypoints), w.a.pos, w.b.pos)
       if (by > worst.by) Object.assign(worst, { build: w.build, by })
     }

@@ -5,6 +5,7 @@ import { defaultParams, requirePart } from '@/parts/kernel/registry'
 import { drawerUnit, piCase, workbench } from './assemblies'
 import {
   arcadeCabinet,
+  controlStack,
   benchClock,
   cncRouter,
   controlPanel,
@@ -19,6 +20,7 @@ import {
   soundBench,
   thrustRig,
 } from './builds'
+import { plantWatering, quadcopter } from './projects'
 import { lab10Buzzer, lab9Blinker } from './labs'
 
 /**
@@ -413,6 +415,9 @@ export const STARTERS: Starter[] = [
     tags: ["clock","rtc","perfboard","sensor","buttons","alarm","project","finished"],
     build: benchClock,
   },
+  { id: 'quadcopter', title: 'Quadcopter', blurb: 'Four arms, four motors and a flight controller between two plates', kind: 'build', tags: ["drone","quad","quadcopter","fpv","motor","propeller","esc","lipo","imu","flight","radio","airframe"], build: quadcopter },
+  { id: 'plant-watering', title: 'Plant watering controller', blurb: 'Soil probe, relay and a pump, on an ESP32', kind: 'build', tags: ["plant","water","pump","soil","relay","esp32","automation","garden","sensor","irrigation"], build: plantWatering },
+  { id: 'control-stack', title: 'Three-tier control stack', blurb: 'Supply, logic and panel on three decks, loom up the side', kind: 'build', tags: ["stack","deck","standoff","shift register","lcd","controller","tiers","loom","panel"], build: controlStack },
   { id: 'arcade', title: 'Bartop arcade cabinet', blurb: 'Plywood carcass, 15-inch panel, stick and six buttons on a Pi', kind: 'build', tags: ["arcade","cabinet","bartop","joystick","buttons","raspberry pi","retro","monitor","plywood","hdmi","speakers"], build: arcadeCabinet },
   { id: 'pi-case', title: 'Pi enclosure', blurb: 'A single-board computer bolted into a case, inserts and all', kind: 'build', tags: ["case","enclosure","raspberry pi","sbc","standoff","insert","panel","box","3d print"], build: piCase },
   { id: 'workbench', title: 'Workbench', blurb: 'Extrusion frame on casters, worktop, and a rail of terminals', kind: 'build', tags: ["bench","desk","workbench","extrusion","caster","worktop","din rail","terminal","shop","space"], build: workbench },

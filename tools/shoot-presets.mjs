@@ -63,6 +63,7 @@ const only = process.argv.slice(2)
  */
 /* Builds with a display that has to be clocked up before it reads. */
 const SETTLE = {
+  'plant-watering': 2200,
   scoreboard: 2600,
   lcd: 2600,
   'bench-clock': 2600,
@@ -72,6 +73,10 @@ const SETTLE = {
 
 const SHOTS = [
   ['arcade', 0.62, 198, 62],
+  // The projects: a machine with an output on the end of it.
+  ['quadcopter', 0.58, 34, 58],
+  ['control-stack', 0.60, 36, 58],
+  ['plant-watering', 0.58, 28, 54],
   // The assemblies. Visible height is 0.65·d at this fov, so each distance
   // is read off the build rather than guessed at.
   ['pi-case', 0.34, 34, 46],
