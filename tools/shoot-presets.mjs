@@ -63,6 +63,8 @@ const only = process.argv.slice(2)
  */
 /* Builds with a display that has to be clocked up before it reads. */
 const SETTLE = {
+  'desk-terminal': 2600,
+  'control-cabinet': 2600,
   'plant-watering': 2200,
   scoreboard: 2600,
   lcd: 2600,
@@ -73,6 +75,10 @@ const SETTLE = {
 
 const SHOTS = [
   ['arcade', 0.62, 198, 62],
+  /* The devices. Both have a display on the front, so both are shot nearly
+     level with it rather than down onto the case. */
+  ['desk-terminal', 0.56, 14, 68],
+  ['control-cabinet', 0.60, 10, 66],
   // The projects: a machine with an output on the end of it.
   ['quadcopter', 0.58, 34, 58],
   ['control-stack', 0.60, 36, 58],

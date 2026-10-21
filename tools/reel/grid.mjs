@@ -83,6 +83,14 @@ const tile = (id, starter, target, dist, az, polar = 46) => ({
 })
 
 export const GRID_SHOTS = [
+  /* Devices: a case with a lid on it and a screen on the front. Distances
+     allow for the sweep as well as the start — the take flies out to 0.9 of
+     where it begins, so a tile framed exactly at its opening distance is
+     cropped by the time it settles. The cabinet is 288 on its horizontal
+     diagonal and 200 tall, which wants 332 at the tightest; 470 opening and
+     423 closing leaves it the margin the sweep eats. */
+  tile('desk-terminal', 'desk-terminal', [0, 100, 0], 430, 10, 54),
+  tile('control-cabinet', 'control-cabinet', [0, 100, 0], 470, 8, 54),
   /* Projects: a machine with an output on the end of it, which is what the
      wall was short of. Distances are width-limited here, not height: a tile
      is 760 by 570, so the frame is 0.867*d across and only 0.65*d tall. */

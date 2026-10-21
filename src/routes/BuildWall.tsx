@@ -38,19 +38,25 @@ import { Link } from 'react-router-dom'
  * and most of them were either furniture or a circuit, which answers the
  * question "can it do a bench supply" and not the question "what would I
  * make with this".
+ *
+ * It leads on the two finished devices, because they are the ones that
+ * answer that question without needing a caption: a case with a lid on it
+ * and a screen on the front is the thing most people are actually trying to
+ * arrive at, and a bench full of parts is the thing they are trying to get
+ * past. The workbench and the bare sensor node came off to make room.
  */
 const TILES = [
-  { id: 'grid-quadcopter', name: 'Quadcopter', note: 'Ten-inch airframe, four ESCs, IMU and radio' },
+  { id: 'grid-desk-terminal', name: 'Desk terminal', note: 'Case, posts, 16x2 panel and a knob' },
   { id: 'grid-eight-bit', name: 'Eight-bit machine', note: '83 parts, 238 wires' },
   { id: 'grid-pi-case', name: 'Pi enclosure', note: 'Panels, standoffs, heat-set inserts' },
   { id: 'grid-control-stack', name: 'Control stack', note: 'Three decks, shift register, 16x2 panel' },
   { id: 'grid-arcade', name: 'Bartop cabinet', note: '15mm ply, 15" panel, Pi 5, button loom' },
   { id: 'grid-thrust-rig', name: 'Thrust rig', note: 'Brushless motor on a load cell' },
-  { id: 'grid-plant-watering', name: 'Plant watering', note: 'Soil probe, relay and a pump on an ESP32' },
+  { id: 'grid-control-cabinet', name: 'Control cabinet', note: 'DIN rail, four relays, ESP32, clear door' },
   { id: 'grid-cnc-router', name: 'CNC router frame', note: '2020 extrusion, rails, leadscrews' },
   { id: 'grid-panel', name: 'Control panel', note: 'LCD, keypad and switches on one face' },
-  { id: 'grid-esp-weather', name: 'Sensor node', note: 'ESP32, gas and humidity' },
-  { id: 'grid-workbench', name: 'Workbench', note: 'Extrusion, casters, DIN rail' },
+  { id: 'grid-quadcopter', name: 'Quadcopter', note: 'Ten-inch airframe, four ESCs, IMU and radio' },
+  { id: 'grid-plant-watering', name: 'Plant watering', note: 'Soil probe, relay and a pump on an ESP32' },
   { id: 'grid-rover', name: 'Four-wheel rover', note: 'Acrylic deck, gearmotors, wheels' },
 ]
 

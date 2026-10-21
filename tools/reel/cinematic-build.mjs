@@ -3,6 +3,8 @@ import { existsSync, mkdirSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { homedir } from 'node:os'
 import { usable, writeList } from './frames.mjs'
+import { CINE_SHOTS } from './cinematic.mjs'
+import { DEVICE_SHOTS } from './devices.mjs'
 
 /**
  * Encode the cinematic assemblies.
@@ -27,7 +29,16 @@ const SRC = 'shots/reel'
  */
 const OUT = join(process.env.REELS_DIR || join(homedir(), 'Videos', 'Draftrig reels'), 'cinematic')
 
-const SECONDS = 11
+/*
+ * How long each clip is, taken from the shot that recorded it.
+ *
+ * It was one constant for every take, which was right while every take was
+ * eleven seconds. The device shots are twice that, and encoding them at
+ * eleven lays two thousand frames over a third of the footage — the clip
+ * plays at triple speed and the assembly becomes a flicker.
+ */
+const LENGTH = new Map([...CINE_SHOTS, ...DEVICE_SHOTS].map((s) => [s.id, s.secs ?? 11]))
+
 const W = 1080
 const H = 1920
 const FPS = 30
@@ -55,14 +66,15 @@ for (const id of shots) {
   const kept = usable(dir, frames)
 
   const list = join(dir, 'cine.ffconcat')
-  const inRate = kept.length / SECONDS
+  const seconds = LENGTH.get(id) ?? 11
+  const inRate = kept.length / seconds
   writeList(list, dir, kept, (1 / inRate).toFixed(6))
 
   const scale = `scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H}`
   const mp4 = join(OUT, `${id}.mp4`)
   const jpg = join(OUT, `${id}.jpg`)
 
-  run(['-f', 'concat', '-safe', '0', '-i', list, '-t', String(SECONDS), '-r', String(FPS),
+  run(['-f', 'concat', '-safe', '0', '-i', list, '-t', String(seconds), '-r', String(FPS),
     '-vf', scale, '-c:v', 'libx264', '-crf', '20', '-preset', 'slow', '-an',
     '-pix_fmt', 'yuv420p', '-movflags', '+faststart', mp4])
 
@@ -72,7 +84,7 @@ for (const id of shots) {
   const lost = frames.length - kept.length
   console.log(
     `${id.padEnd(18)} ${String(kept.length).padStart(4)} frames` +
-      `${lost ? ` (${lost} blank dropped)` : ''}  mp4 ${kb(mp4)}K  poster ${kb(jpg)}K`,
+      `${lost ? ` (${lost} blank dropped)` : ''}  ${seconds}s  mp4 ${kb(mp4)}K  poster ${kb(jpg)}K`,
   )
   total += kb(mp4)
 }

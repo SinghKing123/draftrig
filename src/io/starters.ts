@@ -21,6 +21,7 @@ import {
   thrustRig,
 } from './builds'
 import { plantWatering, quadcopter } from './projects'
+import { controlCabinet, deskTerminal } from './devices'
 import { lab10Buzzer, lab9Blinker } from './labs'
 
 /**
@@ -415,6 +416,8 @@ export const STARTERS: Starter[] = [
     tags: ["clock","rtc","perfboard","sensor","buttons","alarm","project","finished"],
     build: benchClock,
   },
+  { id: 'desk-terminal', title: 'Desk terminal', blurb: 'A board, a 16x2 panel and a knob, in a case with a lid on it', kind: 'build', tags: ["terminal","lcd","1602","enclosure","case","device","knob","encoder","front panel","product","computer","rtc"], build: deskTerminal },
+  { id: 'control-cabinet', title: 'Control cabinet', blurb: 'Four switched zones on a DIN rail, behind a clear door', kind: 'build', tags: ["cabinet","panel","din rail","relay","esp32","automation","enclosure","wago","irrigation","zones","industrial"], build: controlCabinet },
   { id: 'quadcopter', title: 'Quadcopter', blurb: 'Four arms, four motors and a flight controller between two plates', kind: 'build', tags: ["drone","quad","quadcopter","fpv","motor","propeller","esc","lipo","imu","flight","radio","airframe"], build: quadcopter },
   { id: 'plant-watering', title: 'Plant watering controller', blurb: 'Soil probe, relay and a pump, on an ESP32', kind: 'build', tags: ["plant","water","pump","soil","relay","esp32","automation","garden","sensor","irrigation"], build: plantWatering },
   { id: 'control-stack', title: 'Three-tier control stack', blurb: 'Supply, logic and panel on three decks, loom up the side', kind: 'build', tags: ["stack","deck","standoff","shift register","lcd","controller","tiers","loom","panel"], build: controlStack },

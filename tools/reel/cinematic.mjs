@@ -104,11 +104,34 @@ window.__cinema = (() => {
       to: full.instances[id].pos,
     }))
 
+    /*
+     * Wires either after the parts, or as soon as both ends exist.
+     *
+     * All of them at the end is the right shape for a bare board, where the
+     * wiring is the subject and there is nothing in the way of it. It is the
+     * wrong shape for anything with a lid: the loom appears after the case
+     * has closed over it, which reads as the wires having been threaded
+     * through a sealed box. Woven, each wire lands a moment after the later
+     * of the two things it joins, so the harness grows with the build and is
+     * finished before the walls go on.
+     */
+    const place = new Map(order.map((id, i) => [id, i]))
     const wireAt = []
     const wGap = wireWin / Math.max(wires.length, 1)
-    for (let i = 0; i < wires.length; i++) wireAt.push(lead + partWin + 0.3 + i * wGap)
+    for (let i = 0; i < wires.length; i++) {
+      if (!o.weave) {
+        wireAt.push(lead + partWin + 0.3 + i * wGap)
+        continue
+      }
+      const c = full.connections[wires[i]]
+      const later = Math.max(place.get(c.a.instanceId) ?? 0, place.get(c.b.instanceId) ?? 0)
+      // Fanned a little, so eight wires onto one terminal are not one event.
+      wireAt.push(lead + (later + 1) * gap + dur + (i % 6) * 0.05)
+    }
 
-    const total = lead + partWin + 0.3 + wireWin + (o.hold || 0.9)
+    const total = o.weave
+      ? lead + partWin + dur + (o.hold || 0.9)
+      : lead + partWin + 0.3 + wireWin + (o.hold || 0.9)
     const t0 = performance.now()
     const landed = new Set()
     const strung = new Set()
@@ -220,42 +243,74 @@ const base = {
  * frame wants a tall subject, and looking steeply down lays the build flat
  * across the middle of it with a third of the picture empty underneath.
  */
-const take = (id, starter, target, camera, legs, opts = {}) => ({
-  ...base,
-  id: `cine-${id}`,
-  camera,
-  async setup(page) {
-    await page.addScriptTag({ content: CINEMA })
-    await page.evaluate(
-      ([s, t]) => {
-        window.__cinema.stage(s)
-        const c = window.draftrig.camera.controls
-        c.target.set(t[0], t[1], t[2])
-        c.update()
-      },
-      [starter, target],
-    )
-  },
-  async perform(page) {
-    await page.evaluate(
-      async ([legs, opts, rate]) => {
-        const rig = window.__rig
-        // Running from the first frame, so anything with a display on it is
-        // lit by the time there is something to light.
-        window.draftrig.engine.reset()
-        window.draftrig.sim.getState().setRunning(true)
-        await Promise.all([
-          window.__cinema.play({ ...opts, slow: rate }),
-          (async () => {
-            for (const l of legs) await rig.fly(l[0], l[1], l[2], l[3])
-          })(),
-        ])
-        await rig.drift(5, 1400)
-      },
-      [legs, opts, base.rate],
-    )
-  },
-})
+export const cineTake = (id, starter, target, camera, legs, opts = {}) => {
+  const rate = opts.rate ?? base.rate
+  const drift = opts.drift ?? [5, 1400]
+  /*
+   * How long the finished clip is.
+   *
+   * Taken from the legs rather than set, because it is the sum of them plus
+   * the drift and nothing else — and a number typed separately from the moves
+   * it is meant to describe is a number that goes stale the first time a leg
+   * is retimed. The encoder reads it off the shot.
+   */
+  const secs = opts.secs ?? (legs.reduce((n, l) => n + l[3], 0) + drift[1]) / 1000
+  return {
+    ...base,
+    rate,
+    simDt: opts.simDt ?? base.simDt,
+    id: `cine-${id}`,
+    secs,
+    camera,
+    async setup(page) {
+      await page.addScriptTag({ content: CINEMA })
+      await page.evaluate(
+        ([s, t]) => {
+          window.__cinema.stage(s)
+          const c = window.draftrig.camera.controls
+          c.target.set(t[0], t[1], t[2])
+          c.update()
+        },
+        [starter, target],
+      )
+    },
+    async perform(page) {
+      await page.evaluate(
+        async ([legs, opts, rate, drift, target]) => {
+          const rig = window.__rig
+          /*
+           * The target, again, and this time where nothing can overwrite it.
+           *
+           * Staging hides every part, and the rig frames what it can see — so
+           * the framing that lands a moment after the document loads is a
+           * framing of nothing, and it leaves the look-at point at the origin
+           * however carefully setup aimed it. Everything then sits in the top
+           * third of a portrait frame with the bench filling the rest, which
+           * is exactly what a tall frame is supposed to avoid.
+           */
+          const c = window.draftrig.camera.controls
+          c.target.set(target[0], target[1], target[2])
+          c.object.lookAt(c.target)
+          c.update()
+          // Running from the first frame, so anything with a display on it is
+          // lit by the time there is something to light.
+          window.draftrig.engine.reset()
+          window.draftrig.sim.getState().setRunning(true)
+          await Promise.all([
+            window.__cinema.play({ ...opts, slow: rate }),
+            (async () => {
+              for (const l of legs) await rig.fly(l[0], l[1], l[2], l[3])
+            })(),
+          ])
+          await rig.drift(drift[0], drift[1])
+        },
+        [legs, opts, rate, drift, target],
+      )
+    },
+  }
+}
+
+const take = cineTake
 
 export const CINE_SHOTS = [
   /*
