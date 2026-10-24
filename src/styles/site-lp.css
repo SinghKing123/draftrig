@@ -1328,3 +1328,6 @@
 @media (prefers-reduced-motion: reduce) {
   .lp .trace svg { animation: none; }
 }
+
+/* He plays the console that is in the build beside him. */
+.lp .row-rig { margin: 26px 0 -10px; --rig-shadow: rgba(62, 48, 30, 0.12); }

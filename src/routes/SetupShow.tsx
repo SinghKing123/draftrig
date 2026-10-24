@@ -151,7 +151,7 @@ function SocketDemo() {
           * that reacts to real state is worth four that wave.
           */}
         <div className="sk-rig">
-          <Rig size={74} mood={over ? 'oops' : near ? 'think' : 'happy'} />
+          <Rig size={74} act="plug" mood={over ? 'oops' : near ? 'think' : 'happy'} />
         </div>
 
         <div className="sk-verdict" data-tone={over ? 'bad' : near ? 'warn' : 'ok'}>
@@ -205,6 +205,8 @@ export function SetupShow() {
             <Link className="btn btn-ghost" to="/app?start=desk-setup">
               Open this one<span className="arr" aria-hidden="true" />
             </Link>
+            {/* The build beside him has a console on it, so he is on it. */}
+            <Rig className="row-rig" size={88} act="game" mood="happy" />
           </div>
           <div className="art setup-art">
             <video

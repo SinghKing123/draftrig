@@ -113,7 +113,7 @@ export function Find({ total }: { total: number | null }) {
 
         {/* He reads the catalogue while you do: the bar sweeps his panel
             whenever there is something in the box. */}
-        <Rig className="find-rig" size={62} mood={q ? 'scan' : 'idle'} />
+        <Rig className="find-rig" size={62} act="solder" mood={q ? 'scan' : 'idle'} />
 
         <label className="find-bar">
           <svg width="17" height="17" viewBox="0 0 16 16" fill="none" aria-hidden="true">

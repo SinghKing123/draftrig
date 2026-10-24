@@ -114,3 +114,59 @@
 @media (prefers-reduced-motion: reduce) {
   .rig .rig-dot { transition: none; }
 }
+
+/* ==================================================================
+   What his hands are doing
+   ------------------------------------------------------------------
+   Each activity animates the one part that proves it is happening:
+   the iron's tip and its smoke, the thumbs on the pad, the turn of
+   the spanner. The rest of the pose is still, because a figure where
+   everything moves reads as a loop rather than as work.
+   ================================================================== */
+
+/* --- soldering --- */
+
+@keyframes rig-tip {
+  0%, 100% { opacity: 0.75; }
+  50% { opacity: 1; }
+}
+.rig .rig-tip { animation: rig-tip 1.4s ease-in-out infinite; }
+
+/*
+ * Three puffs on one loop, each a third of a cycle behind the last, rising
+ * and widening as they fade. Cheaper and better than a drawn plume: smoke
+ * that keeps its shape all the way up is not smoke.
+ */
+@keyframes rig-puff {
+  0% { opacity: 0; transform: translate(0, 6px) scale(0.5); }
+  22% { opacity: 0.5; }
+  100% { opacity: 0; transform: translate(-5px, -16px) scale(1.5); }
+}
+.rig .rig-smoke circle { fill: #8E8A82; opacity: 0; transform-box: fill-box; transform-origin: center; }
+.rig .rig-smoke circle:nth-child(1) { animation: rig-puff 3.2s linear infinite; }
+.rig .rig-smoke circle:nth-child(2) { animation: rig-puff 3.2s linear infinite 1.07s; }
+.rig .rig-smoke circle:nth-child(3) { animation: rig-puff 3.2s linear infinite 2.14s; }
+
+/* --- gaming --- */
+
+/* The buttons, not the hands. Offset so it reads as playing rather than as
+   a two-beat metronome. */
+@keyframes rig-press {
+  0%, 68%, 100% { transform: translateY(0); opacity: 1; }
+  74%, 82% { transform: translateY(0.9px); opacity: 0.6; }
+}
+.rig .rig-btn-a,
+.rig .rig-btn-b { transform-box: fill-box; transform-origin: center; }
+.rig .rig-btn-a { animation: rig-press 1.9s ease-in-out infinite; }
+.rig .rig-btn-b { animation: rig-press 1.5s ease-in-out infinite 0.4s; }
+
+/* --- tightening --- */
+
+/* A few degrees each way about the nut, with a pause at the end of the
+   stroke, which is what a quarter turn with a spanner actually looks like. */
+@keyframes rig-turn {
+  0%, 100% { transform: rotate(0deg); }
+  40% { transform: rotate(-9deg); }
+  55% { transform: rotate(-9deg); }
+}
+.rig .rig-turn { transform-origin: 108px 99px; animation: rig-turn 2.6s cubic-bezier(0.4, 0, 0.2, 1) infinite; }

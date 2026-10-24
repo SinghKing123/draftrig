@@ -189,7 +189,7 @@ export function BuildWall() {
           * the same sentence twice.
           */}
         <div className="bw-cta">
-          <Rig size={104} mood="happy" />
+          <Rig size={104} act="wrench" mood="happy" />
           <Link className="btn btn-primary btn-lg" to="/app">
             Open the editor<span className="arr" aria-hidden="true" />
           </Link>
