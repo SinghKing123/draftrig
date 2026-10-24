@@ -1129,12 +1129,20 @@
   background: var(--bg-3);
   overflow: hidden;
 }
+/*
+ * The fill is full width and clipped back, rather than a narrow box that
+ * grows.
+ *
+ * Animating width is a layout property, and the cheap substitute — scaleX
+ * from the left — squashes the rounded cap into an ellipse. An inset clip
+ * with a radius keeps the cap exactly as it was and never touches layout.
+ */
 .lp .sk-fill {
   position: absolute;
-  inset: 0 auto 0 0;
+  inset: 0;
   border-radius: 999px;
   background: var(--accent);
-  transition: width 420ms var(--ease), background 240ms var(--ease);
+  transition: clip-path 420ms var(--ease), background 240ms var(--ease);
 }
 .lp .sk[data-over='true'] .sk-fill { background: #D9483B; }
 /* Where thirteen amps is. The fill clips at the rating, so the line is what

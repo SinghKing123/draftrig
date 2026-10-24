@@ -23,14 +23,20 @@ type Panel =
   | { kind: 'still'; src: string; alt: string }
 
 /*
- * The two editor stills lead, then the clips in the order they were in.
+ * The room leads, then the two editor stills, then the clips.
  *
- * The deck used to open on the assembly clip with these two at the back,
- * four and five presses to the right. They are the panels that show what
- * the thing actually is — code beside the board running it, and a bill with
- * prices on it — so they go first and the rest keeps its order behind them.
+ * The deck is the first thing anyone sees and it was all boards, which is
+ * the half of the editor every competitor also does. A sign full of lit
+ * dots and a desk with a tower under it are the half none of them do, so
+ * those open it.
+ *
+ * The sign goes first and the desk clip second, not the other way round:
+ * the clip is an assembly and assemblies start on an empty bench, so
+ * leading with it opened the whole page on a black panel.
  */
 const PANELS: Panel[] = [
+  { kind: 'still', src: '/presets/message-board.jpg', alt: 'An LED sign of forty-eight matrix modules, lit' },
+  { kind: 'clip', name: 'clip-setup' },
   { kind: 'still', src: '/slides/sketch.jpg', alt: 'A sketch open beside the board running it' },
   { kind: 'still', src: '/slides/bom.jpg', alt: 'The bill of materials, priced by part' },
   { kind: 'clip', name: 'clip-assemble' },

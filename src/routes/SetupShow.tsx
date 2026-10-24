@@ -2,11 +2,11 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 /**
- * The mains section of the front page.
+ * The setup section of the front page.
  *
- * The page described a bench and the editor now does a room, so this covers
- * the part nothing else on the page shows: sockets, leads, appliances, and
- * whether one plug will carry them.
+ * The page described a bench and the editor does a whole room, so this is
+ * the part nothing else on the page shows: anything functional in one
+ * scene, and whether one plug will carry it.
  *
  * Two examples, in two formats. A panel you can press, run on the real part
  * models, and a clip of a build assembling itself. A third — a grid of
@@ -134,7 +134,10 @@ function SocketDemo() {
         <div className="sk-sub">{Math.round(total)} W drawn · {SOCKET_A} A available</div>
 
         <div className="sk-bar" role="img" aria-label={`${current.toFixed(1)} amps of ${SOCKET_A}`}>
-          <span className="sk-fill" style={{ width: `${Math.min(100, fraction * 100)}%` }} />
+          <span
+            className="sk-fill"
+            style={{ clipPath: `inset(0 ${100 - Math.min(100, fraction * 100)}% 0 0 round 999px)` }}
+          />
           <span className="sk-limit" />
         </div>
 
@@ -169,11 +172,10 @@ export function SetupShow() {
     <section className="sec sec-alt setup-show" id="setup">
       <div className="lpw">
         <div className="sec-head center">
-          <h2>Mains, screens, and the desk they sit on.</h2>
+          <h2>Build the whole setup.</h2>
           <p>
-            Sockets, extension leads, towers, televisions, projectors, consoles. The mains is
-            solved the same way the circuits are, so a layout can tell you when the socket
-            cannot carry it.
+            Desks, towers, screens, consoles, projectors, sockets and the leads between them.
+            It all solves, so a layout can tell you when the socket cannot carry it.
           </p>
         </div>
 
