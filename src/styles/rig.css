@@ -91,3 +91,26 @@
 @media (prefers-reduced-motion: reduce) {
   .rig * { animation: none !important; }
 }
+
+/* --- the scan bar --- */
+
+/*
+ * Crosses the panel and comes back, which is the only face that is a motion
+ * rather than a shape. Drawn as a rect rather than as lit dots because it
+ * passes over dots that are off, and a dot is on or it is not.
+ */
+@keyframes rig-scan {
+  0%, 100% { transform: translateX(0); opacity: 0.85; }
+  50% { transform: translateX(48px); opacity: 0.85; }
+  8%, 58% { opacity: 0.35; }
+}
+.rig .rig-scan { animation: rig-scan 2.8s cubic-bezier(0.5, 0, 0.5, 1) infinite; }
+
+/* --- a glance --- */
+
+/* The eyes are redrawn at their new columns rather than moved, so the only
+   thing to animate is how fast they arrive. */
+.rig .rig-dot { transition: cx 220ms cubic-bezier(0.2, 0.8, 0.3, 1); }
+@media (prefers-reduced-motion: reduce) {
+  .rig .rig-dot { transition: none; }
+}

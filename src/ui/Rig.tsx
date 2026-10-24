@@ -27,10 +27,16 @@ type Dot = [number, number]
 const COLS = 10
 const ROWS = 8
 
-/** Two square eyes, which is as much face as 80 dots will carry. */
-const eyes = (row: number): Dot[] => [
-  [2, row], [3, row], [2, row + 1], [3, row + 1],
-  [6, row], [7, row], [6, row + 1], [7, row + 1],
+/**
+ * Two square eyes, which is as much face as 80 dots will carry.
+ *
+ * `dx` slides them along the row. It is how he looks at something: the pair
+ * moves, the mouth does not, which is what reads as a glance rather than as
+ * the whole head turning.
+ */
+const eyes = (row: number, dx = 0): Dot[] => [
+  [2 + dx, row], [3 + dx, row], [2 + dx, row + 1], [3 + dx, row + 1],
+  [6 + dx, row], [7 + dx, row], [6 + dx, row + 1], [7 + dx, row + 1],
 ]
 
 /**
@@ -39,21 +45,21 @@ const eyes = (row: number): Dot[] => [
  * Shut is the blink, and it is a single row rather than an empty grid: a
  * matrix with nothing lit reads as switched off, not as blinking.
  */
-const FACES: Record<string, Dot[]> = {
-  idle: [...eyes(2), [3, 5], [4, 6], [5, 6], [6, 5]],
-  shut: [[2, 3], [3, 3], [6, 3], [7, 3], [3, 5], [4, 6], [5, 6], [6, 5]],
-  happy: [
-    [2, 2], [3, 2], [2, 3], [3, 3], [6, 2], [7, 2], [6, 3], [7, 3],
+const FACES: Record<string, (dx: number) => Dot[]> = {
+  idle: (dx) => [...eyes(2, dx), [3, 5], [4, 6], [5, 6], [6, 5]],
+  shut: (dx) => [[2 + dx, 3], [3 + dx, 3], [6 + dx, 3], [7 + dx, 3], [3, 5], [4, 6], [5, 6], [6, 5]],
+  happy: (dx) => [
+    ...eyes(2, dx),
     [2, 5], [7, 5], [3, 6], [4, 6], [5, 6], [6, 6],
   ],
-  think: [
-    ...eyes(2),
-    [5, 6], [6, 6], [7, 6],
-  ],
-  oops: [
-    [2, 2], [3, 3], [3, 2], [2, 3], [6, 2], [7, 2], [6, 3], [7, 3],
+  think: (dx) => [...eyes(2, dx), [5, 6], [6, 6], [7, 6]],
+  oops: (dx) => [
+    ...eyes(2, dx),
     [3, 6], [4, 5], [5, 5], [6, 6],
   ],
+  /* Reading the catalogue: a bar sweeping the width of the panel, which is
+     the one face that is an animation rather than an expression. */
+  scan: (dx) => [...eyes(2, dx)],
 }
 
 export type Mood = keyof typeof FACES
@@ -61,6 +67,8 @@ export type Mood = keyof typeof FACES
 interface Props {
   size?: number
   mood?: Mood
+  /** Which way he is looking: -1 left, 0 ahead, 1 right. */
+  look?: -1 | 0 | 1
   /** Still, for a screenshot or a reel frame. */
   still?: boolean
   className?: string
@@ -72,9 +80,9 @@ const DOT_Y = 14.6
 const PITCH = 6.4
 const DOT_R = 2.1
 
-export function Rig({ size = 120, mood = 'idle', still = false, className }: Props) {
-  const lit = new Set(FACES[mood].map(([c, r]) => `${c},${r}`))
-  const blink = FACES.shut.map(([c, r]) => `${c},${r}`)
+export function Rig({ size = 120, mood = 'idle', look = 0, still = false, className }: Props) {
+  const lit = new Set(FACES[mood](look).map(([c, r]) => `${c},${r}`))
+  const blink = FACES.shut(look).map(([c, r]) => `${c},${r}`)
   const canBlink = !still && mood === 'idle'
 
   const dots = []
@@ -181,7 +189,12 @@ export function Rig({ size = 120, mood = 'idle', still = false, className }: Pro
         <rect x="20.8" y="8.8" width="78.4" height="56.4" rx="7.2" stroke="#36332D" strokeWidth="1.6" />
         {/* The panel the dots are behind. */}
         <rect x="25" y="13" width="70" height="48" rx="4.5" fill="#0E0D0B" />
-        <g filter="url(#rig-glow)">{dots}</g>
+          <g filter="url(#rig-glow)">{dots}</g>
+        {/* The scan bar, drawn rather than lit, because it crosses dots that
+            are off and a dot cannot be half on. */}
+        {mood === 'scan' && (
+          <rect className="rig-scan" x="29" y="46" width="9" height="12" rx="2" fill="#FFB020" />
+        )}
         {/* Two mounting screws, because the real module has four. */}
         <circle cx="25.5" cy="62.5" r="1.7" fill="#3C3932" />
         <circle cx="94.5" cy="62.5" r="1.7" fill="#3C3932" />

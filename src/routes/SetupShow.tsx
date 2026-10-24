@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Rig } from '@/ui/Rig'
 
 /**
  * The setup section of the front page.
@@ -139,6 +140,18 @@ function SocketDemo() {
             style={{ clipPath: `inset(0 ${100 - Math.min(100, fraction * 100)}% 0 0 round 999px)` }}
           />
           <span className="sk-limit" />
+        </div>
+
+        {/*
+          * Rig reads the same number the meter does.
+          *
+          * This is the only place on the page where he is wired to anything:
+          * his face comes off the current, so pressing the fan heater makes
+          * him wince a beat before you have finished reading why. A mascot
+          * that reacts to real state is worth four that wave.
+          */}
+        <div className="sk-rig">
+          <Rig size={74} mood={over ? 'oops' : near ? 'think' : 'happy'} />
         </div>
 
         <div className="sk-verdict" data-tone={over ? 'bad' : near ? 'warn' : 'ok'}>

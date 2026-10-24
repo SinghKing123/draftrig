@@ -136,6 +136,43 @@ const FEATURES = [
   { title: 'Priced bill of materials', icon: ICONS.bom },
 ]
 
+
+/**
+ * A 555 output, running.
+ *
+ * The page says it solves and then shows photographs of it having solved.
+ * This is the claim in motion: the waveform the first circuit most people
+ * here will build actually puts out, drawn at column width and panned on a
+ * loop. The period and the duty are the ones the lab preset produces, so it
+ * is the right shape rather than a decorative zigzag; it is not live data
+ * and the page never says it is.
+ *
+ * Two copies end to end, translated by exactly half, which is what makes
+ * the loop seamless without measuring anything.
+ */
+function Wave() {
+  const HI = 16
+  const LO = 58
+  const PERIOD = 150
+  const DUTY = 0.34
+  const cycles = 10
+  let d = `M0 ${LO}`
+  for (let i = 0; i < cycles; i++) {
+    const x = i * PERIOD
+    const up = x + PERIOD * DUTY
+    d += ` L${x} ${LO} L${x} ${HI} L${up} ${HI} L${up} ${LO}`
+  }
+  d += ` L${cycles * PERIOD} ${LO}`
+  return (
+    <div className="trace" aria-hidden="true">
+      <svg viewBox={`0 0 ${cycles * PERIOD} 76`} preserveAspectRatio="none">
+        <path className="trace-grid" d={`M0 ${LO + 0.5} H${cycles * PERIOD}`} />
+        <path d={d} />
+      </svg>
+    </div>
+  )
+}
+
 /* ------------------------------------------------------------------ */
 
 export function Landing() {
@@ -268,6 +305,8 @@ export function Landing() {
           </div>
         </div>
       </section>
+
+      <Wave />
 
       {/* ---- parts search ---- */}
       <Find total={parts} />

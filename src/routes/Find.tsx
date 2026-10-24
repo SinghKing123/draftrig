@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Rig } from '@/ui/Rig'
 import { useNavigate } from 'react-router-dom'
 import type { PartDef } from '@/parts/kernel/types'
 import { PartIcon } from '@/ui/PartIcons'
@@ -109,6 +110,10 @@ export function Find({ total }: { total: number | null }) {
             Type <span className="mono">10k</span> and it finds the resistor and the pots.
           </p>
         </div>
+
+        {/* He reads the catalogue while you do: the bar sweeps his panel
+            whenever there is something in the box. */}
+        <Rig className="find-rig" size={62} mood={q ? 'scan' : 'idle'} />
 
         <label className="find-bar">
           <svg width="17" height="17" viewBox="0 0 16 16" fill="none" aria-hidden="true">

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Rig } from '@/ui/Rig'
 
 /**
  * The product panel, as a stack you cycle through.
@@ -70,7 +71,12 @@ export function Carousel() {
    */
   const hold = useRef(false)
 
-  const go = useCallback((step: number) => setAt((n) => (n + step + N) % N), [])
+  /** Which way the deck last moved, for Rig to follow. */
+  const last = useRef<-1 | 0 | 1>(0)
+  const go = useCallback((step: number) => {
+    last.current = step > 0 ? 1 : -1
+    setAt((n) => (n + step + N) % N)
+  }, [])
 
   /*
    * A picture has no end of its own, so it is given one.
@@ -90,6 +96,23 @@ export function Carousel() {
     }, 250)
     return () => window.clearInterval(id)
   }, [at, go])
+
+  /*
+   * Rig stands under the deck and watches it.
+   *
+   * His eyes go the way the panels went for three quarters of a second and
+   * then come back to centre. It is the cheapest possible way to make the
+   * deck feel driven by something rather than on a timer, and it costs one
+   * number of state.
+   */
+  const [look, setLook] = useState<-1 | 0 | 1>(0)
+  useEffect(() => {
+    if (!last.current) return
+    const way = last.current
+    setLook(way)
+    const id = window.setTimeout(() => setLook(0), 760)
+    return () => window.clearTimeout(id)
+  }, [at])
 
   const onKey = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowLeft') {
@@ -166,6 +189,7 @@ export function Carousel() {
       </div>
 
       <div className="lp-car-nav">
+        <Rig className="lp-car-rig" size={46} look={look} />
         <button className="lp-car-arrow" onClick={() => go(-1)} aria-label="Previous panel">
           ‹
         </button>

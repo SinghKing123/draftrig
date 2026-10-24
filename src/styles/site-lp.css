@@ -1264,3 +1264,67 @@
   .lp .sk-fill { transition: none; }
   .lp .sk-amps, .lp .sk-verdict, .lp .sk { transition: none; }
 }
+
+/* ==================================================================
+   Where Rig stands
+   ------------------------------------------------------------------
+   Four places, each doing one thing that belongs to that section
+   rather than the same wave four times: he reads the meter, he
+   watches the deck, he scans while you search, and he waits at the
+   bottom beside the button.
+   ================================================================== */
+
+/* Beside the meter, reacting to the current. */
+.lp .sk-rig {
+  position: absolute;
+  right: 18px;
+  top: 26px;
+  --rig-shadow: rgba(62, 48, 30, 0.1);
+}
+.lp .sk-meter { position: relative; }
+@media (max-width: 980px) {
+  .lp .sk-rig { display: none; }
+}
+
+/* Under the deck, between the arrows. */
+.lp .lp-car-rig {
+  margin: 0 4px -6px;
+  --rig-shadow: rgba(62, 48, 30, 0.12);
+}
+@media (max-width: 560px) {
+  .lp .lp-car-rig { display: none; }
+}
+
+/* Over the search box, scanning while you type. */
+.lp .find-rig {
+  margin: -6px auto 2px;
+  --rig-shadow: rgba(62, 48, 30, 0.1);
+}
+
+/* ==================================================================
+   A trace, running
+   ------------------------------------------------------------------
+   The page claims a solver and then shows stills of one. This is the
+   claim moving: a waveform drawn left to right, on a loop, at the
+   width of the column. It is not live data and does not pretend to
+   be — it is the shape a 555 puts out, which is the first thing most
+   people here will build.
+   ================================================================== */
+
+.lp .trace {
+  position: relative;
+  height: 76px;
+  margin: 34px 0 -8px;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+.lp .trace svg { width: 200%; height: 100%; display: block; animation: trace-pan 11s linear infinite; }
+.lp .trace path { fill: none; stroke: var(--accent); stroke-width: 2.4; stroke-linejoin: round; opacity: 0.85; }
+.lp .trace .trace-grid { stroke: var(--line); stroke-width: 1; opacity: 0.9; }
+
+@keyframes trace-pan { to { transform: translateX(-50%); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .lp .trace svg { animation: none; }
+}
