@@ -1,0 +1,93 @@
+/* ==================================================================
+   Rig
+   ------------------------------------------------------------------
+   Drawn in src/ui/Rig.tsx. He appears on the light product page and
+   on the editor's dark empty bench, so nothing here may assume a
+   ground colour: the only thing that touches the page behind him is
+   the contact shadow, and that is set from the surface he is on.
+
+   One authored moment, not five. He breathes, he blinks, and his
+   arms trail that breath by a beat. Everything else is still.
+   ================================================================== */
+
+.rig { display: block; overflow: visible; }
+
+/* --- the matrix --- */
+
+.rig-dot { fill: #2B2721; }
+.rig-dot.on { fill: #FFB020; }
+
+/*
+ * The blink, which is the whole character.
+ *
+ * Both halves run on one 5.4 s cycle and are each other's inverse: the dots
+ * that make the open eyes go out for 7 % of it while the dots that make the
+ * shut ones come up. No state, no timer, nothing to clean up — and nothing
+ * that keeps re-rendering a component to animate two rows of circles.
+ */
+@keyframes rig-wink {
+  0%, 92%, 100% { opacity: 1; }
+  94%, 97.5% { opacity: 0; }
+}
+@keyframes rig-blink {
+  0%, 92%, 100% { opacity: 0; }
+  94%, 97.5% { opacity: 1; }
+}
+.rig-wink { animation: rig-wink 5.4s infinite steps(1, end); }
+/* Lit in the rule rather than in the keyframe, so a browser that drops the
+   animation shows a shut eye rather than an unlit dot in the wrong colour. */
+.rig-blink { fill: #FFB020; opacity: 0; animation: rig-blink 5.4s infinite steps(1, end); }
+
+/* --- breathing --- */
+
+/*
+ * Two and a half pixels over six seconds, eased at both ends.
+ *
+ * A linear bob is a bouncing icon. The point is that he is standing still
+ * and loaded, not that he is excited to see you, so the movement wants to
+ * be slow enough that you notice it only once.
+ */
+@keyframes rig-breathe {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2.5px); }
+}
+.rig .rig-head,
+.rig .rig-body { animation: rig-breathe 6s cubic-bezier(0.45, 0, 0.55, 1) infinite; }
+
+/* The arms hang off him, so they follow a third of a second late and by
+   half as much, which is what stops the whole figure reading as one sticker
+   sliding up and down. */
+@keyframes rig-sway {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(1.6deg); }
+}
+.rig .rig-arm {
+  transform-origin: 60px 76px;
+  animation: rig-sway 6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  animation-delay: 0.34s;
+}
+.rig .rig-arm-r { animation-direction: alternate-reverse; }
+
+/* The power LED, which is the only thing on him that is not weather. */
+@keyframes rig-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+.rig .rig-led { animation: rig-pulse 2.6s ease-in-out infinite; }
+
+/* --- the ground --- */
+
+/*
+ * Set by whoever places him. He stands on paper on the product page and on
+ * a dark bench in the editor, and a shadow that does not know which is a
+ * grey smudge on one of them.
+ */
+.rig-shadow { fill: var(--rig-shadow, rgba(62, 48, 30, 0.14)); }
+
+/* --- held still --- */
+
+.rig-still * { animation: none !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  .rig * { animation: none !important; }
+}

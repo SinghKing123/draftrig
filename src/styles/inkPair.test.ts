@@ -57,7 +57,11 @@ describe('ink and the colour that reads on it', () => {
       }
     }
     expect(missing).toEqual([])
-    expect(found, 'blocks defining --ink').toBeGreaterThanOrEqual(5)
+    /* Four: the site, the product page, and the manual's two stocks. It was
+       five until the product page's dark theme came out — this number is
+       here so the check cannot pass by finding nothing, so lower it only
+       when a theme genuinely goes away, never to make a run green. */
+    expect(found, 'blocks defining --ink').toBeGreaterThanOrEqual(4)
   })
 
   it('never puts a hardcoded foreground on an --ink background', () => {
@@ -85,6 +89,6 @@ describe('ink and the colour that reads on it', () => {
         checked++
       }
     }
-    expect(checked, 'pairs checked').toBeGreaterThanOrEqual(5)
+    expect(checked, 'pairs checked').toBeGreaterThanOrEqual(4)
   })
 })

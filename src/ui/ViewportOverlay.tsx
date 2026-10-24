@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Rig } from './Rig'
 import {
   IconEye, IconEyeOff, IconFrame, IconGrid, IconHelp, IconMagnet, IconMove, IconRotate,
   IconX, IconXray, IconZap,
@@ -388,6 +389,9 @@ export function ViewportOverlay({
       {empty && firstVisit && (
         <div className="empty-state">
           <div className="empty-hint">
+            {/* The one place in the editor he appears: an empty document is
+                the only screen here with nothing on it to look at. */}
+            <Rig size={86} mood="idle" className="empty-rig" />
             <p>Empty bench.</p>
             <p className="sub">Place a part from the library.</p>
             <div className="empty-actions">

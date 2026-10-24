@@ -4,23 +4,36 @@
                amber = energized / current / live simulation
    ============================================================ */
 :root {
+  /*
+   * Warm near-blacks, not blue-blacks.
+   *
+   * These were the slate ramp every dark tool ships with, which put a cold
+   * cast on panels that sit for hours next to renders lit with warm light.
+   * Every surface and rule is pulled a few degrees towards brown. The
+   * amount is small on purpose: this is the temperature of the room, not a
+   * sepia filter, and at this end of the scale a little goes a long way.
+   *
+   * --void is the fallback behind the canvas, not the bench. The bench's
+   * colour is set in the three.js scene, so nothing here changes a render
+   * or invalidates a shot preset.
+   */
   /* --- surfaces --- */
-  --void:      #08090B;   /* viewport background */
-  --bg-0:      #0C0E12;   /* app canvas */
-  --bg-1:      #111419;   /* panels */
-  --bg-2:      #161A20;   /* raised / headers */
-  --bg-3:      #1D222A;   /* inputs, wells */
-  --bg-4:      #262C36;   /* hover */
+  --void:      #0A0908;   /* viewport background */
+  --bg-0:      #0E0D0C;   /* app canvas */
+  --bg-1:      #141311;   /* panels */
+  --bg-2:      #1A1816;   /* raised / headers */
+  --bg-3:      #22201D;   /* inputs, wells */
+  --bg-4:      #2C2925;   /* hover */
 
-  --line:      #22272F;
-  --line-2:    #2E353F;
-  --line-3:    #3D4552;
+  --line:      #26231F;
+  --line-2:    #332F2A;
+  --line-3:    #433E37;
 
   /* --- text --- */
-  --tx-0:      #EEF2F7;
-  --tx-1:      #B6C0CD;
-  --tx-2:      #7C8797;
-  --tx-3:      #545E6C;
+  --tx-0:      #F5F2EC;
+  --tx-1:      #C3BCB2;
+  --tx-2:      #8B847A;
+  --tx-3:      #5F594F;
 
   /* --- brand --- */
   --brand:     #4C8DFF;
@@ -63,9 +76,9 @@
   --fs-xs: 11px; --fs-sm: 12px; --fs-md: 13px; --fs-lg: 14.5px; --fs-xl: 18px;
 
   /* --- elevation --- */
-  --sh-1: 0 1px 2px rgba(0,0,0,.4);
-  --sh-2: 0 4px 14px rgba(0,0,0,.45), 0 1px 3px rgba(0,0,0,.4);
-  --sh-3: 0 16px 48px rgba(0,0,0,.6), 0 2px 8px rgba(0,0,0,.5);
+  --sh-1: 0 1px 2px rgba(0,0,0,.42);
+  --sh-2: 0 5px 16px rgba(0,0,0,.44), 0 1px 3px rgba(0,0,0,.4);
+  --sh-3: 0 18px 54px rgba(0,0,0,.58), 0 2px 8px rgba(0,0,0,.5);
 
   --dur: 120ms;
   --ease: cubic-bezier(.22,.61,.36,1);

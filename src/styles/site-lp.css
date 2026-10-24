@@ -23,7 +23,13 @@
    ================================================================== */
 
 /*
- * Warm paper rather than white.
+ * Warm paper rather than white, and only ever paper.
+ *
+ * The page had a dark theme and a switch in the nav for it. It is a product
+ * page: it is read once, in daylight, by somebody deciding whether to open
+ * the editor, and a second full palette to keep correct bought nothing for
+ * that. The editor keeps its dark theme, because the editor is where people
+ * sit for an hour.
  *
  * The greys were the Zinc ramp, which is a cool neutral: pure white ground,
  * blue-black ink, grey-blue rules. Against the dark 3D renders the page
@@ -74,25 +80,6 @@
   text-rendering: optimizeLegibility;
 }
 
-/* The same move on the negative: a near-black with brown in it rather than
-   the blue-black it was, so the two themes are one page lit differently. */
-.lp[data-theme='dark'] {
-  --bg: #121010;
-  --bg-2: #191614;
-  --bg-3: #221F1B;
-  --ink: #FAF7F2;
-  --ink-on: #1C1A17;
-  --ink-2: #A9A199;
-  --ink-3: #8C847B;
-  --line: #2E2A26;
-  --line-2: #45403A;
-  --accent: #4D94FF;
-  --accent-ink: #06121F;
-  --accent-wash: #121D2C;
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.38);
-  --shadow: 0 6px 18px rgba(0, 0, 0, 0.38), 0 18px 44px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.42), 0 40px 80px -16px rgba(0, 0, 0, 0.58);
-}
 
 .lp a { color: inherit; text-decoration: none; }
 .lp button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
@@ -197,17 +184,6 @@
 .lp .nav-links a:hover { color: var(--ink); background: var(--bg-3); }
 .lp .nav-sp { flex: 1; }
 
-.lp .theme-btn {
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  color: var(--ink-2);
-  transition: background 150ms var(--ease), color 150ms var(--ease);
-}
-.lp .theme-btn:hover { background: var(--bg-3); color: var(--ink); }
-.lp .theme-btn svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 
 /* ==================================================================
    Hero
@@ -701,11 +677,12 @@
   gap: clamp(30px, 6vh, 64px);
   overflow: hidden;
   pointer-events: none;
-  /* Pure black and pure white rather than the text inks, which are a
-     shade short of both — at this opacity that shortfall is the difference
-     between notation you can read and a smudge. */
-  color: #000;
-  opacity: 0.2;
+  /* Near-black rather than the body ink, which is a shade short of it — at
+     this opacity that shortfall is the difference between notation you can
+     read and a smudge. Warm, because it is printed on the same stock as
+     everything else. */
+  color: #120F0A;
+  opacity: 0.21;
   /*
    * Weakest where the headline sits, strongest out towards the edges.
    *
@@ -720,7 +697,6 @@
   mask-composite: intersect;
   -webkit-mask-composite: source-in;
 }
-.lp[data-theme='dark'] .glyphs { color: #FFF; opacity: 0.3; }
 
 .lp .glyph-row { overflow: hidden; }
 .lp .glyph-run {
@@ -774,8 +750,16 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  filter: blur(3px) saturate(1.2);
-  opacity: 0.18;
+  /*
+   * Desaturated and warmed rather than boosted.
+   *
+   * Saturating a lit board and blurring it leaves a rainbow smear, which on
+   * a paper ground is the one cold thing on the page and reads as a
+   * rendering fault. Pulled most of the way to grey and then tinted back
+   * towards the stock, the same footage becomes a texture in the paper.
+   */
+  filter: blur(4px) saturate(0.42) sepia(0.34) contrast(1.06);
+  opacity: 0.3;
   transform: scale(1.06); /* the blur would otherwise show the frame's edge */
   /*
    * A hole where the words are, and a fade at both ends.
@@ -792,7 +776,6 @@
   mask-composite: intersect;
   -webkit-mask-composite: source-in;
 }
-.lp[data-theme='dark'] .hero-vid video { opacity: 0.32; }
 
 /* The schematic field sits over the footage, the words over both. */
 .lp .glyphs { z-index: 1; }
@@ -902,9 +885,39 @@
   to { transform: translateY(-50%); }
 }
 
-.lp[data-theme='dark'] .bw-code { opacity: 0.26; }
 
-.lp .bw-cta { display: flex; justify-content: center; margin-top: 34px; }
+/*
+ * Rig stands on the line the button sits on, not beside it.
+ *
+ * Centring the pair as a unit puts the button off-centre from the grid
+ * above, which is the one alignment on this page anybody would notice. He
+ * is placed against the column instead and the button stays where it was.
+ */
+.lp .bw-cta {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  margin-top: 34px;
+  min-height: 130px;
+}
+.lp .bw-cta .rig {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  margin-left: -178px;
+  --rig-shadow: rgba(62, 48, 30, 0.16);
+}
+.lp .bw-cta .btn { margin-bottom: 20px; }
+
+/* Under about 700px there is no room beside the button, so he goes above
+   it and the row becomes a column. Dropping him entirely would be easier
+   and would also mean the phone never meets him. */
+@media (max-width: 700px) {
+  .lp .bw-cta { flex-direction: column; align-items: center; min-height: 0; gap: 4px; }
+  .lp .bw-cta .rig { position: static; margin-left: 0; }
+  .lp .bw-cta .btn { margin-bottom: 0; }
+}
 
 @media (max-width: 900px) {
   .lp .bw-grid { grid-template-columns: repeat(2, 1fr); }
@@ -1195,7 +1208,6 @@
   color: color-mix(in srgb, var(--ink) 74%, #8A2A1A);
 }
 .lp .sk-verdict[data-tone='bad'] b { color: #B83C26; }
-.lp[data-theme='dark'] .sk-verdict[data-tone='bad'] b { color: #FF8578; }
 
 .lp .sk-foot {
   margin: 14px 0 0;

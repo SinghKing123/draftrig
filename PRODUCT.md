@@ -112,6 +112,37 @@ not want. No irony, no smuggled quirk, no second concept wearing this one's
 clothes: future work executes the convention well rather than looking for a
 way out of it.
 
+**Three amendments, set by the user on 2026-10-24 and binding with the
+above.**
+
+1. *Warm, not neutral.* The near-white is warm paper (`#FDFBF7`) and every
+   neutral under it carries the same shift: warm near-black ink, oatmeal
+   rules, brown shadows that are wide and faint rather than tight and dark.
+   The blue accent does not move — it is the logo's.
+2. *The product page is light only.* It had a dark theme and a switch in the
+   nav; both are gone. It is read once, in daylight, by somebody deciding
+   whether to open the editor, and a second palette to keep correct bought
+   nothing for that. The editor keeps its dark theme, warmed to the same
+   temperature, because that is where people sit for an hour.
+3. *There is a character.* Rig, in `src/ui/Rig.tsx`. See below.
+
+### Rig
+
+A mascot, asked for by the user, with plyxl.com's sheep as the reference.
+
+Every part of him is a part the catalogue has: the head is an LED matrix
+module, the body 20x20 extrusion with its T-slot to the front, the arms are
+cable into a 2.54 mm header, and he stands on a screwed-down foot plate. His
+face is the matrix working the way the real one works — a bitmap of lit dots
+in the amber this codebase uses for energised — so an expression is a list of
+coordinates rather than an illustration.
+
+He appears twice and only twice: at the foot of the product page, where it
+stops arguing and asks, and on the editor's empty bench, which is the one
+screen in the app with nothing on it to look at. He does not speak. The copy
+says things once and plainly, and a robot repeating them in a balloon is the
+same sentence twice.
+
 ## Evidence on Hand
 
 Real, in the repository:

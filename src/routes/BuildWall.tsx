@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Rig } from '@/ui/Rig'
 
 /**
  * A wall of builds putting themselves together, with code running over it.
@@ -174,7 +175,21 @@ export function BuildWall() {
           ))}
         </div>
 
+        {/*
+          * Rig stands at the bottom of the page and nowhere else on it.
+          *
+          * He is the last thing before the footer because this is where the
+          * page stops arguing and asks, and a character at the top of a
+          * product page is a mascot wearing the hero. He is also built out
+          * of the catalogue, so he belongs under a wall of builds rather
+          * than over a headline.
+          *
+          * No speech bubble. The copy on this page says things once and
+          * plainly, and a robot saying them again in a cartoon balloon is
+          * the same sentence twice.
+          */}
         <div className="bw-cta">
+          <Rig size={104} mood="happy" />
           <Link className="btn btn-primary btn-lg" to="/app">
             Open the editor<span className="arr" aria-hidden="true" />
           </Link>

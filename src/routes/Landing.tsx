@@ -65,34 +65,6 @@ function useStuck(): boolean {
   return stuck
 }
 
-const THEME_KEY = 'draftrig.lp.theme.v2'
-
-function useTheme(): ['light' | 'dark', () => void] {
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    try {
-      const saved = localStorage.getItem(THEME_KEY)
-      if (saved === 'light' || saved === 'dark') return saved
-      return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-    } catch {
-      return 'light'
-    }
-  })
-  const flip = () => {
-    const next = theme === 'light' ? 'dark' : 'light'
-    setTheme(next)
-    try {
-      localStorage.setItem(THEME_KEY, next)
-    } catch {
-      /* private window: it simply will not be remembered */
-    }
-  }
-  useEffect(() => {
-    document.querySelector('meta[name="theme-color"]')
-      ?.setAttribute('content', theme === 'light' ? '#FFFFFF' : '#09090B')
-  }, [theme])
-  return [theme, flip]
-}
-
 function useCatalogCount(): number | null {
   const [n, setN] = useState<number | null>(null)
   useEffect(() => {
@@ -169,17 +141,16 @@ const FEATURES = [
 export function Landing() {
   const stuck = useStuck()
   const accounts = useAuth().enabled
-  const [theme, flipTheme] = useTheme()
   const parts = useCatalogCount()
 
   useEffect(() => { document.title = pageTitle() }, [])
 
 
   return (
-    <div className="lp" data-theme={theme}>
+    <div className="lp">
       <header className="nav" data-stuck={stuck}>
         <div className="nav-in">
-          <Link to="/" aria-label={BRAND.name}><Wordmark size={20} onDark={theme === 'dark'} /></Link>
+          <Link to="/" aria-label={BRAND.name}><Wordmark size={20} /></Link>
           <nav className="nav-links">
             <a href="#features">Features</a>
             <a href="#parts">Parts</a>
@@ -187,20 +158,6 @@ export function Landing() {
             <a href="#builds">Builds</a>
           </nav>
           <div className="nav-sp" />
-          <button
-            className="theme-btn"
-            onClick={flipTheme}
-            aria-label={theme === 'light' ? 'Dark theme' : 'Light theme'}
-          >
-            {theme === 'light' ? (
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" /></svg>
-            ) : (
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="12" cy="12" r="4.2" />
-                <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
-              </svg>
-            )}
-          </button>
           <AccountMenu compact />
           <Link className="btn btn-primary btn-sm" to="/app">Open the editor</Link>
         </div>
