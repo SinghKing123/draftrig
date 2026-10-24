@@ -1002,3 +1002,225 @@
 @media (prefers-reduced-motion: reduce) {
   .lp .lp-car-panel { transition: opacity 200ms ease; }
 }
+
+/* ==================================================================
+   The room: what Draftrig does beyond a bench
+   ================================================================== */
+
+.lp .setup-show .sec-head { margin-bottom: clamp(34px, 5vw, 56px); }
+
+/* ---- the socket, which is the argument ---- */
+
+.lp .sk {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: clamp(18px, 3vw, 34px);
+  padding: clamp(18px, 2.6vw, 28px);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  background: var(--bg);
+  box-shadow: var(--shadow);
+  transition: border-color 320ms var(--ease), box-shadow 320ms var(--ease);
+}
+.lp .sk[data-over='true'] {
+  border-color: color-mix(in srgb, #E0584B 42%, var(--line));
+  box-shadow: var(--shadow), 0 0 0 4px color-mix(in srgb, #E0584B 9%, transparent);
+}
+
+.lp .sk-list { display: flex; flex-direction: column; gap: 2px; }
+.lp .sk-list-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 0 4px 10px;
+  color: var(--ink-3);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.lp .sk-rating { font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
+
+.lp .sk-row {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--r);
+  background: none;
+  color: var(--ink-3);
+  font: inherit;
+  font-size: 0.9375rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 160ms var(--ease), color 160ms var(--ease), border-color 160ms var(--ease);
+}
+.lp .sk-row:hover { background: var(--bg-3); }
+.lp .sk-row[data-on='true'] { color: var(--ink); }
+
+/* The lamp on each row: a ring when off, filled when on. */
+.lp .sk-dot {
+  width: 11px;
+  height: 11px;
+  border: 2px solid var(--line-2);
+  border-radius: 50%;
+  transition: background 200ms var(--ease), border-color 200ms var(--ease), box-shadow 200ms var(--ease);
+}
+.lp .sk-row[data-on='true'] .sk-dot {
+  border-color: var(--accent);
+  background: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+.lp .sk-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lp .sk-hint {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--accent-wash);
+  color: var(--accent);
+  font-size: 0.6875rem;
+  font-weight: 650;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+.lp .sk-w {
+  color: var(--ink-3);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+.lp .sk-row[data-on='true'] .sk-w { color: var(--ink-2); }
+
+/* ---- the meter ---- */
+
+.lp .sk-meter {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(16px, 2vw, 24px);
+  border-radius: var(--r-lg);
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+}
+.lp .sk-big { display: flex; align-items: baseline; gap: 6px; }
+.lp .sk-amps {
+  font-size: clamp(2.8rem, 6vw, 4rem);
+  font-weight: 680;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  transition: color 240ms var(--ease);
+}
+.lp .sk[data-over='true'] .sk-amps { color: #D9483B; }
+.lp .sk-unit { font-size: 1.25rem; font-weight: 600; color: var(--ink-3); }
+.lp .sk-sub {
+  margin-top: 6px;
+  color: var(--ink-3);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.lp .sk-bar {
+  position: relative;
+  height: 10px;
+  margin: 18px 0 14px;
+  border-radius: 999px;
+  background: var(--bg-3);
+  overflow: hidden;
+}
+.lp .sk-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width 420ms var(--ease), background 240ms var(--ease);
+}
+.lp .sk[data-over='true'] .sk-fill { background: #D9483B; }
+/* Where thirteen amps is. The fill clips at the rating, so the line is what
+   shows you have gone past it. */
+.lp .sk-limit {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  right: 0;
+  width: 2px;
+  background: var(--line-2);
+}
+
+.lp .sk-verdict {
+  padding: 11px 13px;
+  border-radius: var(--r);
+  background: var(--bg-3);
+  color: var(--ink-2);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  transition: background 240ms var(--ease), color 240ms var(--ease);
+}
+.lp .sk-verdict b { color: var(--ink); }
+.lp .sk-verdict[data-tone='warn'] {
+  background: color-mix(in srgb, #F5B942 16%, transparent);
+  color: color-mix(in srgb, var(--ink) 80%, #8A6400);
+}
+.lp .sk-verdict[data-tone='bad'] {
+  background: color-mix(in srgb, #E0584B 13%, transparent);
+  color: color-mix(in srgb, var(--ink) 74%, #8E2C22);
+}
+.lp .sk-verdict[data-tone='bad'] b { color: #C33F32; }
+.lp[data-theme='dark'] .sk-verdict[data-tone='bad'] b { color: #FF8578; }
+
+.lp .sk-foot {
+  margin: 14px 0 0;
+  color: var(--ink-3);
+  font-size: 0.8125rem;
+  line-height: 1.55;
+}
+
+/* ---- the clip row ---- */
+
+.lp .setup-row { margin-top: clamp(40px, 6vw, 72px); }
+.lp .setup-row .row-copy h3 {
+  margin: 0 0 12px;
+  font-size: clamp(1.4rem, 2.4vw, 1.75rem);
+  font-weight: 640;
+  letter-spacing: -0.02em;
+}
+.lp .setup-row .row-copy p { margin: 0 0 20px; color: var(--ink-2); line-height: 1.65; }
+.lp .setup-art video, .lp .setup-art img { aspect-ratio: 16 / 10; }
+
+@media (max-width: 860px) {
+  .lp .sk { grid-template-columns: 1fr; }
+}
+
+/* ---- fixes from the first inspection round ---- */
+
+/*
+ * The section heading balances like the hero's does.
+ *
+ * "Mains, screens, and the desk they / sit on." left two words alone on the
+ * second line. Same fix as the h1 above, for the same reason.
+ */
+.lp .sec-head h2 { text-wrap: balance; }
+
+/*
+ * Proportional figures on the big number, tabular everywhere else.
+ *
+ * A tabular full stop is as wide as a digit, so "2.9" set in tabular at four
+ * rem reads as "2 . 9". Tabular is there to stop a changing value jittering,
+ * and the only thing that moves here is the unit after it, which is supposed
+ * to move when the value gains a digit.
+ */
+.lp .sk-amps { letter-spacing: -0.04em; font-variant-numeric: normal; }
+
+.lp .sk-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+@media (max-width: 560px) {
+  /* The nudge costs the appliance its name on a narrow row, and the row is
+     the only thing it was pointing at. */
+  .lp .sk-hint { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp .sk-fill { transition: none; }
+  .lp .sk-amps, .lp .sk-verdict, .lp .sk { transition: none; }
+}

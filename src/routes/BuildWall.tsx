@@ -39,25 +39,26 @@ import { Link } from 'react-router-dom'
  * question "can it do a bench supply" and not the question "what would I
  * make with this".
  *
- * It leads on the two finished devices, because they are the ones that
- * answer that question without needing a caption: a case with a lid on it
- * and a screen on the front is the thing most people are actually trying to
- * arrive at, and a bench full of parts is the thing they are trying to get
- * past. The workbench and the bare sensor node came off to make room.
+ * It leads on a room rather than a board. A desk with a tower under it, two
+ * monitors on it and a heater beside it is the thing the editor does now
+ * that nothing else in this category does at all, and it is also the
+ * clearest answer to "what would I make with this". The thrust rig and the
+ * rover came off to make room; the workbench and the bare sensor node went
+ * earlier.
  */
 const TILES = [
-  { id: 'grid-desk-terminal', name: 'Desk terminal', note: 'Case, posts, 16x2 panel and a knob' },
+  { id: 'grid-desk-setup', name: 'Desk setup', note: 'Desk, arm, two monitors, a tower and a heater' },
   { id: 'grid-eight-bit', name: 'Eight-bit machine', note: '83 parts, 238 wires' },
   { id: 'grid-pi-case', name: 'Pi enclosure', note: 'Panels, standoffs, heat-set inserts' },
-  { id: 'grid-control-stack', name: 'Control stack', note: 'Three decks, shift register, 16x2 panel' },
+  { id: 'grid-message-board', name: 'LED message board', note: '48 matrix modules, 3,072 dots' },
   { id: 'grid-arcade', name: 'Bartop cabinet', note: '15mm ply, 15" panel, Pi 5, button loom' },
-  { id: 'grid-thrust-rig', name: 'Thrust rig', note: 'Brushless motor on a load cell' },
+  { id: 'grid-desk-terminal', name: 'Desk terminal', note: 'Case, posts, 16x2 panel and a knob' },
   { id: 'grid-control-cabinet', name: 'Control cabinet', note: 'DIN rail, four relays, ESP32, clear door' },
-  { id: 'grid-cnc-router', name: 'CNC router frame', note: '2020 extrusion, rails, leadscrews' },
+  { id: 'grid-shop-rack', name: 'Extrusion rack', note: 'Four posts, sixteen joints, every T-nut' },
   { id: 'grid-panel', name: 'Control panel', note: 'LCD, keypad and switches on one face' },
   { id: 'grid-quadcopter', name: 'Quadcopter', note: 'Ten-inch airframe, four ESCs, IMU and radio' },
   { id: 'grid-plant-watering', name: 'Plant watering', note: 'Soil probe, relay and a pump on an ESP32' },
-  { id: 'grid-rover', name: 'Four-wheel rover', note: 'Acrylic deck, gearmotors, wheels' },
+  { id: 'grid-cnc-router', name: 'CNC router frame', note: '2020 extrusion, rails, leadscrews' },
 ]
 
 /** Taken from the sketches the boards in these clips are running. */

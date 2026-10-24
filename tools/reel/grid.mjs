@@ -69,15 +69,28 @@ const tile = (id, starter, target, dist, az, polar = 46) => ({
   },
   async perform(page) {
     await page.evaluate(
-      async ([a, d, polarEnd]) => {
+      async ([a, d, polarEnd, t]) => {
         const rig = window.__rig
+        /*
+         * The target, again, after staging.
+         *
+         * Loading the document arms the rig, and the framing that lands a
+         * moment later puts the look-at point back on the whole scene — so
+         * a tile aimed at the middle of a tall rack was shot from the floor
+         * at a third of the distance it asked for. It never showed on the
+         * small builds, where the middle is near the origin anyway.
+         */
+        const c = window.draftrig.camera.controls
+        c.target.set(t[0], t[1], t[2])
+        c.object.lookAt(c.target)
+        c.update()
         await Promise.all([
           window.__buildup.play(34, 70),
           rig.fly(a + 26, polarEnd, d * 0.9, 9000),
         ])
         await rig.drift(4, 1500)
       },
-      [az, dist, Math.max(28, polar - 6)],
+      [az, dist, Math.max(28, polar - 6), target],
     )
   },
 })
@@ -89,6 +102,12 @@ export const GRID_SHOTS = [
      cropped by the time it settles. The cabinet is 288 on its horizontal
      diagonal and 200 tall, which wants 332 at the tightest; 470 opening and
      423 closing leaves it the margin the sweep eats. */
+  /* The room. A desk setup is wide and low, so it is width-limited where
+     everything else here is not: 1600 across the top plus the tower beside
+     it is 1900 on the diagonal, and the frame is 0.867*d. */
+  tile('desk-setup', 'desk-setup', [0, 430, -120], 3000, 20, 58),
+  tile('message-board', 'message-board', [0, 520, 0], 1500, 6, 62),
+  tile('shop-rack', 'shop-rack', [0, 660, 0], 2650, 32, 60),
   tile('desk-terminal', 'desk-terminal', [0, 100, 0], 430, 10, 54),
   tile('control-cabinet', 'control-cabinet', [0, 100, 0], 470, 8, 54),
   /* Projects: a machine with an output on the end of it, which is what the

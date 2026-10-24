@@ -30,4 +30,4 @@ import './modules2'
 import './setup'
 import './setup2'
 
-export { allParts, getPart, partsByCategory, searchParts, CATEGORY_META } from '../kernel/registry'
+export { allParts, defaultParams, getPart, partsByCategory, searchParts, CATEGORY_META } from '../kernel/registry'

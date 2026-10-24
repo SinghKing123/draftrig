@@ -8,6 +8,7 @@ import { Carousel } from './Carousel'
 import { Trace } from './Trace'
 import { Find } from './Find'
 import { BuildWall } from './BuildWall'
+import { SetupShow } from './SetupShow'
 import { Glyphs } from './Glyphs'
 
 /**
@@ -182,6 +183,7 @@ export function Landing() {
           <nav className="nav-links">
             <a href="#features">Features</a>
             <a href="#parts">Parts</a>
+            <a href="#setup">New</a>
             <a href="#builds">Builds</a>
           </nav>
           <div className="nav-sp" />
@@ -250,6 +252,9 @@ export function Landing() {
           </Rise>
         </div>
       </section>
+
+      {/* ---- what it does now that it did not last month ---- */}
+      <SetupShow />
 
       {/* ---- builds ---- */}
       <BuildWall />

@@ -1,4 +1,5 @@
 import { BUILD as DISPLAY_BUILD } from './display.mjs'
+import { CINEMA } from './cinematic.mjs'
 
 /**
  * Short silent clips for the front page.
@@ -329,4 +330,53 @@ export const CLIP_BG = {
   },
 }
 
-export const CLIPS = [CLIP_ASSEMBLE, CLIP_RUN, CLIP_WIRE, CLIP_BUILDS, CLIP_BG]
+
+/**
+ * The room going together, for the mains section of the front page.
+ *
+ * Landscape, because it sits in a 16:10 plate beside its copy rather than in
+ * a phone-shaped frame. Same treatment as the cinematic takes: the whole
+ * document loaded and hidden, parts eased down one at a time, wires woven in
+ * as both their ends arrive.
+ */
+export const CLIP_SETUP = {
+  ...base,
+  id: 'clip-setup',
+  rate: 5,
+  simSpeed: 1,
+  fit: false,
+  camera: [26, 64, 3000],
+  async setup(page) {
+    await page.addScriptTag({ content: CINEMA })
+    await page.evaluate(() => {
+      window.__cinema.stage('desk-setup')
+      const c = window.draftrig.camera.controls
+      c.target.set(0, 430, -120)
+      c.update()
+    })
+  },
+  async perform(page) {
+    await page.evaluate(
+      async ([rate]) => {
+        const rig = window.__rig
+        const c = window.draftrig.camera.controls
+        c.target.set(0, 430, -120)
+        c.object.lookAt(c.target)
+        c.update()
+        window.draftrig.engine.reset()
+        window.draftrig.sim.getState().setRunning(true)
+        await Promise.all([
+          window.__cinema.play({ rise: 320, partWin: 7.4, hold: 1.1, weave: true, slow: rate }),
+          (async () => {
+            await rig.fly(44, 60, 3150, 4600)
+            await rig.fly(4, 56, 3000, 4400)
+          })(),
+        ])
+        await rig.drift(3, 1200)
+      },
+      [5],
+    )
+  },
+}
+
+export const CLIPS = [CLIP_ASSEMBLE, CLIP_RUN, CLIP_WIRE, CLIP_BUILDS, CLIP_BG, CLIP_SETUP]
