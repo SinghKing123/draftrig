@@ -15,9 +15,32 @@ import * as THREE from 'three'
 const LAUNCH_MAX = 6
 const LAUNCH_FRACTION = 0.2
 
-/** How high the middle of an unrouted wire rides above the straight line. */
+/**
+ * How far the middle of an unrouted wire falls below the straight line.
+ *
+ * Fourteen millimetres, which is right for the thing this was written for: a
+ * jumper between two holes on a breadboard is cut near enough to length and
+ * has no slack worth drawing.
+ *
+ * It is wrong by an order of magnitude for a room. A cable from a socket
+ * behind a desk to a tower under it is a standard two-metre lead covering
+ * one and a half, and the half metre has to go somewhere — it hangs. Drawn
+ * with fourteen millimetres of droop over two thousand it is a taut straight
+ * line, which is what the first desk build looked like: a room strung with
+ * laser beams.
+ *
+ * So the cap grows past the point where a wire stops being a cut jumper and
+ * starts being a lead somebody bought: nothing changes under 300 mm, and
+ * above it the droop is about an eighth of the extra run. A two-metre cable
+ * gets 220 mm of belly, which is roughly what a two-metre cable does.
+ */
 const SAG_FRACTION = 0.18
 const SAG_MAX = 14
+const SAG_SLACK_FROM = 300
+const SAG_SLACK_RATE = 0.12
+
+const sagFor = (span: number): number =>
+  Math.min(span * SAG_FRACTION, SAG_MAX + Math.max(0, span - SAG_SLACK_FROM) * SAG_SLACK_RATE)
 
 /**
  * The shortest wire that still gets an arch. Below this the two terminals are
@@ -337,7 +360,7 @@ export function wirePoints(
   // Somebody routed this by hand. That is the route.
   if (waypoints?.length) return pathVia(null)
 
-  const natural = Math.min(span * SAG_FRACTION, SAG_MAX)
+  const natural = sagFor(span)
   const centre = a.pos.clone().add(b.pos).multiplyScalar(0.5)
   const ceiling = Math.min(natural + span * MAX_BOW, BOW_MAX)
   const at = (dir: THREE.Vector3, reach: number): THREE.Vector3[] =>

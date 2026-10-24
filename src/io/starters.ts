@@ -2,7 +2,7 @@ import type { Doc } from '@/state/doc'
 import { emptyDoc } from '@/state/doc'
 import type { Instance, Params, Vec3 } from '@/parts/kernel/types'
 import { defaultParams, requirePart } from '@/parts/kernel/registry'
-import { drawerUnit, piCase, workbench } from './assemblies'
+import { drawerUnit, piCase, shopRack, workbench } from './assemblies'
 import {
   arcadeCabinet,
   controlStack,
@@ -21,7 +21,7 @@ import {
   thrustRig,
 } from './builds'
 import { plantWatering, quadcopter } from './projects'
-import { controlCabinet, deskTerminal } from './devices'
+import { controlCabinet, deskSetup, deskTerminal, messageBoard } from './devices'
 import { lab10Buzzer, lab9Blinker } from './labs'
 
 /**
@@ -416,6 +416,9 @@ export const STARTERS: Starter[] = [
     tags: ["clock","rtc","perfboard","sensor","buttons","alarm","project","finished"],
     build: benchClock,
   },
+  { id: 'desk-setup', title: 'Desk setup', blurb: 'A desk, a TV, a heater, and one socket that cannot carry them', kind: 'build', tags: ["desk","setup","room","pc","monitor","tv","console","mains","socket","extension","battlestation","office","av"], build: deskSetup },
+  { id: 'message-board', title: 'LED message board', blurb: 'Forty-eight matrix modules on a stand, three thousand dots', kind: 'build', tags: ["led","matrix","max7219","sign","message","display","dot matrix","scroll","board","advert","text"], build: messageBoard },
+  { id: 'shop-rack', title: 'Extrusion shop rack', blurb: 'Four posts, sixteen joints, three shelves and a set of casters', kind: 'build', tags: ["rack","extrusion","2020","frame","shelf","structure","bracket","t-nut","caster","workshop","aluminium","shelving"], build: shopRack },
   { id: 'desk-terminal', title: 'Desk terminal', blurb: 'A board, a 16x2 panel and a knob, in a case with a lid on it', kind: 'build', tags: ["terminal","lcd","1602","enclosure","case","device","knob","encoder","front panel","product","computer","rtc"], build: deskTerminal },
   { id: 'control-cabinet', title: 'Control cabinet', blurb: 'Four switched zones on a DIN rail, behind a clear door', kind: 'build', tags: ["cabinet","panel","din rail","relay","esp32","automation","enclosure","wago","irrigation","zones","industrial"], build: controlCabinet },
   { id: 'quadcopter', title: 'Quadcopter', blurb: 'Four arms, four motors and a flight controller between two plates', kind: 'build', tags: ["drone","quad","quadcopter","fpv","motor","propeller","esc","lipo","imu","flight","radio","airframe"], build: quadcopter },

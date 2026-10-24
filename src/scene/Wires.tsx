@@ -71,8 +71,8 @@ function useObstacles(): Obstacle[] {
       const def = getPart(inst.defId)
       if (!def) continue
       const built = buildPart(def, inst.params)
-      if (built.bbox.isEmpty()) continue
-      const box = built.bbox.clone().applyMatrix4(instanceMatrix(inst.pos, inst.rot))
+      if (built.hull.isEmpty()) continue
+      const box = built.hull.clone().applyMatrix4(instanceMatrix(inst.pos, inst.rot))
       out.push({ instanceId: inst.id, box })
     }
     return out

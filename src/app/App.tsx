@@ -4,6 +4,8 @@ import { Viewport } from '@/scene/Viewport'
 import { fbKey, peekFramebuffer, type CharBuffer } from '@/sim/display/framebuffer'
 import { TopBar } from '@/ui/TopBar'
 import { Library } from '@/ui/Library'
+import { Outline } from '@/ui/Outline'
+import { useSidePanel } from '@/ui/PanelTabs'
 import { Inspector } from '@/ui/Inspector'
 import { Console } from '@/ui/Console'
 import { BomPanel, BomTab } from '@/ui/Bom'
@@ -125,6 +127,7 @@ export function Editor() {
   const loadDoc = useDoc((s) => s.loadDoc)
   const doc = useDoc((s) => s.doc)
   const bomOpen = useBomPanel((s) => s.open)
+  const sideTab = useSidePanel((s) => s.tab)
   const sketchOpen = useSketchPanel((s) => s.editing) !== null
   // On a phone the columns become sheets; see MobileBar for why.
   const sheet = useMobile((s) => s.sheet)
@@ -392,7 +395,9 @@ export function Editor() {
           covering up the thing you are pricing while you do that is no
           help. */}
       <div className="app-body" data-bom={bomOpen} data-sketch={sketchOpen} data-sheet={sheet ?? 'none'}>
-        <Library />
+        {/* One column, two panels: the catalogue of what you could add and
+            the list of what you have. */}
+        {sideTab === 'parts' ? <Library /> : <Outline />}
         <div className="app-center">
           <div className="viewport-wrap" data-tour="viewport">
             <Viewport />

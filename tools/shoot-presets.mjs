@@ -77,6 +77,9 @@ const SHOTS = [
   ['arcade', 0.62, 198, 62],
   /* The devices. Both have a display on the front, so both are shot nearly
      level with it rather than down onto the case. */
+  ['desk-setup', 0.66, 22, 70],
+  ['shop-rack', 0.80, 36, 64],
+  ['message-board', 0.74, 4, 72],
   ['desk-terminal', 0.56, 14, 68],
   ['control-cabinet', 0.60, 10, 66],
   // The projects: a machine with an output on the end of it.

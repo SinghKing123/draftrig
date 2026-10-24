@@ -594,6 +594,38 @@ const BY_ID: Record<string, Glyph> = {
 }
 
 /** Whatever the category is, when a part has no symbol of its own. */
+const Socket = (p: Props) => (
+  <G {...p}>
+    <rect x="3" y="3" width="14" height="14" rx="2.2" />
+    <circle cx="10" cy="7.4" r="0.95" fill="currentColor" stroke="none" />
+    <circle cx="7.4" cy="12" r="0.95" fill="currentColor" stroke="none" />
+    <circle cx="12.6" cy="12" r="0.95" fill="currentColor" stroke="none" />
+  </G>
+)
+
+const Tower = (p: Props) => (
+  <G {...p}>
+    <rect x="5.4" y="2.6" width="9.2" height="14.8" rx="1.3" />
+    <path d="M7.8 5.6h4.4M7.8 8h4.4" />
+    <circle cx="10" cy="13.4" r="1.9" />
+  </G>
+)
+
+const Screen = (p: Props) => (
+  <G {...p}>
+    <rect x="2" y="3.6" width="16" height="10.4" rx="1.4" />
+    <path d="M10 14v2.6M6.6 16.6h6.8" />
+  </G>
+)
+
+const Desk = (p: Props) => (
+  <G {...p}>
+    <path d="M2 7.4h16" />
+    <path d="M4.2 7.4v9M15.8 7.4v9" />
+    <path d="M4.2 11.2h11.6" />
+  </G>
+)
+
 const BY_CATEGORY: Record<PartCategory, Glyph> = {
   passive: Resistor,
   semiconductor: Diode,
@@ -610,6 +642,10 @@ const BY_CATEGORY: Record<PartCategory, Glyph> = {
   panel: Panel,
   fastener: Screw,
   motion: Motion,
+  mains: Socket,
+  computer: Tower,
+  av: Screen,
+  furniture: Desk,
 }
 
 export function PartIcon({ def, size = 18 }: { def: PartDef; size?: number }) {

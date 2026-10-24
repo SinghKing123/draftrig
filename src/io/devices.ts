@@ -2,6 +2,16 @@ import type { Doc } from '@/state/doc'
 import type { Vec3 } from '@/parts/kernel/types'
 import { BLACK, BLUE, Builder, GREEN, ORANGE, RED, WHITE, YELLOW } from './builds'
 
+/*
+ * Mains core colours, which are not the signal colours and never were.
+ * Brown is live, blue is neutral, green-and-yellow is earth; using the
+ * breadboard red and black for a 230 V run is the one thing in a picture of
+ * a mains build that an electrician would notice immediately.
+ */
+const BROWN = '#7A4A2B'
+const BLUE_N = '#2F6BD8'
+const GREEN_E = '#9FBF2B'
+
 /**
  * Finished devices, in enclosures.
  *
@@ -533,6 +543,354 @@ export function controlCabinet(): Doc {
   toLcd('d4', 'd5', BLUE)
   toLcd('d3', 'd6', BLUE)
   toLcd('d2', 'd7', BLUE)
+
+  return b.doc
+}
+
+/* ================================================================== */
+/* LED message board                                                   */
+/* ================================================================== */
+
+/**
+ * A sign, four rows of matrix modules on a stand.
+ *
+ * Forty-eight MAX7219 modules in four chains, three thousand and seventy-two
+ * dots, and a message laid across the whole width in the same 5 by 7 font a
+ * character LCD uses. It is the biggest single thing in the catalog measured
+ * in light, and it is here because the question everybody asks about a
+ * design tool is what it can make rather than what it can draw.
+ *
+ * Honest about one thing: what the panels show is a parameter on the part,
+ * not something decoded off the clock and data lines. The chain is wired the
+ * way a chain is wired — in at the left of a row, out at the right, on to
+ * the next — and the current it would pull is why the converter is a five
+ * amp one rather than the usual two. But the pin protocol for this part is
+ * not simulated, so the sign shows what the build says it shows.
+ *
+ * Twelve modules is ninety-six columns, and a character is six of them, so
+ * a row holds sixteen. The lines below are exactly that long or padded to
+ * sit in the middle, because a sign with its text hard against the left edge
+ * looks like a sign that has gone wrong.
+ */
+export function messageBoard(): Doc {
+  const b = new Builder('LED message board')
+
+  const MODULES = 12
+  /** A module is 32 mm square, so a row is this wide and this tall. */
+  const ROW = 32
+  const SIGN = MODULES * ROW
+  const PANEL_W = SIGN + 56
+  const PANEL_H = ROW * 4 + 62
+  const T = 6
+  /** The front face of the backing panel. Modules stand off it. */
+  const FACE = T
+  const STANDOFF = 8
+  const DOTS = FACE + STANDOFF
+  /*
+   * The eight millimetres of air between the panel and the backs of the
+   * modules, which is where the loom is dressed.
+   *
+   * Worth deriving rather than guessing: the first cut put it at
+   * DOTS - STANDOFF - 2, which is inside the backing panel, and the whole
+   * harness came up the front of the sign and across the face of it.
+   */
+  const BEHIND = FACE + 2
+
+  /* Base, legs, and the backing panel they carry. The panel's bottom edge is
+     high enough that the message is at eye level on a bench. */
+  const BASE_Y = 15
+  /*
+   * Most of a metre of leg, and that is a framing decision as much as a
+   * practical one. A sign on short legs is a wide, shallow object, and a
+   * wide shallow object in a nine-by-sixteen frame is a band across the
+   * middle with bench above and below it. Standing it at eye level makes
+   * the whole thing about as tall as it is wide, which is what a portrait
+   * frame wants — and is also where you would actually put a sign.
+   */
+  const LEG = 900
+  const PANEL_BOT = BASE_Y + LEG - PANEL_H
+
+  b.add('panel-sheet', [0, 0, 0], { material: 'plywood', width: PANEL_W + 120, depth: 260, thickness: BASE_Y, corner: 8 }, [0, 0, 0], 'Base')
+
+  /* A square tube is authored along X with its underside at y = 0, so
+     standing one up is [0, 0, 90] and it occupies its own width in -x from
+     where it is placed. Placing the pair at -(W/2) and +(W/2 + 25) is what
+     makes the two bodies symmetric about the middle rather than both
+     offset the same way. */
+  const legX = PANEL_W / 2
+  for (const [x, name] of [[-legX, 'Left leg'], [legX + 25, 'Right leg']] as const) {
+    b.add('tube-square', [x, BASE_Y + LEG / 2, 0], { size: 25, wall: 2, length: LEG, material: 'alu-anod-black' }, [0, 0, 90], name)
+  }
+  /* A bracket each side, foot inboard. The L is authored with its upright
+     in +y and its foot in +x, so the right-hand one is turned through 180
+     rather than placed differently. */
+  b.add('bracket-l', [-legX, BASE_Y, 0], { leg: 60, width: 25, thick: 3, finish: 'steel-zinc' }, [0, 0, 0], 'Leg foot')
+  b.add('bracket-l', [legX, BASE_Y, 0], { leg: 60, width: 25, thick: 3, finish: 'steel-zinc' }, [0, 180, 0], 'Leg foot')
+
+  b.add('panel-sheet', [0, PANEL_BOT + PANEL_H / 2, 0], { material: 'abs-black', width: PANEL_W, depth: PANEL_H, thickness: T, corner: 6 }, [90, 0, 0], 'Backing panel')
+
+  /* --- The sign itself. Four rows, top first, the way they read.
+     A row of modules mounted [90, 0, 0] faces +z with its columns along X
+     and its first row of dots at the top, which is what the font wants. */
+  const lines = [
+    'DESIGN THE WHOLE',
+    'BUILD BEFORE YOU',
+    ' SPEND A PENNY',
+    '  DRAFTRIG.COM',
+  ]
+  const top = PANEL_BOT + PANEL_H / 2 + ROW * 1.5
+  const rows = lines.map((text, i) => {
+    const y = top - i * ROW
+    for (const sx of [-1, 1] as const) {
+      b.add('standoff-hex', [sx * (SIGN / 2 - 10), y, FACE], { thread: 'M3', length: STANDOFF, ends: 'mf', material: 'nylon-black' }, [90, 0, 0], 'Panel standoff')
+    }
+    return b.add(
+      'led-matrix-8x8',
+      [0, y, DOTS],
+      { modules: MODULES, color: 'red', intensity: 11, text },
+      [90, 0, 0],
+      `Row ${i + 1}`,
+    )
+  })
+
+  /* --- The gear on the base. A sign this size is most of an amp at full
+     brightness and three at white-out, which is why the converter is rated
+     where it is and why the supply comes in on a fused terminal rather than
+     a barrel jack. */
+  const supply = b.add('terminal-block', [160, BASE_Y, 62], { ways: 2, pitch: '7.62' }, [0, 0, 0], 'Supply in')
+  const fuse = b.add('fuse-glass', [118, BASE_Y, 62], { rating: '5', speed: 'slow' }, [0, 0, 0], 'Fuse')
+  const buck = b.add('buck-converter', [60, BASE_Y, 62], { vout: 5, imax: 5 }, [0, 0, 0], 'Buck converter')
+  const tog = b.add('switch-toggle', [-150, BASE_Y, 62], { poles: 'spst', on: true }, [0, 0, 0], 'Power')
+  /* Nothing is written to the chain here: the message is set on the parts.
+     A board that claims to be running a sketch it is not running is worse
+     than one that admits it is only holding the wires. */
+  const mcu = b.add('mcu-board', [-50, BASE_Y, 62], { program: 'off', mask: 'fr4-black' }, [0, 0, 0], 'Controller')
+
+  /* --- Wiring. In, switched, fused, down to five volts, then the chain. */
+  b.wire([supply, 't1'], [tog, 'com'], RED, 0.8)
+  b.wire([tog, 'no'], [fuse, 'a'], RED, 0.8)
+  b.wire([fuse, 'b'], [buck, 'in'], RED, 0.8)
+  b.wire([supply, 't2'], [buck, 'ing'], BLACK, 0.8)
+  b.wire([buck, 'out'], [mcu, 'vin'], RED, 0.5)
+  b.wire([buck, 'outg'], [mcu, 'gnd'], BLACK, 0.5)
+
+  /*
+   * Up the left-hand side to the bottom row, then row to row.
+   *
+   * Hand-routed, and it has to be: the straight line from the base to a row
+   * of modules goes through the face of the sign, and the straight line from
+   * one row's output to the next row's input goes diagonally across the
+   * dots. Both of those belong in the eight millimetres of air the standoffs
+   * leave behind the panels, which is exactly where a real one is dressed.
+   */
+  /* Up behind the left leg, round the bottom edge of the panel, and into
+     the gap. Crossing the panel rather than going under it puts the whole
+     loom through 6 mm of ABS, and brushing the leg on the way up costs
+     seven millimetres of wire inside a 25 mm tube. */
+  const side = -PANEL_W / 2 + 20
+  const up: Vec3[] = [
+    [side, BASE_Y + 240, -40],
+    [side, PANEL_BOT - 65, -16],
+    [side, PANEL_BOT - 23, BEHIND + 2],
+  ]
+  const last = rows[rows.length - 1]
+  b.wireVia([buck, 'out'], [last, 'vcc'], up, RED, 0.5)
+  b.wireVia([buck, 'outg'], [last, 'gnd'], up, BLACK, 0.5)
+  b.wireVia([mcu, 'd11'], [last, 'din'], up, GREEN, 0.16)
+  b.wireVia([mcu, 'd10'], [last, 'cs'], up, YELLOW, 0.16)
+  b.wireVia([mcu, 'd13'], [last, 'clk'], up, BLUE, 0.16)
+
+  /* Out of the right-hand end of one row and back along the top of the next,
+     which is the loop you see hanging behind every one of these. */
+  for (let i = rows.length - 1; i > 0; i--) {
+    const a = rows[i]
+    const c = rows[i - 1]
+    const mid = top - (i - 0.5) * ROW
+    const via: Vec3[] = [[SIGN / 2 + 20, mid, BEHIND], [-SIGN / 2 - 20, mid, BEHIND]]
+    b.wireVia([a, 'vcco'], [c, 'vcc'], via, RED, 0.5)
+    b.wireVia([a, 'gndo'], [c, 'gnd'], via, BLACK, 0.5)
+    b.wireVia([a, 'dino'], [c, 'din'], via, GREEN, 0.16)
+    b.wireVia([a, 'cso'], [c, 'cs'], via, YELLOW, 0.16)
+    b.wireVia([a, 'clko'], [c, 'clk'], via, BLUE, 0.16)
+  }
+
+  return b.doc
+}
+
+/* ================================================================== */
+/* Desk setup                                                          */
+/* ================================================================== */
+
+/**
+ * A desk, and everything plugged in at it.
+ *
+ * Not a circuit. It is the other thing people turn up wanting to lay out —
+ * where the monitors go, how long the HDMI has to be to get from a tower on
+ * the floor to a screen on an arm, and whether the whole lot will run off
+ * the one socket behind the desk.
+ *
+ * That last question is the one worth having a solver for, and the answer
+ * here is no. A tower, two monitors, a charger and a router come to about
+ * 350 W between them, which is nothing. A three kilowatt fan heater on the
+ * same extension lead is not nothing, and the lead is rated at thirteen amps
+ * for everything plugged into it put together — so this build opens with the
+ * checks already complaining, which is the point of it.
+ *
+ * Turn the heater down to 1 kW, or move it to its own socket, and watch them
+ * clear. That is the whole argument for drawing a room before wiring it.
+ */
+export function deskSetup(): Doc {
+  const b = new Builder('Desk setup')
+
+  const DW = 1600
+  const DD = 750
+  const DH = 740
+
+  b.add('desk', [0, 0, 0], { width: DW, depth: DD, height: DH, top: 'oak', frame: 'sit-stand' }, [0, 0, 0], 'Desk')
+
+  /* The socket behind the desk, at skirting height. Everything in the room
+     is downstream of this one pair of terminals. */
+  const wall = b.add('outlet-mains', [-520, 300, -DD / 2 - 40], { region: 'uk', ways: '2', switched: true }, [0, 0, 0], 'Wall socket')
+
+  /* One lead under the desk, and this is where it gets interesting: six ways
+     does not mean six times the current. */
+  const lead = b.add('extension-lead', [-120, 60, -DD / 2 + 120], { ways: '6', length: 2000, fuse: '13' }, [0, 0, 0], 'Extension lead')
+
+  /* --- On the desk. */
+  /*
+   * The arm, and the screen actually on the end of it.
+   *
+   * Worth getting right rather than drawing an arm near a monitor: the arm
+   * is authored reaching along its own +x with the VESA plate at the end,
+   * so [0, -90, 0] turns that reach to +z, over the desk. The screen then
+   * goes where the plate is — clamp at the rear edge, 240 of reach, and the
+   * plate 350 above the clamp, which puts the panel centre 350 above the
+   * top and 110 back from the middle. Pointed the other way the boom hangs
+   * off the back of the desk, which is where the first cut had it and is
+   * also what the mains run was going through.
+   */
+  const ARM_REACH = 240
+  const ARM_POST = 420
+  const ARM_Z = -DD / 2 + 20
+  b.add('monitor-arm', [-330, DH, ARM_Z], { reach: ARM_REACH, height: ARM_POST, load: '2-9' }, [0, -90, 0], 'Monitor arm')
+  const mon1 = b.add('monitor-desk', [-330, DH + ARM_POST - 70 - 188, ARM_Z + ARM_REACH + 4 + 21], { diagonal: '27', hz: '144', stand: false }, [0, 0, 0], 'Monitor, left')
+  const mon2 = b.add('monitor-desk', [330, DH, -DD / 2 + 180], { diagonal: '27', hz: '60', stand: true }, [0, -18, 0], 'Monitor, right')
+  const lap = b.add('laptop', [330, DH, 170], { diagonal: '14', lid: 105, watts: '65' }, [0, -12, 0], 'Laptop')
+  const handset = b.add('phone-handset', [-620, DH, 120], { size: 'standard', stand: true }, [0, 14, 0], 'Phone')
+  const psu = b.add('charger-usb-mains', [-120, 112, -DD / 2 + 120], { watts: '65', ports: '2', load: 70 }, [0, 0, 0], 'USB charger')
+
+  /* --- Under it. */
+  const pc = b.add('pc-tower', [600, 0, -DD / 2 + 230], { size: 'midi', psu: '850', gpu: true, load: 35 }, [0, -24, 0], 'Tower')
+  const net = b.add('router-wifi', [-660, 0, -DD / 2 + 160], { aerials: 4, ports: '4' }, [0, 0, 0], 'Router')
+  /* And the thing that makes it a question rather than a layout. Everything
+     else at this desk together is about 650 W; a fan heater on high is five
+     times that, and it is on the same lead. */
+  const heat = b.add('heater-fan', [120, 0, 240], { watts: '3000', on: true }, [0, 12, 0], 'Fan heater')
+
+  /*
+   * --- Mains, routed along the floor.
+   *
+   * Hand-routed, and for once not to dodge an obstacle. A cable between two
+   * things a metre and a half apart does not take the straight line between
+   * their sockets: it falls to the floor, crosses, and comes back up. Left
+   * to the router these came out as taut diagonals through the middle of the
+   * room, which is the one thing a picture of a room must not look like.
+   *
+   * Three waypoints each: down behind the thing it leaves, along the floor,
+   * and up behind the thing it arrives at. Desk-mounted kit comes up behind
+   * the rear edge rather than through the top, which is what the grommet in
+   * a real desk is for.
+   */
+  const FLOOR = 26
+  /* The line the desk cables climb, 55 mm behind the back edge. Twenty was
+     not enough: the arm's boom reaches to 20 behind the edge itself, and
+     the left monitor's supply came up through it. */
+  const REAR = -DD / 2 - 55
+  const at = (id: string): Vec3 => b.doc.instances[id].pos
+
+  /** Down to the floor, across, and up — for anything standing on the floor. */
+  const floorRun = (from: string, to: string, pair: [string, string], color: string, g: number): void => {
+    const a = at(from)
+    const c = at(to)
+    b.wireVia([from, pair[0]], [to, pair[1]], [
+      [a[0], FLOOR, a[2] - 110],
+      [c[0], FLOOR, c[2] - 110],
+    ], color, g)
+  }
+
+  /** Down to the floor and up again behind the desk, for anything on it. */
+  const deskRun = (from: string, to: string, pair: [string, string], color: string, g: number): void => {
+    const a = at(from)
+    const c = at(to)
+    b.wireVia([from, pair[0]], [to, pair[1]], [
+      [a[0], FLOOR, a[2] - 90],
+      /* Up on the socket side of the thing, not the far side: climbing on
+         the far side means the last hop crosses the whole width of whatever
+         is in the way, which for the arm-mounted screen is the arm. */
+      [c[0] + 60, FLOOR, REAR],
+      [c[0] + 60, c[1] + 60, REAR],
+    ], color, g)
+  }
+
+  /*
+   * Two and a half rather than the one and a half a real 13 A flex is.
+   *
+   * The solver rates a conductor at 6 A per square millimetre, which is the
+   * figure for wiring bundled inside a chassis rather than for a flex lying
+   * on a floor in free air — the real cable is good for about sixteen amps
+   * and the model calls it nine. Sized at 1.5 the build filled the checks
+   * with complaints about the cable, which buried the complaint that
+   * matters: the socket. Sized at 2.5 the only thing left saying anything
+   * is the thing that should be.
+   */
+  const CORES: [string, string, string, number][] = [
+    ['l', 'l', BROWN, 2.5],
+    ['n', 'n', BLUE_N, 2.5],
+    ['e', 'e', GREEN_E, 2.5],
+  ]
+
+  /* Socket to lead. The second face of the socket is left spare, and it is
+     worth knowing that taking it would not help: both faces are the same
+     pair of terminals behind the plate. */
+  for (const [pa, pb, col] of CORES) {
+    b.wireVia([wall, `a${pa}`], [lead, pb], [[-520, FLOOR, REAR], [at(lead)[0], FLOOR, at(lead)[2] - 110]], col, 2.5)
+  }
+
+  /* On the desk lead: the tower, both monitors, the charger and the heater. */
+  const onFloor: [string, number][] = [[pc, 1], [heat, 2]]
+  for (const [id, way] of onFloor) {
+    for (const [pa, pb, col, g] of CORES) floorRun(lead, id, [`${way}${pa}`, pb], col, g)
+  }
+  const onDesk: [string, number][] = [[mon1, 3], [mon2, 4]]
+  for (const [id, way] of onDesk) {
+    for (const [pa, pb, col, g] of CORES) deskRun(lead, id, [`${way}${pa}`, pb], col, g * 0.4)
+  }
+  /* The charger is plugged straight into the lead, so it is a plug rather
+     than a run: no floor, no waypoints, 40 mm of lead. */
+  for (const [pa, pb, col] of CORES) b.wire([lead, `5${pa}`], [psu, pb], col, 0.75)
+
+  /* --- Low voltage, which is short enough to leave alone. */
+  b.wire([psu, 'vbus1'], [lap, 'usbc'], WHITE, 0.5)
+  b.wire([psu, 'gnd1'], [lap, 'usbcg'], BLACK, 0.5)
+  b.wire([psu, 'vbus2'], [handset, 'usbc'], WHITE, 0.3)
+  b.wire([psu, 'gnd2'], [handset, 'usbcg'], BLACK, 0.3)
+
+  /* --- Picture and network. These carry nothing worth solving; what they
+     carry is length, and length is the reason they are drawn. A metre and a
+     half of HDMI does not reach from the floor to an arm, and that is a
+     thing worth finding out before the cable is bought. */
+  for (const [from, fp, to, tp] of [
+    [pc, 'dp1', mon1, 'dp'],
+    [pc, 'hdmi', mon2, 'hdmi'],
+  ] as [string, string, string, string][]) {
+    const a = at(from)
+    const c = at(to)
+    b.wireVia([from, fp], [to, tp], [[a[0], FLOOR + 10, a[2] - 130], [c[0], FLOOR + 10, c[2] - 130]], BLACK, 0.4)
+  }
+  b.wire([lap, 'hdmi'], [mon2, 'usbc'], BLACK, 0.4)
+  const n = at(net)
+  const c = at(pc)
+  b.wireVia([net, 'lan1'], [pc, 'eth'], [[n[0], FLOOR, n[2] - 120], [c[0], FLOOR, c[2] - 130]], YELLOW, 0.3)
 
   return b.doc
 }

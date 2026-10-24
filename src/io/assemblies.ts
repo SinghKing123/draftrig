@@ -199,3 +199,114 @@ export function drawerUnit(): Doc {
 
   return b.doc
 }
+
+/* ================================================================== */
+/* Extrusion rack                                                      */
+/* ================================================================== */
+
+/**
+ * A shop rack, and nothing in it but structure.
+ *
+ * Four posts, four rings of rail, a bracket at every joint, the T-nuts and
+ * the screws that hold the brackets, three shelves and a set of casters.
+ * There is no circuit anywhere in it, which is the point of it being here —
+ * the editor is as much a framing tool as a wiring one, and a wall of boards
+ * says otherwise.
+ *
+ * It is also the build that shows what designing in extrusion really costs.
+ * A rail is not a line between two posts: it is a 520 mm cut of 2020, two
+ * brackets, four T-nuts and four screws, and sixteen joints of that is a
+ * hundred and sixty parts before a single shelf goes in. Drawn, that is
+ * tedious; priced, it is the difference between a two-hundred-pound rack and
+ * a four-hundred-pound one, and it is why the bill of materials matters more
+ * on a frame than on a board.
+ *
+ * Extrusion convention is the one at the top of builds.ts: a beam is authored
+ * lying along X with its seating face at y = 0, `beamZ` lays one along Z, and
+ * `post` stands one up from its own base.
+ */
+export function shopRack(): Doc {
+  const b = new Builder('Shop rack')
+
+  const W = 600
+  const D = 400
+  const H = 1300
+  /* Where the rails ring the posts. The bottom one is clear of the casters,
+     the top one is the handle height, and the two between carry shelves. */
+  const LEVELS = [60, 460, 860, 1240]
+
+  /** The centre line of a post, which is 10 in from the outside corner. */
+  const px = W / 2 - 10
+  const pz = D / 2 - 10
+
+  /* --- The four posts. A beam stood up has its origin at the bottom of the
+     post and needs half a profile of offset in X, which `post` does. */
+  for (const sx of [-1, 1] as const) {
+    for (const sz of [-1, 1] as const) b.post(sx * px - 10, 0, sz * pz, H)
+  }
+
+  /* --- Four rings of rail. The X rails run between the posts, so they are
+     short of the full width by a post at each end; the Z rails are shorter
+     again because they land inside the X ones. */
+  const railX = W - 40
+  const railZ = D - 40
+  for (const y of LEVELS) {
+    b.beamX(0, y, -pz, railX)
+    b.beamX(0, y, pz, railX)
+    b.beamZ(-px, y, 0, railZ)
+    b.beamZ(px, y, 0, railZ)
+  }
+
+  /* --- A bracket at every joint, and what holds each one on.
+     Sixteen joints, two T-nuts and two screws apiece: the parts that are
+     invisible in a sketch and are most of the afternoon in the workshop. */
+  for (const y of LEVELS) {
+    for (const sx of [-1, 1] as const) {
+      for (const sz of [-1, 1] as const) {
+        b.add('bracket-corner-2020', [sx * (px - 20), y + 20, sz * pz], { size: '20', finish: 'alu-anod-black' }, [0, 0, 0], 'Corner bracket')
+        for (const n of [0, 1]) {
+          b.add('tnut-2020', [sx * (px - 20) + n * 8, y + 30, sz * pz], { thread: 'M5' }, [0, 0, 0], 'T-nut')
+          b.add('screw-bhcs', [sx * (px - 20) + n * 8, y + 36, sz * pz], { thread: 'M5', length: 10, finish: 'steel-zinc' }, [0, 0, 0], 'Screw')
+        }
+      }
+    }
+  }
+
+  /* --- Shelves, sitting on the three lower rings. MDF rather than ply for
+     the two that carry weight, because it is flatter and cheaper and nobody
+     looks at a shelf. */
+  for (const y of LEVELS.slice(0, 3)) {
+    b.add('panel-sheet', [0, y + 20, 0], { material: y === LEVELS[0] ? 'plywood' : 'mdf', width: W - 60, depth: D - 60, thickness: 15 }, [0, 0, 0], 'Shelf')
+  }
+
+  /* --- Braced across the back, which is the one thing a rack of rectangles
+     cannot do for itself. A rectangle of bolted joints racks over sideways
+     under its own weight; a diagonal makes two triangles of it. */
+  for (const sx of [-1, 1] as const) {
+    b.add(
+      'extrusion-tslot',
+      [sx * 150, 660, -pz],
+      { size: '2020', length: 440, finish: 'alu-anod-black' },
+      [0, 0, sx * 62],
+      'Back brace',
+    )
+  }
+
+  /* --- Casters, and the plates that spread their load into the post ends.
+     Rated well past the mass the bill of materials adds up to, because the
+     rating on a caster is static and a rack gets shoved. */
+  for (const sx of [-1, 1] as const) {
+    for (const sz of [-1, 1] as const) {
+      b.add('plate-joining-2020', [sx * px, 0, sz * pz], { shape: 'straight', finish: 'alu-anod-black' }, [0, 0, 0], 'Foot plate')
+      b.add('caster', [sx * px, -6, sz * pz], { diameter: 75, load: 70, braked: sz < 0, tyre: 'pu' }, [0, 0, 0], 'Caster')
+    }
+  }
+
+  /* --- A handle across the top, which is what turns a rack into something
+     somebody will actually move rather than drag. */
+  b.add('tube-round', [0, H + 42, pz + 36], { od: 25, wall: 2, length: 340, material: 'alu-6063' }, [0, 0, 0], 'Handle')
+  b.add('bracket-l', [-150, H + 20, pz + 24], { leg: 40, width: 20, thick: 3, finish: 'steel-zinc' }, [0, 0, 0], 'Handle bracket')
+  b.add('bracket-l', [150, H + 20, pz + 24], { leg: 40, width: 20, thick: 3, finish: 'steel-zinc' }, [0, 180, 0], 'Handle bracket')
+
+  return b.doc
+}

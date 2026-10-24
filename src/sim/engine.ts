@@ -330,6 +330,39 @@ class SimEngine {
         }
       }
 
+      /*
+       * A part carrying more than it is rated for.
+       *
+       * Generic, on purpose. Thirteen amps through a socket, ten through an
+       * extension lead and sixteen through a breaker are the same fault, and
+       * before this the only thing in the build that knew its own rating was
+       * the wire. A setup is mostly a question about this — one socket, a
+       * lead, a tower, a television, a console and a kettle — and the answer
+       * has to come from the solver rather than from arithmetic in somebody's
+       * head.
+       *
+       * Measured at the part's own worst device, which for a socket is the
+       * source and for a lead is whichever conductor carries the lot.
+       */
+      const rated = def.electrical?.limits?.imax
+      const carried = instI[id]
+      if (rated !== undefined && carried !== undefined && def.category === 'mains') {
+        const a = Math.abs(carried)
+        if (a > rated) {
+          issues.push({
+            severity: 'error',
+            instanceId: id,
+            message: `${inst.name} is carrying ${eng(a, 'A')} through a ${rated} A rating. Move something onto another circuit.`,
+          })
+        } else if (a > rated * 0.8) {
+          issues.push({
+            severity: 'warning',
+            instanceId: id,
+            message: `${inst.name} is at ${Math.round((a / rated) * 100)} % of its ${rated} A rating.`,
+          })
+        }
+      }
+
       if (def.id === 'capacitor-electrolytic') {
         const vp = nodeV[portKey(id, 'p')] ?? 0
         const vn = nodeV[portKey(id, 'n')] ?? 0

@@ -1,6 +1,7 @@
 import type { DeviceModel, PartDef, Port, SilkItem, Solid, Vec3 } from '../kernel/types'
 import { registerParts } from '../kernel/registry'
 import { circle, num, roundRect, str } from './_helpers'
+import { glyph } from '@/sim/display/font5x7'
 
 /**
  * Displays and indicators beyond the character LCD.
@@ -306,13 +307,18 @@ const ledMatrix: PartDef = {
       'An 8 by 8 matrix with a MAX7219 behind it. The driver multiplexes one row at a time fast enough to look continuous, and sets the current for all 64 dots with a single resistor.',
   },
   params: [
-    { key: 'modules', label: 'Modules chained', type: 'number', default: 1, min: 1, max: 8, step: 1, group: 'Module' },
+    { key: 'modules', label: 'Modules chained', type: 'number', default: 1, min: 1, max: 24, step: 1, group: 'Module', help: 'A chain is limited by refresh rate and by the current the first module has to pass, not by the protocol.' },
     {
       key: 'color', label: 'Dot colour', type: 'enum', default: 'red', group: 'Module',
       options: [{ value: 'red', label: 'Red' }, { value: 'green', label: 'Green' }, { value: 'blue', label: 'Blue' }, { value: 'white', label: 'White' }],
     },
     { key: 'intensity', label: 'Intensity', type: 'number', default: 8, min: 0, max: 15, step: 1, group: 'Display', help: 'The MAX7219 has sixteen brightness steps, not a PWM pin.' },
-    { key: 'lit', label: 'Dots lit', type: 'number', unit: '%', default: 25, min: 0, max: 100, step: 1, group: 'Display' },
+    {
+      key: 'text', label: 'Message', type: 'text', default: '', group: 'Display',
+      help: 'Shown in the 5 by 7 font, six columns a character. Eight modules hold ten characters.',
+    },
+    { key: 'shift', label: 'Scrolled by', type: 'number', unit: 'col', default: 0, min: -200, max: 200, step: 1, group: 'Display', showIf: (p) => str(p, 'text', '') !== '' },
+    { key: 'lit', label: 'Dots lit', type: 'number', unit: '%', default: 25, min: 0, max: 100, step: 1, group: 'Display', showIf: (p) => str(p, 'text', '') === '' },
   ],
   solids: (p) => {
     const n = Math.round(num(p, 'modules', 1))
@@ -320,6 +326,35 @@ const ledMatrix: PartDef = {
     const emit = colors[str(p, 'color', 'red')] ?? colors.red
     const lit = num(p, 'lit', 25) / 100
     const glow = (num(p, 'intensity', 8) / 15) * 1.8
+    /*
+     * What the dots are showing.
+     *
+     * A message, laid out across the whole chain in the same 5 by 7 font the
+     * character LCD uses, six columns a character. The chain is one display
+     * the length of all of it, so a word can straddle the seam between two
+     * modules exactly as it does on a real sign.
+     *
+     * The text is a parameter rather than something decoded off the SPI
+     * lines: the pin protocol is not simulated for this part, so what it
+     * shows is what the build says it shows. Wired for layout, in other
+     * words, not driven. Left empty it falls back to the fixed scatter,
+     * which is there so a panel nobody has written to still reads as a panel
+     * rather than as a grid of identical beads.
+     */
+    const text = str(p, 'text', '')
+    const cols = n * 8
+    let bits: Uint8Array | null = null
+    if (text) {
+      bits = new Uint8Array(cols)
+      const shift = Math.round(num(p, 'shift', 0))
+      for (let i = 0; i < text.length; i++) {
+        const g = glyph(text.charCodeAt(i))
+        for (let c = 0; c < 5; c++) {
+          const x = i * 6 + c - shift
+          if (x >= 0 && x < cols) bits[x] = g[c]
+        }
+      }
+    }
     const MOD = 32
     const total = n * MOD
     const T = 1.2
@@ -336,9 +371,13 @@ const ledMatrix: PartDef = {
       out.push({ kind: 'box', mat: { color: '#0C0E11', rough: 0.75, density: 1.4 }, size: [MOD - 0.6, 6, MOD - 0.6], at: [ox, T + 3, 0], bevel: 0.4 })
       for (let r = 0; r < 8; r++) {
         for (let col = 0; col < 8; col++) {
-          // A fixed scatter, so the panel reads as showing something rather
-          // than as a grid of identical beads.
-          const on = ((r * 8 + col + m * 3) % 7) / 7 < lit
+          /* Row 0 is the top of the glyph, which is also the end of the
+             module nearest -z: a panel stood up to face the room puts its
+             own +z downwards, so the first bit of a font column lands where
+             the top of a letter belongs. */
+          const on = bits
+            ? ((bits[m * 8 + col] >> r) & 1) === 1
+            : ((r * 8 + col + m * 3) % 7) / 7 < lit
           out.push({
             kind: 'cyl', mat: {
               color: on ? emit : '#3A0A08', rough: 0.3, density: 1.2,

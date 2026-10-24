@@ -317,6 +317,18 @@ export type PartCategory =
   | 'fastener'
   | 'panel'
   | 'motion'
+  /*
+   * The room the bench is in.
+   *
+   * Mains, screens, computers and the furniture they sit on. They are a
+   * section of their own rather than more electronics because they answer a
+   * different question — not "what does this circuit do" but "does all of
+   * this fit, and can that one socket run it".
+   */
+  | 'mains'
+  | 'av'
+  | 'computer'
+  | 'furniture'
 
 export interface PartDoc {
   manufacturer?: string

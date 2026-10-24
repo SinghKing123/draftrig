@@ -48,6 +48,21 @@ export interface BuiltPart {
   meshes: BuiltMesh[]
   surfaces: BuiltSurface[]
   bbox: THREE.Box3
+  /**
+   * The same box with the `noCollide` solids left out.
+   *
+   * `noCollide` has been in the solid type since the beginning and until now
+   * did nothing. It matters for two kinds of part. One is anything with a
+   * decal or a lens drawn a hair proud of its body, which was inflating the
+   * box a wire had to keep out of by a millimetre for no reason. The other
+   * is anything that draws its own flex: an extension lead with two metres
+   * of cable drooping off it has a bounding box the size of the floor, and
+   * every wire in the room was reported as passing through it.
+   *
+   * Framing still uses `bbox` — Fit should frame the cable too. Routing and
+   * clearance use this one.
+   */
+  hull: THREE.Box3
   /** cm^3 */
   volume: number
   /** grams */
@@ -306,12 +321,13 @@ function walk(
   buckets: Map<string, Bucket>,
   acc: { volume: number; moment: THREE.Vector3; mass: number },
   surfaces: BuiltSurface[],
+  hull: THREE.Box3,
 ): void {
   for (const s of solids) {
     const world = new THREE.Matrix4().multiplyMatrices(parent, localMatrix(s))
 
     if (s.kind === 'group') {
-      walk(s.children, world, buckets, acc, surfaces)
+      walk(s.children, world, buckets, acc, surfaces, hull)
       continue
     }
 
@@ -350,6 +366,10 @@ function walk(
     }
     bucket.geos.push(geo)
     if (s.tag) bucket.tags.add(s.tag)
+    if (!s.noCollide) {
+      geo.computeBoundingBox()
+      if (geo.boundingBox) hull.union(geo.boundingBox)
+    }
 
     // Mass properties: treat each primitive as a point mass at its centroid.
     const vol = primitiveVolume(s) // mm^3
@@ -379,7 +399,9 @@ export function buildSolids(solids: Solid[]): BuiltPart {
   const buckets = new Map<string, Bucket>()
   const acc = { volume: 0, moment: new THREE.Vector3(), mass: 0 }
   const surfaces: BuiltSurface[] = []
-  walk(solids, new THREE.Matrix4(), buckets, acc, surfaces)
+  const hull = new THREE.Box3()
+  hull.makeEmpty()
+  walk(solids, new THREE.Matrix4(), buckets, acc, surfaces, hull)
 
   const meshes: BuiltMesh[] = []
   const bbox = new THREE.Box3()
@@ -408,7 +430,9 @@ export function buildSolids(solids: Solid[]): BuiltPart {
   }
 
   const com = acc.mass > 0 ? acc.moment.clone().divideScalar(acc.mass) : new THREE.Vector3()
-  return { meshes, surfaces, bbox, volume: acc.volume / 1000, mass: acc.mass, com }
+  // A part made of nothing but decals still has to keep wires out of itself.
+  if (hull.isEmpty()) hull.copy(bbox)
+  return { meshes, surfaces, bbox, hull, volume: acc.volume / 1000, mass: acc.mass, com }
 }
 
 /* ------------------------------------------------------------------ */

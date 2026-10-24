@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { IconChevron, IconSearch, IconX } from './Icons'
 import { CategoryIcon, PartIcon } from './PartIcons'
+import { PanelTabs } from './PanelTabs'
 import { allParts, CATEGORY_META, getPart, searchParts, valueTargetFor } from '@/parts/kernel/registry'
 import type { PartCategory, PartDef } from '@/parts/kernel/types'
 import { useDoc } from '@/state/doc'
 
-const SECTION_ORDER: ('Electronics' | 'Build')[] = ['Electronics', 'Build']
+const SECTION_ORDER: ('Electronics' | 'Build' | 'Setup')[] = ['Electronics', 'Build', 'Setup']
 
 /**
  * Which categories are expanded, remembered between sessions.
@@ -54,6 +55,7 @@ export function Library() {
   const [open, setOpen] = useState<Record<string, boolean>>(readOpen)
   const addPart = useDoc((s) => s.addPart)
   const setMode = useDoc((s) => s.setMode)
+  const partsInBuild = useDoc((s) => s.doc.order.length)
 
   useEffect(() => {
     try {
@@ -98,7 +100,7 @@ export function Library() {
   return (
     <aside className="panel" data-tour="library">
       <div className="panel-head">
-        Parts
+        <PanelTabs count={partsInBuild} />
         <div className="grow" />
         {!searching && anyOpen && (
           <button className="link-btn" onClick={() => setOpen({})} title="Collapse all">

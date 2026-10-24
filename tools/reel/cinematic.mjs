@@ -299,7 +299,13 @@ export const cineTake = (id, starter, target, camera, legs, opts = {}) => {
           await Promise.all([
             window.__cinema.play({ ...opts, slow: rate }),
             (async () => {
-              for (const l of legs) await rig.fly(l[0], l[1], l[2], l[3])
+              /* A fifth number on a leg is where the look-at point should
+                 have got to by the end of it, which is how the camera
+                 cranes up a tall build instead of orbiting its middle. */
+              for (const l of legs) {
+                if (l.length > 4) await rig.crane(l[0], l[1], l[2], l[3], l[4])
+                else await rig.fly(l[0], l[1], l[2], l[3])
+              }
             })(),
           ])
           await rig.drift(drift[0], drift[1])

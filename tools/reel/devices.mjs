@@ -88,4 +88,52 @@ export const DEVICE_SHOTS = [
     ],
     { rise: 95, partWin: 17.4, hold: 2.6, weave: true, rate: RATE, drift: [4, 2400], simDt: 1e-4 },
   ),
+
+  /*
+   * The rack. Nothing in it but structure — four posts, sixteen joints and
+   * what holds them — and 1365 mm tall on a 600 by 400 footprint, which is
+   * the one build in the set that fills a portrait frame without being
+   * asked twice.
+   *
+   * Height-limited rather than width-limited, unlike everything else here:
+   * 721 on the horizontal diagonal wants 1970, and 1365 of height wants
+   * 2100, so the legs run near the taller of the two.
+   */
+  cineTake(
+    'shop-rack',
+    'shop-rack',
+    [0, 660, 0],
+    [30, 74, 2000],
+    [
+      [62, 66, 2220, 5200],
+      [10, 58, 2400, 5200],
+      [-44, 62, 2300, 5200],
+      [-6, 70, 2120, 5400],
+    ],
+    { rise: 420, partWin: 17.4, hold: 2.6, weave: true, rate: RATE, drift: [4, 2400] },
+  ),
+
+  /*
+   * The sign, and the one shot here that cranes.
+   *
+   * It is 955 tall and 500 wide, so the whole thing needs about 1500 to sit
+   * in frame — at which distance a 3 mm dot is a pixel and a half and the
+   * message, which is the entire point of the build, is unreadable. So the
+   * first three legs frame the stand going up and the last one lifts the
+   * look-at point from the middle of the build to the middle of the panel
+   * and closes to 760, which puts the four rows across the frame.
+   */
+  cineTake(
+    'message-board',
+    'message-board',
+    [0, 520, 0],
+    [26, 76, 1350],
+    [
+      [54, 68, 1500, 5200],
+      [8, 62, 1560, 5200],
+      [-42, 66, 1480, 5200],
+      [-6, 76, 760, 5400, 880],
+    ],
+    { rise: 300, partWin: 17.4, hold: 2.6, weave: true, rate: RATE, drift: [3, 2400] },
+  ),
 ]

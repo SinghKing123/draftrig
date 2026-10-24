@@ -1975,3 +1975,150 @@ kbd {
   font-variant-numeric: tabular-nums;
 }
 .modal-readout .mr-keys { color: var(--tx-3, #7d838f); }
+
+/* ================================================================== */
+/* Left column: two panels, one strip                                  */
+/* ================================================================== */
+
+/*
+ * The catalogue and the build share the left column, so the thing that
+ * switches them sits in the panel head where the title used to be. A tab
+ * strip rather than two stacked panels: the parts list wants the whole
+ * column when you are adding, and the build list wants it when you are
+ * looking for something, and neither is improved by having half.
+ */
+.side-tabs {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  margin: 0 -10px;
+  height: 100%;
+}
+.side-tabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 11px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--tx-3);
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: inherit;
+  cursor: pointer;
+  transition: color var(--dur), border-color var(--dur);
+}
+.side-tabs button:hover { color: var(--tx-1); }
+.side-tabs button[data-on='true'] {
+  color: var(--tx-0);
+  border-bottom-color: var(--brand);
+}
+.tab-count {
+  min-width: 17px;
+  padding: 1px 4px;
+  border-radius: 999px;
+  background: var(--bg-3, rgba(255, 255, 255, 0.07));
+  color: var(--tx-3);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-align: center;
+}
+.side-tabs button[data-on='true'] .tab-count { color: var(--tx-1); }
+
+/* ---- the build list ---- */
+
+.out-row {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto 20px 20px 20px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px 0 10px;
+  height: 26px;
+  border-left: 2px solid transparent;
+  color: var(--tx-1);
+  font-size: var(--fs-md);
+  cursor: default;
+  user-select: none;
+}
+.out-row:hover,
+.out-row[data-hover='true'] { background: var(--bg-2); }
+.out-row[data-on='true'] {
+  border-left-color: var(--brand);
+  background: color-mix(in srgb, var(--brand) 13%, transparent);
+  color: var(--tx-0);
+}
+/* A hidden part stays in the list — that is the only place it still is. */
+.out-row[data-dim='true'] .out-name,
+.out-row[data-dim='true'] .out-glyph { opacity: 0.45; }
+
+.out-glyph { display: flex; color: var(--tx-3); }
+.out-row[data-on='true'] .out-glyph { color: var(--brand); }
+.out-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.out-name-edit {
+  min-width: 0;
+  padding: 1px 4px;
+  border: 1px solid var(--line-3);
+  border-radius: var(--r-sm, 4px);
+  background: var(--bg-0);
+  color: var(--tx-0);
+  font: inherit;
+  font-size: var(--fs-md);
+}
+.out-kind {
+  color: var(--tx-3);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* The row actions stay out of the way until the row is under the pointer,
+   because three buttons on every one of two hundred rows is a texture. */
+.out-act {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-sm, 4px);
+  background: none;
+  color: var(--tx-3);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--dur), color var(--dur), background var(--dur);
+}
+.out-row:hover .out-act,
+.out-row[data-on='true'] .out-act,
+.out-row[data-dim='true'] .out-act { opacity: 1; }
+.out-act:hover { background: var(--bg-3, rgba(255, 255, 255, 0.07)); color: var(--tx-0); }
+.out-act.danger:hover { color: var(--bad, #E0584B); }
+
+.out-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--line);
+  background: var(--bg-2);
+  color: var(--tx-3);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.out-foot b { margin-left: 5px; color: var(--tx-1); font-weight: 600; }
+
+/*
+ * Room on the inspector's right edge for the tab that floats over it.
+ *
+ * The bill-of-materials tab is positioned against the window rather than in
+ * the layout, so it sat on top of whatever the inspector had at mid height
+ * — which is the transform block, and which is why the unit after every
+ * position field was invisible.
+ */
+.inspector .panel-body { padding-right: 26px; }

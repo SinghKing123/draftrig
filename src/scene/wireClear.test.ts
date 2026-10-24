@@ -57,10 +57,10 @@ function obstaclesOf(doc: Doc, build = ''): Obstacle[] {
     const def = getPart(inst.defId)
     if (!def) continue
     const built = buildPart(def, inst.params)
-    if (built.bbox.isEmpty()) continue
+    if (built.hull.isEmpty()) continue
     out.push({
       instanceId: inst.id,
-      box: built.bbox.clone().applyMatrix4(instanceMatrix(inst.pos, inst.rot)),
+      box: built.hull.clone().applyMatrix4(instanceMatrix(inst.pos, inst.rot)),
     })
   }
   return out

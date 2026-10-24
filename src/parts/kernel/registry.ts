@@ -59,7 +59,7 @@ export function partsByCategory(cat: PartCategory): PartDef[] {
 export interface CategoryMeta {
   label: string
   /** Grouping in the library sidebar. */
-  section: 'Electronics' | 'Build'
+  section: 'Electronics' | 'Build' | 'Setup'
   order: number
 }
 
@@ -79,6 +79,10 @@ export const CATEGORY_META: Record<PartCategory, CategoryMeta> = {
   panel: { label: 'Sheet & panel', section: 'Build', order: 210 },
   fastener: { label: 'Fasteners', section: 'Build', order: 220 },
   motion: { label: 'Motion', section: 'Build', order: 230 },
+  mains: { label: 'Mains & sockets', section: 'Setup', order: 300 },
+  computer: { label: 'Computers & consoles', section: 'Setup', order: 310 },
+  av: { label: 'Screens & AV', section: 'Setup', order: 320 },
+  furniture: { label: 'Desk & room', section: 'Setup', order: 330 },
 }
 
 const escapeRe = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')

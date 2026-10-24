@@ -88,6 +88,55 @@ window.__rig = {
       requestAnimationFrame(step)
     })
   },
+  /**
+   * Orbit, and raise the look-at point while it happens.
+   *
+   * Flying keeps the target where it is, which is right for a shot of one
+   * object and wrong for anything tall: a sign on a metre of leg has to be
+   * framed whole while it is being built and then closed in on where the
+   * message is, and that is a move of the target as much as of the camera.
+   * Changing the target under a fly does not work — fly takes a copy at the
+   * start and looks at that copy all the way through, so the camera arrives
+   * pointing at where the subject used to be.
+   */
+  crane(azDeg, polarDeg, dist, ms, targetY) {
+    ms *= this.slow
+    const c = window.draftrig.camera?.controls
+    if (!c) return Promise.resolve()
+    const t = c.target.clone()
+    const from = c.object.position.clone().sub(t)
+    const r0 = from.length()
+    const az0 = Math.atan2(from.x, from.z)
+    const po0 = Math.acos(Math.max(-1, Math.min(1, from.y / r0)))
+    let az1 = (azDeg * Math.PI) / 180
+    const po1 = (polarDeg * Math.PI) / 180
+    const r1 = dist ?? r0
+    const y1 = targetY ?? t.y
+    while (az1 - az0 > Math.PI) az1 -= Math.PI * 2
+    while (az1 - az0 < -Math.PI) az1 += Math.PI * 2
+    const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2)
+    const t0 = performance.now()
+    return new Promise((done) => {
+      const step = () => {
+        const k = Math.min(1, (performance.now() - t0) / ms)
+        const e = ease(k)
+        const az = az0 + (az1 - az0) * e
+        const po = po0 + (po1 - po0) * e
+        const r = r0 + (r1 - r0) * e
+        c.target.set(t.x, t.y + (y1 - t.y) * e, t.z)
+        c.object.position.set(
+          c.target.x + r * Math.sin(po) * Math.sin(az),
+          c.target.y + r * Math.cos(po),
+          c.target.z + r * Math.sin(po) * Math.cos(az),
+        )
+        c.object.lookAt(c.target)
+        c.update()
+        if (k < 1) requestAnimationFrame(step)
+        else done()
+      }
+      requestAnimationFrame(step)
+    })
+  },
   /** A slow continuous orbit, for a bed to lay other action over. */
   drift(degPerSec, ms) {
     degPerSec /= this.slow
