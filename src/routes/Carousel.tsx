@@ -18,37 +18,36 @@ import { useCallback, useEffect, useRef, useState } from 'react'
  * their turn comes round.
  */
 
-type Panel =
-  | { kind: 'clip'; name: string }
-  | { kind: 'still'; src: string; alt: string }
+interface Panel {
+  src: string
+  alt: string
+}
 
 /*
- * The room leads, then the two editor stills, then the clips.
+ * Six pictures of the same size, in one order.
  *
- * The deck is the first thing anyone sees and it was all boards, which is
- * the half of the editor every competitor also does. A sign full of lit
- * dots and a desk with a tower under it are the half none of them do, so
- * those open it.
+ * It used to be four video clips at 1280x720 mixed with screenshots and
+ * preset renders at 16:10, so every press changed the shape of the thing
+ * being looked at, and a clip that opened on an empty bench opened the page
+ * on a black panel. These are one set shot together by
+ * tools/shoot-slides.mjs: 1728 by 1080, every one.
  *
- * The sign goes first and the desk clip second, not the other way round:
- * the clip is an assembly and assemblies start on an empty bench, so
- * leading with it opened the whole page on a black panel.
+ * The room leads. The deck is the first thing anyone sees and it was all
+ * boards, which is the half of the editor every competitor also does.
  */
 const PANELS: Panel[] = [
-  { kind: 'still', src: '/presets/message-board.jpg', alt: 'An LED sign of forty-eight matrix modules, lit' },
-  { kind: 'clip', name: 'clip-setup' },
-  { kind: 'still', src: '/slides/sketch.jpg', alt: 'A sketch open beside the board running it' },
-  { kind: 'still', src: '/slides/bom.jpg', alt: 'The bill of materials, priced by part' },
-  { kind: 'clip', name: 'clip-assemble' },
-  { kind: 'clip', name: 'clip-wire' },
-  { kind: 'clip', name: 'clip-run' },
-  { kind: 'clip', name: 'clip-builds' },
+  { src: '/slides/setup.jpg', alt: 'A desk with two monitors, a tower and a heater, wired to one socket' },
+  { src: '/slides/sign.jpg', alt: 'An LED sign of forty-eight matrix modules, lit' },
+  { src: '/slides/board.jpg', alt: 'An eight-bit machine across four breadboards' },
+  { src: '/slides/editor.jpg', alt: 'The editor, with the build list open and a monitor selected' },
+  { src: '/slides/rack.jpg', alt: 'A shop rack in aluminium extrusion' },
+  { src: '/slides/bom.jpg', alt: 'The bill of materials, priced by part' },
 ]
 
 const N = PANELS.length
 
-/** How long a still holds the front before the deck moves on. */
-const DWELL = 6500
+/** How long a panel holds the front before the deck moves on. */
+const DWELL = 4200
 
 /** How far panel `i` sits from the front, the short way round the ring. */
 function offset(i: number, at: number): number {
@@ -60,7 +59,6 @@ function offset(i: number, at: number): number {
 
 export function Carousel() {
   const [at, setAt] = useState(0)
-  const vids = useRef<(HTMLVideoElement | null)[]>([])
   const drag = useRef<{ x: number; moved: boolean } | null>(null)
 
   /*
@@ -74,29 +72,13 @@ export function Carousel() {
 
   const go = useCallback((step: number) => setAt((n) => (n + step + N) % N), [])
 
-  /* Only the panel in front plays, and it plays from the top. A deck of six
-     all decoding at once is six decoders for one thing anybody is looking
-     at. */
-  useEffect(() => {
-    vids.current.forEach((v, i) => {
-      if (!v) return
-      if (i === at) {
-        v.currentTime = 0
-        void v.play().catch(() => {})
-      } else {
-        v.pause()
-      }
-    })
-  }, [at])
-
   /*
-   * A still has no end of its own, so it is given one.
+   * A picture has no end of its own, so it is given one.
    *
    * Counted down rather than set once, so that holding the deck pauses the
    * dwell instead of only deferring the jump that was already scheduled.
    */
   useEffect(() => {
-    if (PANELS[at].kind !== 'still') return
     let left = DWELL
     const id = window.setInterval(() => {
       if (hold.current) return
@@ -125,7 +107,7 @@ export function Carousel() {
         className="lp-car-stage"
         tabIndex={0}
         role="group"
-        aria-label="What the editor does, six panels"
+        aria-label="What the editor does, six pictures"
         onKeyDown={onKey}
         onPointerDown={(e) => {
           drag.current = { x: e.clientX, moved: false }
@@ -162,43 +144,21 @@ export function Carousel() {
           return (
             <div
               className="lp-car-panel"
-              key={p.kind === 'clip' ? p.name : p.src}
+              key={p.src}
               data-at={d === 0}
               aria-hidden={d !== 0}
               style={{ ['--d' as string]: d }}
             >
               <div className="lp-shot-bar" aria-hidden="true"><i /><i /><i /></div>
               <div className="lp-shot-body">
-                {p.kind === 'clip' ? (
-                  <video
-                    ref={(el) => {
-                      vids.current[i] = el
-                    }}
-                    poster={`/clips/${p.name}.jpg`}
-                    muted
-                    playsInline
-                    preload="none"
-                    aria-hidden="true"
-                    onEnded={() => {
-                      /* Not looped: reaching the end is what moves the deck
-                         on. Held, it starts the same clip again rather than
-                         freezing on its last frame. */
-                      if (d !== 0) return
-                      const v = vids.current[i]
-                      if (hold.current && v) {
-                        v.currentTime = 0
-                        void v.play().catch(() => {})
-                      } else {
-                        go(1)
-                      }
-                    }}
-                  >
-                    {near && <source src={`/clips/${p.name}.webm`} type="video/webm" />}
-                    {near && <source src={`/clips/${p.name}.mp4`} type="video/mp4" />}
-                  </video>
-                ) : (
-                  <img src={p.src} alt={d === 0 ? p.alt : ''} loading="lazy" />
-                )}
+                <img
+                  src={p.src}
+                  alt={d === 0 ? p.alt : ''}
+                  width={1728}
+                  height={1080}
+                  loading={near ? 'eager' : 'lazy'}
+                  decoding="async"
+                />
               </div>
             </div>
           )
@@ -212,7 +172,7 @@ export function Carousel() {
         <div className="lp-car-dots">
           {PANELS.map((p, i) => (
             <button
-              key={p.kind === 'clip' ? p.name : p.src}
+              key={p.src}
               data-on={i === at}
               onClick={() => setAt(i)}
               aria-label={`Panel ${i + 1} of ${N}`}

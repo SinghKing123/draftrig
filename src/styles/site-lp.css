@@ -22,26 +22,44 @@
    a screenshot, and the contrast does the work of an accent.
    ================================================================== */
 
+/*
+ * Warm paper rather than white.
+ *
+ * The greys were the Zinc ramp, which is a cool neutral: pure white ground,
+ * blue-black ink, grey-blue rules. Against the dark 3D renders the page
+ * carries, that reads hard — the renders are the only warm thing on it and
+ * everything around them is clinical.
+ *
+ * Every neutral is now pulled a few degrees towards paper: the ground is an
+ * off-white with yellow in it, the ink is a warm near-black, the rules are
+ * oatmeal. The blue is untouched, because it is the logo's and the logo is
+ * not ours to warm; a cool accent on a warm ground is the oldest pairing
+ * there is and it is what makes the blue read as ink rather than as a
+ * highlight.
+ */
 .lp {
-  --bg: #FFFFFF;
-  --bg-2: #FAFAFA;
-  --bg-3: #F4F4F5;
-  --ink: #18181B;
-  --ink-on: #FFFFFF;
-  --ink-2: #52525B;
-  --ink-3: #71717A;
-  --line: #E4E4E7;
-  --line-2: #D4D4D8;
+  --bg: #FDFBF7;
+  --bg-2: #F8F4ED;
+  --bg-3: #F1EBE1;
+  --ink: #1C1A17;
+  --ink-on: #FFFDF9;
+  --ink-2: #57514A;
+  --ink-3: #7A736A;
+  --line: #E8E1D6;
+  --line-2: #D9D0C2;
   --accent: #1E6FFF;
   --accent-ink: #FFFFFF;
-  --accent-wash: #EFF5FF;
-  --shadow-sm: 0 1px 2px rgba(24, 24, 27, 0.06), 0 1px 3px rgba(24, 24, 27, 0.08);
-  --shadow: 0 4px 12px rgba(24, 24, 27, 0.06), 0 12px 32px rgba(24, 24, 27, 0.08);
-  --shadow-lg: 0 8px 24px rgba(24, 24, 27, 0.07), 0 32px 64px -12px rgba(24, 24, 27, 0.16);
+  --accent-wash: #EDF2FD;
+  /* Wider and fainter than they were. A tight dark shadow is a hard edge
+     with extra steps; the warmth comes from the shadow being brown rather
+     than black as much as from the ground. */
+  --shadow-sm: 0 1px 2px rgba(62, 48, 30, 0.05), 0 1px 3px rgba(62, 48, 30, 0.07);
+  --shadow: 0 6px 18px rgba(62, 48, 30, 0.055), 0 18px 44px rgba(62, 48, 30, 0.075);
+  --shadow-lg: 0 10px 30px rgba(62, 48, 30, 0.06), 0 40px 80px -16px rgba(62, 48, 30, 0.14);
 
-  --r: 12px;
-  --r-lg: 18px;
-  --r-xl: 24px;
+  --r: 14px;
+  --r-lg: 20px;
+  --r-xl: 28px;
   --gut: clamp(20px, 5vw, 40px);
   --max: 1180px;
   --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
@@ -56,22 +74,24 @@
   text-rendering: optimizeLegibility;
 }
 
+/* The same move on the negative: a near-black with brown in it rather than
+   the blue-black it was, so the two themes are one page lit differently. */
 .lp[data-theme='dark'] {
-  --bg: #09090B;
-  --bg-2: #0E0E11;
-  --bg-3: #18181B;
-  --ink: #FAFAFA;
-  --ink-on: #18181B;
-  --ink-2: #A1A1AA;
-  --ink-3: #8B8B94;
-  --line: #27272A;
-  --line-2: #3F3F46;
+  --bg: #121010;
+  --bg-2: #191614;
+  --bg-3: #221F1B;
+  --ink: #FAF7F2;
+  --ink-on: #1C1A17;
+  --ink-2: #A9A199;
+  --ink-3: #8C847B;
+  --line: #2E2A26;
+  --line-2: #45403A;
   --accent: #4D94FF;
   --accent-ink: #06121F;
-  --accent-wash: #0E1B2E;
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow: 0 4px 12px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.45), 0 32px 64px -12px rgba(0, 0, 0, 0.6);
+  --accent-wash: #121D2C;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.38);
+  --shadow: 0 6px 18px rgba(0, 0, 0, 0.38), 0 18px 44px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.42), 0 40px 80px -16px rgba(0, 0, 0, 0.58);
 }
 
 .lp a { color: inherit; text-decoration: none; }
@@ -1023,8 +1043,8 @@
   transition: border-color 320ms var(--ease), box-shadow 320ms var(--ease);
 }
 .lp .sk[data-over='true'] {
-  border-color: color-mix(in srgb, #E0584B 42%, var(--line));
-  box-shadow: var(--shadow), 0 0 0 4px color-mix(in srgb, #E0584B 9%, transparent);
+  border-color: color-mix(in srgb, #CE5340 42%, var(--line));
+  box-shadow: var(--shadow), 0 0 0 4px color-mix(in srgb, #CE5340 10%, transparent);
 }
 
 .lp .sk-list { display: flex; flex-direction: column; gap: 2px; }
@@ -1112,7 +1132,7 @@
   font-variant-numeric: tabular-nums;
   transition: color 240ms var(--ease);
 }
-.lp .sk[data-over='true'] .sk-amps { color: #D9483B; }
+.lp .sk[data-over='true'] .sk-amps { color: #C9452F; }
 .lp .sk-unit { font-size: 1.25rem; font-weight: 600; color: var(--ink-3); }
 .lp .sk-sub {
   margin-top: 6px;
@@ -1144,7 +1164,7 @@
   background: var(--accent);
   transition: clip-path 420ms var(--ease), background 240ms var(--ease);
 }
-.lp .sk[data-over='true'] .sk-fill { background: #D9483B; }
+.lp .sk[data-over='true'] .sk-fill { background: #C9452F; }
 /* Where thirteen amps is. The fill clips at the rating, so the line is what
    shows you have gone past it. */
 .lp .sk-limit {
@@ -1171,10 +1191,10 @@
   color: color-mix(in srgb, var(--ink) 80%, #8A6400);
 }
 .lp .sk-verdict[data-tone='bad'] {
-  background: color-mix(in srgb, #E0584B 13%, transparent);
-  color: color-mix(in srgb, var(--ink) 74%, #8E2C22);
+  background: color-mix(in srgb, #CE5340 14%, transparent);
+  color: color-mix(in srgb, var(--ink) 74%, #8A2A1A);
 }
-.lp .sk-verdict[data-tone='bad'] b { color: #C33F32; }
+.lp .sk-verdict[data-tone='bad'] b { color: #B83C26; }
 .lp[data-theme='dark'] .sk-verdict[data-tone='bad'] b { color: #FF8578; }
 
 .lp .sk-foot {
