@@ -20,8 +20,25 @@ import { applyDevUserFlag, DEV_USER, devUserOn } from './devUser'
 export interface AuthState {
   /** True while we are still working out whether someone is signed in. */
   loading: boolean
-  /** Null when signed out, or when sign-in is not configured at all. */
+  /**
+   * The signed-in user, or null.
+   *
+   * Null for somebody who has signed up but not yet confirmed their email:
+   * see `pending` below and the note on verification at the bottom of this
+   * file. Everything that gates on an account gates on this field, so an
+   * unconfirmed account is treated exactly as signed out, which is what it
+   * is.
+   */
   user: User | null
+  /**
+   * Signed in to Auth0, but the email address has not been confirmed.
+   *
+   * Separate from `user` on purpose. They are not an account yet, but they
+   * are also not a stranger — the app has to be able to tell them what is
+   * happening and offer to send the mail again, and it cannot do either if
+   * they look identical to a signed-out visitor.
+   */
+  pending: User | null
   /** False when the app was built without Auth0 credentials. */
   enabled: boolean
   error: string | null
@@ -151,6 +168,7 @@ export function useAuth(): AuthState {
 const DEV_SIGNED_IN: AuthState = {
   loading: false,
   user: DEV_USER,
+  pending: null,
   enabled: true,
   error: null,
   signIn: () => {},
@@ -168,6 +186,7 @@ const DEV_SIGNED_IN: AuthState = {
 const SIGNED_OUT: AuthState = {
   loading: false,
   user: null,
+  pending: null,
   enabled: false,
   error: null,
   signIn: () => {},
@@ -199,10 +218,34 @@ function useAuthLive(): AuthState {
     logout({ logoutParams: { returnTo: window.location.origin } })
   }, [logout])
 
+  /*
+   * Confirmed email, or not an account.
+   *
+   * Auth0 signs a brand-new database-connection user in immediately and
+   * issues them a full access token; it does not wait for them to click
+   * anything. So without this check anybody could type a stranger's address,
+   * never open the mailbox, and be a signed-in account — with their work
+   * syncing to the database under that address.
+   *
+   * Social connections arrive with `email_verified` already true, because
+   * Google has done the confirming, so this only ever stops the
+   * username-password case it is meant to stop.
+   *
+   * This is the client half. It governs what this app does with the session
+   * and nothing else, and a client check is not a security boundary: the
+   * token is still valid and the database would still take it. The half that
+   * actually closes the hole is the post-login Action in
+   * `auth0/require-verified-email.js`, which stops Auth0 issuing the token at
+   * all, plus the matching claim check in `supabase/schema.sql`.
+   */
+  const live = isAuthenticated ? (user ?? null) : null
+  const confirmed = live?.email_verified === true
+
   return useMemo(
     () => ({
       loading: isLoading,
-      user: isAuthenticated ? (user ?? null) : null,
+      user: confirmed ? live : null,
+      pending: live && !confirmed ? live : null,
       // Sign-in works on its own; the database is what needs Supabase, and
       // the projects layer already falls back to this browser without it.
       enabled: true,
@@ -211,7 +254,7 @@ function useAuthLive(): AuthState {
       signUp,
       signOut,
     }),
-    [isLoading, isAuthenticated, user, error, signIn, signUp, signOut],
+    [isLoading, live, confirmed, error, signIn, signUp, signOut],
   )
 }
 

@@ -21,7 +21,7 @@ import {
   thrustRig,
 } from './builds'
 import { plantWatering, quadcopter } from './projects'
-import { controlCabinet, deskSetup, deskTerminal, messageBoard } from './devices'
+import { controlCabinet, deskSetup, roomSetup, deskTerminal, messageBoard } from './devices'
 import { lab10Buzzer, lab9Blinker } from './labs'
 
 /**
@@ -416,6 +416,7 @@ export const STARTERS: Starter[] = [
     tags: ["clock","rtc","perfboard","sensor","buttons","alarm","project","finished"],
     build: benchClock,
   },
+  { id: 'room-setup', title: 'Room setup', blurb: 'A room, a desk against the wall, a television on the other one, and two sockets', kind: 'build', tags: ["room","space","layout","plan","desk","tv","setup","office","mains"], build: roomSetup },
   { id: 'desk-setup', title: 'Desk setup', blurb: 'A desk, a TV, a heater, and one socket that cannot carry them', kind: 'build', tags: ["desk","setup","room","pc","monitor","tv","console","mains","socket","extension","battlestation","office","av"], build: deskSetup },
   { id: 'message-board', title: 'LED message board', blurb: 'Forty-eight matrix modules on a stand, three thousand dots', kind: 'build', tags: ["led","matrix","max7219","sign","message","display","dot matrix","scroll","board","advert","text"], build: messageBoard },
   { id: 'shop-rack', title: 'Extrusion shop rack', blurb: 'Four posts, sixteen joints, three shelves and a set of casters', kind: 'build', tags: ["rack","extrusion","2020","frame","shelf","structure","bracket","t-nut","caster","workshop","aluminium","shelving"], build: shopRack },

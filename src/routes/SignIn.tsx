@@ -17,7 +17,7 @@ import { CONNECTIONS, useAuth } from '@/auth/AuthProvider'
  * passes through it, because that is the one that needs a password field.
  */
 export function SignIn() {
-  const { user, loading, enabled, error, signIn, signUp } = useAuth()
+  const { user, pending, loading, enabled, error, signIn, signUp, signOut } = useAuth()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -54,9 +54,33 @@ export function SignIn() {
             <LogoMark size={34} />
           </Link>
 
-          <h1>Sign in to {BRAND.name}</h1>
+          <h1>{pending ? 'Confirm your email' : `Sign in to ${BRAND.name}`}</h1>
 
-          {!enabled ? (
+          {pending ? (
+            /*
+              * Signed in to Auth0, but the address is unconfirmed.
+              *
+              * They are not an account yet, so everything that keeps work is
+              * shut to them. Saying so is the whole job of this panel: the
+              * alternative is a person who signed up a minute ago being shown
+              * a sign-in form, which reads as the sign-up having failed.
+              *
+              * There is no Resend button because resending needs the
+              * Management API and a server to hold the credential, and a
+              * button that cannot do what it says is worse than no button.
+              */
+            <div className="auth-notice">
+              <b>Open the message we sent to {pending.email}.</b> Your account is not
+              finished until you do, so nothing you build will be kept yet. The bench
+              itself is open either way.
+              <button className="auth-btn primary" onClick={() => navigate('/app')}>
+                Keep building meanwhile
+              </button>
+              <button className="auth-skip" onClick={signOut}>
+                Sign out, or use a different address
+              </button>
+            </div>
+          ) : !enabled ? (
             <div className="auth-notice">
               <b>Accounts are not open yet.</b> The editor works without one, and everything you
               build saves in this browser.

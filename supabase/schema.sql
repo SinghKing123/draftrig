@@ -18,9 +18,29 @@
 create extension if not exists "pgcrypto";
 
 -- The caller, according to the token they presented. Null when anonymous.
+--
+-- Null as well for somebody whose email address has never been confirmed.
+--
+-- Auth0 signs a new database-connection user in straight away and issues
+-- them a working token; it does not wait for them to open the mail. So the
+-- subject alone is not enough to write rows under: somebody could sign up
+-- as an address they do not own and their work would land in the database
+-- under it. The post-login Action in auth0/require-verified-email.js stops
+-- that token being issued at all, and this is the belt to its braces --
+-- the database stops caring whether that Action is still in the flow.
+--
+-- The claim is namespaced because Auth0 requires it on anything custom, and
+-- it is set by that same Action. A token minted before the Action was
+-- installed has no such claim and is refused, which is the right way round:
+-- a missing claim is not a passing one.
 create or replace function public.auth_sub()
 returns text language sql stable as $$
-  select nullif(current_setting('request.jwt.claims', true)::jsonb ->> 'sub', '')
+  select case
+    when (current_setting('request.jwt.claims', true)::jsonb
+           ->> 'https://draftrig.com/email_verified') = 'true'
+    then nullif(current_setting('request.jwt.claims', true)::jsonb ->> 'sub', '')
+    else null
+  end
 $$;
 
 /* ------------------------------------------------------------------ */

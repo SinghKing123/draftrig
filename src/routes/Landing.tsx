@@ -197,7 +197,7 @@ export function Landing() {
           </nav>
           <div className="nav-sp" />
           <AccountMenu compact />
-          <Link className="btn btn-primary btn-sm" to="/app">Open the editor</Link>
+          <Link className="btn btn-primary btn-sm" to="/projects">Try Draftrig</Link>
         </div>
       </header>
 
@@ -216,8 +216,8 @@ export function Landing() {
               the mains behind it — laid out in 3D, wired point to point, and solved.
             </p>
             <div className="hero-cta">
-              <Link className="btn btn-primary btn-lg" to="/app">
-                Start building<span className="arr" aria-hidden="true" />
+              <Link className="btn btn-primary btn-lg" to="/projects">
+                Try Draftrig<span className="arr" aria-hidden="true" />
               </Link>
               <a className="btn btn-ghost btn-lg" href="#features">See how it works</a>
             </div>
@@ -357,8 +357,8 @@ export function Landing() {
           <Rise>
             <h2>Start building</h2>
             <div className="end-cta">
-              <Link className="btn btn-primary btn-lg" to="/app">
-                Open the editor<span className="arr" aria-hidden="true" />
+              <Link className="btn btn-primary btn-lg" to="/projects">
+                Try Draftrig<span className="arr" aria-hidden="true" />
               </Link>
               {accounts && <Link className="btn btn-ghost btn-lg" to="/signin">Sign in</Link>}
             </div>
@@ -371,7 +371,7 @@ export function Landing() {
           <span>© {new Date().getFullYear()} {BRAND.name}</span>
           <div className="foot-sp" />
           <a href={`mailto:${BRAND.support}`}>Contact</a>
-          <Link to="/app">Editor</Link>
+          <Link to="/projects">Projects</Link>
         </div>
       </footer>
     </div>

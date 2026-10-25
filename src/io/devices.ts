@@ -894,3 +894,84 @@ export function deskSetup(): Doc {
 
   return b.doc
 }
+
+
+/* ------------------------------------------------------------------ */
+
+/**
+ * A room, with a setup laid out in it.
+ *
+ * The other builds are objects. This one is a space, and the question it
+ * answers is the one anybody planning a setup actually has: does this fit
+ * along that wall, and does the wall it is against have enough sockets.
+ *
+ * The room shell puts its corner at the origin and runs +x and +z, so every
+ * position here reads as a distance from the back-left corner — which is
+ * how you would measure it standing in the room with a tape. Nothing is
+ * centred on the origin the way a single device is, because a room has a
+ * corner and a device has a middle.
+ */
+export function roomSetup(): Doc {
+  const b = new Builder('Room setup')
+
+  const RW = 4200
+  const RD = 3600
+  const at = (id: string): Vec3 => b.doc.instances[id].pos
+
+  b.add('room-shell', [0, 0, 0], { width: RW, depth: RD, height: 2400, paint: 'warm', floor: 'oak', skirting: true, sockets: 2 }, [0, 0, 0], 'Room')
+
+  /* --- the desk, against the back wall --- */
+  const DW = 1600
+  const DD = 750
+  const DH = 740
+  const DX = 1180
+  const DZ = DD / 2 + 70 /* 70 mm of clearance behind, for the cables */
+
+  b.add('desk', [DX, 0, DZ], { width: DW, depth: DD, height: DH, top: 'oak', frame: 'sit-stand' }, [0, 0, 0], 'Desk')
+
+  const ARM_REACH = 240
+  const ARM_POST = 420
+  const ARM_Z = DZ - DD / 2 + 20
+  b.add('monitor-arm', [DX - 330, DH, ARM_Z], { reach: ARM_REACH, height: ARM_POST, load: '2-9' }, [0, -90, 0], 'Monitor arm')
+  b.add('monitor-desk', [DX - 330, DH + ARM_POST - 70 - 188, ARM_Z + ARM_REACH + 25], { diagonal: '27', hz: '144', stand: false }, [0, 0, 0], 'Monitor, left')
+  b.add('monitor-desk', [DX + 330, DH, DZ - DD / 2 + 180], { diagonal: '27', hz: '60', stand: true }, [0, -16, 0], 'Monitor, right')
+  const pc = b.add('pc-tower', [DX + 640, 0, DZ - DD / 2 + 240], { size: 'midi', psu: '850', gpu: true, load: 35 }, [0, -22, 0], 'Tower')
+
+  /* --- the television, on the left wall --- */
+  /* Authored facing +z, so a quarter turn puts its face into the room. */
+  const tv = b.add('tv-set', [120, 950, 2300], { diagonal: '55', stand: false }, [0, 90, 0], 'Television')
+  const bar = b.add('soundbar', [160, 760, 2300], { watts: 200 }, [0, 90, 0], 'Soundbar')
+  const con = b.add('console-game', [210, 0, 2650], { load: 70 }, [0, 90, 0], 'Console')
+
+  /* --- mains --- */
+  const w1 = b.add('outlet-mains', [RW / 3, 450, 14], { region: 'uk', ways: '2', switched: true }, [0, 0, 0], 'Socket, desk wall')
+  const w2 = b.add('outlet-mains', [(RW * 2) / 3, 450, 14], { region: 'uk', ways: '2', switched: true }, [0, 0, 0], 'Socket, media wall')
+  const lead = b.add('extension-lead', [DX - 120, 60, DZ - DD / 2 + 130], { ways: '6', length: 2000, fuse: '13' }, [0, 0, 0], 'Extension lead')
+
+  /* The lead's ways are named way-then-core: 1l, 1n, 1e for the first. */
+  const CORES: [string, string][] = [['l', BROWN], ['n', BLUE_N], ['e', GREEN_E]]
+  const FLOORY = 26
+
+  /** A run that drops to the floor, crosses, and comes back up. */
+  const floorRun = (from: string, to: string, ports: [string, string], col: string, mm2: number) => {
+    const a = at(from)
+    const c = at(to)
+    b.wireVia([from, ports[0]], [to, ports[1]], [
+      [a[0], FLOORY, a[2] + 70],
+      [c[0], FLOORY, c[2] + 70],
+    ], col, mm2)
+  }
+
+  /* Socket to lead, then the tower off the lead. */
+  for (const [core, col] of CORES) floorRun(w1, lead, [`a${core}`, core], col, 2.5)
+  for (const [core, col] of CORES) floorRun(lead, pc, [`1${core}`, core], col, 1.5)
+
+  /* The media wall runs off its own socket, which is the point of having
+     put a second one in: the television and the console are nowhere near
+     the desk and nothing about them should be on the desk's lead. */
+  for (const [core, col] of CORES) floorRun(w2, con, [`a${core}`, core], col, 1.5)
+  for (const [core, col] of CORES) floorRun(w2, tv, [`b${core}`, core], col, 1.5)
+  for (const [core, col] of CORES) floorRun(w2, bar, [`b${core}`, core], col, 1.0)
+
+  return b.doc
+}

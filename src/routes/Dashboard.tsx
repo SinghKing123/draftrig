@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { BRAND, pageTitle } from '@/brand'
 import { Wordmark, LogoMark } from '@/ui/Logo'
 import {
@@ -344,18 +344,20 @@ export function Dashboard() {
   const recent = (items ?? []).slice().sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
 
   /*
-   * No account, no dashboard.
+   * Open to anybody, which it was not.
    *
-   * Builds live in an account, so a list of them without one is a list of
-   * nothing with a heading over it. The editor is still open to anybody —
-   * see SignInWall for where the ask actually happens — but this page is not.
+   * This page used to bounce a signed-out visitor to /signin, on the
+   * reasoning that builds live in an account. They do not: projects.ts is
+   * local-first and syncs to the cloud when there is somewhere to sync to,
+   * so a signed-out visitor has a real list, real templates and a real
+   * blank button — everything except durability.
    *
-   * A build with no sign-in configured at all is the exception: there, work
-   * lives in the browser because there is nowhere else for it to go, and
-   * taking the page away would leave no way back to anything.
+   * It matters more now that this is the front door. "Try Draftrig" landing
+   * on a sign-in form is the thing the product principle exists to prevent:
+   * the bench is open, and the account is for keeping, not for trying. The
+   * ask happens when there is something worth keeping, in SignInWall.
    */
   if (loading) return <div className="root-wait" />
-  if (enabled && !user) return <Navigate to="/signin" replace />
 
   return (
     <div className="dash site">

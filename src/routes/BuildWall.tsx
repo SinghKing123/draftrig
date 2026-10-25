@@ -190,8 +190,8 @@ export function BuildWall() {
           */}
         <div className="bw-cta">
           <Rig size={104} act="wrench" mood="happy" />
-          <Link className="btn btn-primary btn-lg" to="/app">
-            Open the editor<span className="arr" aria-hidden="true" />
+          <Link className="btn btn-primary btn-lg" to="/projects">
+            Try Draftrig<span className="arr" aria-hidden="true" />
           </Link>
         </div>
       </div>
