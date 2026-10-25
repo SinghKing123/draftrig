@@ -5,11 +5,12 @@ import { Wordmark } from '@/ui/Logo'
 import { AccountMenu } from '@/ui/AccountMenu'
 import { useAuth } from '@/auth/AuthProvider'
 import { Carousel } from './Carousel'
+import { RigBench, RigDesk, RigFrame } from '@/ui/RigScenes'
+import { Selected } from '@/ui/Selected'
 import { Trace } from './Trace'
 import { Find } from './Find'
 import { BuildWall } from './BuildWall'
 import { SetupShow } from './SetupShow'
-import { Glyphs } from './Glyphs'
 
 /**
  * The front page.
@@ -202,28 +203,8 @@ export function Landing() {
 
       {/* ---- hero ---- */}
       <section className="hero">
-        {/*
-          * The bench, turning slowly behind everything.
-          *
-          * Muted, looping, and not a control: it carries no information, so
-          * there is nothing to give anyone a way to play or pause. It is
-          * decoration, and it is marked as such.
-          */}
-        <div className="hero-vid" aria-hidden="true">
-          <video
-            src="/clips/clip-bg.webm"
-            poster="/clips/clip-bg.jpg"
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="metadata"
-            tabIndex={-1}
-          />
-        </div>
-        <Glyphs />
-        <div className="lpw">
-          <Rise>
+        <div className="lpw hero-split">
+          <Rise className="hero-copy">
             <Link className="pill" to="/app?start=lab9-blinker">
               <b>New</b> 555 breadboard labs
               <span className="chev" aria-hidden="true">›</span>
@@ -231,7 +212,8 @@ export function Landing() {
 
             <h1>Run it before you build it.</h1>
             <p className="hero-sub">
-              3D layout, point-to-point wiring, and a modified nodal analysis solver.
+              A bench you can put anything on. Boards, frames, screens, a whole desk and
+              the mains behind it — laid out in 3D, wired point to point, and solved.
             </p>
             <div className="hero-cta">
               <Link className="btn btn-primary btn-lg" to="/app">
@@ -241,7 +223,23 @@ export function Landing() {
             </div>
           </Rise>
 
-          <Rise delay={90}>
+          {/*
+            * The build, selected.
+            *
+            * Not a screenshot in a rounded frame, which is what the category
+            * ships and what the deck below already does properly. This is the
+            * desk-setup document drawn as the editor would have it: picked,
+            * boxed, named, and measured. The millimetres are that build's.
+            */}
+          <Rise delay={110} className="hero-art">
+            <Selected label="Desk setup" dim="1600 × 740 mm">
+              <RigDesk />
+            </Selected>
+          </Rise>
+        </div>
+
+        <div className="lpw">
+          <Rise delay={170}>
             <Carousel />
           </Rise>
         </div>
@@ -252,6 +250,48 @@ export function Landing() {
 
       {/* ---- builds ---- */}
       <BuildWall />
+
+      {/*
+        * Two more of him, at the two other kinds of work.
+        *
+        * The page had one claim about scope and a lot of boards. This is the
+        * scope: the same editor solders a board and bolts a frame, and the
+        * measurements under each are that build's own.
+        */}
+      <section className="sec works">
+        <div className="lpw">
+          <Rise className="sec-head center">
+            <h2>Same bench, either job.</h2>
+            <p>
+              A board of twenty-two parts and a rack a metre and a third tall are
+              the same document, drawn the same way, priced off the same list.
+            </p>
+          </Rise>
+
+          <div className="works-grid">
+            <Rise>
+              <Selected label="Bench clock" dim="22 parts · $37.89" live={false}>
+                <RigBench />
+              </Selected>
+              <h3>Boards, down to the pad</h3>
+              <p>
+                Perfboard, a vice, an iron. Parts sit where they sit on the real
+                thing, and the solver runs on what you joined.
+              </p>
+            </Rise>
+            <Rise delay={90}>
+              <Selected label="Extrusion rack" dim="600 × 400 × 1300 mm" live={false}>
+                <RigFrame />
+              </Selected>
+              <h3>Frames, down to the T-nut</h3>
+              <p>
+                2020 profile, corner brackets, every screw counted. It comes out
+                as a cut list you can order from.
+              </p>
+            </Rise>
+          </div>
+        </div>
+      </section>
 
       {/* ---- features ---- */}
       <section className="sec sec-alt" id="features">

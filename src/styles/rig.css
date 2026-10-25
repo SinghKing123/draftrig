@@ -170,3 +170,34 @@
   55% { transform: rotate(-9deg); }
 }
 .rig .rig-turn { transform-origin: 108px 99px; animation: rig-turn 2.6s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+
+/* ==================================================================
+   The scenes
+   ------------------------------------------------------------------
+   Rig in a build rather than beside one. Drawn in
+   src/ui/RigScenes.tsx; what moves here is the thing that proves the
+   scene is running — a screen refreshing, a tower's LED, a hot tip.
+   ================================================================== */
+
+.scene { display: block; width: 100%; height: auto; overflow: visible; }
+
+/* A band drifting down a lit panel. Not a scanline raster, which at this
+   size is a moiré: one soft band, slowly, twice as slow on the second
+   monitor so the pair never beats against itself. */
+@keyframes sc-band {
+  0% { transform: translateY(-10px); opacity: 0; }
+  12%, 72% { opacity: 1; }
+  100% { transform: translateY(44px); opacity: 0; }
+}
+.scene .sc-band { animation: sc-band 5.5s linear infinite; }
+.scene .sc-band-2 { animation-duration: 8.5s; animation-delay: 1.8s; }
+
+@keyframes sc-led {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+.scene .sc-led { animation: sc-led 3.4s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .scene * { animation: none !important; }
+}

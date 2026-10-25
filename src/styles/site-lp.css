@@ -1331,3 +1331,182 @@
 
 /* He plays the console that is in the build beside him. */
 .lp .row-rig { margin: 26px 0 -10px; --rig-shadow: rgba(62, 48, 30, 0.12); }
+
+/* ==================================================================
+   The bench
+   ------------------------------------------------------------------
+   The page's ground is the editor's own snap grid: 8 mm minor, 64 mm
+   major, at the alpha the viewport draws it. It is the one thing on
+   the page that is not decoration — it is what the product looks
+   like, and everything else sits on it the way a part sits on the
+   bench.
+   ================================================================== */
+
+.lp {
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(to right, rgba(21, 24, 29, 0.028) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(21, 24, 29, 0.028) 1px, transparent 1px),
+    linear-gradient(to right, rgba(21, 24, 29, 0.055) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(21, 24, 29, 0.055) 1px, transparent 1px);
+  background-size: 8px 8px, 8px 8px, 64px 64px, 64px 64px;
+  background-position: -1px -1px;
+}
+
+/* A section that wants to sit on plain stock rather than on the grid. */
+.lp .sec-alt { background-image: none; }
+
+/* ==================================================================
+   Selection
+   ------------------------------------------------------------------
+   Drawn by src/ui/Selected.tsx. One box, four handles, a name above
+   and a real measurement below, exactly as the editor draws it round
+   whatever you have picked.
+   ================================================================== */
+
+.lp .sel {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  /* Quiet, but still legible: a label at --line-2 on this ground is a
+     label nobody can read, which is the same as not drawing it. */
+  --sel: #9A9183;
+}
+.lp .sel-live { --sel: var(--accent); }
+
+.lp .sel-body { position: relative; z-index: 1; }
+
+.lp .sel::before {
+  content: '';
+  position: absolute;
+  inset: -14px -14px -14px -14px;
+  border: 1px solid var(--sel);
+  border-radius: 3px;
+  pointer-events: none;
+}
+
+/* The handles. 7px, white-filled, on the corners of that box — a handle
+   that is not on the corner it claims is the detail that gives the whole
+   device away. */
+.lp .sel-h {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  background: var(--bg);
+  border: 1.5px solid var(--sel);
+  border-radius: 1px;
+  pointer-events: none;
+}
+.lp .sel-h-tl { left: -18px; top: -18px; }
+.lp .sel-h-tr { right: -18px; top: -18px; }
+.lp .sel-h-bl { left: -18px; bottom: -18px; }
+.lp .sel-h-br { right: -18px; bottom: -18px; }
+
+.lp .sel-label {
+  position: absolute;
+  left: -14px;
+  top: -36px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--sel);
+}
+
+.lp .sel-dim {
+  position: absolute;
+  left: 50%;
+  bottom: -38px;
+  transform: translateX(-50%);
+  padding: 2px 7px;
+  border-radius: 3px;
+  background: var(--sel);
+  color: #FFF;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.6875rem;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+/* Under about 700px the handles sit outside the gutter and the box starts
+   fighting the screen edge, so the chrome comes off and the figure is just
+   a figure. */
+@media (max-width: 700px) {
+  .lp .sel::before, .lp .sel-h { display: none; }
+  .lp .sel-label { position: static; display: block; margin-bottom: 8px; }
+  .lp .sel-dim { position: static; display: inline-block; transform: none; margin-top: 10px; }
+}
+
+/* ==================================================================
+   Callouts
+   ------------------------------------------------------------------
+   A dot, a line and a word, the way the editor labels a port.
+   ================================================================== */
+
+.lp .callout {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  font-size: 0.75rem;
+  color: var(--ink-2);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.lp .callout-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+  flex: none;
+}
+.lp .callout-line { width: 26px; height: 1px; background: var(--line-2); flex: none; }
+.lp .callout-text {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+}
+
+/* ==================================================================
+   The hero, split
+   ------------------------------------------------------------------
+   Copy left at the column, the build right. Centred over a frame is
+   the arrangement this category always ships and it puts the product
+   below the fold on every laptop.
+   ================================================================== */
+
+.lp .hero-split {
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  align-items: center;
+  gap: clamp(32px, 6vw, 86px);
+  padding: clamp(26px, 5vh, 54px) 0 clamp(40px, 6vh, 72px);
+  text-align: left;
+}
+.lp .hero-split h1 { max-width: 13ch; margin: 0; }
+.lp .hero-split .hero-sub { margin: 20px 0 0; max-width: 42ch; }
+.lp .hero-split .hero-cta { justify-content: flex-start; }
+.lp .hero-art { position: relative; }
+
+@media (max-width: 900px) {
+  .lp .hero-split { grid-template-columns: 1fr; text-align: center; gap: 54px; }
+  .lp .hero-split h1 { max-width: 18ch; margin: 0 auto; }
+  .lp .hero-split .hero-sub { margin-left: auto; margin-right: auto; }
+  .lp .hero-split .hero-cta { justify-content: center; }
+}
+
+/* Two jobs, side by side, with room for the selection chrome to breathe. */
+.lp .works-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(56px, 7vw, 96px);
+  margin-top: 74px;
+}
+.lp .works-grid h3 { margin: 64px 0 8px; font-size: 1.25rem; letter-spacing: -0.022em; }
+.lp .works-grid p { color: var(--ink-2); max-width: 36ch; }
+
+@media (max-width: 760px) {
+  .lp .works-grid { grid-template-columns: 1fr; gap: 64px; }
+  .lp .works-grid h3 { margin-top: 26px; }
+}

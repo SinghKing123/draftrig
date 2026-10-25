@@ -2,94 +2,39 @@
 version: 1
 slug: "src-routes-landing-tsx"
 primary_target: "src/routes/Landing.tsx"
-related_targets: ["src/routes/Trace.tsx","src/routes/Find.tsx","src/routes/Showcase.tsx","src/routes/Reel.tsx"]
+related_targets: ["src/styles/site-lp.css","src/ui/Rig.tsx"]
 ---
-
-# Landing page
-
-Scope: `/` — the public front page. Visitor mode: **Persuade**.
-
-Audience: people who build small electronics, deciding whether this is worth
-opening. Job: find out if it is real and whether it has their parts. Action:
-open the editor. Proof on hand: 13 preset renders shot from the live editor, 4
-silent clips of it working, the live catalog and its ranked search. No
-customers, numbers, testimonials or press exist; none may be invented.
-
-Constraint carried from PRODUCT.md: motion is not simulated, so nothing on this
-page may imply a motor turns.
 
 ## Direction contract
 
-**THESIS.** The page is the manual that comes in the box. Draftrig's promise is
-"put it together and switch it on", which is what an assembly manual *is*, so
-the page does not describe that promise, it performs it: numbered steps, a
-checkbox on each, a figure plate beside them. It refuses the arrangement this
-category always ships — centred headline over a product shot over a row of
-equal cards — and it refuses its own predecessor, a dark page with tiles.
+THESIS: The page is the bench. Draftrig's own editor chrome — the snap grid,
+selection boxes with corner handles, millimetre dimension badges, port dots
+and leader lines — becomes the page's furniture, and Rig works on that bench
+in every section. It refuses the arrangement this category always ships: a
+centred headline over a row of equal feature cards with screenshots in
+rounded frames.
 
-**OWN-WORLD.** Warm paper ground (not white, not grey). One ink: near-black
-line. One spot colour, the brand blue, rationed to what is *live* — current
-flowing, a control that acts, a step not yet done. No gradients anywhere, no
-glass, no soft cards. Structure is drawn: rules of two weights, figure plates
-with a caption rule under them, a title block top-left, a strict left margin
-column carrying step numbers. Type is a tight grotesque for setting with a
-slab/mono only where the manual uses one — designators, quantities, figure
-numbers. Dark is not a theme switch but the blueprint negative: dark ground,
-white line, same geometry.
+OWN-WORLD: Light bench ground (#F7F6F3) under a 1px snap grid at 8px minor /
+64px major, white panels floating on it with soft wide shadows. Ink #15181D.
+Two working colours, both the editor's: brand blue #1E6FFF for selection,
+intent and chrome; amber #FFB020 for energised — current, lit dots, a hot
+iron tip. Headlines in a tight heavy grotesque. Every measurement shown on
+the page is a real one from the build it labels.
 
-**STORY.** The visitor understands within one viewport that this is a bench
-they operate, not a video they watch; believes it because the step list beside
-the film is the film's own control; and opens the editor from step 3.
+STORY: A visitor sees a workbench with somebody working on it, understands
+within one viewport that this is where a whole setup gets designed and run
+before it is bought, and opens the editor.
 
-**FIRST VIEWPORT.** Title block top-left: wordmark, then the document line and
-a sheet number, set in a ruled block. Below it the spread: left column, a
-narrow strict margin of step numbers against three steps with real checkboxes —
-Place the board / Run the wires / Switch it on. Right, at roughly 58% of the
-width, one figure plate holding the live clip, with `Fig. 1-1` and its caption
-rule beneath. All three steps tick as the clip reaches them. The primary
-action is a fourth, unnumbered row at the foot of the list, carrying an arrow
-in the margin column where the numbers sit and a filled box as its hit
-target. Nav sits on the title block's right as plain ruled links.
+FIRST VIEWPORT: Grid ground edge to edge. Headline left-aligned at the
+column, not centred. To its right, Rig at a desk he built: two lit monitors,
+a tower, a controller in his hands, a lead running down to a wall socket, the
+whole vignette inside a selection box with handles and a `1600 x 740 mm`
+badge. Primary action sits directly under the headline on the left.
 
-> **Amendment, made during the build.** This block originally said step 3
-> "stays open and is the primary action", with `Open the editor` as the step's
-> own instruction. That conflated two things: step 3 is a stage of the
-> procedure with a clip of its own ("Switch it on."), and the action is
-> something the visitor performs. Holding both on one row meant the step could
-> never tick, which broke the legend — the film reaches stage 3 and the list
-> could not say so. Separating them keeps every stage tickable and keeps the
-> action inside the list rather than in a band at the foot of the page, which
-> is what the block was protecting. No user answer or product truth is cited
-> for this; it is my call, made to keep the signature interaction coherent,
-> and it is recorded here so the page and the contract agree.
+FORM: The page as the product's own canvas, ranked first of seven; the
+reference pair the user pinned (nootles.com, plyxl.com) set the craft bar and
+the density. Direction pinned by the user, so no seed was rolled.
 
-**FORM.** The kit assembly manual (Heathkit/Dynaco, 1960s–80s). Position 4 of
-my ordered list of seven artifacts from this audience's world; the roll
-assigned 4. Seed key `c1294f4c`.
-
-Raises, each named for the hand it came from:
-- *From the glazier colour-field partition:* colour is rationed. The blue
-  appears only where something is genuinely live; nothing is blue for decoration.
-- *From the orizuru fold sequence:* the flat pattern and the spatial object are
-  one continuous thing. The schematic and the 3D build are the same figure, not
-  two sections.
-- *From the split-flap concourse:* state cascades inside a grid that never
-  reflows. Ticks and clip changes move within fixed rules.
-- *From the ebru bath:* one committed pass. No hedged states.
-- *From the OSPAAAL silkscreen:* flat ink only, no gradient anywhere.
-
-Signature interaction: **the step list is the film's control and its legend.**
-Ticking a step scrubs the clip to that stage; the running clip ticks the steps.
-Motion grammar: one authored moment per section, exponential ease-out from an
-already-visible default; the only looping motion is current in the schematic.
-
-**FINISH.** unreviewed and undocumented is unfinished; this build ends with the
+FINISH: unreviewed and undocumented is unfinished; this build ends with the
 finish review, the verdict, DESIGN.md, and every shipping raster carrying its
-provenance
-
-## Unresolved
-
-- Display face must be sourced and self-hosted to match the manual's lettering;
-  the installed stack is not a fallback.
-- Preset renders are dark plates on light paper. The figure frame is what makes
-  that work and is the main execution risk.
+provenance.
