@@ -27,6 +27,21 @@ export function AuthCallback() {
   useEffect(() => {
     if (loading) return
 
+    /*
+     * The one refusal that is not a failure.
+     *
+     * A brand-new account whose address is unconfirmed comes back here as an
+     * OAuth error, because that is how a post-login deny reaches the app.
+     * Showing it as one would tell somebody their sign-up broke ten seconds
+     * after it worked.
+     */
+    const denied = /email_unverified(?::(.*))?/.exec(error ?? '')
+    if (denied) {
+      const addr = denied[1]?.trim()
+      navigate(`/confirm${addr ? `?email=${encodeURIComponent(addr)}` : ''}`, { replace: true })
+      return
+    }
+
     if (!user) {
       const t = setTimeout(() => navigate('/signin', { replace: true }), 2200)
       setStatus('That sign-in did not complete. Taking you back…')
@@ -45,7 +60,7 @@ export function AuthCallback() {
     return () => {
       cancelled = true
     }
-  }, [loading, user, navigate])
+  }, [loading, user, error, navigate])
 
   return (
     <div className="auth-page">

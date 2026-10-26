@@ -11,6 +11,7 @@ import { AuthProvider } from '@/auth/AuthProvider'
 import { Root } from '@/routes/Root'
 import { SignIn } from '@/routes/SignIn'
 import { AuthCallback } from '@/routes/AuthCallback'
+import { ConfirmEmail } from '@/routes/ConfirmEmail'
 import { Dashboard } from '@/routes/Dashboard'
 import { LogoMark } from '@/ui/Logo'
 import { Sting, useSting } from '@/ui/Sting'
@@ -91,6 +92,7 @@ createRoot(el).render(
           <Route path="/projects" element={<Dashboard />} />
           <Route path="/signin" element={<SignIn />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/confirm" element={<ConfirmEmail />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>

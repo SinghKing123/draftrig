@@ -56,9 +56,16 @@ exports.onExecutePostLogin = async (event, api) => {
     return
   }
 
-  api.access.deny(
-    'Confirm your email address before signing in. We sent a message to ' +
-      (event.user.email || 'the address you signed up with') +
-      ' — open it, then come back and sign in.',
-  )
+  /*
+   * A code, not a sentence.
+   *
+   * Auth0 hands this back to the app as `error_description` on the callback
+   * URL, and the app turns it into a real page (src/routes/ConfirmEmail).
+   * A sentence here would be a sentence the app has to pattern-match on and
+   * a sentence that shows raw if anything upstream changes, in a typeface
+   * and a colour we do not control. The address rides along so the page can
+   * say which inbox to open; it is the person's own address going back to
+   * the person's own browser.
+   */
+  api.access.deny(`email_unverified:${event.user.email || ''}`)
 }

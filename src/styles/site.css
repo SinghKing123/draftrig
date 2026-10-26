@@ -1717,3 +1717,53 @@
 @media (prefers-reduced-motion: reduce) {
   .tcard-shot, .btile-shot, .dnew, .dsearch { transition: none; }
 }
+
+/* ==================================================================
+   Confirm your email
+   ------------------------------------------------------------------
+   The last step of signing up, not a failed one. Drawn in
+   src/routes/ConfirmEmail.tsx, and deliberately in the accent rather
+   than in any of the warning colours: the only thing that has gone
+   wrong here is that an inbox has not been opened yet.
+   ================================================================== */
+
+.auth-card.confirm { text-align: center; }
+
+.auth-card.confirm .confirm-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  margin-bottom: 22px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent, #1E6FFF) 11%, transparent);
+  color: var(--accent, #1E6FFF);
+}
+.auth-card.confirm .confirm-mark svg { width: 34px; height: 34px; }
+
+/* The envelope flap draws itself once on arrival, which is the whole
+   motion on this page: it says the thing has been sent, and then stops. */
+@keyframes confirm-seal {
+  from { stroke-dashoffset: 52; }
+  to { stroke-dashoffset: 0; }
+}
+.auth-card.confirm .confirm-mark path {
+  stroke-dasharray: 52;
+  animation: confirm-seal 620ms cubic-bezier(0.2, 0.8, 0.3, 1) 180ms both;
+}
+
+.auth-card.confirm h1 { margin-bottom: 10px; }
+.auth-card.confirm .lede { margin-bottom: 26px; line-height: 1.6; text-wrap: pretty; }
+.auth-card.confirm .lede b { font-weight: 600; overflow-wrap: anywhere; }
+
+.auth-card.confirm .confirm-note {
+  margin: 16px 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--tx-2, #7C8797);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-card.confirm .confirm-mark path { animation: none; stroke-dashoffset: 0; }
+}
