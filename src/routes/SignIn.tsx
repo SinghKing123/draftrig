@@ -100,7 +100,12 @@ export function SignIn() {
                 Continue with email
               </button>
 
-              {error && <p className="auth-error">{error}</p>}
+              {/* The unconfirmed-address refusal has its own page; showing
+                  its wire format here as a red error would be the thing that
+                  page exists to stop. */}
+              {error && !/email_unverified/.test(error) && (
+                <p className="auth-error">{error}</p>
+              )}
 
               <p className="auth-switch">
                 New here?{' '}

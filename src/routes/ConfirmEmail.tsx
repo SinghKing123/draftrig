@@ -1,4 +1,4 @@
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { Wordmark } from '@/ui/Logo'
 import { BRAND, pageTitle } from '@/brand'
 import { useEffect } from 'react'
@@ -21,9 +21,27 @@ export function ConfirmEmail() {
   const navigate = useNavigate()
   const email = params.get('email')?.trim() || null
 
+  /*
+   * Only reachable off the back of a signup in this tab.
+   *
+   * Read before the redirect below so a reload still works: the marker is
+   * set by the callback and lives as long as the tab does. Opened cold —
+   * a restored tab, a bookmark, a second visit — there is nothing to
+   * confirm and the front page is where they meant to go.
+   */
+  const inFlight = (() => {
+    try {
+      return sessionStorage.getItem('draftrig.signup.v1') !== null
+    } catch {
+      return true
+    }
+  })()
+
   useEffect(() => {
     document.title = pageTitle('Confirm your email')
   }, [])
+
+  if (!inFlight) return <Navigate to="/" replace />
 
   return (
     <div className="auth-page">

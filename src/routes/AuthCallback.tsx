@@ -38,6 +38,21 @@ export function AuthCallback() {
     const denied = /email_unverified(?::(.*))?/.exec(error ?? '')
     if (denied) {
       const addr = denied[1]?.trim()
+      /*
+       * Mark the signup as in flight, for this tab only.
+       *
+       * The confirmation page is the last step of something that just
+       * happened, not a place. Without this marker it is just a URL, and a
+       * browser that restores its tabs reopens it every morning — which is
+       * the other half of the site looking stuck on a message. sessionStorage
+       * is exactly the right lifetime: a reload keeps it, a new session does
+       * not.
+       */
+      try {
+        sessionStorage.setItem('draftrig.signup.v1', addr ?? '1')
+      } catch {
+        /* private window: the page falls back to its own query string */
+      }
       navigate(`/confirm${addr ? `?email=${encodeURIComponent(addr)}` : ''}`, { replace: true })
       return
     }

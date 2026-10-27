@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react'
 import { Auth0Provider, useAuth0, type User } from '@auth0/auth0-react'
 import { cloudConfigured, provideAccessToken, supabase } from './supabase'
 import { applyDevUserFlag, DEV_USER, devUserOn } from './devUser'
@@ -196,6 +196,34 @@ const SIGNED_OUT: AuthState = {
 
 function useAuthLive(): AuthState {
   const { isLoading, isAuthenticated, user, error, loginWithRedirect, logout } = useAuth0()
+
+  /*
+   * Throw away a session the Action has refused.
+   *
+   * This is the bug where the site "remembers" a confirmation message. The
+   * SDK caches its session in localStorage and silently re-authenticates on
+   * every page load. When the post-login Action denies an unconfirmed
+   * address, that silent call fails the same way every time, so the error is
+   * permanently set from the first paint of every visit — days later, in a
+   * new tab, having never asked to sign in. The callback route then reads it
+   * and sends them to the confirmation page again, which is what makes it
+   * look stuck.
+   *
+   * A refused login is not a session, so the cache should not be holding
+   * one. Clearing it locally — no redirect, nothing user-visible — means the
+   * next load starts clean and the site behaves like what it is: signed out,
+   * with an account waiting to be confirmed.
+   *
+   * Once, hence the ref. logout() changes SDK state, which re-renders this
+   * hook, and clearing on every render is a loop.
+   */
+  const cleared = useRef(false)
+  useEffect(() => {
+    if (cleared.current) return
+    if (!error || !/email_unverified/.test(error.message)) return
+    cleared.current = true
+    void logout({ openUrl: false })
+  }, [error, logout])
 
   const signIn = useCallback(
     (connection?: Connection) => {
