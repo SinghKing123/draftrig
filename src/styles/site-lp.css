@@ -335,7 +335,9 @@
    Sections
    ================================================================== */
 
-.lp .sec { padding: clamp(58px, 10vh, 118px) 0; }
+/* Positioned because Rig stands on the top edge of these, and an absolute
+   child needs a positioned parent to measure that edge from. */
+.lp .sec { position: relative; padding: clamp(58px, 10vh, 118px) 0; }
 .lp .sec-alt { background: var(--bg-2); border-block: 1px solid var(--line); }
 
 .lp .sec-head { max-width: 46rem; }
@@ -1353,8 +1355,16 @@
   background-position: -1px -1px;
 }
 
-/* A section that wants to sit on plain stock rather than on the grid. */
-.lp .sec-alt { background-image: none; }
+/*
+ * An alternate band, still on the bench.
+ *
+ * It used to switch the grid off entirely, which left a hard seam where one
+ * world stopped and another started — paper above, bench below, in the
+ * middle of a page that is supposed to be one surface. A band of different
+ * stock is the right idea; a band of a different world is not. So the grid
+ * runs through it and only the ground underneath changes.
+ */
+.lp .sec-alt { background-color: #F4F1EA; }
 
 /* ==================================================================
    Selection
@@ -1509,4 +1519,116 @@
 @media (max-width: 760px) {
   .lp .works-grid { grid-template-columns: 1fr; gap: 64px; }
   .lp .works-grid h3 { margin-top: 26px; }
+}
+
+/* ==================================================================
+   The close
+   ------------------------------------------------------------------
+   The bench with the lights off, inset in the paper. The page ends
+   on the thing it has spent four thousand pixels describing, and
+   Rig stands on its top edge with one foot in each.
+   ================================================================== */
+
+.lp .end-wrap { padding-bottom: clamp(56px, 8vh, 96px); }
+
+.lp .end {
+  position: relative;
+  padding: clamp(66px, 10vh, 118px) clamp(24px, 5vw, 72px);
+  border-radius: var(--r-xl);
+  text-align: center;
+  background: #16151A;
+  /* The editor's own grid, at the density it draws it, so the panel reads
+     as the bench rather than as a dark box. */
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 32px 32px;
+  box-shadow: var(--shadow-lg);
+  overflow: visible;
+}
+
+.lp .end h2 { color: #FBF9F5; }
+.lp .end p {
+  max-width: 48ch;
+  margin: 18px auto 0;
+  font-size: 1.0625rem;
+  line-height: 1.62;
+  color: #A9A299;
+  text-wrap: pretty;
+}
+.lp .end-cta { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-top: 32px; }
+
+/* On the dark panel the primary button has to invert, or the one black
+   thing on a black ground is the thing you are asking them to press. */
+.lp .end .btn-primary { background: #FBF9F5; color: #16151A; }
+.lp .end .btn-primary:hover { background: #FFFFFF; }
+.lp .end .btn-ghost { background: transparent; color: #E8E3DC; border-color: rgba(255, 255, 255, 0.22); }
+.lp .end .btn-ghost:hover { background: rgba(255, 255, 255, 0.07); border-color: rgba(255, 255, 255, 0.34); }
+
+/* His feet are on the join, so the contact shadow is the panel's black and
+   not the paper's brown. */
+.lp .end .rig-stand {
+  /* Fully above the join here. Six pixels into paper is invisible; six into
+     a near-black panel swallows the foot plate and he reads as cut off. */
+  transform: translateY(-100%);
+  --rig-shadow: rgba(62, 48, 30, 0.16);
+}
+.lp .end .rig-stand::after {
+  bottom: -1px;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.55), transparent 72%);
+}
+
+/* ==================================================================
+   Footer
+   ------------------------------------------------------------------
+   Three short columns and the mark. Somewhere to go next when the
+   buttons above were not what they wanted.
+   ================================================================== */
+
+.lp .foot { border-top: 1px solid var(--line); padding: clamp(44px, 6vh, 72px) 0 28px; }
+
+.lp .foot-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) repeat(3, minmax(0, 1fr));
+  gap: clamp(28px, 4vw, 64px);
+  align-items: start;
+}
+
+.lp .foot-brand p {
+  margin: 16px 0 0;
+  max-width: 34ch;
+  font-size: 0.875rem;
+  line-height: 1.62;
+  color: var(--ink-3);
+  text-wrap: pretty;
+}
+
+.lp .foot-col { display: flex; flex-direction: column; align-items: flex-start; gap: 11px; }
+.lp .foot-col h3 {
+  margin: 0 0 3px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.lp .foot-col a { font-size: 0.9375rem; color: var(--ink-2); }
+.lp .foot-col a:hover { color: var(--ink); }
+
+.lp .foot-base {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 26px;
+  margin-top: clamp(40px, 6vh, 72px);
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+  font-size: 0.8125rem;
+  color: var(--ink-3);
+}
+.lp .foot-note { margin-left: auto; }
+
+@media (max-width: 820px) {
+  .lp .foot-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 36px; }
+  .lp .foot-brand { grid-column: 1 / -1; }
+  .lp .foot-note { margin-left: 0; }
 }

@@ -7,6 +7,7 @@ import { useAuth } from '@/auth/AuthProvider'
 import { Carousel } from './Carousel'
 import { RigBench, RigDesk, RigFrame } from '@/ui/RigScenes'
 import { Selected } from '@/ui/Selected'
+import { RigStand } from '@/ui/RigStand'
 import { Trace } from './Trace'
 import { Find } from './Find'
 import { BuildWall } from './BuildWall'
@@ -295,6 +296,8 @@ export function Landing() {
 
       {/* ---- features ---- */}
       <section className="sec sec-alt" id="features">
+        {/* Presenting the list, and looking at it rather than at you. */}
+        <RigStand act="point" mood="happy" side="right" size={92} look={-1} />
         <div className="lpw">
           <Rise className="sec-head center">
             <h2>What it does</h2>
@@ -351,27 +354,86 @@ export function Landing() {
       {/* ---- parts search ---- */}
       <Find total={parts} />
 
-      {/* ---- closing ---- */}
-      <section className="end">
+      {/*
+        * The close.
+        *
+        * It was a heading and two buttons on empty grid, which is a page
+        * trailing off rather than ending. A page needs a last beat with some
+        * weight in it, and the obvious one here is the bench with the lights
+        * off: the same dark the editor is, inset in the paper, so the last
+        * thing before the footer is the thing being sold.
+        *
+        * Rig stands on its top edge with his feet on the join, which is the
+        * one place on the page where he is lit from two sides.
+        */}
+      <section className="sec end-wrap">
         <div className="lpw">
-          <Rise>
-            <h2>Start building</h2>
-            <div className="end-cta">
-              <Link className="btn btn-primary btn-lg" to="/projects">
-                Try Draftrig<span className="arr" aria-hidden="true" />
-              </Link>
-              {accounts && <Link className="btn btn-ghost btn-lg" to="/signin">Sign in</Link>}
-            </div>
-          </Rise>
+          <div className="end">
+            <RigStand act="game" mood="happy" side="left" size={118} inset={34} look={1} />
+            <Rise>
+              <h2>Start building</h2>
+              <p>
+                The bench is open. Lay something out, wire it and run it without an
+                account — one is only needed to keep what you made.
+              </p>
+              <div className="end-cta">
+                <Link className="btn btn-primary btn-lg" to="/projects">
+                  Try Draftrig<span className="arr" aria-hidden="true" />
+                </Link>
+                {accounts && <Link className="btn btn-ghost btn-lg" to="/signin">Sign in</Link>}
+              </div>
+            </Rise>
+          </div>
         </div>
       </section>
 
+      {/*
+        * A footer with the rest of the site in it.
+        *
+        * It was a copyright line and two links, which on a page this long
+        * reads as the site having run out rather than finished. Three short
+        * columns is the smallest thing that does the job a footer is for:
+        * somewhere to go next when the buttons above were not what you
+        * wanted.
+        *
+        * Nothing invented. Every link goes to a route that exists, which is
+        * why there is no Pricing, no Docs, no Careers and no social row.
+        */}
       <footer className="foot">
-        <div className="foot-in">
+        <div className="lpw foot-grid">
+          <div className="foot-brand">
+            <Wordmark size={20} />
+            <p>
+              A bench for anything functional. Lay it out, wire it, and run it before
+              you buy a single part.
+            </p>
+          </div>
+
+          <nav className="foot-col">
+            <h3>The editor</h3>
+            <Link to="/projects">Your projects</Link>
+            <Link to="/app">Open the bench</Link>
+            <a href="#parts">Part catalogue</a>
+            <a href="#builds">Example builds</a>
+          </nav>
+
+          <nav className="foot-col">
+            <h3>This page</h3>
+            <a href="#features">What it does</a>
+            <a href="#setup">Whole setups</a>
+            <a href="#builds">Built with it</a>
+          </nav>
+
+          <nav className="foot-col">
+            <h3>Account</h3>
+            {accounts && <Link to="/signin">Sign in</Link>}
+            <a href={`mailto:${BRAND.support}`}>Contact</a>
+          </nav>
+        </div>
+
+        <div className="lpw foot-base">
           <span>© {new Date().getFullYear()} {BRAND.name}</span>
-          <div className="foot-sp" />
-          <a href={`mailto:${BRAND.support}`}>Contact</a>
-          <Link to="/projects">Projects</Link>
+          <span className="foot-note">Built in the open. Nothing here is a mock-up.</span>
         </div>
       </footer>
     </div>

@@ -72,7 +72,7 @@ export type Mood = keyof typeof FACES
  * is a different pair of arms and a real object out of the catalogue, so
  * the section he is standing in is the thing he is working on.
  */
-export type Act = 'idle' | 'solder' | 'game' | 'plug' | 'wrench'
+export type Act = 'idle' | 'solder' | 'game' | 'plug' | 'wrench' | 'carry' | 'point'
 
 const CABLE = '#33302B'
 const ARM_W = 4.4
@@ -172,6 +172,53 @@ const ARMS: Record<Act, () => JSX.Element> = {
         <rect x="95" y="94" width="3.4" height="6" rx="1" fill="#8E8A82" />
         <rect x="101" y="94" width="3.4" height="6" rx="1" fill="#8E8A82" />
         <rect x="97.6" y="104" width="4" height="7" rx="1" fill="#8E8A82" />
+      </g>
+    </>
+  ),
+
+  /*
+   * Carrying a length of extrusion on one shoulder.
+   *
+   * The one pose that implies he was somewhere else a moment ago, which is
+   * what stops a row of him along a page reading as five statues. The rail
+   * oversails him on both sides, because a man carrying a two-metre
+   * section is the joke of a two-metre section, not of a man.
+   */
+  carry: () => (
+    <>
+      <g className="rig-haul">
+        <path d="M28 77 C 20 84, 24 90, 34 90" stroke={CABLE} strokeWidth={ARM_W} strokeLinecap="round" />
+        <path d="M92 77 C 98 83, 92 88, 80 88" stroke={CABLE} strokeWidth={ARM_W} strokeLinecap="round" />
+        {/* 2020, seen from the side: square, with the slot down its length. */}
+        <g transform="rotate(-7 60 84)">
+          <rect x="4" y="79" width="112" height="11" rx="2" fill="#B9BDC4" />
+          <rect x="8" y="83" width="104" height="3.4" rx="1.7" fill="#8D929A" />
+          <rect x="8" y="80.4" width="104" height="1.4" rx="0.7" fill="#D8DBE0" />
+        </g>
+      </g>
+      <g className="rig-arm rig-arm-l">
+        <path d="M30 92 C 22 100, 20 108, 23 116" stroke={CABLE} strokeWidth={ARM_W} strokeLinecap="round" />
+        <Header x={17} y={114} />
+      </g>
+    </>
+  ),
+
+  /*
+   * Pointing at whatever is beside him.
+   *
+   * Placed against a heading he reads as presenting it. The raised arm is
+   * the only thing that moves, and barely — a mascot that waves is a mascot
+   * asking for attention, and this one is giving it to something else.
+   */
+  point: () => (
+    <>
+      <g className="rig-arm rig-arm-l">
+        <path d="M28 77 C 15 85, 11 97, 15 109" stroke={CABLE} strokeWidth={ARM_W} strokeLinecap="round" />
+        <Header x={9} y={107} />
+      </g>
+      <g className="rig-point">
+        <path d="M92 77 C 104 74, 112 66, 114 56" stroke={CABLE} strokeWidth={ARM_W} strokeLinecap="round" />
+        <circle cx="114.5" cy="53" r="4.4" fill="#1E6FFF" />
       </g>
     </>
   ),

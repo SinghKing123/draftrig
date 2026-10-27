@@ -201,3 +201,111 @@
 @media (prefers-reduced-motion: reduce) {
   .scene * { animation: none !important; }
 }
+
+/* ==================================================================
+   Standing on the line
+   ------------------------------------------------------------------
+   Drawn by src/ui/RigStand.tsx. His feet land on the section's top
+   edge and his body hangs up into the section above, so the boundary
+   is something he is standing on rather than a box he is inside.
+
+   The parent section must be positioned and must not clip: `.sec`
+   already is, and that is the one thing to check if he vanishes.
+   ================================================================== */
+
+.lp .rig-stand {
+  position: absolute;
+  top: 0;
+  z-index: 2;
+  width: var(--rig-w, 96px);
+  /* Feet on the line, not his box. The drawing carries about 5 % of its
+     height in shadow below the foot plate, so he is pushed down by that
+     much or he reads as hovering a few pixels over it. */
+  transform: translateY(calc(-100% + 6px));
+  pointer-events: none;
+  --rig-shadow: rgba(62, 48, 30, 0.17);
+}
+
+.lp .rig-stand .rig-face { display: block; }
+
+.lp .rig-stand-left { left: calc(50% - min(620px, 44vw) + var(--rig-inset, 0px)); }
+.lp .rig-stand-right { right: calc(50% - min(620px, 44vw) + var(--rig-inset, 0px)); }
+
+/*
+ * The line he is standing on.
+ *
+ * A section boundary is only a floor where you can see it, and between two
+ * bands of near-identical stock there is nothing there — which is how he
+ * ended up apparently hovering over a blank patch of page, the exact fault
+ * this component was written to fix. So he brings his own: a hairline out
+ * to either side, fading before it reaches anything, which reads as the
+ * near edge of a surface rather than as a rule somebody drew.
+ *
+ * Suppressed where a real edge already exists; see the closing panel.
+ */
+.lp .rig-stand::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 300%;
+  height: 1px;
+  transform: translateX(-50%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--line-2) 22%,
+    var(--line-2) 78%,
+    transparent
+  );
+}
+
+/*
+ * A contact shadow on the line itself.
+ *
+ * The figure carries its own soft ellipse, which is enough on a flat
+ * ground. Standing on an edge he also needs the darker, tighter smudge
+ * right under the plate that says the two surfaces are touching — without
+ * it he reads as pasted over the line rather than resting on it.
+ */
+.lp .rig-stand::after {
+  content: '';
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  bottom: 2px;
+  height: 3px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(62, 48, 30, 0.2), transparent 72%);
+}
+
+/* On a real edge — the closing panel's own top — the drawn line would be a
+   second rule a pixel off the first. */
+.lp .end .rig-stand::before { display: none; }
+
+/* He is a flourish, and a flourish that squeezes the reading column is a
+   mistake. Below the point where the gutter runs out, he goes. */
+@media (max-width: 1080px) {
+  .lp .rig-stand { display: none; }
+}
+
+/* --- carrying --- */
+
+/* The rail dips and rises a degree as he walks, hinged at his shoulder. A
+   carried thing that is perfectly level is a carried thing nobody is
+   carrying. */
+@keyframes rig-haul {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(1.1deg); }
+}
+.rig .rig-haul { transform-origin: 60px 84px; animation: rig-haul 4.4s ease-in-out infinite; }
+
+/* --- pointing --- */
+
+/* Two degrees, slowly. Enough that the arm is alive, not so much that it
+   becomes a wave. */
+@keyframes rig-point {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-2.4deg); }
+}
+.rig .rig-point { transform-origin: 92px 78px; animation: rig-point 5.2s ease-in-out infinite; }

@@ -205,8 +205,6 @@ export function SetupShow() {
             <Link className="btn btn-ghost" to="/app?start=desk-setup">
               Open this one<span className="arr" aria-hidden="true" />
             </Link>
-            {/* The build beside him has a console on it, so he is on it. */}
-            <Rig className="row-rig" size={88} act="game" mood="happy" />
           </div>
           <div className="art setup-art">
             <video
