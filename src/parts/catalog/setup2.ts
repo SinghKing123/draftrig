@@ -754,6 +754,14 @@ const router: PartDef = {
 
 const desk: PartDef = {
   id: 'desk',
+  // The scan is one desk: an oak top on a sit-stand column. It stands in only
+  // for that configuration — a walnut top or a four-legged frame is a different
+  // object, and the solids draw those at whatever width is set. Uniform fit
+  // keeps the mesh honest at the default size; very wide tops it cannot follow.
+  model: (p) =>
+    str(p, 'top', 'oak') === 'oak' && str(p, 'frame', 'sit-stand') === 'sit-stand'
+      ? { url: 'models/desk.glb', fit: 'bbox', credit: { title: 'Adjustable Wooden Desk', author: 'twopixels', license: 'CC-BY-4.0', source: 'https://sketchfab.com/3d-models/57ba9e7b17464b58998e91f05dae9035' } }
+      : undefined,
   name: 'Desk',
   category: 'furniture',
   blurb: 'A top at a height, which is what everything else is measured from',

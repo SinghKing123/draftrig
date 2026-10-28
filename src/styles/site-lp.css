@@ -1665,3 +1665,65 @@
 .lp .credits li a { color: var(--ink-2); }
 .lp .credits li a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
 .lp .credits-by { color: var(--ink-3); font-size: 0.75rem; }
+
+/* ==================================================================
+   Rooms
+   ------------------------------------------------------------------
+   The one section that answers "is this for my desk, or only for
+   circuits". It leads on the render because the render is the
+   argument, and the figures under it are read off that build.
+   ================================================================== */
+
+.lp .room-art { margin: clamp(52px, 7vh, 86px) auto 0; max-width: 1020px; }
+.lp .room-art img { width: 100%; height: auto; border-radius: var(--r-lg); box-shadow: var(--shadow); }
+
+/*
+ * Four figures on one rule, not four cards.
+ *
+ * A card each would be the fourth grid of equal boxes on this page, and
+ * these are four short facts about one object rather than four things.
+ */
+.lp .room-facts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  margin: clamp(56px, 7vh, 82px) auto 0;
+  max-width: 1020px;
+  padding: 0;
+  background: var(--line);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+.lp .room-facts > div { padding: 20px 22px; background: var(--bg); }
+.lp .room-facts dt {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.lp .room-facts dd {
+  margin: 6px 0 0;
+  font-size: 1.375rem;
+  font-weight: 600;
+  letter-spacing: -0.028em;
+  color: var(--ink);
+  font-variant-numeric: normal;
+}
+
+.lp .room-copy {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(26px, 4vw, 58px);
+  margin: clamp(52px, 7vh, 80px) auto 0;
+  max-width: 1020px;
+}
+.lp .room-copy h3 { margin: 0 0 8px; font-size: 1.0625rem; letter-spacing: -0.018em; }
+.lp .room-copy p { color: var(--ink-2); line-height: 1.62; text-wrap: pretty; }
+
+.lp .room-cta { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-top: clamp(44px, 6vh, 68px); }
+
+@media (max-width: 860px) {
+  .lp .room-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lp .room-copy { grid-template-columns: 1fr; gap: 30px; }
+}

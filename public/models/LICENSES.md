@@ -23,6 +23,7 @@ CC-BY permits modification.
 | `soundbar.glb` | Q-Acoustics M3 Soundbar | Q-Acoustics | https://sketchfab.com/3d-models/7cf33febf603401586ffa5e18c312d31 |
 | `tv.glb` | Flat Screen Television | HippoStance | https://sketchfab.com/3d-models/f90d4fb91dd34b6791e8d66d00f96591 |
 | `pc-tower.glb` | Fractal Design Meshify C — PC Case | MUSHROOM_BUILDS | https://sketchfab.com/3d-models/a46526af2ac84fa098edc3f01c012450 |
+| `desk.glb` | Adjustable Wooden Desk | twopixels | https://sketchfab.com/3d-models/57ba9e7b17464b58998e91f05dae9035 |
 
 ## steel-desk
 

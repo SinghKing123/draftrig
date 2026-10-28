@@ -9,6 +9,7 @@ import { RigBench, RigDesk, RigFrame } from '@/ui/RigScenes'
 import { Selected } from '@/ui/Selected'
 import { RigStand } from '@/ui/RigStand'
 import { ModelCredits } from '@/ui/ModelCredits'
+import { RoomShow } from './RoomShow'
 import { Trace } from './Trace'
 import { Find } from './Find'
 import { BuildWall } from './BuildWall'
@@ -249,6 +250,8 @@ export function Landing() {
 
       {/* ---- what it does now that it did not last month ---- */}
       <SetupShow />
+
+      <RoomShow />
 
       {/* ---- builds ---- */}
       <BuildWall />
