@@ -1727,3 +1727,21 @@
   .lp .room-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .lp .room-copy { grid-template-columns: 1fr; gap: 30px; }
 }
+
+/* The second figure in the room section: one object rather than a room. */
+.lp .room-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.92fr);
+  align-items: center;
+  gap: clamp(40px, 6vw, 86px);
+  max-width: 1020px;
+  margin: clamp(68px, 9vh, 112px) auto 0;
+}
+.lp .room-pair img { width: 100%; height: auto; border-radius: var(--r-lg); box-shadow: var(--shadow); }
+.lp .room-pair-copy h3 { margin: 0 0 12px; font-size: 1.375rem; letter-spacing: -0.024em; }
+.lp .room-pair-copy p { margin: 0 0 12px; color: var(--ink-2); line-height: 1.62; text-wrap: pretty; }
+.lp .room-pair-note { color: var(--ink-3); font-size: 0.9375rem; }
+
+@media (max-width: 860px) {
+  .lp .room-pair { grid-template-columns: 1fr; gap: 34px; }
+}

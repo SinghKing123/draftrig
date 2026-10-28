@@ -2,7 +2,7 @@ import type { Doc } from '@/state/doc'
 import { emptyDoc } from '@/state/doc'
 import type { Instance, Params, Vec3 } from '@/parts/kernel/types'
 import { defaultParams, requirePart } from '@/parts/kernel/registry'
-import { drawerUnit, piCase, shopRack, workbench } from './assemblies'
+import { drawerUnit, piCase, shopRack, workbench, ps5Stand } from './assemblies'
 import {
   arcadeCabinet,
   controlStack,
@@ -416,6 +416,7 @@ export const STARTERS: Starter[] = [
     tags: ["clock","rtc","perfboard","sensor","buttons","alarm","project","finished"],
     build: benchClock,
   },
+  { id: 'ps5-stand', title: 'Console stand', blurb: 'A 2020 frame built around an upright console, with the clearance it needs', kind: 'build', tags: ["ps5","console","stand","shelf","extrusion","2020","frame","setup","gaming"], build: ps5Stand },
   { id: 'room-setup', title: 'Room setup', blurb: 'A room, a desk against the wall, a television on the other one, and two sockets', kind: 'build', tags: ["room","space","layout","plan","desk","tv","setup","office","mains"], build: roomSetup },
   { id: 'desk-setup', title: 'Desk setup', blurb: 'A desk, a TV, a heater, and one socket that cannot carry them', kind: 'build', tags: ["desk","setup","room","pc","monitor","tv","console","mains","socket","extension","battlestation","office","av"], build: deskSetup },
   { id: 'message-board', title: 'LED message board', blurb: 'Forty-eight matrix modules on a stand, three thousand dots', kind: 'build', tags: ["led","matrix","max7219","sign","message","display","dot matrix","scroll","board","advert","text"], build: messageBoard },

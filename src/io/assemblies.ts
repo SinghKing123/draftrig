@@ -310,3 +310,79 @@ export function shopRack(): Doc {
 
   return b.doc
 }
+
+/* ------------------------------------------------------------------ */
+
+/**
+ * A stand built around a console.
+ *
+ * This is the case for drawing a real object rather than a box of the right
+ * size. The console is 104 wide, 390 tall and 260 deep, and the whole point
+ * of the frame is the gap between it and the uprights: 33 mm a side, which
+ * is a number you can only choose once you know what you are building
+ * around. A box would give the same number and tell you nothing about
+ * whether the thing clears the rail at the back when you lift it out.
+ *
+ * Two uprights, a base, a top tie and a shelf. Open at the front and open
+ * at both sides, because the intake is on the sides and a stand that boxes
+ * it in is a stand that cooks it.
+ *
+ * Every fastener is here. That is most of the afternoon, and it is the part
+ * a sketch leaves out.
+ */
+export function ps5Stand(): Doc {
+  const b = new Builder('Console stand')
+
+  /* The console, upright, as the scan has it. */
+  const CW = 104
+  const CD = 260
+  const CH = 390
+
+  /* Uprights at a third of a profile clear of the console on each side. */
+  const GAP = 33
+  const PX = CW / 2 + GAP + 10 /* + half a 20 mm profile */
+  const PZ = CD / 2 - 10
+  const SHELF = 90
+  const TOP = SHELF + CH + 70
+
+  /* --- base: two rails front to back, tied across at each end --- */
+  for (const sx of [-1, 1] as const) b.beamZ(sx * PX, 10, 0, CD + 60)
+  for (const sz of [-1, 1] as const) b.beamX(0, 10, sz * (PZ + 20), PX * 2 - 20)
+
+  /* --- two uprights at the back, where they do not block the front --- */
+  for (const sx of [-1, 1] as const) b.post(sx * PX - 10, 20, -PZ - 20, TOP)
+
+  /* --- a tie across the top, which is what stops the two posts waving --- */
+  b.beamX(0, 20 + TOP - 10, -PZ - 20, PX * 2 - 20)
+
+  /* --- the shelf it stands on --- */
+  b.add('panel-sheet', [0, SHELF, 0], { material: 'plywood', thickness: 9, width: PX * 2 - 20, depth: CD + 40 }, [0, 0, 0], 'Shelf')
+  for (const sx of [-1, 1] as const) b.beamX(sx * 0, SHELF - 14, 0, PX * 2 - 20)
+
+  /* --- the console --- */
+  b.add('console-game', [0, SHELF + 9, 0], { style: 'tower', on: true, load: 70 }, [0, 0, 0], 'Console')
+
+  /* --- what holds it together --- */
+  const joints: [number, number, number][] = []
+  for (const sx of [-1, 1] as const) {
+    joints.push([sx * (PX - 20), 30, -PZ - 20])
+    joints.push([sx * (PX - 20), 20 + TOP - 30, -PZ - 20])
+    joints.push([sx * (PX - 20), SHELF - 14, 0])
+  }
+  for (const [x, y, z] of joints) {
+    b.add('bracket-corner-2020', [x, y, z], { size: '20', finish: 'alu-anod-black' }, [0, 0, 0], 'Corner bracket')
+    for (const n of [0, 1]) {
+      b.add('tnut-2020', [x + n * 8, y + 10, z], { thread: 'M5' }, [0, 0, 0], 'T-nut')
+      b.add('screw-bhcs', [x + n * 8, y + 10, z + 6], { thread: 'M5', length: 10 }, [0, 0, 0], 'Screw')
+    }
+  }
+
+  /* --- feet, so it does not mark the desk --- */
+  for (const sx of [-1, 1] as const) {
+    for (const sz of [-1, 1] as const) {
+      b.add('rubber-foot', [sx * PX, 0, sz * (PZ + 10)], { dia: 18 }, [0, 0, 0], 'Foot')
+    }
+  }
+
+  return b.doc
+}

@@ -102,6 +102,46 @@ export function RoomShow() {
           </div>
         </div>
 
+        {/*
+          * The other direction: not a room, one object.
+          *
+          * The room makes the case for scale. This makes the case for the
+          * scanned meshes, which the room does not: the frame exists to hold
+          * a specific console, and the gap each side is a number you can only
+          * choose once you know the shape you are building around. A box of
+          * the right size gives you the same number and tells you nothing
+          * about whether the thing clears the back rail on the way out.
+          */}
+        <div className="room-pair">
+          <Selected label="Console stand" dim="33 mm clear each side" live={false}>
+            <img
+              src="/slides/ps5-stand.jpg"
+              alt="A frame of aluminium extrusion built around an upright games console, standing on a plywood shelf"
+              width={1800}
+              height={1520}
+              loading="lazy"
+              decoding="async"
+            />
+          </Selected>
+
+          <div className="room-pair-copy">
+            <h3>Build around the thing itself</h3>
+            <p>
+              The console is the scanned object, at its own size. The frame is
+              2020 extrusion around it.
+            </p>
+            <p>
+              You pick the gap because you can see the shape. Here it is 33 mm each
+              side, which lets air into the intake and lets you lift the console out
+              past the back rail.
+            </p>
+            <p className="room-pair-note">
+              Every bracket, T-nut and screw is in the build. That is the part a
+              sketch leaves out, and the part that takes the afternoon.
+            </p>
+          </div>
+        </div>
+
         <div className="room-cta">
           <Link className="btn btn-primary btn-lg" to="/app?start=room-setup">
             Open this room<span className="arr" aria-hidden="true" />

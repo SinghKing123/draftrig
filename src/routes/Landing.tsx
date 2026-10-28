@@ -248,10 +248,20 @@ export function Landing() {
         </div>
       </section>
 
+      {/*
+        * The room first, then the socket arithmetic.
+        *
+        * The room is the picture that answers "what is this for" without
+        * anybody reading a word, so it goes directly under the hero. The
+        * socket demo is the better argument but it is an argument -- it
+        * wants a reader who has already decided to stay, and it reads far
+        * better as the answer to a room somebody has just looked at than as
+        * the first thing on the page after the fold.
+        */}
+      <RoomShow />
+
       {/* ---- what it does now that it did not last month ---- */}
       <SetupShow />
-
-      <RoomShow />
 
       {/* ---- builds ---- */}
       <BuildWall />
