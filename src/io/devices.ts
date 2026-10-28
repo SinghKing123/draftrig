@@ -903,75 +903,143 @@ export function deskSetup(): Doc {
  *
  * The other builds are objects. This one is a space, and the question it
  * answers is the one anybody planning a setup actually has: does this fit
- * along that wall, and does the wall it is against have enough sockets.
+ * along that wall, and does the wall it is against carry it.
+ *
+ * Everything is on one wall. That is a composition decision as much as a
+ * layout one -- a room photographs from one corner, and a setup spread over
+ * two walls is a setup you need two pictures of. It is also how most people
+ * do it: the desk goes where the sockets are.
  *
  * The room shell puts its corner at the origin and runs +x and +z, so every
- * position here reads as a distance from the back-left corner — which is
- * how you would measure it standing in the room with a tape. Nothing is
- * centred on the origin the way a single device is, because a room has a
- * corner and a device has a middle.
+ * position here reads as a distance from the back-left corner, which is how
+ * you would measure it standing in the room with a tape. Nothing is centred
+ * on the origin the way a single device is, because a room has a corner and
+ * a device has a middle.
  */
 export function roomSetup(): Doc {
   const b = new Builder('Room setup')
 
-  const RW = 4200
-  const RD = 3600
+  const RW = 4600
+  const RD = 3400
   const at = (id: string): Vec3 => b.doc.instances[id].pos
 
-  b.add('room-shell', [0, 0, 0], { width: RW, depth: RD, height: 2400, paint: 'warm', floor: 'oak', skirting: true, sockets: 2 }, [0, 0, 0], 'Room')
+  b.add('room-shell', [0, 0, 0], { width: RW, depth: RD, height: 2400, paint: 'warm', floor: 'oak', skirting: true, sockets: 0 }, [0, 0, 0], 'Room')
 
   /* --- the desk, against the back wall --- */
   const DW = 1600
   const DD = 750
   const DH = 740
-  const DX = 1180
-  const DZ = DD / 2 + 70 /* 70 mm of clearance behind, for the cables */
+  const DX = 1240
+  /* 90 mm of clearance behind it: enough for the cables to drop, which is
+     the gap everybody forgets and then cannot close the desk against. */
+  const DZ = DD / 2 + 90
 
   b.add('desk', [DX, 0, DZ], { width: DW, depth: DD, height: DH, top: 'oak', frame: 'sit-stand' }, [0, 0, 0], 'Desk')
 
-  const ARM_REACH = 240
-  const ARM_POST = 420
-  const ARM_Z = DZ - DD / 2 + 20
-  b.add('monitor-arm', [DX - 330, DH, ARM_Z], { reach: ARM_REACH, height: ARM_POST, load: '2-9' }, [0, -90, 0], 'Monitor arm')
-  b.add('monitor-desk', [DX - 330, DH + ARM_POST - 70 - 188, ARM_Z + ARM_REACH + 25], { diagonal: '27', hz: '144', stand: false }, [0, 0, 0], 'Monitor, left')
-  b.add('monitor-desk', [DX + 330, DH, DZ - DD / 2 + 180], { diagonal: '27', hz: '60', stand: true }, [0, -16, 0], 'Monitor, right')
-  const pc = b.add('pc-tower', [DX + 640, 0, DZ - DD / 2 + 240], { size: 'midi', psu: '850', gpu: true, load: 35 }, [0, -22, 0], 'Tower')
+  /*
+   * The arm, and the screen on the end of it.
+   *
+   * The arm is authored reaching along its own +x with the VESA plate at the
+   * far end, so [0, -90, 0] turns that reach to +z, out over the desk. The
+   * panel then goes where the plate is: clamp at the rear edge, 240 of
+   * reach, plate 420 up the post. Pointed the other way the boom hangs off
+   * the back of the desk and through the wall.
+   */
+  const REACH = 240
+  const POST = 420
+  const ARM_Z = DZ - DD / 2 + 30
+  b.add('monitor-arm', [DX - 300, DH, ARM_Z], { reach: REACH, height: POST, load: '2-9' }, [0, -90, 0], 'Monitor arm')
+  const mon1 = b.add('monitor-desk', [DX - 300, DH + POST - 70 - 188, ARM_Z + REACH + 25], { diagonal: '27', hz: '144', stand: false }, [0, 0, 0], 'Monitor, left')
+  const mon2 = b.add('monitor-desk', [DX + 360, DH, DZ - DD / 2 + 210], { diagonal: '27', hz: '60', stand: true }, [0, -14, 0], 'Monitor, right')
 
-  /* --- the television, on the left wall --- */
-  /* Authored facing +z, so a quarter turn puts its face into the room. */
-  const tv = b.add('tv-set', [120, 950, 2300], { diagonal: '55', stand: false }, [0, 90, 0], 'Television')
-  const bar = b.add('soundbar', [160, 760, 2300], { watts: 200 }, [0, 90, 0], 'Soundbar')
-  const con = b.add('console-game', [210, 0, 2650], { load: 70 }, [0, 90, 0], 'Console')
+  const lap = b.add('laptop', [DX + 330, DH, DZ + 170], { diagonal: '14', lid: 108, watts: '65' }, [0, -10, 0], 'Laptop')
+  const phone = b.add('phone-handset', [DX - 540, DH, DZ + 150], { size: 'standard', stand: true }, [0, 12, 0], 'Phone')
+  const psu = b.add('charger-usb-mains', [DX - 150, DH, DZ - DD / 2 + 120], { watts: '65', ports: '2', load: 70 }, [0, 0, 0], 'USB charger')
+
+  /* --- under it --- */
+  const pc = b.add('pc-tower', [DX + 660, 0, DZ - DD / 2 + 250], { size: 'midi', psu: '850', gpu: true, load: 35 }, [0, -20, 0], 'Tower')
+  const net = b.add('router-wifi', [DX - 700, 0, DZ - DD / 2 + 160], { aerials: 4, ports: '4' }, [0, 8, 0], 'Router')
+
+  /* --- the media end of the same wall --- */
+  /*
+   * On its feet rather than on the wall.
+   *
+   * The scanned mesh has a stand in it, so the wall-mounted configuration
+   * draws the built-in geometry instead -- correct, and a plain grey slab
+   * next to a photoscanned desk. Standing it on the floor is the honest way
+   * to get the good picture, and it is what most of these actually do.
+   */
+  const tv = b.add('tv-set', [3500, 0, 300], { diagonal: '55', stand: 'feet' }, [0, 0, 0], 'Television')
+  const bar = b.add('soundbar', [3500, 0, 620], { watts: 200 }, [0, 0, 0], 'Soundbar')
+  const con = b.add('console-game', [4050, 0, 470], { load: 70 }, [0, -14, 0], 'Console')
 
   /* --- mains --- */
-  const w1 = b.add('outlet-mains', [RW / 3, 450, 14], { region: 'uk', ways: '2', switched: true }, [0, 0, 0], 'Socket, desk wall')
-  const w2 = b.add('outlet-mains', [(RW * 2) / 3, 450, 14], { region: 'uk', ways: '2', switched: true }, [0, 0, 0], 'Socket, media wall')
-  const lead = b.add('extension-lead', [DX - 120, 60, DZ - DD / 2 + 130], { ways: '6', length: 2000, fuse: '13' }, [0, 0, 0], 'Extension lead')
+  /* Two sockets on the back wall at 450, one behind the desk and one behind
+     the television, which is where a sparky would have put them. */
+  const w1 = b.add('outlet-mains', [DX - 120, 450, 16], { region: 'uk', ways: '2', switched: true }, [0, 0, 0], 'Socket, desk')
+  const w2 = b.add('outlet-mains', [3500, 450, 16], { region: 'uk', ways: '2', switched: true }, [0, 0, 0], 'Socket, media')
+  const lead = b.add('extension-lead', [DX - 40, 60, DZ - DD / 2 + 150], { ways: '6', length: 2000, fuse: '13' }, [0, 0, 0], 'Extension lead')
 
-  /* The lead's ways are named way-then-core: 1l, 1n, 1e for the first. */
   const CORES: [string, string][] = [['l', BROWN], ['n', BLUE_N], ['e', GREEN_E]]
-  const FLOORY = 26
+  const FLOORY = 28
 
-  /** A run that drops to the floor, crosses, and comes back up. */
-  const floorRun = (from: string, to: string, ports: [string, string], col: string, mm2: number) => {
+  /** Down to the floor, across, and back up. */
+  const run = (from: string, to: string, ports: [string, string], col: string, mm2: number) => {
     const a = at(from)
     const c = at(to)
     b.wireVia([from, ports[0]], [to, ports[1]], [
-      [a[0], FLOORY, a[2] + 70],
-      [c[0], FLOORY, c[2] + 70],
+      [a[0], FLOORY, a[2] + 80],
+      [c[0], FLOORY, c[2] + 80],
     ], col, mm2)
   }
 
-  /* Socket to lead, then the tower off the lead. */
-  for (const [core, col] of CORES) floorRun(w1, lead, [`a${core}`, core], col, 2.5)
-  for (const [core, col] of CORES) floorRun(lead, pc, [`1${core}`, core], col, 1.5)
+  /* Socket to lead, then everything at the desk off the lead's six ways. */
+  for (const [core, col] of CORES) run(w1, lead, ['a' + core, core], col, 2.5)
+  for (const [core, col] of CORES) run(lead, pc, ['1' + core, core], col, 1.5)
+  for (const [core, col] of CORES) run(lead, mon1, ['2' + core, core], col, 0.75)
+  for (const [core, col] of CORES) run(lead, mon2, ['3' + core, core], col, 0.75)
+  for (const [core, col] of CORES) run(lead, net, ['4' + core, core], col, 0.75)
+  /* The charger is plugged straight into the lead: no floor, no waypoints. */
+  for (const [core, col] of CORES) b.wire([lead, '5' + core], [psu, core], col, 0.75)
 
-  /* The media wall runs off its own socket, which is the point of having
-     put a second one in: the television and the console are nowhere near
-     the desk and nothing about them should be on the desk's lead. */
-  for (const [core, col] of CORES) floorRun(w2, con, [`a${core}`, core], col, 1.5)
-  for (const [core, col] of CORES) floorRun(w2, tv, [`b${core}`, core], col, 1.5)
-  for (const [core, col] of CORES) floorRun(w2, bar, [`b${core}`, core], col, 1.0)
+  /*
+   * The media wall runs off its own socket.
+   *
+   * Nothing down there should be on the desk's lead, and the second socket
+   * is the reason it does not have to be.
+   *
+   * These hug the skirting rather than taking the shortest line. Three
+   * devices fanning straight out from one plate looked like a starburst --
+   * technically a route, visibly nothing anybody has ever seen behind a
+   * television. Down the wall, along it, then out to the device.
+   */
+  const wallRun = (to: string, ports: [string, string], col: string, mm2: number) => {
+    const c = at(to)
+    b.wireVia([w2, ports[0]], [to, ports[1]], [
+      [at(w2)[0], FLOORY, 70],
+      [c[0], FLOORY, 70],
+      [c[0], FLOORY, c[2] - 70],
+    ], col, mm2)
+  }
+  for (const [core, col] of CORES) wallRun(tv, ['a' + core, core], col, 1.5)
+  for (const [core, col] of CORES) wallRun(bar, ['b' + core, core], col, 1.0)
+  for (const [core, col] of CORES) wallRun(con, ['b' + core, core], col, 1.0)
+
+  /* --- low voltage and picture, which carry length rather than current --- */
+  b.wire([psu, 'vbus1'], [lap, 'usbc'], WHITE, 0.5)
+  b.wire([psu, 'gnd1'], [lap, 'usbcg'], BLACK, 0.5)
+  b.wire([psu, 'vbus2'], [phone, 'usbc'], WHITE, 0.3)
+  b.wire([psu, 'gnd2'], [phone, 'usbcg'], BLACK, 0.3)
+
+  for (const [from, fp, to, tp] of [
+    [pc, 'dp1', mon1, 'dp'],
+    [pc, 'hdmi', mon2, 'hdmi'],
+    [con, 'hdmi', tv, 'hdmi1'],
+  ] as [string, string, string, string][]) {
+    const a = at(from)
+    const c = at(to)
+    b.wireVia([from, fp], [to, tp], [[a[0], FLOORY, a[2] + 60], [c[0], FLOORY, c[2] + 60]], '#1E2228', 0.5)
+  }
 
   return b.doc
 }

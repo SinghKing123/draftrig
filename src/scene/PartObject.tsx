@@ -42,7 +42,14 @@ function PartObjectImpl({ inst, selected, hovered, onPointerDown }: Props) {
    * solids below are drawn, which is a part that looks plainer, not a part
    * that is missing.
    */
-  const spec = def?.model
+  // A part may offer its model unconditionally or decide per configuration;
+  // resolve to one spec here so the rest of this is identical either way.
+  // Memoised on the params so a static model keeps a stable identity and the
+  // load effect below does not re-fire on every unrelated render.
+  const spec = useMemo(() => {
+    const m = def?.model
+    return typeof m === 'function' ? m(inst.params) : m
+  }, [def, inst.params])
   const [model, setModel] = useState<THREE.Object3D | null>(null)
   useEffect(() => {
     if (!spec || !built || built.bbox.isEmpty()) {

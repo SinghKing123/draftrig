@@ -69,6 +69,22 @@ const panel169 = (inches: number): [number, number] => {
 
 const television: PartDef = {
   id: 'tv-set',
+  /*
+   * No mesh: models/tv.glb does not draw.
+   *
+   * The file fetches (200), the loader accepts it, and the part's selection
+   * box comes out the right size -- and nothing is rendered inside it. The
+   * other seven scans in this catalogue work through the same path, so the
+   * loader and the fit are not the fault; this one file is. It is the only
+   * one carrying a node scale (0.01) and the only one with a single
+   * untextured material, which is where to start looking.
+   *
+   * Until it draws, the television uses the geometry below. A part that
+   * looks plainer is a part; a part that renders nothing is a hole in the
+   * room. The credit is removed with it, because we are not showing the
+   * author's work and crediting them for a blank space would be worse than
+   * not crediting them at all.
+   */
   name: 'Television',
   category: 'av',
   blurb: 'A flat panel on feet, sized by the diagonal',
@@ -149,6 +165,13 @@ const television: PartDef = {
 
 const desktopMonitor: PartDef = {
   id: 'monitor-desk',
+  /* Same as the television: the scan has a stand in it, so it is only the
+     right picture for the configuration that has one. On an arm the panel
+     draws itself. */
+  model: (p) =>
+    bool(p, 'stand', true)
+      ? { url: 'models/monitor-27.glb', fit: 'bbox', credit: { title: 'LG moniter', author: 'Mohamed Ahmed', license: 'CC-BY-4.0', source: 'https://sketchfab.com/3d-models/lg-moniter-f899bb43701f4e95b1e44c4bf21ed29c' } }
+      : undefined,
   name: 'Desktop monitor',
   category: 'av',
   blurb: 'A monitor on a stand, DisplayPort and USB-C in',
@@ -290,6 +313,7 @@ const projector: PartDef = {
 
 const soundbar: PartDef = {
   id: 'soundbar',
+  model: { url: 'models/soundbar.glb', fit: 'bbox', credit: { title: 'Q-Acoustics M3 Soundbar', author: 'Q-Acoustics', license: 'CC-BY-4.0', source: 'https://sketchfab.com/3d-models/7cf33febf603401586ffa5e18c312d31' } },
   name: 'Soundbar',
   category: 'av',
   blurb: 'A bar under the screen, on eARC',
@@ -337,6 +361,7 @@ const soundbar: PartDef = {
 
 const pcTower: PartDef = {
   id: 'pc-tower',
+  model: { url: 'models/pc-tower.glb', fit: 'bbox', credit: { title: 'Fractal Design Meshify C — PC Case', author: 'MUSHROOM_BUILDS', license: 'CC-BY-4.0', source: 'https://sketchfab.com/3d-models/a46526af2ac84fa098edc3f01c012450' } },
   name: 'Desktop PC',
   category: 'computer',
   blurb: 'A tower, its supply, and what it pulls under load',
@@ -436,6 +461,7 @@ const pcTower: PartDef = {
 
 const laptop: PartDef = {
   id: 'laptop',
+  model: { url: 'models/laptop.glb', fit: 'bbox', credit: { title: 'MacBook Pro 16" 2021', author: 'rtql8d', license: 'CC-BY-4.0', source: 'https://sketchfab.com/3d-models/macbook-pro-16-2021-8ac16bda501c4bcc8ba93ac3eb63a8e1' } },
   name: 'Laptop',
   category: 'computer',
   blurb: 'Open on the desk, charging over USB-C',
@@ -519,6 +545,12 @@ const laptop: PartDef = {
 
 const console_: PartDef = {
   id: 'console-game',
+  // Only upright: the photoscan is a standing PS5, so a layout that lays the
+  // console flat or docks a handheld falls back to the built-in box.
+  model: (p) =>
+    str(p, 'style', 'tower') === 'tower'
+      ? { url: 'models/ps5-console.glb', fit: 'bbox', credit: { title: 'PS5', author: 'rtql8d', license: 'CC-BY-4.0', source: 'https://sketchfab.com/3d-models/ps5-d788de3735964151a3e24fd59c0f1956' } }
+      : undefined,
   name: 'Games console',
   category: 'computer',
   blurb: 'Upright or flat, and hot either way',
@@ -578,6 +610,14 @@ const console_: PartDef = {
 
 const phone: PartDef = {
   id: 'phone-handset',
+  // The scan stands upright on its long axis; the handset lies flat on the
+  // desk, so the mesh is turned a quarter-turn to lie down with it. In a stand
+  // it is tilted back on a cradle the mesh has no notion of, so that one draws
+  // its own geometry instead.
+  model: (p) =>
+    bool(p, 'stand', false)
+      ? undefined
+      : { url: 'models/phone.glb', fit: 'bbox', rot: [90, 0, 0], credit: { title: 'Apple iPhone 13 Pro Max', author: 'DatSketch', license: 'CC-BY-4.0', source: 'https://sketchfab.com/3d-models/apple-iphone-13-pro-max-4328dea00e47497dbeac73c556121bc9' } },
   name: 'Phone',
   category: 'computer',
   blurb: 'A handset, flat or in a stand',
@@ -646,6 +686,7 @@ const phone: PartDef = {
 
 const router: PartDef = {
   id: 'router-wifi',
+  model: { url: 'models/router-wifi.glb', fit: 'bbox', credit: { title: '3D Router', author: 'SanForge Studio', license: 'CC-BY-4.0', source: 'https://sketchfab.com/3d-models/3d-router-fc90c018647c4fd1a3a9f62559bf67f0' } },
   name: 'Router',
   category: 'computer',
   blurb: 'Four ports, a WAN, and the aerials that decide where it goes',

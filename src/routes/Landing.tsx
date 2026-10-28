@@ -8,6 +8,7 @@ import { Carousel } from './Carousel'
 import { RigBench, RigDesk, RigFrame } from '@/ui/RigScenes'
 import { Selected } from '@/ui/Selected'
 import { RigStand } from '@/ui/RigStand'
+import { ModelCredits } from '@/ui/ModelCredits'
 import { Trace } from './Trace'
 import { Find } from './Find'
 import { BuildWall } from './BuildWall'
@@ -430,6 +431,8 @@ export function Landing() {
             <a href={`mailto:${BRAND.support}`}>Contact</a>
           </nav>
         </div>
+
+        <ModelCredits className="lpw" />
 
         <div className="lpw foot-base">
           <span>© {new Date().getFullYear()} {BRAND.name}</span>

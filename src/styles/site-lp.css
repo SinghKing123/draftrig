@@ -1632,3 +1632,36 @@
   .lp .foot-brand { grid-column: 1 / -1; }
   .lp .foot-note { margin-left: 0; }
 }
+
+/* ==================================================================
+   Model credits
+   ------------------------------------------------------------------
+   Required, not decorative: eight of the setup meshes are CC-BY-4.0,
+   which permits the use and asks for the author's name wherever the
+   work is shown. Drawn from the catalogue by src/ui/ModelCredits.
+   ================================================================== */
+
+.lp .credits { margin-top: clamp(40px, 6vh, 64px); padding-top: 30px; border-top: 1px solid var(--line); }
+
+.lp .credits h3 {
+  margin: 0 0 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.lp .credits-lede { max-width: 56ch; margin: 0 0 18px; font-size: 0.8125rem; line-height: 1.6; color: var(--ink-3); }
+
+.lp .credits ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(238px, 1fr));
+  gap: 10px 26px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.lp .credits li { display: flex; flex-direction: column; gap: 1px; font-size: 0.8125rem; }
+.lp .credits li a { color: var(--ink-2); }
+.lp .credits li a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
+.lp .credits-by { color: var(--ink-3); font-size: 0.75rem; }

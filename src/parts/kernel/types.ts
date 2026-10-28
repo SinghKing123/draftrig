@@ -404,8 +404,14 @@ export interface PartDef {
    * An external mesh to draw in place of the solids, where the real object is
    * a shape nobody wants to write out as boxes and lathes. The solids are
    * still required, and still define everything but the picture.
+   *
+   * A function instead of a bare spec lets a parametric part answer per
+   * configuration: a console shows its photoscan upright but falls back to the
+   * built-in box when stood on its side, rather than wearing a mesh that no
+   * longer matches the shape the parameters describe. Returning undefined for a
+   * configuration is how a part says "draw the solids for this one".
    */
-  model?: ModelSpec
+  model?: ModelSpec | ((p: Params) => ModelSpec | undefined)
   /** Connection points. Must be pure. */
   ports: (p: Params) => Port[]
   electrical?: ElectricalSpec
