@@ -162,9 +162,22 @@
 .band.ink p { color: #b9c2cc; }
 .band.tight { padding-top: 0; }
 
-.sec-head { max-width: 62ch; margin-bottom: clamp(36px, 4vw, 56px); }
-.sec-head.centred { margin-left: auto; margin-right: auto; text-align: center; }
-.sec-head p { margin-top: 16px; font-size: 1.05rem; }
+/*
+ * `.sec-head` was here, unscoped, and it belonged to nothing.
+ *
+ * No `.site` page uses the class — the dashboard's heads are `.dsec-head`
+ * — and the only markup that does is the front page, which has its own
+ * `.lp .sec-head` in site-lp.css. So these three rules sat in a stylesheet
+ * loaded on every page and quietly fought the page they did not belong to:
+ * the front page's own rule set the margin, said nothing about the width,
+ * and this one's `max-width: 62ch` won by default. Measured, it clamped a
+ * 50px section heading to 493px and broke it over two lines, in four
+ * sections, for as long as it was here.
+ *
+ * This is the hazard the note at the top of this file describes. A bare
+ * class in a stylesheet that loads everywhere is a trap for whichever page
+ * uses the name next.
+ */
 
 /* ------------------------------------------------------------------ */
 /* Buttons                                                             */

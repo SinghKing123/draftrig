@@ -42,7 +42,7 @@ interface Step {
 const STEPS: Step[] = [
   {
     title: 'Draftrig',
-    body: '3D layout, point-to-point wiring and a modified nodal analysis solver. Every part is a catalog part at its real dimensions.',
+    body: '3D layout, point-to-point wiring and a modified nodal analysis solver. Every part is a catalogue part at its real dimensions.',
     place: 'center',
   },
   {

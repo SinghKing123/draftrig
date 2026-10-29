@@ -1,74 +1,89 @@
 /* ==================================================================
    The front page
    ------------------------------------------------------------------
-   The category convention, executed properly: a light ground, dark
-   text, one restrained accent, and generous air. The references the
-   brief names are plyxl.com and nootles.com, and the things that make
-   those work are not tricks — they are restraint and spacing.
+   PRODUCT.md records a standing preference: the category convention,
+   played straight, with plyxl.com and nootles.com as the craft bar.
+   This file is the second attempt at that. The first one was the
+   convention played safe, which is a different thing — a lot of warm
+   paper with a little content floating in the middle of it.
 
-   Three rules the whole file keeps to:
+   What changed, and the rules that follow from it:
 
-   1. One accent, used for actions and live state. Everything else is
-      the greyscale. A second colour is how a page like this starts to
-      look busy.
-   2. Depth is a soft shadow, never a border. Borders are for dividing
-      content, shadows for lifting a surface off the page.
-   3. One corner radius family, and it is generous. Mixing radii is
-      the fastest way to make a clean layout look assembled.
-
-   The product's own imagery is dark 3D renders. On a white page that
-   is a feature rather than a problem: a dark panel in a rounded
-   container with a soft shadow is exactly how this category presents
-   a screenshot, and the contrast does the work of an accent.
+   1. DENSITY. Sections are closer together and each one has something
+      in it worth looking at. The old page was eleven screens tall with
+      four things on it. Air between sections is a rhythm, not a
+      substitute for content.
+   2. THE PRODUCT IS THE IMAGERY, at full size. Dark renders on warm
+      paper, in a generous radius with a wide soft shadow. Not flat SVG
+      drawings of the product; not thumbnails beside paragraphs.
+   3. MOTION IS AUTHORED, and all of it comes from ui/motion.tsx. One
+      curve, one distance, one direction. The only loops on the page are
+      the two strips that carry motion as content, and the running
+      trace, which is a waveform.
+   4. ONE ACCENT, and the amber is reserved. Blue is intent and
+      selection; amber is energised — lit dots, current, a hot tip. A
+      third colour is how this kind of page starts to look cheap.
+   5. DEPTH IS A SHADOW, never a border. Borders divide content;
+      shadows lift a surface. Nothing on this page has both.
    ================================================================== */
 
-/*
- * Warm paper rather than white, and only ever paper.
- *
- * The page had a dark theme and a switch in the nav for it. It is a product
- * page: it is read once, in daylight, by somebody deciding whether to open
- * the editor, and a second full palette to keep correct bought nothing for
- * that. The editor keeps its dark theme, because the editor is where people
- * sit for an hour.
- *
- * The greys were the Zinc ramp, which is a cool neutral: pure white ground,
- * blue-black ink, grey-blue rules. Against the dark 3D renders the page
- * carries, that reads hard — the renders are the only warm thing on it and
- * everything around them is clinical.
- *
- * Every neutral is now pulled a few degrees towards paper: the ground is an
- * off-white with yellow in it, the ink is a warm near-black, the rules are
- * oatmeal. The blue is untouched, because it is the logo's and the logo is
- * not ours to warm; a cool accent on a warm ground is the oldest pairing
- * there is and it is what makes the blue read as ink rather than as a
- * highlight.
- */
 .lp {
+  /*
+   * Warm paper, not white. Every neutral is pulled a few degrees towards
+   * it: off-white ground with yellow in it, warm near-black ink, oatmeal
+   * rules, brown shadows. The blue is the logo's and is left alone — a
+   * cool accent on a warm ground is what makes it read as ink rather than
+   * as a highlighter.
+   */
   --bg: #FDFBF7;
-  --bg-2: #F8F4ED;
-  --bg-3: #F1EBE1;
-  --ink: #1C1A17;
+  --bg-2: #F7F3EC;
+  --bg-3: #F0EAE0;
+  --ink: #17150F;
   --ink-on: #FFFDF9;
-  --ink-2: #57514A;
-  --ink-3: #7A736A;
-  --line: #E8E1D6;
-  --line-2: #D9D0C2;
+  --ink-2: #554F46;
+  /*
+   * Darkened from #7B7267, which measured 4.62:1 on the page ground and
+   * fell through the floor the moment the ground was tinted — 4.28:1 under
+   * the gallery's captions, 3.99:1 under a hovered search result. Secondary
+   * text that fails on hover is text that dims as you point at it.
+   */
+  --ink-3: #6B6257;
+  --line: #E9E2D7;
+  --line-2: #DBD2C3;
   --accent: #1E6FFF;
   --accent-ink: #FFFFFF;
-  --accent-wash: #EDF2FD;
-  /* Wider and fainter than they were. A tight dark shadow is a hard edge
-     with extra steps; the warmth comes from the shadow being brown rather
-     than black as much as from the ground. */
-  --shadow-sm: 0 1px 2px rgba(62, 48, 30, 0.05), 0 1px 3px rgba(62, 48, 30, 0.07);
-  --shadow: 0 6px 18px rgba(62, 48, 30, 0.055), 0 18px 44px rgba(62, 48, 30, 0.075);
-  --shadow-lg: 0 10px 30px rgba(62, 48, 30, 0.06), 0 40px 80px -16px rgba(62, 48, 30, 0.14);
+  --accent-wash: #ECF2FE;
+  --volt: #D98500;          /* energised, on paper. The render's amber is
+                               #FFB020 and is illegible on this ground. */
 
-  --r: 14px;
-  --r-lg: 20px;
-  --r-xl: 28px;
-  --gut: clamp(20px, 5vw, 40px);
-  --max: 1180px;
-  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  /* Dark, for the panels that carry a render or close the page. */
+  --dark: #15130F;
+  --dark-2: #1E1B16;
+  --dark-line: #2E2920;
+  --dark-ink: #F6F2EA;
+  --dark-ink-2: #A79E91;
+  --dark-line-2: #46402F;
+  /* The accent, lifted for dark grounds. #1E6FFF on near-black is 2.6:1;
+     this is the same hue opened up until it reads. */
+  --accent-on-dark: #9FC4FF;
+  /* The two ends of the ramp, named so nothing reaches for a bare literal. */
+  --white: #FFFFFF;
+  --black: #000000;
+
+  /* Wide and faint, and brown rather than black. A tight dark shadow is
+     a hard edge with extra steps. */
+  --shadow-sm: 0 1px 2px rgba(62, 48, 30, 0.05), 0 2px 6px rgba(62, 48, 30, 0.05);
+  --shadow: 0 6px 18px rgba(62, 48, 30, 0.05), 0 18px 44px rgba(62, 48, 30, 0.07);
+  --shadow-lg: 0 10px 30px rgba(62, 48, 30, 0.06), 0 44px 90px -18px rgba(62, 48, 30, 0.16);
+
+  --r-sm: 10px;
+  --r: 16px;
+  --r-lg: 24px;
+  --r-xl: 32px;
+  --gut: clamp(20px, 5vw, 44px);
+  --max: 1240px;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --sec: clamp(68px, 10vh, 132px);
 
   position: relative;
   min-height: 100dvh;
@@ -80,25 +95,37 @@
   text-rendering: optimizeLegibility;
 }
 
+/*
+ * The nav is fixed and 72px tall with its gutter, so an anchor that scrolls
+ * a section's top edge to y=0 puts that section's heading underneath it.
+ * This is every in-page link on the page, including the six in the footer.
+ */
+.lp { scroll-padding-top: 86px; }
 
 .lp a { color: inherit; text-decoration: none; }
 .lp button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
 .lp img { display: block; max-width: 100%; }
+.lp ul, .lp ol { list-style: none; }
 
 /* The browser's own surfaces, which ship belonging to no design system. */
 .lp ::selection { background: var(--accent); color: var(--accent-ink); }
 .lp input { caret-color: var(--accent); }
-.lp :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.lp :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 5px; }
 .lp { scrollbar-color: var(--line-2) transparent; scrollbar-width: thin; }
 .lp ::-webkit-scrollbar { width: 10px; height: 10px; }
-.lp ::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 99px; border: 3px solid transparent; background-clip: content-box; }
+.lp ::-webkit-scrollbar-thumb {
+  background: var(--line-2);
+  border-radius: 99px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
 
-/* ---- type ---- */
+/* ---- type ------------------------------------------------------- */
 
-.lp h1, .lp h2, .lp h3 { margin: 0; font-weight: 600; letter-spacing: -0.03em; line-height: 1.08; }
-.lp h1 { font-size: clamp(2.6rem, 6vw, 4.5rem); letter-spacing: -0.042em; }
-.lp h2 { font-size: clamp(1.9rem, 3.6vw, 2.85rem); letter-spacing: -0.034em; }
-.lp h3 { font-size: 1.0625rem; letter-spacing: -0.015em; }
+.lp h1, .lp h2, .lp h3 { margin: 0; font-weight: 600; line-height: 1.06; letter-spacing: -0.034em; }
+.lp h1 { font-size: clamp(2.9rem, 7.2vw, 5.4rem); letter-spacing: -0.045em; line-height: 0.98; }
+.lp h2 { font-size: clamp(2rem, 4vw, 3.1rem); letter-spacing: -0.038em; text-wrap: balance; }
+.lp h3 { font-size: 1.0625rem; letter-spacing: -0.016em; }
 .lp p { margin: 0; }
 
 .lp .mono {
@@ -109,6 +136,53 @@
 .lp .lpw { max-width: var(--max); margin: 0 auto; padding-inline: var(--gut); }
 
 /* ==================================================================
+   Motion
+   ------------------------------------------------------------------
+   Four behaviours, one grammar. See ui/motion.tsx for why each of them
+   is shaped the way it is; this is only how they are drawn.
+   ================================================================== */
+
+.lp .mo-rise {
+  opacity: 0;
+  transform: translate3d(0, var(--mo-rise, 18px), 0);
+  filter: blur(6px);
+  transition:
+    opacity 620ms var(--ease) var(--mo-delay, 0ms),
+    transform 760ms var(--ease) var(--mo-delay, 0ms),
+    filter 620ms var(--ease) var(--mo-delay, 0ms);
+}
+.lp .mo-rise[data-on] {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+
+.lp .mo-marquee {
+  --mo-dur: 64s;
+  overflow: hidden;
+  /* The ends fade into the page instead of being cut by it. A strip that
+     stops at a hard edge reads as a clipped container; one that fades
+     reads as continuing past the window. */
+  mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+}
+.lp .mo-marquee-track { display: flex; width: max-content; }
+.lp .mo-marquee-run {
+  display: flex;
+  gap: 18px;
+  padding-right: 18px;
+  animation: mo-drift var(--mo-dur) linear infinite;
+}
+.lp .mo-marquee[data-reverse] .mo-marquee-run { animation-direction: reverse; }
+.lp .mo-marquee[data-paused] .mo-marquee-run { animation-play-state: paused; }
+
+@keyframes mo-drift {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-100%, 0, 0); }
+}
+
+.lp .mo-tally { font-variant-numeric: tabular-nums; }
+
+/* ==================================================================
    Buttons
    ================================================================== */
 
@@ -117,303 +191,850 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  height: 44px;
-  padding: 0 20px;
-  border-radius: 10px;
+  height: 42px;
+  padding: 0 18px;
+  border-radius: 999px;
   font-size: 0.9375rem;
   font-weight: 500;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.012em;
   white-space: nowrap;
-  .lp transition: background 160ms var(--ease), border-color 160ms var(--ease),
-              transform 160ms var(--ease), box-shadow 160ms var(--ease);
+  transition: background 180ms var(--ease), color 180ms var(--ease),
+    box-shadow 180ms var(--ease), transform 180ms var(--ease);
 }
-.lp .btn:active { transform: translateY(1px); }
+.lp .btn-sm { height: 34px; padding: 0 14px; font-size: 0.875rem; }
+.lp .btn-lg { height: 50px; padding: 0 24px; font-size: 1rem; }
 
-.lp .btn-primary { background: var(--ink); color: var(--bg); box-shadow: var(--shadow-sm); }
-.lp .btn-primary:hover { background: var(--accent); box-shadow: 0 4px 14px rgba(30, 111, 255, 0.3); }
+.lp .btn-primary {
+  background: var(--ink);
+  color: var(--ink-on);
+  box-shadow: var(--shadow-sm);
+}
+.lp .btn-primary:hover { background: var(--black); transform: translateY(-1px); box-shadow: var(--shadow); }
+.lp .btn-primary:active { transform: translateY(0); }
 
-.lp .btn-ghost { background: var(--bg); color: var(--ink); border: 1px solid var(--line-2); }
-.lp .btn-ghost:hover { background: var(--bg-3); border-color: var(--line-2); }
+.lp .btn-ghost {
+  background: var(--bg);
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--line-2), var(--shadow-sm);
+}
+.lp .btn-ghost:hover { background: var(--white); box-shadow: inset 0 0 0 1px var(--ink-3), var(--shadow-sm); }
 
-.lp .btn-sm { height: 36px; padding: 0 14px; font-size: 0.875rem; border-radius: 8px; }
-.lp .btn-lg { height: 50px; padding: 0 26px; font-size: 1rem; }
-
-/* An arrow that leans on hover, which is the one flourish on a button. */
-.lp .btn .arr {
-  width: 7px; height: 7px;
-  border-top: 1.6px solid currentColor;
+/* The arrow nudges rather than the button growing. A button that scales
+   on hover moves the text under the cursor; an arrow that moves says the
+   same thing and leaves the label where it was. */
+.lp .arr {
+  width: 7px;
+  height: 7px;
   border-right: 1.6px solid currentColor;
+  border-top: 1.6px solid currentColor;
   transform: rotate(45deg);
-  transition: transform 180ms var(--ease);
+  transition: transform 200ms var(--ease);
 }
-.lp .btn:hover .arr { transform: translateX(2px) rotate(45deg); }
+.lp .btn:hover .arr { transform: rotate(45deg) translate(2px, -2px); }
 
 /* ==================================================================
-   Nav
+   Navigation
+   ------------------------------------------------------------------
+   A pill floating over the page rather than a bar sitting on it. The
+   bar version needs a border or a shade under it to separate itself
+   from the content, and either one draws a line across the top of
+   every screenshot taken of this page.
    ================================================================== */
 
 .lp .nav {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  border-bottom: 1px solid transparent;
-  transition: background 220ms var(--ease), border-color 220ms var(--ease), backdrop-filter 220ms var(--ease);
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 60;
+  padding: 14px var(--gut) 0;
+  pointer-events: none;
 }
-.lp .nav[data-stuck='true'] {
-  background: color-mix(in srgb, var(--bg) 82%, transparent);
-  backdrop-filter: saturate(180%) blur(12px);
-  border-bottom-color: var(--line);
-}
-.lp .nav-in {
+.lp .nav-pill {
   display: flex;
   align-items: center;
-  gap: 10px;
-  height: 64px;
+  gap: 18px;
   max-width: var(--max);
   margin: 0 auto;
-  padding-inline: var(--gut);
+  height: 58px;
+  padding: 0 10px 0 18px;
+  border-radius: 999px;
+  pointer-events: auto;
+  background: rgba(253, 251, 247, 0.72);
+  -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  backdrop-filter: blur(14px) saturate(1.3);
+  box-shadow: inset 0 0 0 1px rgba(219, 210, 195, 0);
+  /* Background and shadow only. It used to shrink from 58px to 52px as
+     well, which is a layout animation on a fixed element: it reflows the
+     wordmark, the four links and two buttons on every frame of the
+     transition, and the pill is on screen for the whole page. */
+  transition: background 260ms var(--ease), box-shadow 260ms var(--ease);
 }
-.lp .nav-links { display: flex; align-items: center; gap: 4px; margin-left: 18px; }
+/* Once the page is scrolled the pill has content under it and needs to
+   separate itself; at the top it has paper under it and does not. */
+.lp .nav[data-stuck] .nav-pill {
+  background: rgba(253, 251, 247, 0.86);
+  box-shadow: inset 0 0 0 1px rgba(219, 210, 195, 0.9), var(--shadow);
+}
+
+.lp .nav-mark { display: flex; align-items: center; flex: none; }
+.lp .nav-links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-inline: auto;
+}
 .lp .nav-links a {
-  padding: 7px 11px;
-  border-radius: 8px;
+  position: relative;
+  padding: 7px 12px;
+  border-radius: 999px;
   font-size: 0.9rem;
   color: var(--ink-2);
-  transition: color 150ms var(--ease), background 150ms var(--ease);
+  transition: color 160ms var(--ease), background 160ms var(--ease);
 }
 .lp .nav-links a:hover { color: var(--ink); background: var(--bg-3); }
-.lp .nav-sp { flex: 1; }
+.lp .nav-end { display: flex; align-items: center; gap: 8px; flex: none; }
 
+@media (max-width: 860px) {
+  .lp .nav-links { display: none; }
+  .lp .nav-pill { padding-right: 8px; }
+}
 
 /* ==================================================================
    Hero
+   ------------------------------------------------------------------
+   Centred, because the thing under it is a band of figures the full
+   width of the page and a left-aligned column over a centred band is
+   two different pages stacked.
    ================================================================== */
 
-.lp .hero { padding: clamp(48px, 9vh, 104px) 0 clamp(28px, 5vh, 56px); text-align: center; }
+.lp .hero {
+  position: relative;
+  padding-top: clamp(118px, 17vh, 184px);
+  padding-bottom: 0;
+  /*
+   * The bench grid, very faint.
+   *
+   * It is the editor's own ground, at the editor's own 8 mm minor and
+   * 64 mm major, and it is the only texture on the page. At this
+   * strength it is not readable as a grid so much as it stops the top
+   * of the page being an empty field — which is what the first version
+   * of this page was.
+   */
+  background:
+    linear-gradient(180deg, rgba(253, 251, 247, 0) 62%, var(--bg) 100%),
+    repeating-linear-gradient(90deg, rgba(123, 114, 103, 0.055) 0 1px, transparent 1px 64px),
+    repeating-linear-gradient(0deg, rgba(123, 114, 103, 0.055) 0 1px, transparent 1px 64px),
+    repeating-linear-gradient(90deg, rgba(123, 114, 103, 0.03) 0 1px, transparent 1px 8px),
+    repeating-linear-gradient(0deg, rgba(123, 114, 103, 0.03) 0 1px, transparent 1px 8px);
+}
 
-.lp .pill {
+.lp .hero-copy { text-align: center; }
+
+.lp .hero-flag { margin-bottom: clamp(20px, 3vh, 30px); }
+.lp .hero-flag a {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  height: 30px;
-  padding: 0 6px 0 12px;
-  margin-bottom: 26px;
-  border: 1px solid var(--line);
-  border-radius: 99px;
-  background: var(--bg-2);
-  font-size: 0.8125rem;
+  gap: 9px;
+  height: 32px;
+  padding: 0 7px 0 7px;
+  border-radius: 999px;
+  background: var(--bg);
+  box-shadow: inset 0 0 0 1px var(--line-2), var(--shadow-sm);
+  font-size: 0.84rem;
   color: var(--ink-2);
-  transition: border-color 160ms var(--ease), background 160ms var(--ease);
+  transition: box-shadow 180ms var(--ease), transform 180ms var(--ease);
 }
-.lp .pill:hover { border-color: var(--line-2); background: var(--bg-3); }
-.lp .pill b { color: var(--ink); font-weight: 500; }
-.lp .pill .chev {
-  display: grid; place-items: center;
-  width: 20px; height: 20px;
-  border-radius: 99px;
-  background: var(--bg-3);
-  font-size: 11px;
-  color: var(--ink-3);
+.lp .hero-flag a:hover { transform: translateY(-1px); box-shadow: inset 0 0 0 1px var(--ink-3), var(--shadow); }
+.lp .hero-flag b {
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
+.lp .hero-flag .chev { width: 8px; height: 12px; margin-right: 6px; color: var(--ink-3); }
 
-/*
- * Let the browser even the lines out.
- *
- * A width in `ch` picks the break by counting characters, which does not
- * know the difference between a good break and a bad one: "Run it before you
- * build" sat on one line and left "it." alone on the next. `balance` chooses
- * the split that evens the lines, so a headline can be rewritten without
- * also retuning the width it is allowed.
- */
-.lp .hero h1 { max-width: 18ch; margin: 0 auto; text-wrap: balance; }
-.lp .hero-sub, .lp .sec-head p { text-wrap: pretty; }
+.lp .hero h1 { margin: 0; }
+.lp .hero-line { display: block; }
+
 .lp .hero-sub {
-  max-width: 54ch;
-  margin: 22px auto 0;
-  font-size: clamp(1.0625rem, 1.6vw, 1.1875rem);
-  line-height: 1.55;
+  max-width: 34ch;
+  margin: clamp(20px, 3vh, 30px) auto 0;
+  font-size: clamp(1.0625rem, 1.5vw, 1.1875rem);
+  line-height: 1.52;
   color: var(--ink-2);
+  text-wrap: pretty;
 }
-.lp .hero-cta { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
-.lp .hero-note { margin-top: 16px; font-size: 0.8125rem; color: var(--ink-3); }
 
-/* ---- the product shot ---- */
+.lp .hero-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-top: clamp(24px, 3.4vh, 36px);
+}
+
+.lp .hero-cast { margin-top: clamp(34px, 6vh, 72px); }
+
+/* ---- the picked word ---- */
 
 /*
- * A dark panel on a light page, which is how this category shows an
- * interface and the reason the renders need no treatment. The frame is the
- * browser-chrome convention at its quietest: a bar, three dots, no fake URL.
+ * The editor's selection chrome, around a word.
+ *
+ * Padding rather than a margin, so the box sits off the glyphs instead of
+ * on them, and the whole thing is inline-block so a line break never puts
+ * the box on one line and the dimension badge on the next.
  */
-.lp .lp-shot {
+.lp .picked {
   position: relative;
-  max-width: 1020px;
-  margin: clamp(34px, 6vh, 64px) auto 0;
-  border: 1px solid var(--line);
-  border-radius: var(--r-xl);
-  background: var(--bg-2);
-  box-shadow: var(--shadow-lg);
-  overflow: hidden;
+  display: inline-block;
+  padding: 0 0.1em;
 }
-.lp .lp-shot-bar {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  height: 38px;
-  padding: 0 14px;
-  border-bottom: 1px solid var(--line);
-  background: var(--bg-2);
-}
-.lp .lp-shot-bar i { width: 9px; height: 9px; border-radius: 99px; background: var(--line-2); }
-.lp .lp-shot-body { position: relative; background: #0C0D10; }
+.lp .picked-word { position: relative; z-index: 1; }
 
-.lp .reel { position: relative; aspect-ratio: 16 / 9.6; overflow: hidden; }
-.lp .reel-film {
-  position: absolute; inset: 0;
-  width: 100%; height: 100%;
-  object-fit: cover;
+.lp .picked-box {
+  position: absolute;
+  inset: 0.06em -0.08em 0.1em -0.08em;
+  border: 1.5px solid var(--accent);
+  border-radius: 2px;
   opacity: 0;
-  transition: opacity 500ms var(--ease);
+  transform: scale(1.06);
+  transition: opacity 320ms var(--ease) 620ms, transform 420ms var(--ease) 620ms;
 }
-.lp .reel-film[data-on='true'] { opacity: 1; }
+.lp .picked[data-on] .picked-box { opacity: 1; transform: none; }
 
-.lp .lp-shot-tabs {
+/* Four corner handles, drawn as the editor draws them: filled squares,
+   centred on the corners, not floating inside them. */
+.lp .picked-box i {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  background: var(--bg);
+  border: 1.5px solid var(--accent);
+  border-radius: 1px;
+}
+.lp .picked-box i:nth-child(1) { top: -4px; left: -4px; }
+.lp .picked-box i:nth-child(2) { top: -4px; right: -4px; }
+.lp .picked-box i:nth-child(3) { bottom: -4px; left: -4px; }
+.lp .picked-box i:nth-child(4) { bottom: -4px; right: -4px; }
+
+.lp .picked-dim {
   position: absolute;
   left: 50%;
-  bottom: 16px;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 3px;
-  padding: 3px;
-  border-radius: 99px;
-  background: rgba(10, 11, 14, 0.72);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  bottom: -0.1em;
+  transform: translate(-50%, 100%) translateY(4px);
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 300ms var(--ease) 820ms, transform 380ms var(--ease) 820ms;
 }
-.lp .lp-shot-tabs button {
-  padding: 6px 13px;
-  border-radius: 99px;
-  font-size: 0.8125rem;
-  font-weight: 450;
-  color: #A8AAB4;
-  transition: color 160ms var(--ease), background 160ms var(--ease);
+.lp .picked[data-on] .picked-dim { opacity: 1; transform: translate(-50%, 100%); }
+
+@media (max-width: 620px) {
+  /* At this size the badge is wider than the word it labels, and it
+     collides with the line under it. The box alone still reads. */
+  .lp .picked-dim { display: none; }
 }
-.lp .lp-shot-tabs button:hover { color: #E8E9ED; }
-.lp .lp-shot-tabs button[data-on='true'] { color: #0C0D10; background: #F4F4F5; }
 
 /* ==================================================================
-   The strip of parts under the hero
+   Where the crew stand
+   ------------------------------------------------------------------
+   One to a section, never a row of them, always with a floor. See
+   ui/CrewSpot.tsx for why both of those are rules rather than
+   preferences.
    ================================================================== */
 
-.lp .strip { padding: clamp(26px, 4vh, 40px) 0 0; }
-.lp .strip-say { text-align: center; font-size: 0.8125rem; color: var(--ink-3); letter-spacing: 0.01em; }
-.lp .strip-row {
+.lp .spot {
   position: relative;
-  margin-top: 0;
-  overflow: hidden;
-  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  display: inline-block;
+  flex: none;
 }
-.lp .strip-run { display: flex; gap: 10px; width: max-content; animation: strip 46s linear infinite; }
-.lp .strip-row:hover .strip-run { animation-play-state: paused; }
-@keyframes strip { to { transform: translateX(-50%); } }
+.lp .spot-fig {
+  display: block;
+  /* The shadow belongs under the feet, so it is cast from the figure
+     rather than painted on the floor line. */
+  filter: drop-shadow(0 12px 12px rgba(62, 48, 30, 0.1));
+}
+.lp .spot-floor {
+  position: absolute;
+  left: 50%;
+  bottom: 2px;
+  width: 260px;
+  max-width: 44vw;
+  height: 1px;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, transparent, var(--line-2) 26%, var(--line-2) 74%, transparent);
+}
 
-.lp .chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  height: 38px;
-  padding: 0 15px;
-  border: 1px solid var(--line);
-  border-radius: 99px;
-  background: var(--bg);
-  font-size: 0.875rem;
-  color: var(--ink-2);
-  white-space: nowrap;
+/* ---- the two at the foot of the hero ---- */
+
+/*
+ * They stand at the ends of the measure, not in the margins.
+ *
+ * Pinned to the content column rather than to the viewport, so on a wide
+ * screen they stay beside the headline instead of drifting out to the
+ * edges of the window and becoming two unrelated figures in the corners.
+ */
+.lp .hero-floor {
+  position: relative;
+  max-width: var(--max);
+  margin: clamp(18px, 3.4vh, 40px) auto 0;
+  padding-inline: var(--gut);
+  height: 168px;
 }
-.lp .chip svg { color: var(--ink-3); }
+.lp .hero-floor::after {
+  /* The floor the pair stand on, and the line the hero's grid stops at. */
+  content: '';
+  position: absolute;
+  left: var(--gut);
+  right: var(--gut);
+  bottom: 2px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--line-2) 18%, var(--line-2) 82%, transparent);
+}
+.lp .hero-floor .spot { position: absolute; bottom: 0; }
+.lp .hero-floor .spot-floor { display: none; }
+/*
+ * In from the ends, not at them.
+ *
+ * At the ends of the measure they read as two separate figures in two
+ * corners with a screen of nothing between them, which is what the first
+ * version looked like. Brought in to roughly the width of the headline
+ * they frame it instead, and the space between them belongs to the thing
+ * they are standing either side of.
+ */
+.lp .hero-floor-l { left: calc(var(--gut) + 12%); }
+.lp .hero-floor-r { right: calc(var(--gut) + 12%); }
+
+@media (max-width: 1180px) {
+  .lp .hero-floor-l { left: calc(var(--gut) + 3%); }
+  .lp .hero-floor-r { right: calc(var(--gut) + 3%); }
+}
+
+@media (max-width: 760px) {
+  /* One of them, at a size that still reads. Two at 70px on a phone are
+     two smudges at the ends of a line. */
+  .lp .hero-floor { height: 132px; }
+  .lp .hero-floor-r { display: none; }
+  .lp .hero-floor-l { left: 50%; transform: translateX(-50%); }
+}
+
+/* ==================================================================
+   The showpiece
+   ------------------------------------------------------------------
+   The first sight of the product, at full width. It starts tipped back
+   and comes upright as it enters — the page's one piece of
+   three-dimensional movement, spent here.
+   ================================================================== */
+
+.lp .showpiece {
+  max-width: calc(var(--max) + 80px);
+  margin: clamp(26px, 5vh, 56px) auto 0;
+  padding-inline: var(--gut);
+  perspective: 1800px;
+}
+
+.lp .showpiece-frame {
+  overflow: hidden;
+  border-radius: var(--r-lg);
+  background: var(--dark);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(26px) scale(0.965) rotateX(7deg);
+  transform-origin: 50% 0;
+  opacity: 0;
+  transition:
+    transform 1100ms var(--ease),
+    opacity 700ms var(--ease);
+}
+.lp .showpiece[data-on] .showpiece-frame { transform: none; opacity: 1; }
+.lp .showpiece-frame img { width: 100%; height: auto; }
+
+.lp .showpiece-cap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0 10px;
+  margin: 20px auto 0;
+  max-width: 54ch;
+  text-align: center;
+  font-size: 0.9375rem;
+  color: var(--ink-2);
+}
+/* A square, not a middot: the middot is a different width in every font
+   that might end up rendering it, and this one is drawn. */
+.lp .showpiece-dot {
+  width: 3px;
+  height: 3px;
+  background: var(--line-2);
+}
+.lp .showpiece-cap .mo-tally { font-weight: 600; color: var(--ink); }
+.lp .showpiece-wait { color: var(--line-2); font-weight: 600; }
 
 /* ==================================================================
    Sections
    ================================================================== */
 
-/* Positioned because Rig stands on the top edge of these, and an absolute
-   child needs a positioned parent to measure that edge from. */
-.lp .sec { position: relative; padding: clamp(58px, 10vh, 118px) 0; }
-.lp .sec-alt { background: var(--bg-2); border-block: 1px solid var(--line); }
+.lp .sec { padding-block: var(--sec); }
+.lp .sec-alt { background: var(--bg-2); }
 
-.lp .sec-head { max-width: 46rem; }
-.lp .sec-head.center { margin-inline: auto; text-align: center; }
-.lp .sec-head p {
+/*
+ * One head, used by every section.
+ *
+ * `.walk-head` and `.show-head` each had their own copy of this, and each
+ * copy set `max-width` on an element that `.lpw` had already given
+ * `margin: 0 auto`. The result was a heading that claimed to be
+ * left-aligned and rendered centred, in two sections and not the rest, so
+ * the page had three different head alignments and no rule behind any of
+ * them. They all use this now.
+ */
+/*
+ * The measure goes on the paragraph, never on the block.
+ *
+ * `max-width: 44ch` on the wrapper computes against the wrapper's own 1rem
+ * font — 350px — and then the h2 inside it, set at up to 50px, has to wrap
+ * inside that. Measured: "Four moves, and the thing is real." came out
+ * 262px wide over four lines. The two headings on this page that are not
+ * inside one of these wrappers set correctly across 500-790px, which is
+ * the proof. A heading and a paragraph want different measures and have to
+ * be given them separately.
+ */
+.lp .sec-head,
+.lp .walk-head,
+.lp .show-head {
+  /* Explicit, because `.sec-head` was also defined bare in site.css, which
+     loads on every page, and that rule's `max-width: 62ch` applied here for
+     every property this one did not set. Stating it means the name cannot
+     be captured again from another stylesheet. */
+  max-width: none;
+  margin-bottom: clamp(30px, 4.5vh, 52px);
+}
+.lp .sec-head h2,
+.lp .walk-head h2,
+.lp .show-head h2 {
+  /* About 16 characters of the display size, which is two comfortable
+     lines of a section heading at the top of the clamp. */
+  max-width: 15em;
+  margin-inline: auto;
+}
+.lp .sec-head.center,
+.lp .walk-head.center,
+.lp .show-head.center {
+  text-align: center;
+}
+.lp .sec-head.center p,
+.lp .walk-head.center p,
+.lp .show-head.center p {
+  margin-inline: auto;
+}
+.lp .sec-head p,
+.lp .walk-head p,
+.lp .show-head p {
+  max-width: 46ch;
   margin-top: 14px;
   font-size: clamp(1rem, 1.4vw, 1.0625rem);
-  line-height: 1.6;
+  line-height: 1.58;
   color: var(--ink-2);
+  text-wrap: pretty;
 }
 
-/* ---- the feature grid ---- */
+/* ==================================================================
+   How it works
+   ------------------------------------------------------------------
+   A pinned column of steps beside a picture that changes with the
+   scrollbar. The height of .walk-body is what sets how long each step
+   holds: one viewport of scroll per step, plus the one the column is
+   pinned for.
+   ================================================================== */
+
+.lp .walk { padding-block: var(--sec) 0; }
+.lp .walk-body { height: 420vh; }
+.lp .walk-pin {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  /* Clear of the floating nav, which otherwise sits on the top of the
+     picture for the whole time the column is pinned. */
+  padding-top: 56px;
+}
+/*
+ * Wider than the rest of the page, and weighted hard towards the picture.
+ *
+ * Two of the four frames are screenshots of the editor, and the editor is
+ * a three-column application: at the 1240px measure the rest of the page
+ * uses, the picture came out about 620px wide and the bill of materials in
+ * it was a column of grey smudges. A screenshot nobody can read is not a
+ * screenshot, so this section takes the wider measure and gives the
+ * picture nearly two thirds of it.
+ */
+.lp .walk-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.64fr) minmax(0, 1.36fr);
+  gap: clamp(24px, 3.4vw, 54px);
+  align-items: center;
+  width: 100%;
+  max-width: 1480px;
+}
+
+.lp .walk-steps { display: grid; gap: 2px; }
+/*
+ * State is carried by the number and the rule, not by fading the row.
+ *
+ * The three inactive steps were held at `opacity: 0.38`, which put their
+ * titles at 2.45:1 and their numbers at about 1.8:1 on this ground — below
+ * the floor for any text at any size. The comment on the body below says
+ * the point of showing four steps is that the reader can see the whole
+ * procedure; at 2.45:1 they could not read it.
+ *
+ * So nothing is faded. The title stays at the secondary ink and lifts to
+ * full ink when it is the current step, the number goes to the accent, and
+ * the left rule thickens. All three are legible in every state.
+ */
+.lp .walk-step {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 14px;
+  padding: 18px 0;
+  border-top: 1px solid var(--line);
+}
+.lp .walk-step:last-child { border-bottom: 1px solid var(--line); }
+.lp .walk-step h3 {
+  color: var(--ink-2);
+  transition: color 320ms var(--ease);
+}
+.lp .walk-step[data-on] h3 { color: var(--ink); }
+.lp .walk-step[data-on] { border-top-color: var(--line-2); }
+
+.lp .walk-n {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-3);
+  padding-top: 3px;
+  transition: color 320ms var(--ease);
+}
+.lp .walk-step[data-on] .walk-n { color: var(--accent); }
+
+.lp .walk-step h3 { font-size: 1.1875rem; letter-spacing: -0.022em; }
+/*
+ * The body of a step that is not current is closed up rather than hidden:
+ * the reader can still see the whole procedure, which is the point of
+ * showing four steps instead of one at a time.
+ *
+ * Opened with `grid-template-rows: 0fr -> 1fr` rather than `max-height`.
+ * Animating max-height means picking a number bigger than the tallest
+ * paragraph, which makes every shorter one open at the wrong speed, and it
+ * reflows the column on every frame. The grid version interpolates to the
+ * content's real height and is what the row is measured against.
+ */
+.lp .walk-open {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 420ms var(--ease);
+}
+.lp .walk-step[data-on] .walk-open { grid-template-rows: 1fr; }
+.lp .walk-open > p { overflow: hidden; }
+.lp .walk-step p {
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--ink-2);
+  max-width: 38ch;
+  padding-top: 8px;
+  opacity: 0;
+  transition: opacity 320ms var(--ease);
+}
+.lp .walk-step[data-on] p { opacity: 1; }
+.lp .walk-stacked p { opacity: 1; }
+
+.lp .walk-art {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background: var(--dark);
+  box-shadow: var(--shadow-lg);
+}
+.lp .walk-shot {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  /* A still cross-fade is a slideshow. A fraction of a per cent of scale
+     on the way in gives the change a direction without anybody being
+     able to say what moved. */
+  transform: scale(1.028);
+  transition: opacity 620ms var(--ease), transform 1200ms var(--ease);
+}
+.lp .walk-shot[data-on] { opacity: 1; transform: none; }
+.lp .walk-shot img { width: 100%; height: 100%; object-fit: cover; }
+
+.lp .walk-shot figcaption {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  /* Dense enough to hold its own over the brightest frame in the set,
+     which is the lit room: at 0.72 the caption composited to about 3.9:1
+     over it. */
+  background: rgba(21, 19, 15, 0.86);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  font-size: 0.78rem;
+  color: var(--dark-ink);
+}
+.lp .walk-fact { color: var(--accent-on-dark); font-size: 0.72rem; }
+.lp .walk-cap { color: var(--dark-ink-2); }
+
+.lp .walk-rail {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.12);
+}
+.lp .walk-rail span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transform-origin: 0 50%;
+  transition: transform 520ms var(--ease);
+}
+
+/*
+ * The buttons sit on the line Sixteen is standing on, with the figure to
+ * their left rather than centred with them. Centring the group as a unit
+ * puts the buttons off the middle of the page, which is the one alignment
+ * on a page like this that anybody notices.
+ */
+.lp .walk-foot {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-end;
+  justify-content: center;
+  padding-block: clamp(34px, 6vh, 64px) var(--sec);
+}
+/* Far enough left that the figure's floor line clears the button rather
+   than running under it, which is what -300px did. */
+.lp .walk-rig { position: absolute; left: 50%; bottom: calc(var(--sec) - 2px); margin-left: -392px; }
+.lp .walk-foot .btn { margin-bottom: 0; }
+
+@media (max-width: 920px) {
+  .lp .walk-rig { position: static; margin-left: 0; margin-bottom: 8px; }
+  .lp .walk-foot { flex-direction: column; align-items: center; }
+}
+
+/*
+ * Stacked, on a narrow screen.
+ *
+ * Walk.tsx renders different markup below 900px rather than restyling the
+ * pinned layout — see the note there. These rules dress that markup: the
+ * figures are in the flow, each inside the step it belongs to, so all four
+ * pictures are drawn and each one sits with the paragraph that describes
+ * it.
+ */
+.lp .walk-narrow .walk-step h3 { color: var(--ink); }
+.lp .walk-stacked .walk-shot {
+  /* Relative, not static: the caption inside it is absolutely positioned,
+     and with no positioned ancestor it escapes the picture entirely and
+     anchors somewhere up the page. */
+  position: relative;
+  margin: 14px 0 0;
+  border-radius: var(--r);
+  overflow: hidden;
+  background: var(--dark);
+  box-shadow: var(--shadow);
+  opacity: 1;
+  transform: none;
+}
+.lp .walk-stacked .walk-shot img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+}
+.lp .walk-stacked .walk-shot figcaption { left: 10px; bottom: 10px; }
+
+/* ==================================================================
+   The gallery
+   ================================================================== */
+
+.lp .show { padding-block: var(--sec); background: var(--bg-2); overflow: hidden; }
+.lp .show-row + .show-row { margin-top: 18px; }
+
+.lp .show-tile {
+  display: block;
+  width: 320px;
+  flex: none;
+}
+.lp .show-tile[data-wide] { width: 470px; }
+
+.lp .show-pic {
+  display: block;
+  overflow: hidden;
+  border-radius: var(--r);
+  background: var(--dark);
+  aspect-ratio: 16 / 10;
+  box-shadow: var(--shadow);
+}
+.lp .show-pic img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 700ms var(--ease);
+}
+.lp .show-tile:hover .show-pic img { transform: scale(1.04); }
+
+.lp .show-meta { display: block; padding: 12px 2px 0; }
+.lp .show-name {
+  display: block;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  letter-spacing: -0.014em;
+  transition: color 180ms var(--ease);
+}
+.lp .show-tile:hover .show-name { color: var(--accent); }
+.lp .show-note { display: block; margin-top: 2px; font-size: 0.84rem; color: var(--ink-3); }
+
+@media (max-width: 620px) {
+  .lp .show-tile { width: 240px; }
+  .lp .show-tile[data-wide] { width: 330px; }
+}
+
+/* ==================================================================
+   What is inside
+   ------------------------------------------------------------------
+   A ruled grid rather than a row of cards. Six same-size cards of icon,
+   heading and paragraph is the default shape of this section on every
+   page in the category; the rules do the same separating with nothing
+   boxed.
+   ================================================================== */
 
 .lp .feats {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
-  margin-top: clamp(28px, 4vh, 44px);
+  column-gap: clamp(22px, 3.4vw, 54px);
 }
 .lp .feat {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 16px 18px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-lg);
-  background: var(--bg);
-  transition: border-color 200ms var(--ease), box-shadow 200ms var(--ease), transform 200ms var(--ease);
+  padding: 26px 0;
+  border-top: 1px solid var(--line);
 }
-.lp .feat:hover { border-color: var(--line-2); box-shadow: var(--shadow); transform: translateY(-2px); }
+/* The first row's rule is the one under the section head, so the top
+   three do not draw their own and double it. */
+.lp .feat:nth-child(-n + 3) { border-top: 0; padding-top: 0; }
+
 .lp .feat-ico {
-  flex: none;
   display: grid;
   place-items: center;
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
+  margin-bottom: 14px;
   border-radius: 9px;
-  background: var(--accent-wash);
-  color: var(--accent);
+  background: var(--bg-3);
+  color: var(--ink);
 }
-.lp .feat h3 { font-size: 0.95rem; font-weight: 500; }
-.lp .feat p { font-size: 0.9375rem; line-height: 1.55; color: var(--ink-2); }
+.lp .feat-ico svg { width: 18px; height: 18px; }
+.lp .feat h3 { margin-bottom: 7px; }
+.lp .feat p { font-size: 0.9375rem; line-height: 1.55; color: var(--ink-2); max-width: 36ch; }
 
-/* ---- the big split rows ---- */
+@media (max-width: 880px) {
+  .lp .feats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lp .feat:nth-child(-n + 3) { border-top: 1px solid var(--line); padding-top: 26px; }
+  .lp .feat:nth-child(-n + 2) { border-top: 0; padding-top: 0; }
+}
+@media (max-width: 560px) {
+  .lp .feats { grid-template-columns: minmax(0, 1fr); }
+  .lp .feat:nth-child(-n + 3) { border-top: 1px solid var(--line); padding-top: 26px; }
+  .lp .feat:first-child { border-top: 0; padding-top: 0; }
+}
 
-.lp .row {
+/* ==================================================================
+   Build around what you own
+   ================================================================== */
+
+.lp .pair-grid {
   display: grid;
-  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: clamp(28px, 5vw, 76px);
   align-items: center;
-  gap: clamp(28px, 5vw, 72px);
-  margin-top: clamp(34px, 6vh, 72px);
 }
-.lp .row.flip > .row-art { order: -1; }
-.lp .row-copy h2 { font-size: clamp(1.6rem, 2.8vw, 2.1rem); }
-.lp .row-copy p { margin-top: 14px; font-size: 1rem; line-height: 1.6; color: var(--ink-2); }
-.lp .row-list { margin: 20px 0 0; padding: 0; list-style: none; display: grid; gap: 10px; }
-.lp .row-list li {
-  display: flex;
-  gap: 10px;
-  font-size: 0.9375rem;
-  color: var(--ink-2);
-}
-.lp .row-list svg { flex: none; margin-top: 3px; color: var(--accent); }
-
-.lp .art {
-  border: 1px solid var(--line);
+.lp .pair-art {
+  position: relative;
   border-radius: var(--r-lg);
-  background: #0C0D10;
-  box-shadow: var(--shadow);
   overflow: hidden;
+  background: var(--dark);
+  box-shadow: var(--shadow-lg);
 }
-.lp .art img, .art video { display: block; width: 100%; height: 100%; object-fit: cover; aspect-ratio: 16 / 10; }
+.lp .pair-art img { width: 100%; height: auto; }
+.lp .pair-tag {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: rgba(21, 19, 15, 0.72);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  color: var(--accent-on-dark);
+  font-size: 0.72rem;
+}
+.lp .pair-copy p {
+  margin-top: 14px;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--ink-2);
+  max-width: 46ch;
+}
+.lp .pair-copy .btn { margin-top: 24px; }
+
+@media (max-width: 860px) {
+  .lp .pair-grid { grid-template-columns: minmax(0, 1fr); }
+}
 
 /* ==================================================================
    The drawn circuit
+   ------------------------------------------------------------------
+   Trace.tsx draws a schematic one segment at a time and then runs
+   current round it. The draw is a dash offset on each segment, so the
+   line is stroked on rather than faded in; the current is a second
+   dash travelling the same paths. Both wait for the section to be on
+   screen, which is what [data-on='true'] gates.
    ================================================================== */
+
+.lp .row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(24px, 4vw, 56px);
+}
+.lp .art {
+  border-radius: var(--r-lg);
+  background: var(--dark);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+.lp .art img, .lp .art video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  aspect-ratio: 16 / 10;
+}
 
 .lp .trace-art { display: block; width: 100%; height: auto; overflow: visible; }
 .lp .trace-art .seg {
@@ -431,7 +1052,10 @@
 .lp [data-on='true'] .trace-flow { opacity: 1; }
 .lp .flow {
   fill: none;
-  stroke: var(--accent);
+  /* Amber, because this is current. Blue on this page is intent and
+     selection; what is flowing in a wire is energised, and energised is
+     the one thing amber means anywhere in this codebase. */
+  stroke: var(--volt);
   stroke-width: 3.2;
   stroke-linecap: round;
   animation: flow 2.6s linear infinite;
@@ -444,7 +1068,7 @@
 .lp [data-on='true'] .trace-sym .sym { opacity: 1; }
 .lp .trace-sym g { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .lp .trace-sym .ink-fill { fill: var(--ink); stroke: var(--ink); }
-.lp .trace-sym .ray { stroke: var(--accent); stroke-width: 1.7; }
+.lp .trace-sym .ray { stroke: var(--volt); stroke-width: 1.7; }
 .lp .trace-sym text {
   fill: var(--ink-3);
   stroke: none;
@@ -453,372 +1077,168 @@
   text-anchor: middle;
 }
 
+@media (max-width: 860px) {
+  .lp .row { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ==================================================================
+   A trace, running
+   ------------------------------------------------------------------
+   The 555's output, full width, panned on a loop.
+   ================================================================== */
+
+.lp .trace {
+  overflow: hidden;
+  height: clamp(58px, 7vh, 86px);
+  margin-block: 0 var(--sec);
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+.lp .trace svg {
+  width: 300%;
+  height: 100%;
+  animation: trace-pan 26s linear infinite;
+}
+.lp .trace path {
+  fill: none;
+  stroke: var(--volt);
+  stroke-width: 2.4;
+  vector-effect: non-scaling-stroke;
+}
+.lp .trace .trace-grid { stroke: var(--line-2); stroke-width: 1; }
+@keyframes trace-pan {
+  to { transform: translateX(-50%); }
+}
+
 /* ==================================================================
    Part search
+   ------------------------------------------------------------------
+   Find.tsx. The real catalogue and the real ranked search, because a
+   faked one is a lie the product then has to live with.
    ================================================================== */
 
 .lp .find-bar {
   display: flex;
   align-items: center;
   gap: 10px;
-  max-width: 560px;
-  margin: clamp(24px, 4vh, 36px) auto 0;
-  padding: 0 6px 0 16px;
   height: 52px;
-  border: 1px solid var(--line-2);
-  border-radius: 12px;
+  padding: 0 14px;
+  border-radius: 999px;
   background: var(--bg);
-  box-shadow: var(--shadow-sm);
-  transition: border-color 170ms var(--ease), box-shadow 170ms var(--ease);
+  box-shadow: inset 0 0 0 1px var(--line-2), var(--shadow-sm);
+  transition: box-shadow 180ms var(--ease);
 }
 .lp .find-bar:focus-within {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 14%, transparent);
+  box-shadow: inset 0 0 0 1.5px var(--accent), 0 0 0 4px var(--accent-wash);
 }
-.lp .find-bar svg { flex: none; color: var(--ink-3); }
 .lp .find-bar input {
   flex: 1;
   min-width: 0;
   border: 0;
+  outline: 0;
   background: none;
-  color: var(--ink);
   font: inherit;
-  font-size: 0.9375rem;
-  outline: none;
+  font-size: 1rem;
+  color: var(--ink);
 }
 .lp .find-bar input::placeholder { color: var(--ink-3); }
 .lp .find-x {
-  display: grid; place-items: center;
-  width: 30px; height: 30px;
-  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
   color: var(--ink-3);
-  font-size: 17px;
 }
+.lp .find-x svg { width: 14px; height: 14px; }
 .lp .find-x:hover { background: var(--bg-3); color: var(--ink); }
 
-.lp .find-try { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 14px; }
-.lp .find-try button {
+.lp .find-try { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 14px; }
+.lp .find-try button,
+.lp .find-try .chip {
   padding: 5px 11px;
-  border: 1px solid var(--line);
-  border-radius: 99px;
+  border-radius: 999px;
+  background: var(--bg);
+  box-shadow: inset 0 0 0 1px var(--line);
   font-family: 'JetBrains Mono', ui-monospace, monospace;
   font-size: 0.78rem;
   color: var(--ink-2);
-  transition: border-color 150ms var(--ease), color 150ms var(--ease), background 150ms var(--ease);
+  transition: box-shadow 160ms var(--ease), color 160ms var(--ease);
 }
-.lp .find-try button:hover { color: var(--ink); border-color: var(--line-2); }
-.lp .find-try button[data-on='true'] { color: var(--accent); border-color: var(--accent); background: var(--accent-wash); }
+.lp .find-try button:hover { color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink-3); }
+.lp .find-try button[data-on] { color: var(--accent); box-shadow: inset 0 0 0 1.5px var(--accent); }
 
 .lp .find-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 24px;
-  min-height: 150px;
+  grid-template-columns: repeat(auto-fill, minmax(236px, 1fr));
+  gap: 2px;
+  margin-top: 22px;
+  /* Two rows, not nine. Reserving the full resting height left a third of
+     a screen of empty paper under a narrow search. */
+  min-height: 116px;
 }
 .lp .hit {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 13px 15px;
-  border: 1px solid var(--line);
-  border-radius: var(--r);
-  background: var(--bg);
+  gap: 11px;
+  padding: 11px 12px;
+  border-radius: var(--r-sm);
   text-align: left;
-  transition: border-color 170ms var(--ease), box-shadow 170ms var(--ease), transform 170ms var(--ease);
+  transition: background 140ms var(--ease);
 }
-.lp .hit:hover { border-color: var(--line-2); box-shadow: var(--shadow-sm); transform: translateY(-1px); }
+.lp .hit:hover { background: var(--bg-3); }
 .lp .hit-ico {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
   flex: none;
-  display: grid; place-items: center;
-  width: 34px; height: 34px;
-  border-radius: 9px;
+  border-radius: 7px;
   background: var(--bg-3);
   color: var(--ink-2);
 }
-.lp .hit:hover .hit-ico { background: var(--accent-wash); color: var(--accent); }
-.lp .hit-txt { min-width: 0; display: grid; gap: 1px; }
-.lp .hit-txt b { font-size: 0.9rem; font-weight: 500; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.lp .hit-txt span { font-size: 0.8125rem; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.lp .find-none { grid-column: 1 / -1; padding: 34px 2px; text-align: center; color: var(--ink-3); font-size: 0.9375rem; }
-.lp .find-count { margin-top: 16px; text-align: center; font-size: 0.8125rem; color: var(--ink-3); }
-
-/* ==================================================================
-   Builds gallery
-   ================================================================== */
-
-.lp .gal { margin-top: clamp(28px, 4vh, 44px); }
-.lp .gal-stage {
-  position: relative;
-  border: 1px solid var(--line);
-  border-radius: var(--r-xl);
-  background: #0C0D10;
-  box-shadow: var(--shadow-lg);
-  overflow: hidden;
-  aspect-ratio: 16 / 8.2;
-}
-.lp .gal-slide {
-  position: absolute; inset: 0;
-  opacity: 0;
-  transition: opacity 600ms var(--ease);
-  pointer-events: none;
-}
-.lp .gal-slide[data-on='true'] { opacity: 1; pointer-events: auto; }
-.lp .gal-slide img { width: 100%; height: 100%; object-fit: cover; }
-.lp .gal-name {
-  position: absolute;
-  left: 18px; bottom: 16px;
-  padding: 7px 14px;
-  border-radius: 99px;
-  background: rgba(10, 11, 14, 0.74);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  font-size: 0.8125rem;
-  font-weight: 450;
-  color: #F4F4F5;
-}
-.lp .gal-rail { display: flex; gap: 8px; margin-top: 12px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
-.lp .gal-rail::-webkit-scrollbar { display: none; }
-.lp .gal-pip {
-  flex: 0 0 104px;
-  height: 62px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  overflow: hidden;
-  opacity: 0.55;
-  transition: opacity 200ms var(--ease), border-color 200ms var(--ease);
-}
-.lp .gal-pip img { width: 100%; height: 100%; object-fit: cover; }
-.lp .gal-pip:hover { opacity: 0.85; }
-.lp .gal-pip[data-on='true'] { opacity: 1; border-color: var(--accent); }
-
-/* ==================================================================
-   Closing
-   ================================================================== */
-
-.lp .end { padding: clamp(66px, 11vh, 132px) 0; text-align: center; }
-.lp .end p { max-width: 46ch; margin: 16px auto 0; font-size: 1.0625rem; line-height: 1.6; color: var(--ink-2); }
-.lp .end-cta { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
-
-.lp .foot { border-top: 1px solid var(--line); }
-.lp .foot-in {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px 22px;
-  max-width: var(--max);
-  margin: 0 auto;
-  padding: 26px var(--gut) 34px;
-  font-size: 0.875rem;
+.lp .hit:hover .hit-ico { background: var(--bg); color: var(--accent); }
+.lp .hit-txt { min-width: 0; font-size: 0.9rem; }
+.lp .hit-txt b { display: block; font-weight: 500; letter-spacing: -0.012em; }
+.lp .hit-txt span {
+  display: block;
+  margin-top: 1px;
+  font-size: 0.8rem;
   color: var(--ink-3);
-}
-.lp .foot-sp { flex: 1; }
-.lp .foot a:hover { color: var(--ink); }
-
-/* ==================================================================
-   Reveal
-   ------------------------------------------------------------------
-   One entrance, used once per section, from an already-visible
-   default so nothing is invisible to a reader without JavaScript.
-   ================================================================== */
-
-.lp .rise { opacity: 0; transform: translateY(14px); transition: opacity 700ms var(--ease), transform 700ms var(--ease); }
-.lp .rise[data-on='true'] { opacity: 1; transform: none; }
-
-/* ==================================================================
-   Narrow
-   ================================================================== */
-
-@media (max-width: 1000px) {
-  .lp .feats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .lp .find-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .lp .row { grid-template-columns: 1fr; }
-  .lp .row.flip > .row-art { order: 0; }
-}
-
-@media (max-width: 680px) {
-  .lp .nav-links { display: none; }
-  .lp .feats { grid-template-columns: 1fr; }
-  .lp .find-grid { grid-template-columns: 1fr; min-height: 0; }
-  .lp .hero h1 { max-width: 14ch; }
-  .lp .hero-cta .btn { flex: 1 1 auto; }
-  .lp .gal-stage { aspect-ratio: 4 / 3; }
-  .lp .gal-pip { flex: 0 0 82px; height: 50px; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .lp *, .lp *::before, .lp *::after {
-    animation-duration: 0.001ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
-  }
-  .lp .rise { opacity: 1; transform: none; }
-  .lp .trace-art .seg { stroke-dashoffset: 0 !important; }
-  .lp .trace-sym .sym { opacity: 1; }
-}
-
-/* ==================================================================
-   The schematic field
-   ------------------------------------------------------------------
-   Rows of circuit notation drifting behind the hero, each row going
-   the opposite way to the one above it. One row on its own reads as a
-   ticker; several in opposition read as a surface the page is resting
-   on, which is the job.
-
-   It sits under live text, so what decides the opacity is the
-   headline's contrast over it, not how nice the pattern looks alone.
-   Both edges fade to nothing so no symbol is ever cut in half.
-   ================================================================== */
-
-.lp .glyphs {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  display: grid;
-  align-content: center;
-  gap: clamp(30px, 6vh, 64px);
   overflow: hidden;
-  pointer-events: none;
-  /* Near-black rather than the body ink, which is a shade short of it — at
-     this opacity that shortfall is the difference between notation you can
-     read and a smudge. Warm, because it is printed on the same stock as
-     everything else. */
-  color: #120F0A;
-  opacity: 0.21;
-  /*
-   * Weakest where the headline sits, strongest out towards the edges.
-   *
-   * A single flat opacity has to answer to the worst case, which is the
-   * centre, so the whole field ends up as faint as the text behind it needs
-   * — barely visible anywhere. Holding it back only under the words lets the
-   * rest come up two and a half times brighter at no cost to reading them.
-   */
-  mask-image:
-    radial-gradient(44% 34% at 50% 42%, transparent 18%, #000 85%),
-    radial-gradient(150% 110% at 50% 46%, #000 38%, transparent 86%);
-  mask-composite: intersect;
-  -webkit-mask-composite: source-in;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-
-.lp .glyph-row { overflow: hidden; }
-.lp .glyph-run {
-  display: flex;
-  align-items: center;
-  gap: clamp(30px, 5vw, 64px);
-  width: max-content;
-  animation-name: glyph-drift;
-  animation-timing-function: linear;
-  animation-iteration-count: infinite;
-}
-/* Each row holds its list twice and slides by exactly half its own width,
-   which is what makes the loop seamless without measuring anything. */
-.lp .glyph-row[data-rev='true'] .glyph-run { animation-direction: reverse; }
-@keyframes glyph-drift { to { transform: translateX(-50%); } }
-
-.lp .glyph-run svg { flex: none; }
-
-/* The hero's own content has to sit over it. */
-.lp .hero { position: relative; }
-.lp .hero > .lpw { position: relative; z-index: 1; }
-
-@media (prefers-reduced-motion: reduce) {
-  .lp .glyph-run { animation: none; }
-}
-
-/* ==================================================================
-   The hero's background take
-   ------------------------------------------------------------------
-   A slow turn around a lit board, blurred and held well back.
-
-   Three layers, back to front: this, the schematic field, then the
-   words. What fixes the opacity is the headline's contrast over the
-   brightest frame of it, not how good the footage looks — a
-   background that competes with the thing in front of it has stopped
-   being a background.
-
-   It fades to nothing at the bottom so there is no edge where it
-   stops, and it is masked away from the middle for the same reason
-   the glyphs are: that is where the reading happens.
-   ================================================================== */
-
-.lp .hero-vid {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-.lp .hero-vid video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  /*
-   * Desaturated and warmed rather than boosted.
-   *
-   * Saturating a lit board and blurring it leaves a rainbow smear, which on
-   * a paper ground is the one cold thing on the page and reads as a
-   * rendering fault. Pulled most of the way to grey and then tinted back
-   * towards the stock, the same footage becomes a texture in the paper.
-   */
-  filter: blur(4px) saturate(0.42) sepia(0.34) contrast(1.06);
-  opacity: 0.3;
-  transform: scale(1.06); /* the blur would otherwise show the frame's edge */
-  /*
-   * A hole where the words are, and a fade at both ends.
-   *
-   * The hole is wider than the headline and sits a little above centre,
-   * because that is where the reading happens and a wire arcing through a
-   * word is worse than no footage at all. The fade at the top matters as
-   * much: without it the footage began on a hard horizontal line directly
-   * under the nav, which reads as a banner rather than a background.
-   */
-  mask-image:
-    radial-gradient(62% 50% at 50% 34%, transparent 30%, #000 92%),
-    linear-gradient(transparent 0%, #000 20%, #000 54%, transparent 92%);
-  mask-composite: intersect;
-  -webkit-mask-composite: source-in;
-}
-
-/* The schematic field sits over the footage, the words over both. */
-.lp .glyphs { z-index: 1; }
-.lp .hero > .lpw { z-index: 2; }
-
-@media (prefers-reduced-motion: reduce) {
-  .lp .hero-vid { display: none; }
-}
+.lp .find-count, .lp .find-none { margin-top: 16px; font-size: 0.86rem; color: var(--ink-3); }
 
 /* ==================================================================
    The build wall
    ------------------------------------------------------------------
-   Six builds assembling themselves, with code running over them.
+   Twelve builds assembling themselves, with the sketch those boards
+   are actually running scrolling over them.
 
    Named bw- rather than wall-, because app.css already owns a bare
    `.wall`: the sign-in panel. A bare class beats a scoped one it is
-   not competing with, so the section came out as a fixed, narrow,
-   near-black card in the top left corner of the page.
-
-   The tiles carry the weight, so the code is held well back: it is
-   there to say what the section is about, not to be read. It scrolls
-   over the grid rather than behind it, because behind six opaque
-   tiles it would only ever show in the gutters.
+   not competing with, so this section once came out as a fixed,
+   narrow, near-black card in the top left corner of the page.
    ================================================================== */
 
 .lp .bw-grid {
   position: relative;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-  margin-top: 34px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(10px, 1.2vw, 16px);
 }
 
 .lp .bw-tile {
   position: relative;
   overflow: hidden;
   border-radius: var(--r);
-  background: var(--bg-3);
-  border: 1px solid var(--line);
+  background: var(--dark);
+  box-shadow: var(--shadow);
   aspect-ratio: 4 / 3;
+  transition: transform 320ms var(--ease), box-shadow 320ms var(--ease);
 }
+.lp .bw-tile:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
 .lp .bw-tile video,
 .lp .bw-tile img {
   display: block;
@@ -835,21 +1255,21 @@
   display: flex;
   flex-direction: column;
   gap: 1px;
-  padding: 26px 13px 11px;
-  background: linear-gradient(transparent, rgba(9, 9, 11, 0.82));
+  padding: 28px 13px 11px;
+  background: linear-gradient(transparent, rgba(9, 9, 11, 0.84));
   color: #fff;
   pointer-events: none;
 }
-.lp .bw-cap b { font-size: 0.88rem; font-weight: 600; letter-spacing: -0.01em; }
-.lp .bw-cap span { font-size: 0.76rem; color: rgba(255, 255, 255, 0.66); }
+.lp .bw-cap b { font-size: 0.84rem; font-weight: 600; letter-spacing: -0.012em; }
+.lp .bw-cap span { font-size: 0.74rem; color: rgba(255, 255, 255, 0.66); }
 
 /*
  * The code layer.
  *
  * Over the tiles, faint, and masked to nothing at both ends so it has no
- * edge of its own. It is marked aria-hidden and takes no pointer events:
- * it is texture, and a screen reader working through two hundred lines of
- * someone else's sketch is being given nothing.
+ * edge of its own. It is aria-hidden and takes no pointer events: it is
+ * texture, and a screen reader working through two hundred lines of
+ * somebody else's sketch is being given nothing.
  */
 .lp .bw-code {
   position: absolute;
@@ -865,11 +1285,8 @@
   font-size: 0.72rem;
   line-height: 1.75;
   white-space: pre;
-  /* Plain white over the tiles, which are dark whatever the page is doing.
-     An overlay blend made it strong on one tile and invisible on the next,
-     so the code read as a rendering fault rather than a layer. */
   color: #fff;
-  opacity: 0.17;
+  opacity: 0.15;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
   mask-image: linear-gradient(transparent, #000 14%, #000 86%, transparent);
 }
@@ -881,26 +1298,21 @@
   animation-iteration-count: infinite;
 }
 .lp .bw-code pre:nth-child(2) { animation-direction: reverse; }
-/* The text is its own content twice over, so sliding by exactly half
-   its height returns it to where it started with no seam. */
+/* The text is its own content twice over, so sliding by exactly half its
+   height returns it to where it started with no seam. */
 @keyframes bw-scroll {
   to { transform: translateY(-50%); }
 }
 
-
-/*
- * Rig stands on the line the button sits on, not beside it.
- *
- * Centring the pair as a unit puts the button off-centre from the grid
- * above, which is the one alignment on this page anybody would notice. He
- * is placed against the column instead and the button stays where it was.
- */
+/* Rig stands on the line the button sits on, not beside it. Centring the
+   pair as a unit puts the button off-centre from the grid above, which is
+   the one alignment on this page anybody would notice. */
 .lp .bw-cta {
   position: relative;
   display: flex;
   justify-content: center;
   align-items: flex-end;
-  margin-top: 34px;
+  margin-top: clamp(28px, 4vh, 48px);
   min-height: 130px;
 }
 .lp .bw-cta .rig {
@@ -912,836 +1324,189 @@
 }
 .lp .bw-cta .btn { margin-bottom: 20px; }
 
-/* Under about 700px there is no room beside the button, so he goes above
-   it and the row becomes a column. Dropping him entirely would be easier
-   and would also mean the phone never meets him. */
+@media (max-width: 1080px) {
+  .lp .bw-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 820px) {
+  .lp .bw-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 @media (max-width: 700px) {
   .lp .bw-cta { flex-direction: column; align-items: center; min-height: 0; gap: 4px; }
   .lp .bw-cta .rig { position: static; margin-left: 0; }
   .lp .bw-cta .btn { margin-bottom: 0; }
 }
-
-@media (max-width: 900px) {
-  .lp .bw-grid { grid-template-columns: repeat(2, 1fr); }
-}
-@media (max-width: 560px) {
-  .lp .bw-grid { grid-template-columns: 1fr; }
+@media (max-width: 520px) {
   .lp .bw-code { display: none; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .lp .bw-code code { animation: none; }
-}
-
-/* The stills stand in for the clip, so they take the same frame. */
-.lp .lp-shot-body img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/* ==================================================================
-   The product deck
-   ------------------------------------------------------------------
-   One thing per panel, with the two either side of it smaller and
-   behind, so it reads as a deck rather than a slideshow.
-
-   The panels are absolutely positioned and pushed apart by a
-   multiple of their own width, which is why the offsets are in
-   percent of the panel and not of the stage: a percentage in
-   translate resolves against the element being moved.
-   ================================================================== */
-
-.lp .lp-car { margin-top: 4px; }
-
-.lp .lp-car-stage {
-  position: relative;
-  aspect-ratio: 16 / 10;
-  overflow: hidden;
-  touch-action: pan-y;
-  outline: none;
-}
-.lp .lp-car-stage:focus-visible { outline: 2px solid var(--accent); outline-offset: 6px; border-radius: var(--r-lg); }
-
-.lp .lp-car-panel {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 70%;
-  background: var(--bg);
-  border: 1px solid var(--line);
-  border-radius: var(--r-lg);
-  box-shadow: var(--lift-3, 0 24px 50px rgba(9, 9, 11, 0.16));
-  overflow: hidden;
-  /* --d is how many places this panel sits from the front. */
-  transform: translate(-50%, -50%) translateX(calc(var(--d) * 66%)) scale(0.8);
-  opacity: 0;
-  z-index: 0;
-  pointer-events: none;
-  transition:
-    transform 540ms cubic-bezier(0.22, 0.61, 0.36, 1),
-    opacity 380ms ease;
-}
-/* The two neighbours show; anything further round the ring does not. */
-.lp .lp-car-panel[style*='--d: 1'],
-.lp .lp-car-panel[style*='--d: -1'] { opacity: 0.5; z-index: 1; }
-.lp .lp-car-panel[data-at='true'] {
-  transform: translate(-50%, -50%) scale(1);
-  opacity: 1;
-  z-index: 2;
-  pointer-events: auto;
-}
-
-.lp .lp-car-nav {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  margin-top: 18px;
-}
-.lp .lp-car-arrow {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  font-size: 1.15rem;
-  line-height: 1;
-  color: var(--ink-2);
-  border: 1px solid var(--line);
-  background: var(--bg);
-  transition: color 140ms var(--ease), border-color 140ms var(--ease);
-}
-.lp .lp-car-arrow:hover { color: var(--ink); border-color: var(--line-2); }
-
-.lp .lp-car-dots { display: flex; align-items: center; gap: 8px; }
-.lp .lp-car-dots button {
-  width: 7px;
-  height: 7px;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: var(--line-2);
-  transition: background 160ms var(--ease), transform 160ms var(--ease);
-}
-.lp .lp-car-dots button:hover { background: var(--ink-3); }
-.lp .lp-car-dots button[data-on='true'] { background: var(--ink); transform: scale(1.4); }
-
-@media (max-width: 720px) {
-  /* No room for neighbours on a phone; the front panel takes the width. */
-  .lp .lp-car-panel { width: 92%; }
-  .lp .lp-car-panel[style*='--d: 1'],
-  .lp .lp-car-panel[style*='--d: -1'] { opacity: 0; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .lp .lp-car-panel { transition: opacity 200ms ease; }
-}
-
-/* ==================================================================
-   The room: what Draftrig does beyond a bench
-   ================================================================== */
-
-.lp .setup-show .sec-head { margin-bottom: clamp(34px, 5vw, 56px); }
-
-/* ---- the socket, which is the argument ---- */
-
-.lp .sk {
-  display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
-  gap: clamp(18px, 3vw, 34px);
-  padding: clamp(18px, 2.6vw, 28px);
-  border: 1px solid var(--line);
-  border-radius: var(--r-xl);
-  background: var(--bg);
-  box-shadow: var(--shadow);
-  transition: border-color 320ms var(--ease), box-shadow 320ms var(--ease);
-}
-.lp .sk[data-over='true'] {
-  border-color: color-mix(in srgb, #CE5340 42%, var(--line));
-  box-shadow: var(--shadow), 0 0 0 4px color-mix(in srgb, #CE5340 10%, transparent);
-}
-
-.lp .sk-list { display: flex; flex-direction: column; gap: 2px; }
-.lp .sk-list-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  padding: 0 4px 10px;
-  color: var(--ink-3);
-  font-size: 0.8125rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-.lp .sk-rating { font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
-
-.lp .sk-row {
-  display: grid;
-  grid-template-columns: 16px minmax(0, 1fr) auto auto;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 9px 10px;
-  border: 1px solid transparent;
-  border-radius: var(--r);
-  background: none;
-  color: var(--ink-3);
-  font: inherit;
-  font-size: 0.9375rem;
-  text-align: left;
-  cursor: pointer;
-  transition: background 160ms var(--ease), color 160ms var(--ease), border-color 160ms var(--ease);
-}
-.lp .sk-row:hover { background: var(--bg-3); }
-.lp .sk-row[data-on='true'] { color: var(--ink); }
-
-/* The lamp on each row: a ring when off, filled when on. */
-.lp .sk-dot {
-  width: 11px;
-  height: 11px;
-  border: 2px solid var(--line-2);
-  border-radius: 50%;
-  transition: background 200ms var(--ease), border-color 200ms var(--ease), box-shadow 200ms var(--ease);
-}
-.lp .sk-row[data-on='true'] .sk-dot {
-  border-color: var(--accent);
-  background: var(--accent);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent);
-}
-.lp .sk-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.lp .sk-hint {
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: var(--accent-wash);
-  color: var(--accent);
-  font-size: 0.6875rem;
-  font-weight: 650;
-  letter-spacing: 0.03em;
-  white-space: nowrap;
-}
-.lp .sk-w {
-  color: var(--ink-3);
-  font-size: 0.875rem;
-  font-variant-numeric: tabular-nums;
-}
-.lp .sk-row[data-on='true'] .sk-w { color: var(--ink-2); }
-
-/* ---- the meter ---- */
-
-.lp .sk-meter {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: clamp(16px, 2vw, 24px);
-  border-radius: var(--r-lg);
-  background: var(--bg-2);
-  border: 1px solid var(--line);
-}
-.lp .sk-big { display: flex; align-items: baseline; gap: 6px; }
-.lp .sk-amps {
-  font-size: clamp(2.8rem, 6vw, 4rem);
-  font-weight: 680;
-  line-height: 1;
-  letter-spacing: -0.03em;
-  font-variant-numeric: tabular-nums;
-  transition: color 240ms var(--ease);
-}
-.lp .sk[data-over='true'] .sk-amps { color: #C9452F; }
-.lp .sk-unit { font-size: 1.25rem; font-weight: 600; color: var(--ink-3); }
-.lp .sk-sub {
-  margin-top: 6px;
-  color: var(--ink-3);
-  font-size: 0.875rem;
-  font-variant-numeric: tabular-nums;
-}
-
-.lp .sk-bar {
-  position: relative;
-  height: 10px;
-  margin: 18px 0 14px;
-  border-radius: 999px;
-  background: var(--bg-3);
-  overflow: hidden;
-}
-/*
- * The fill is full width and clipped back, rather than a narrow box that
- * grows.
- *
- * Animating width is a layout property, and the cheap substitute — scaleX
- * from the left — squashes the rounded cap into an ellipse. An inset clip
- * with a radius keeps the cap exactly as it was and never touches layout.
- */
-.lp .sk-fill {
-  position: absolute;
-  inset: 0;
-  border-radius: 999px;
-  background: var(--accent);
-  transition: clip-path 420ms var(--ease), background 240ms var(--ease);
-}
-.lp .sk[data-over='true'] .sk-fill { background: #C9452F; }
-/* Where thirteen amps is. The fill clips at the rating, so the line is what
-   shows you have gone past it. */
-.lp .sk-limit {
-  position: absolute;
-  top: -2px;
-  bottom: -2px;
-  right: 0;
-  width: 2px;
-  background: var(--line-2);
-}
-
-.lp .sk-verdict {
-  padding: 11px 13px;
-  border-radius: var(--r);
-  background: var(--bg-3);
-  color: var(--ink-2);
-  font-size: 0.9375rem;
-  line-height: 1.5;
-  transition: background 240ms var(--ease), color 240ms var(--ease);
-}
-.lp .sk-verdict b { color: var(--ink); }
-.lp .sk-verdict[data-tone='warn'] {
-  background: color-mix(in srgb, #F5B942 16%, transparent);
-  color: color-mix(in srgb, var(--ink) 80%, #8A6400);
-}
-.lp .sk-verdict[data-tone='bad'] {
-  background: color-mix(in srgb, #CE5340 14%, transparent);
-  color: color-mix(in srgb, var(--ink) 74%, #8A2A1A);
-}
-.lp .sk-verdict[data-tone='bad'] b { color: #B83C26; }
-
-.lp .sk-foot {
-  margin: 14px 0 0;
-  color: var(--ink-3);
-  font-size: 0.8125rem;
-  line-height: 1.55;
-}
-
-/* ---- the clip row ---- */
-
-.lp .setup-row { margin-top: clamp(40px, 6vw, 72px); }
-.lp .setup-row .row-copy h3 {
-  margin: 0 0 12px;
-  font-size: clamp(1.4rem, 2.4vw, 1.75rem);
-  font-weight: 640;
-  letter-spacing: -0.02em;
-}
-.lp .setup-row .row-copy p { margin: 0 0 20px; color: var(--ink-2); line-height: 1.65; }
-.lp .setup-art video, .lp .setup-art img { aspect-ratio: 16 / 10; }
-
-@media (max-width: 860px) {
-  .lp .sk { grid-template-columns: 1fr; }
-}
-
-/* ---- fixes from the first inspection round ---- */
-
-/*
- * The section heading balances like the hero's does.
- *
- * "Mains, screens, and the desk they / sit on." left two words alone on the
- * second line. Same fix as the h1 above, for the same reason.
- */
-.lp .sec-head h2 { text-wrap: balance; }
-
-/*
- * Proportional figures on the big number, tabular everywhere else.
- *
- * A tabular full stop is as wide as a digit, so "2.9" set in tabular at four
- * rem reads as "2 . 9". Tabular is there to stop a changing value jittering,
- * and the only thing that moves here is the unit after it, which is supposed
- * to move when the value gains a digit.
- */
-.lp .sk-amps { letter-spacing: -0.04em; font-variant-numeric: normal; }
-
-.lp .sk-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-
-@media (max-width: 560px) {
-  /* The nudge costs the appliance its name on a narrow row, and the row is
-     the only thing it was pointing at. */
-  .lp .sk-hint { display: none; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .lp .sk-fill { transition: none; }
-  .lp .sk-amps, .lp .sk-verdict, .lp .sk { transition: none; }
-}
-
-/* ==================================================================
-   Where Rig stands
-   ------------------------------------------------------------------
-   Four places, each doing one thing that belongs to that section
-   rather than the same wave four times: he reads the meter, he
-   watches the deck, he scans while you search, and he waits at the
-   bottom beside the button.
-   ================================================================== */
-
-/* Beside the meter, reacting to the current. */
-.lp .sk-rig {
-  position: absolute;
-  right: 18px;
-  top: 26px;
-  --rig-shadow: rgba(62, 48, 30, 0.1);
-}
-.lp .sk-meter { position: relative; }
-@media (max-width: 980px) {
-  .lp .sk-rig { display: none; }
-}
-
-/* Under the deck, between the arrows. */
-.lp .lp-car-rig {
-  margin: 0 4px -6px;
-  --rig-shadow: rgba(62, 48, 30, 0.12);
-}
-@media (max-width: 560px) {
-  .lp .lp-car-rig { display: none; }
-}
-
-/* Over the search box, scanning while you type. */
-.lp .find-rig {
-  margin: -6px auto 2px;
-  --rig-shadow: rgba(62, 48, 30, 0.1);
-}
-
-/* ==================================================================
-   A trace, running
-   ------------------------------------------------------------------
-   The page claims a solver and then shows stills of one. This is the
-   claim moving: a waveform drawn left to right, on a loop, at the
-   width of the column. It is not live data and does not pretend to
-   be — it is the shape a 555 puts out, which is the first thing most
-   people here will build.
-   ================================================================== */
-
-.lp .trace {
-  position: relative;
-  height: 76px;
-  margin: 34px 0 -8px;
-  overflow: hidden;
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
-  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
-}
-.lp .trace svg { width: 200%; height: 100%; display: block; animation: trace-pan 11s linear infinite; }
-.lp .trace path { fill: none; stroke: var(--accent); stroke-width: 2.4; stroke-linejoin: round; opacity: 0.85; }
-.lp .trace .trace-grid { stroke: var(--line); stroke-width: 1; opacity: 0.9; }
-
-@keyframes trace-pan { to { transform: translateX(-50%); } }
-
-@media (prefers-reduced-motion: reduce) {
-  .lp .trace svg { animation: none; }
-}
-
-/* He plays the console that is in the build beside him. */
-.lp .row-rig { margin: 26px 0 -10px; --rig-shadow: rgba(62, 48, 30, 0.12); }
-
-/* ==================================================================
-   The bench
-   ------------------------------------------------------------------
-   The page's ground is the editor's own snap grid: 8 mm minor, 64 mm
-   major, at the alpha the viewport draws it. It is the one thing on
-   the page that is not decoration — it is what the product looks
-   like, and everything else sits on it the way a part sits on the
-   bench.
-   ================================================================== */
-
-.lp {
-  background-color: var(--bg);
-  background-image:
-    linear-gradient(to right, rgba(21, 24, 29, 0.028) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(21, 24, 29, 0.028) 1px, transparent 1px),
-    linear-gradient(to right, rgba(21, 24, 29, 0.055) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(21, 24, 29, 0.055) 1px, transparent 1px);
-  background-size: 8px 8px, 8px 8px, 64px 64px, 64px 64px;
-  background-position: -1px -1px;
-}
-
-/*
- * An alternate band, still on the bench.
- *
- * It used to switch the grid off entirely, which left a hard seam where one
- * world stopped and another started — paper above, bench below, in the
- * middle of a page that is supposed to be one surface. A band of different
- * stock is the right idea; a band of a different world is not. So the grid
- * runs through it and only the ground underneath changes.
- */
-.lp .sec-alt { background-color: #F4F1EA; }
-
-/* ==================================================================
-   Selection
-   ------------------------------------------------------------------
-   Drawn by src/ui/Selected.tsx. One box, four handles, a name above
-   and a real measurement below, exactly as the editor draws it round
-   whatever you have picked.
-   ================================================================== */
-
-.lp .sel {
-  position: relative;
-  margin: 0;
-  padding: 0;
-  /* Quiet, but still legible: a label at --line-2 on this ground is a
-     label nobody can read, which is the same as not drawing it. */
-  --sel: #9A9183;
-}
-.lp .sel-live { --sel: var(--accent); }
-
-.lp .sel-body { position: relative; z-index: 1; }
-
-.lp .sel::before {
-  content: '';
-  position: absolute;
-  inset: -14px -14px -14px -14px;
-  border: 1px solid var(--sel);
-  border-radius: 3px;
-  pointer-events: none;
-}
-
-/* The handles. 7px, white-filled, on the corners of that box — a handle
-   that is not on the corner it claims is the detail that gives the whole
-   device away. */
-.lp .sel-h {
-  position: absolute;
-  width: 7px;
-  height: 7px;
-  background: var(--bg);
-  border: 1.5px solid var(--sel);
-  border-radius: 1px;
-  pointer-events: none;
-}
-.lp .sel-h-tl { left: -18px; top: -18px; }
-.lp .sel-h-tr { right: -18px; top: -18px; }
-.lp .sel-h-bl { left: -18px; bottom: -18px; }
-.lp .sel-h-br { right: -18px; bottom: -18px; }
-
-.lp .sel-label {
-  position: absolute;
-  left: -14px;
-  top: -36px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  color: var(--sel);
-}
-
-.lp .sel-dim {
-  position: absolute;
-  left: 50%;
-  bottom: -38px;
-  transform: translateX(-50%);
-  padding: 2px 7px;
-  border-radius: 3px;
-  background: var(--sel);
-  color: #FFF;
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
-  font-size: 0.6875rem;
-  letter-spacing: -0.01em;
-  white-space: nowrap;
-}
-
-/* Under about 700px the handles sit outside the gutter and the box starts
-   fighting the screen edge, so the chrome comes off and the figure is just
-   a figure. */
-@media (max-width: 700px) {
-  .lp .sel::before, .lp .sel-h { display: none; }
-  .lp .sel-label { position: static; display: block; margin-bottom: 8px; }
-  .lp .sel-dim { position: static; display: inline-block; transform: none; margin-top: 10px; }
-}
-
-/* ==================================================================
-   Callouts
-   ------------------------------------------------------------------
-   A dot, a line and a word, the way the editor labels a port.
-   ================================================================== */
-
-.lp .callout {
-  position: absolute;
-  display: flex;
-  align-items: center;
-  gap: 0;
-  font-size: 0.75rem;
-  color: var(--ink-2);
-  pointer-events: none;
-  white-space: nowrap;
-}
-.lp .callout-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
-  flex: none;
-}
-.lp .callout-line { width: 26px; height: 1px; background: var(--line-2); flex: none; }
-.lp .callout-text {
-  padding: 2px 7px;
-  border-radius: 999px;
-  background: var(--bg);
-  border: 1px solid var(--line);
-}
-
-/* ==================================================================
-   The hero, split
-   ------------------------------------------------------------------
-   Copy left at the column, the build right. Centred over a frame is
-   the arrangement this category always ships and it puts the product
-   below the fold on every laptop.
-   ================================================================== */
-
-.lp .hero-split {
-  display: grid;
-  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
-  align-items: center;
-  gap: clamp(32px, 6vw, 86px);
-  padding: clamp(26px, 5vh, 54px) 0 clamp(40px, 6vh, 72px);
-  text-align: left;
-}
-.lp .hero-split h1 { max-width: 13ch; margin: 0; }
-.lp .hero-split .hero-sub { margin: 20px 0 0; max-width: 42ch; }
-.lp .hero-split .hero-cta { justify-content: flex-start; }
-.lp .hero-art { position: relative; }
-
-@media (max-width: 900px) {
-  .lp .hero-split { grid-template-columns: 1fr; text-align: center; gap: 54px; }
-  .lp .hero-split h1 { max-width: 18ch; margin: 0 auto; }
-  .lp .hero-split .hero-sub { margin-left: auto; margin-right: auto; }
-  .lp .hero-split .hero-cta { justify-content: center; }
-}
-
-/* Two jobs, side by side, with room for the selection chrome to breathe. */
-.lp .works-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: clamp(56px, 7vw, 96px);
-  margin-top: 74px;
-}
-.lp .works-grid h3 { margin: 64px 0 8px; font-size: 1.25rem; letter-spacing: -0.022em; }
-.lp .works-grid p { color: var(--ink-2); max-width: 36ch; }
-
-@media (max-width: 760px) {
-  .lp .works-grid { grid-template-columns: 1fr; gap: 64px; }
-  .lp .works-grid h3 { margin-top: 26px; }
 }
 
 /* ==================================================================
    The close
    ------------------------------------------------------------------
-   The bench with the lights off, inset in the paper. The page ends
-   on the thing it has spent four thousand pixels describing, and
-   Rig stands on its top edge with one foot in each.
+   The page had been ending on a heading and two buttons on empty
+   paper, which reads as trailing off rather than finishing. The dark
+   panel is the editor's own ground, inset in the page, so the last
+   thing before the footer is the thing being sold.
    ================================================================== */
 
-.lp .end-wrap { padding-bottom: clamp(56px, 8vh, 96px); }
-
+.lp .end-wrap { padding-bottom: clamp(44px, 7vh, 88px); }
 .lp .end {
   position: relative;
-  padding: clamp(66px, 10vh, 118px) clamp(24px, 5vw, 72px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: clamp(20px, 4vw, 60px);
+  /* No bottom padding: the figure stands on the panel's own lower edge,
+     and the copy is lifted off it by its own rule below. A figure inset
+     from the bottom by the padding hovers in the middle of the panel,
+     which is what this looked like. */
+  padding: clamp(40px, 6vw, 72px) clamp(40px, 6vw, 72px) 0;
   border-radius: var(--r-xl);
-  text-align: center;
-  background: #16151A;
-  /* The editor's own grid, at the density it draws it, so the panel reads
-     as the bench rather than as a dark box. */
-  background-image:
-    linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
-  background-size: 32px 32px;
-  box-shadow: var(--shadow-lg);
-  overflow: visible;
+  background:
+    radial-gradient(120% 140% at 85% 110%, rgba(30, 111, 255, 0.16), transparent 62%),
+    var(--dark);
+  color: var(--dark-ink);
+  overflow: hidden;
 }
-
-.lp .end h2 { color: #FBF9F5; }
+.lp .end h2 { color: var(--dark-ink); }
 .lp .end p {
-  max-width: 48ch;
-  margin: 18px auto 0;
+  margin-top: 16px;
+  max-width: 44ch;
   font-size: 1.0625rem;
-  line-height: 1.62;
-  color: #A9A299;
-  text-wrap: pretty;
+  line-height: 1.58;
+  color: var(--dark-ink-2);
 }
-.lp .end-cta { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-top: 32px; }
-
-/* On the dark panel the primary button has to invert, or the one black
-   thing on a black ground is the thing you are asking them to press. */
-.lp .end .btn-primary { background: #FBF9F5; color: #16151A; }
-.lp .end .btn-primary:hover { background: #FFFFFF; }
-.lp .end .btn-ghost { background: transparent; color: #E8E3DC; border-color: rgba(255, 255, 255, 0.22); }
-.lp .end .btn-ghost:hover { background: rgba(255, 255, 255, 0.07); border-color: rgba(255, 255, 255, 0.34); }
-
-/* His feet are on the join, so the contact shadow is the panel's black and
-   not the paper's brown. */
-.lp .end .rig-stand {
-  /* Fully above the join here. Six pixels into paper is invisible; six into
-     a near-black panel swallows the foot plate and he reads as cut off. */
-  transform: translateY(-100%);
-  --rig-shadow: rgba(62, 48, 30, 0.16);
+.lp .end-copy { padding-bottom: clamp(40px, 6vw, 72px); }
+.lp .end-cta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
+.lp .end .btn-primary { background: var(--bg); color: var(--ink); }
+.lp .end .btn-primary:hover { background: var(--white); }
+.lp .end .btn-ghost {
+  background: transparent;
+  color: var(--dark-ink);
+  box-shadow: inset 0 0 0 1px var(--dark-line);
 }
-.lp .end .rig-stand::after {
-  bottom: -1px;
-  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.55), transparent 72%);
+.lp .end .btn-ghost:hover { background: var(--dark-2); box-shadow: inset 0 0 0 1px var(--dark-line-2); }
+
+.lp .end-rig {
+  flex: none;
+  margin-bottom: -4px;
+  margin-right: clamp(0px, 2vw, 28px);
+  /* On the dark panel the drop shadow has nothing to fall on, so it goes
+     and the figure sits on the panel's own floor instead. */
+  --rig-shadow: rgba(0, 0, 0, 0.42);
+}
+.lp .end-rig .spot-fig { filter: none; }
+
+@media (max-width: 720px) {
+  .lp .end { grid-template-columns: minmax(0, 1fr); }
+  .lp .end-copy { padding-bottom: 20px; }
+  .lp .end-rig { justify-self: start; margin-right: 0; }
 }
 
 /* ==================================================================
    Footer
-   ------------------------------------------------------------------
-   Three short columns and the mark. Somewhere to go next when the
-   buttons above were not what they wanted.
    ================================================================== */
 
-.lp .foot { border-top: 1px solid var(--line); padding: clamp(44px, 6vh, 72px) 0 28px; }
-
+.lp .foot { padding-block: clamp(44px, 6vh, 72px) 28px; border-top: 1px solid var(--line); }
 .lp .foot-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) repeat(3, minmax(0, 1fr));
-  gap: clamp(28px, 4vw, 64px);
-  align-items: start;
+  grid-template-columns: minmax(0, 1.5fr) repeat(3, minmax(0, 1fr));
+  gap: clamp(24px, 4vw, 56px);
 }
-
-.lp .foot-brand p {
-  margin: 16px 0 0;
-  max-width: 34ch;
-  font-size: 0.875rem;
-  line-height: 1.62;
-  color: var(--ink-3);
-  text-wrap: pretty;
-}
-
-.lp .foot-col { display: flex; flex-direction: column; align-items: flex-start; gap: 11px; }
-.lp .foot-col h3 {
-  margin: 0 0 3px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-}
-.lp .foot-col a { font-size: 0.9375rem; color: var(--ink-2); }
+.lp .foot-brand p { margin-top: 14px; max-width: 32ch; font-size: 0.9rem; line-height: 1.6; color: var(--ink-3); }
+.lp .foot-col { display: grid; align-content: start; gap: 9px; }
+.lp .foot-col h3 { font-size: 0.78rem; font-weight: 600; letter-spacing: 0.02em; color: var(--ink); margin-bottom: 3px; }
+.lp .foot-col a { font-size: 0.9rem; color: var(--ink-3); transition: color 160ms var(--ease); }
 .lp .foot-col a:hover { color: var(--ink); }
 
 .lp .foot-base {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px 26px;
-  margin-top: clamp(40px, 6vh, 72px);
-  padding-top: 22px;
+  gap: 10px 22px;
+  justify-content: space-between;
+  margin-top: clamp(32px, 5vh, 56px);
+  padding-top: 20px;
   border-top: 1px solid var(--line);
-  font-size: 0.8125rem;
+  font-size: 0.82rem;
   color: var(--ink-3);
 }
-.lp .foot-note { margin-left: auto; }
 
-@media (max-width: 820px) {
-  .lp .foot-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 36px; }
-  .lp .foot-brand { grid-column: 1 / -1; }
-  .lp .foot-note { margin-left: 0; }
+@media (max-width: 780px) {
+  .lp .foot-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 /* ==================================================================
    Model credits
    ------------------------------------------------------------------
-   Required, not decorative: eight of the setup meshes are CC-BY-4.0,
-   which permits the use and asks for the author's name wherever the
-   work is shown. Drawn from the catalogue by src/ui/ModelCredits.
+   CC-BY-4.0 requires the author to be credited wherever the work is
+   shown, which means on the page and not only in a file in the repo.
    ================================================================== */
 
-.lp .credits { margin-top: clamp(40px, 6vh, 64px); padding-top: 30px; border-top: 1px solid var(--line); }
-
-.lp .credits h3 {
-  margin: 0 0 8px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-}
-.lp .credits-lede { max-width: 56ch; margin: 0 0 18px; font-size: 0.8125rem; line-height: 1.6; color: var(--ink-3); }
-
+.lp .credits { margin-top: clamp(34px, 5vh, 56px); }
+.lp .credits h3 { font-size: 0.78rem; font-weight: 600; letter-spacing: 0.02em; }
+.lp .credits-lede { margin-top: 8px; max-width: 54ch; font-size: 0.84rem; line-height: 1.55; color: var(--ink-3); }
 .lp .credits ul {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(238px, 1fr));
-  gap: 10px 26px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 6px 22px;
+  margin-top: 14px;
 }
-.lp .credits li { display: flex; flex-direction: column; gap: 1px; font-size: 0.8125rem; }
-.lp .credits li a { color: var(--ink-2); }
-.lp .credits li a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
-.lp .credits-by { color: var(--ink-3); font-size: 0.75rem; }
+.lp .credits li { font-size: 0.82rem; }
+.lp .credits li a { color: var(--ink-2); text-decoration: underline; text-underline-offset: 2px; text-decoration-color: var(--line-2); }
+.lp .credits li a:hover { color: var(--accent); text-decoration-color: currentColor; }
+.lp .credits-by { display: block; color: var(--ink-3); font-size: 0.78rem; }
 
 /* ==================================================================
-   Rooms
+   Reduced motion
    ------------------------------------------------------------------
-   The one section that answers "is this for my desk, or only for
-   circuits". It leads on the render because the render is the
-   argument, and the figures under it are read off that build.
+   Everything resolves to its final state, with nothing hidden and
+   nothing faded. Somebody who asked for less motion asked for less
+   motion, not for a page with content missing from it.
    ================================================================== */
 
-.lp .room-art { margin: clamp(52px, 7vh, 86px) auto 0; max-width: 1020px; }
-.lp .room-art img { width: 100%; height: auto; border-radius: var(--r-lg); box-shadow: var(--shadow); }
+@media (prefers-reduced-motion: reduce) {
+  /* Everything that arrives is simply already there. */
+  .lp .mo-rise,
+  .lp .showpiece-frame,
+  .lp .picked-box,
+  .lp .picked-dim,
+  .lp .walk-shot,
+  .lp .trace-art .seg,
+  .lp .trace-sym .sym,
+  .lp .rigrow-item {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+    transition: none !important;
+    stroke-dashoffset: 0 !important;
+  }
 
-/*
- * Four figures on one rule, not four cards.
- *
- * A card each would be the fourth grid of equal boxes on this page, and
- * these are four short facts about one object rather than four things.
- */
-.lp .room-facts {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1px;
-  margin: clamp(56px, 7vh, 82px) auto 0;
-  max-width: 1020px;
-  padding: 0;
-  background: var(--line);
-  border-radius: var(--r);
-  overflow: hidden;
-}
-.lp .room-facts > div { padding: 20px 22px; background: var(--bg); }
-.lp .room-facts dt {
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-}
-.lp .room-facts dd {
-  margin: 6px 0 0;
-  font-size: 1.375rem;
-  font-weight: 600;
-  letter-spacing: -0.028em;
-  color: var(--ink);
-  font-variant-numeric: normal;
-}
+  /* Every loop stops. The twelve build clips are not here because a
+     stylesheet cannot stop a video; BuildWall.tsx renders the still
+     instead under this setting. */
+  .lp .mo-marquee-run,
+  .lp .trace svg,
+  .lp .bw-code pre,
+  .lp .flow,
+  .lp .rig * {
+    animation: none !important;
+  }
 
-.lp .room-copy {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: clamp(26px, 4vw, 58px);
-  margin: clamp(52px, 7vh, 80px) auto 0;
-  max-width: 1020px;
-}
-.lp .room-copy h3 { margin: 0 0 8px; font-size: 1.0625rem; letter-spacing: -0.018em; }
-.lp .room-copy p { color: var(--ink-2); line-height: 1.62; text-wrap: pretty; }
+  /*
+   * The current goes, rather than freezing.
+   *
+   * `animation: none` on `.flow` leaves its dash array in place, so four
+   * short amber stubs sit frozen at the head of each wire. That is an
+   * artefact, not a resolved state: the schematic's finished state is a
+   * drawn circuit with no current animating in it.
+   */
+  .lp .trace-flow { opacity: 0; }
 
-.lp .room-cta { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-top: clamp(44px, 6vh, 68px); }
+  .lp .mo-marquee { mask-image: none; overflow-x: auto; }
 
-@media (max-width: 860px) {
-  .lp .room-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .lp .room-copy { grid-template-columns: 1fr; gap: 30px; }
-}
+  /* Every step open and readable, with no transition to get there. */
+  .lp .walk-open { grid-template-rows: 1fr; transition: none; }
+  .lp .walk-step p { opacity: 1; transition: none; }
+  .lp .walk-step h3 { color: var(--ink); }
 
-/* The second figure in the room section: one object rather than a room. */
-.lp .room-pair {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 0.92fr);
-  align-items: center;
-  gap: clamp(40px, 6vw, 86px);
-  max-width: 1020px;
-  margin: clamp(68px, 9vh, 112px) auto 0;
-}
-.lp .room-pair img { width: 100%; height: auto; border-radius: var(--r-lg); box-shadow: var(--shadow); }
-.lp .room-pair-copy h3 { margin: 0 0 12px; font-size: 1.375rem; letter-spacing: -0.024em; }
-.lp .room-pair-copy p { margin: 0 0 12px; color: var(--ink-2); line-height: 1.62; text-wrap: pretty; }
-.lp .room-pair-note { color: var(--ink-3); font-size: 0.9375rem; }
-
-@media (max-width: 860px) {
-  .lp .room-pair { grid-template-columns: 1fr; gap: 34px; }
+  .lp * { scroll-behavior: auto; }
 }

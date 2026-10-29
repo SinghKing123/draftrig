@@ -112,6 +112,24 @@ not want. No irony, no smuggled quirk, no second concept wearing this one's
 clothes: future work executes the convention well rather than looking for a
 way out of it.
 
+**A fourth amendment, set by the user on 2026-10-29 and binding with the
+rest.** The first attempt at the convention was the convention played safe:
+a lot of warm paper with a little content floating in it, flat SVG drawings
+standing in for photographs of the product, a control panel in the middle of
+the page you had to click to get anything out of, and one mascot repeated
+across five sections. The user's words were that it looked "so basic" and
+that parts of it looked "horrible". What the two reference pages have and
+that page did not is **density, motion and photography**, and those are now
+the three things any work on this surface is measured against:
+
+- **Motion is part of the page, not a finish on it.** Things arrive. One
+  grammar, in `src/ui/motion.tsx`, and nothing invents a second.
+- **The product is the imagery, at full size, shot properly.** No drawing of
+  the product stands in for a photograph of it.
+- **Nothing on the page asks to be operated** before it will say anything.
+  A demonstration is driven by the scrollbar, which is an input the reader
+  is already giving.
+
 **Three amendments, set by the user on 2026-10-24 and binding with the
 above.**
 
@@ -126,29 +144,58 @@ above.**
    temperature, because that is where people sit for an hour.
 3. *There is a character.* Rig, in `src/ui/Rig.tsx`. See below.
 
-### Rig
+### The crew
 
-A mascot, asked for by the user, with plyxl.com's sheep as the reference.
+Mascots, asked for by the user, with plyxl.com's sheep and nootles.com's cast
+as the references.
 
-Every part of him is a part the catalogue has: the head is an LED matrix
-module, the body 20x20 extrusion with its T-slot to the front, the arms are
-cable into a 2.54 mm header, and he stands on a screwed-down foot plate. His
-face is the matrix working the way the real one works — a bitmap of lit dots
-in the amber this codebase uses for energised — so an expression is a list of
+The rule that made the first one is that every part of him is a part the
+catalogue has: the head an LED matrix module, the body 20x20 extrusion with
+its T-slot to the front, the arms cable into a 2.54 mm header, and a
+screwed-down foot plate under him. His face is that module working the way
+the real one works — a bitmap of lit dots — so an expression is a list of
 coordinates rather than an illustration.
 
-He appears twice and only twice: at the foot of the product page, where it
-stops arguing and asks, and on the editor's empty bench, which is the one
-screen in the app with nothing on it to look at. He does not speak. The copy
-says things once and plainly, and a robot repeating them in a balloon is the
-same sentence twice.
+**Amendment, set by the user on 2026-10-29.** There are four of them, and the
+same rule produced the other three, because the catalogue has four kinds of
+thing that light up and four kinds of thing to build a body from:
+
+| | head | lit | body |
+|---|---|---|---|
+| **Rig** | 8x10 LED matrix | amber | 20x20 extrusion |
+| **Dot** | 128x64 OLED | white | ABS enclosure |
+| **Sixteen** | 16x2 character LCD | green | perfboard |
+| **Seg** | 4-digit seven-segment | red | breadboard |
+
+Each one's face is drawn the way its own display can draw: the matrix a grid
+of dots, the OLED arbitrary shapes, the character panel whole cells, the
+seven-segment two digits. Each lights in the colour that part really emits.
+That is the whole of the variation between them and none of it is a free
+choice.
+
+Two placement rules, both of them learnt by getting it wrong:
+
+- **Never a row of them.** Six figures side by side is a cast lineup, and six
+  copies of one figure is a lineup of the same drawing. One to a section.
+- **Never in a margin beside text.** A figure in the gutter has no floor and
+  nothing to do, and on a narrow window it ends up over the paragraph. Each
+  one stands in its own space, on a drawn floor.
+
+They do not speak. The copy says things once and plainly, and a robot
+repeating them in a balloon is the same sentence twice.
 
 ## Evidence on Hand
 
 Real, in the repository:
 
 - 13 preset still renders in `public/presets/*.jpg`, shot from the live editor
-  by `tools/shoot-presets.mjs` with the simulation running
+  by `tools/shoot-presets.mjs` with the simulation running. These are
+  catalogue photographs: small, square-on, the whole build in frame.
+- 13 page photographs in `public/shots/cine-*.jpg`, by `tools/shoot-cine.mjs`.
+  Close, off-axis, near the height of the subject, three of them with the
+  editor's own chrome around the render. They exist because a fitted
+  catalogue shot blown up to 1200px is a small object in a large dark field,
+  and a page of them reads as a contact sheet.
 - 4 silent clips in `public/clips/` (`clip-assemble`, `clip-wire`, `clip-run`,
   `clip-builds`), recorded from the editor by `tools/reel/`
 - the live catalog and its ranked search, importable on any page

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Rig } from '@/ui/Rig'
+import { CrewSpot } from '@/ui/CrewSpot'
+import { useMedia, REDUCED } from '@/ui/motion'
+import { GALLERY } from '@/io/gallery'
 
 /**
  * A wall of builds putting themselves together, with code running over it.
@@ -47,19 +49,27 @@ import { Rig } from '@/ui/Rig'
  * rover came off to make room; the workbench and the bare sensor node went
  * earlier.
  */
+/*
+ * Ids only. The name and the note live in `io/gallery.ts`, because the
+ * gallery above this section carried its own copies of both and the two
+ * disagreed — this wall said "LED message board" and "Extrusion rack"
+ * where the gallery said "Message board" and "Shop rack". Two adjacent
+ * sections disagreeing about what the product's own example builds are
+ * called is the kind of thing a reader notices and cannot unsee.
+ */
 const TILES = [
-  { id: 'grid-desk-setup', name: 'Desk setup', note: 'Desk, arm, two monitors, a tower and a heater' },
-  { id: 'grid-eight-bit', name: 'Eight-bit machine', note: '83 parts, 238 wires' },
-  { id: 'grid-pi-case', name: 'Pi enclosure', note: 'Panels, standoffs, heat-set inserts' },
-  { id: 'grid-message-board', name: 'LED message board', note: '48 matrix modules, 3,072 dots' },
-  { id: 'grid-arcade', name: 'Bartop cabinet', note: '15mm ply, 15" panel, Pi 5, button loom' },
-  { id: 'grid-desk-terminal', name: 'Desk terminal', note: 'Case, posts, 16x2 panel and a knob' },
-  { id: 'grid-control-cabinet', name: 'Control cabinet', note: 'DIN rail, four relays, ESP32, clear door' },
-  { id: 'grid-shop-rack', name: 'Extrusion rack', note: 'Four posts, sixteen joints, every T-nut' },
-  { id: 'grid-panel', name: 'Control panel', note: 'LCD, keypad and switches on one face' },
-  { id: 'grid-quadcopter', name: 'Quadcopter', note: 'Ten-inch airframe, four ESCs, IMU and radio' },
-  { id: 'grid-plant-watering', name: 'Plant watering', note: 'Soil probe, relay and a pump on an ESP32' },
-  { id: 'grid-cnc-router', name: 'CNC router frame', note: '2020 extrusion, rails, leadscrews' },
+  'desk-setup',
+  'eight-bit',
+  'pi-case',
+  'message-board',
+  'arcade',
+  'desk-terminal',
+  'control-cabinet',
+  'shop-rack',
+  'panel',
+  'quadcopter',
+  'plant-watering',
+  'cnc-router',
 ]
 
 /** Taken from the sketches the boards in these clips are running. */
@@ -111,9 +121,19 @@ const COLUMNS = [0, 1, 2].map((n) => {
 })
 
 /** A tile that only starts once it has been scrolled to. */
-function Tile({ id, name, note }: { id: string; name: string; note: string }) {
+function Tile({ id }: { id: string }) {
   const host = useRef<HTMLDivElement>(null)
   const [near, setNear] = useState(false)
+  /*
+   * A looping video is motion, and no stylesheet can stop one.
+   *
+   * The reduced-motion block in site-lp.css stops the marquees, the code
+   * layer, the trace and the current. It cannot stop twelve `<video loop>`
+   * elements, so somebody who asked for less motion was still being shown
+   * twelve build animations running forever. The still is already here as
+   * the poster; under the setting it is simply the whole tile.
+   */
+  const still = useMedia(REDUCED)
 
   useEffect(() => {
     const el = host.current
@@ -130,12 +150,17 @@ function Tile({ id, name, note }: { id: string; name: string; note: string }) {
     return () => io.disconnect()
   }, [])
 
+  const b = GALLERY[id]
+
   return (
     <div className="bw-tile" ref={host}>
-      {near ? (
+      {near && !still ? (
         <video
-          src={`/grid/${id}.webm`}
-          poster={`/grid/${id}.jpg`}
+          /* The clips are named after the starter they were recorded
+             from, with one prefix. Deriving the path keeps the tile list a
+             list of build ids rather than a second list of filenames. */
+          src={`/grid/grid-${id}.webm`}
+          poster={`/grid/grid-${id}.jpg`}
           autoPlay
           muted
           loop
@@ -144,11 +169,11 @@ function Tile({ id, name, note }: { id: string; name: string; note: string }) {
           aria-hidden="true"
         />
       ) : (
-        <img src={`/grid/${id}.jpg`} alt="" loading="lazy" />
+        <img src={`/grid/grid-${id}.jpg`} alt="" loading="lazy" />
       )}
       <div className="bw-cap">
-        <b>{name}</b>
-        <span>{note}</span>
+        <b>{b.name}</b>
+        <span>{b.note}</span>
       </div>
     </div>
   )
@@ -156,10 +181,10 @@ function Tile({ id, name, note }: { id: string; name: string; note: string }) {
 
 export function BuildWall() {
   return (
-    <section className="sec bw" id="builds">
+    <section className="sec bw" id="wall">
       <div className="lpw">
         <div className="sec-head center">
-          <h2>Code your Build</h2>
+          <h2>Watch one go together.</h2>
         </div>
 
         <div className="bw-grid">
@@ -170,8 +195,8 @@ export function BuildWall() {
               </pre>
             ))}
           </div>
-          {TILES.map((t) => (
-            <Tile key={t.id} {...t} />
+          {TILES.map((id) => (
+            <Tile key={id} id={id} />
           ))}
         </div>
 
@@ -189,7 +214,7 @@ export function BuildWall() {
           * the same sentence twice.
           */}
         <div className="bw-cta">
-          <Rig size={104} act="wrench" mood="happy" />
+          <CrewSpot who="seg" size={104} act="wrench" mood="happy" bare />
           <Link className="btn btn-primary btn-lg" to="/projects">
             Try Draftrig<span className="arr" aria-hidden="true" />
           </Link>

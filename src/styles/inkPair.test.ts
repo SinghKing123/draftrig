@@ -19,7 +19,13 @@ import { describe, expect, it } from 'vitest'
  * passes by finding nothing to look at — which is worse than not having them.
  */
 
-const SHEETS = ['site.css', 'site-lp.css', 'manual.css']
+/*
+ * manual.css was here and is gone. It was the stylesheet of the kit-manual
+ * visual world, which the user rejected; nothing imported it and it had
+ * drifted 930 lines away from the system that ships. It is in git history
+ * if it is ever wanted back.
+ */
+const SHEETS = ['site.css', 'site-lp.css']
 const read = (f: string) => readFileSync(`src/styles/${f}`, 'utf8').replace(/\r\n/g, '\n')
 
 /** Rule bodies, crudely: everything between a `{` and its `}`. */
@@ -57,11 +63,17 @@ describe('ink and the colour that reads on it', () => {
       }
     }
     expect(missing).toEqual([])
-    /* Four: the site, the product page, and the manual's two stocks. It was
-       five until the product page's dark theme came out — this number is
-       here so the check cannot pass by finding nothing, so lower it only
-       when a theme genuinely goes away, never to make a run green. */
-    expect(found, 'blocks defining --ink').toBeGreaterThanOrEqual(4)
+    /*
+     * Two: the site shell, and the product page.
+     *
+     * It was five, then four when the product page's dark theme came out,
+     * and it is two now that manual.css has gone with the kit-manual world
+     * and taken its paper and blueprint stocks with it. The floor exists so
+     * this check cannot pass by finding nothing to look at, so it comes
+     * down only when a theme genuinely goes away — which is what happened
+     * here — and never to make a run green.
+     */
+    expect(found, 'blocks defining --ink').toBeGreaterThanOrEqual(2)
   })
 
   it('never puts a hardcoded foreground on an --ink background', () => {
@@ -89,6 +101,7 @@ describe('ink and the colour that reads on it', () => {
         checked++
       }
     }
-    expect(checked, 'pairs checked').toBeGreaterThanOrEqual(4)
+    /* Same floor, same reason, as the count above. */
+    expect(checked, 'pairs checked').toBeGreaterThanOrEqual(2)
   })
 })

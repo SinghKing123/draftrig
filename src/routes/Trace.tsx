@@ -99,7 +99,6 @@ export function Trace() {
       <div className="lpw">
         <div className="sec-head center">
           <h2>One circuit, two views</h2>
-          <p>One supply, one resistor, one LED — drawn, and built.</p>
         </div>
 
         <div className="row" style={{ marginTop: 'clamp(30px, 5vh, 56px)' }}>

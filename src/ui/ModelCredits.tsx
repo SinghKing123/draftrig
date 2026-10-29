@@ -65,8 +65,7 @@ export function ModelCredits({ className }: { className?: string }) {
     <section className={`credits${className ? ` ${className}` : ''}`}>
       <h3>Models</h3>
       <p className="credits-lede">
-        Some parts are drawn with scanned models. The authors made them, and gave
-        permission to use them. Each one is listed below.
+        Some parts are drawn with scanned models. Their authors are below.
       </p>
       <ul>
         {credits.map((c) => (

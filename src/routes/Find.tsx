@@ -104,7 +104,7 @@ export function Find({ total }: { total: number | null }) {
     <section className="sec" id="parts" ref={box as React.RefObject<HTMLDivElement>}>
       <div className="lpw">
         <div className="sec-head center">
-          <h2>Search the catalog</h2>
+          <h2>Search the catalogue</h2>
           <p>
             Type <span className="mono">10k</span> and it finds the resistor and the pots.
           </p>
@@ -118,13 +118,20 @@ export function Find({ total }: { total: number | null }) {
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder={cat ? 'Search parts, values, part numbers' : 'Loading the catalog…'}
+            placeholder={cat ? 'Search parts, values, part numbers' : 'Loading the catalogue…'}
             disabled={!cat}
             aria-label="Search parts"
             spellCheck={false}
             autoComplete="off"
           />
-          {q && <button className="find-x" onClick={() => setQ('')} aria-label="Clear">×</button>}
+          {q && (
+            <button className="find-x" onClick={() => setQ('')} aria-label="Clear the search">
+              <svg viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                <path d="M3.5 3.5 L10.5 10.5 M10.5 3.5 L3.5 10.5" stroke="currentColor"
+                  strokeWidth="1.6" strokeLinecap="round" />
+              </svg>
+            </button>
+          )}
         </label>
 
         <div className="find-try">
@@ -148,7 +155,7 @@ export function Find({ total }: { total: number | null }) {
 
         <p className="find-count" role="status" aria-live="polite">
           {!cat
-            ? 'Loading the catalog'
+            ? 'Loading the catalogue'
             : none
               ? `No part matches ${q}`
               : q.trim()

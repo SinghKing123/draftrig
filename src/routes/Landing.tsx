@@ -1,158 +1,246 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { BRAND, pageTitle } from '@/brand'
 import { Wordmark } from '@/ui/Logo'
 import { AccountMenu } from '@/ui/AccountMenu'
 import { useAuth } from '@/auth/AuthProvider'
-import { Carousel } from './Carousel'
-import { RigBench, RigDesk, RigFrame } from '@/ui/RigScenes'
-import { Selected } from '@/ui/Selected'
-import { RigStand } from '@/ui/RigStand'
+import { Reveal, Tally, useInView, useScrolled } from '@/ui/motion'
+import { CrewSpot } from '@/ui/CrewSpot'
 import { ModelCredits } from '@/ui/ModelCredits'
-import { RoomShow } from './RoomShow'
+import { Showcase } from './Showcase'
+import { Walk } from './Walk'
 import { Trace } from './Trace'
 import { Find } from './Find'
 import { BuildWall } from './BuildWall'
-import { SetupShow } from './SetupShow'
 
 /**
  * The front page.
  *
- * The category convention, executed properly rather than escaped from: light
- * ground, dark text, one accent, generous air, and the product's own dark
- * renders carried in rounded containers. PRODUCT.md records this as a
- * standing preference with plyxl.com and nootles.com as the named references,
- * so the job here is restraint and spacing, not a concept.
+ * PRODUCT.md records a standing preference, set by the user and unchanged
+ * since: the category convention, played straight, with plyxl.com and
+ * nootles.com named as the craft bar. The job here is not a concept. It is
+ * to execute that convention at the level those two execute it, which turns
+ * out to be a much harder brief than inventing something.
  *
- * Everything on the page is the real product: the clips are captures of the
- * editor, the stills are screenshots of builds that ship with it, and the
- * search runs the actual catalog.
+ * What those pages actually do, and what this one now does:
+ *
+ *   - The page arrives. Nothing is static on load: the headline assembles,
+ *     the figures land, the first screenshot settles into place. All of it
+ *     through one grammar, in `ui/motion.tsx`.
+ *   - Density. Short sections, close together, each with something in it to
+ *     look at. The old page had eleven screens and four things on them.
+ *   - The product is the imagery, at full size, shot properly. Not a
+ *     thumbnail in a frame beside three paragraphs.
+ *   - The character has one home — a row along one band, every figure doing
+ *     a different job — instead of being tucked into six corners.
+ *
+ * What was removed and why, so it does not come back:
+ *
+ *   - The socket panel with the appliances you clicked. See `Walk.tsx`.
+ *   - The flat SVG vignettes of a desk and a bench. They were drawings of
+ *     the product standing in for photographs of it, on a page whose whole
+ *     argument is that the thing is real.
+ *   - Rig scattered across five sections, twice in front of the text.
  */
 
 /* ------------------------------------------------------------------ */
+/* Pieces                                                              */
+/* ------------------------------------------------------------------ */
 
-
-
-/** Reveals its child once, the first time it comes near the viewport. */
-function Rise({ children, delay = 0, className = '' }: {
-  children: React.ReactNode
-  delay?: number
-  className?: string
-}) {
-  const ref = useRef<HTMLDivElement>(null)
-  const [on, setOn] = useState(false)
-  useEffect(() => {
-    const el = ref.current
-    if (!el || typeof IntersectionObserver === 'undefined') return setOn(true)
-    const io = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) { setOn(true); io.disconnect() } },
-      { rootMargin: '-8% 0px -8% 0px' },
-    )
-    io.observe(el)
-    return () => io.disconnect()
-  }, [])
+/**
+ * A word inside the headline with the editor's selection chrome around it.
+ *
+ * The page's one piece of borrowed vocabulary, and it is borrowed from the
+ * product rather than from the category: a selection box, four corner
+ * handles and a dimension badge is what Draftrig draws around anything you
+ * pick. Putting it round a word in the headline says what the thing is in
+ * the same gesture as it says what the page is about, and it is the one
+ * moment on the page that could not belong to any other product.
+ *
+ * It draws itself a beat after the line lands, so the reader sees the word
+ * first and the box arrive on it — which is the order it happens in the
+ * editor.
+ */
+function Picked({ children, dim }: { children: React.ReactNode; dim: string }) {
+  const [ref, seen] = useInView<HTMLSpanElement>()
   return (
-    <div ref={ref} className={`rise ${className}`} data-on={on} style={{ transitionDelay: `${delay}ms` }}>
-      {children}
-    </div>
+    <span className="picked" ref={ref} data-on={seen || undefined}>
+      <span className="picked-word">{children}</span>
+      <span className="picked-box" aria-hidden="true">
+        <i /><i /><i /><i />
+      </span>
+      {dim && <span className="picked-dim mono" aria-hidden="true">{dim}</span>}
+    </span>
   )
 }
 
-function useStuck(): boolean {
-  const [stuck, setStuck] = useState(false)
-  useEffect(() => {
-    const on = () => setStuck(window.scrollY > 8)
-    on()
-    window.addEventListener('scroll', on, { passive: true })
-    return () => window.removeEventListener('scroll', on)
-  }, [])
-  return stuck
-}
-
-function useCatalogCount(): number | null {
-  const [n, setN] = useState<number | null>(null)
+/**
+ * The two counts on this page, read from the thing they count.
+ *
+ * Both of these were typed in. The page said 172 parts in two places while
+ * the catalogue held 194, because the number was copied out of a document
+ * that was written when it was true. A figure a reader can check in ten
+ * seconds by opening the editor is the worst kind to get wrong, and the
+ * only way to not get it wrong again is to never write it down.
+ *
+ * The import is the same module the search below already pulls in, so this
+ * costs nothing that was not already being paid.
+ */
+function useCounts(): { parts: number | null; builds: number | null } {
+  const [n, setN] = useState<{ parts: number | null; builds: number | null }>({
+    parts: null,
+    builds: null,
+  })
   useEffect(() => {
     let live = true
-    void import('@/parts/catalog').then((m) => { if (live) setN(m.allParts().length) })
-    return () => { live = false }
+    void Promise.all([import('@/parts/catalog'), import('@/io/starters')]).then(
+      ([cat, starters]) => {
+        if (!live) return
+        setN({ parts: cat.allParts().length, builds: starters.STARTERS.length })
+      },
+    )
+    return () => {
+      live = false
+    }
   }, [])
   return n
 }
 
-/* ------------------------------------------------------------------ */
-
-const Check = () => (
-  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-    <path d="M3 8.4 L6.3 11.8 L13 4.6" stroke="currentColor" strokeWidth="2"
-      strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-)
+/**
+ * The first screenshot, settling into the page.
+ *
+ * It starts tipped back a few degrees and slightly small, and comes upright
+ * as it enters. That is the one piece of three-dimensional movement on the
+ * page and it is spent here on purpose: this is the moment the reader first
+ * sees the actual product, and a thing that rights itself in front of you
+ * reads as being presented rather than as having always been there.
+ *
+ * The perspective lives on the wrapper rather than the element, so the tilt
+ * is a real projection and not a squash.
+ */
+function Showpiece({ parts, builds }: { parts: number | null; builds: number | null }) {
+  const [ref, seen] = useInView<HTMLDivElement>('-4% 0px -10% 0px')
+  return (
+    <div className="showpiece" ref={ref} data-on={seen || undefined}>
+      <div className="showpiece-frame">
+        <img
+          src="/shots/cine-ui-room.jpg"
+          alt="The Draftrig editor, with a room laid out in it: a desk, two screens, a tower and the wiring between them"
+          width={1440}
+          height={900}
+          decoding="async"
+        />
+      </div>
+      {/*
+        * A caption, not a stat row.
+        *
+        * This was three cells of big figure over small label, and the third
+        * cell's figure was the words "No account" — a sentence set at two
+        * rem in a slot the reader reads as a number. The moment a
+        * non-number sits in that row the row is a template being filled in
+        * rather than three facts being stated.
+        *
+        * As one line it is a caption under a photograph, which is what it
+        * always was. Both counts are still counted rather than typed, and
+        * each holds its place with a dash until it arrives so nothing
+        * under it moves.
+        */}
+      <p className="showpiece-cap">
+        {parts === null ? <span className="showpiece-wait">—</span> : <Tally to={parts} />} parts in
+        the catalogue
+        <span className="showpiece-dot" aria-hidden="true" />
+        {builds === null ? <span className="showpiece-wait">—</span> : <Tally to={builds} />} builds
+        you can open
+        <span className="showpiece-dot" aria-hidden="true" />
+        no account needed to try it
+      </p>
+    </div>
+  )
+}
 
 /** One stroke weight, one size, drawn rather than borrowed. */
 const ICONS = {
   solver: (
-    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M3 12h4l2-7 4 14 2-7h6" />
     </svg>
   ),
   display: (
-    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <rect x="2.5" y="4.5" width="19" height="13" rx="2" /><path d="M8 21h8M12 17.5V21" />
     </svg>
   ),
   code: (
-    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M9 18l-5-6 5-6M15 6l5 6-5 6" />
     </svg>
   ),
   wire: (
-    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <circle cx="5" cy="19" r="2" /><circle cx="19" cy="5" r="2" /><path d="M5 17c0-8 14-4 14-10" />
     </svg>
   ),
   frame: (
-    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M12 2.5 21 7v10l-9 4.5L3 17V7z" /><path d="M3 7l9 4.5L21 7M12 11.5V21" />
     </svg>
   ),
   bom: (
-    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M5 3.5h14v17l-3-2-2 2-2-2-2 2-2-2-3 2z" /><path d="M9 8h6M9 12h6" />
     </svg>
   ),
 }
 
 /*
- * Six labels, no sentences.
+ * What is in it, one line each.
  *
- * Each of these carried a line of explanation underneath. They were the kind
- * of copy that exists because a card looks empty without it, nobody reads
- * them, and a grid of six short paragraphs is what a page looks like when it
- * has nothing to show. The product is two sections below; these are a list
- * of what is in it.
+ * Every line is a sentence in the simplified technical English the rest of
+ * the page is written in: one idea, active voice, present tense, and the
+ * same word for the same thing throughout. "Wire" is a wire everywhere on
+ * this page; it is never a lead, a link or a connection.
  */
 const FEATURES = [
-  { title: 'Modified nodal analysis', icon: ICONS.solver },
-  { title: 'LCD and OLED, decoded', icon: ICONS.display },
-  { title: 'Sketches for Uno, Nano, ESP', icon: ICONS.code },
-  { title: 'Wiring that routes itself', icon: ICONS.wire },
-  { title: 'Extrusion, panels, fasteners', icon: ICONS.frame },
-  { title: 'Priced bill of materials', icon: ICONS.bom },
+  {
+    icon: ICONS.solver,
+    title: 'A real solver',
+    body: 'Modified nodal analysis, stepped continuously.',
+  },
+  {
+    icon: ICONS.display,
+    title: 'Panels that decode',
+    body: 'A panel reads the bus traffic on its own pins. An uninitialised panel stays dark.',
+  },
+  {
+    icon: ICONS.code,
+    title: 'Sketches that run',
+    body: 'Write a sketch for an Uno, a Nano or an ESP board. Each board has its own pin map.',
+  },
+  {
+    icon: ICONS.wire,
+    title: 'Wire with a length',
+    body: 'A wire goes from pin to pin around what is in the way. It tells you how long it is.',
+  },
+  {
+    icon: ICONS.frame,
+    title: 'Structure in the same file',
+    body: 'Extrusion, panels and fasteners sit with the board they hold.',
+  },
+  {
+    icon: ICONS.bom,
+    title: 'A list you can order',
+    body: 'Every part and every screw, with a price and a weight.',
+  },
 ]
-
 
 /**
  * A 555 output, running.
  *
- * The page says it solves and then shows photographs of it having solved.
- * This is the claim in motion: the waveform the first circuit most people
- * here will build actually puts out, drawn at column width and panned on a
- * loop. The period and the duty are the ones the lab preset produces, so it
- * is the right shape rather than a decorative zigzag; it is not live data
- * and the page never says it is.
- *
- * Two copies end to end, translated by exactly half, which is what makes
- * the loop seamless without measuring anything.
+ * The shape the lab preset actually puts out — the period and the duty are
+ * that circuit's — drawn at full width and panned on a loop. Two copies end
+ * to end, translated by exactly half, which is what makes the loop seamless
+ * without measuring anything. It is not live data, and the page does not say
+ * it is.
  */
 function Wave() {
   const HI = 16
@@ -180,247 +268,199 @@ function Wave() {
 /* ------------------------------------------------------------------ */
 
 export function Landing() {
-  const stuck = useStuck()
+  const scrolled = useScrolled()
   const accounts = useAuth().enabled
-  const parts = useCatalogCount()
+  const { parts, builds } = useCounts()
 
-  useEffect(() => { document.title = pageTitle() }, [])
-
+  useEffect(() => {
+    document.title = pageTitle()
+  }, [])
 
   return (
     <div className="lp">
-      <header className="nav" data-stuck={stuck}>
-        <div className="nav-in">
-          <Link to="/" aria-label={BRAND.name}><Wordmark size={20} /></Link>
+      {/* ---- navigation ---- */}
+      <header className="nav" data-stuck={scrolled || undefined}>
+        <div className="nav-pill">
+          <Link to="/" className="nav-mark" aria-label={BRAND.name}>
+            <Wordmark size={19} />
+          </Link>
           <nav className="nav-links">
-            <a href="#features">Features</a>
-            <a href="#parts">Parts</a>
-            <a href="#setup">New</a>
+            <a href="#how">How it works</a>
             <a href="#builds">Builds</a>
+            <a href="#inside">Inside</a>
+            <a href="#parts">Parts</a>
           </nav>
-          <div className="nav-sp" />
-          <AccountMenu compact />
-          <Link className="btn btn-primary btn-sm" to="/projects">Try Draftrig</Link>
+          <div className="nav-end">
+            <AccountMenu compact />
+            <Link className="btn btn-primary btn-sm" to="/projects">
+              Try Draftrig
+            </Link>
+          </div>
         </div>
       </header>
 
       {/* ---- hero ---- */}
       <section className="hero">
-        <div className="lpw hero-split">
-          <Rise className="hero-copy">
-            <Link className="pill" to="/app?start=lab9-blinker">
-              <b>New</b> 555 breadboard labs
-              <span className="chev" aria-hidden="true">›</span>
+        <div className="lpw hero-copy">
+          <Reveal now delay={40} as="p" className="hero-flag">
+            <Link to="/app?start=lab9-blinker">
+              <b>New</b>
+              <span>555 breadboard labs</span>
+              {/* Drawn, not typed. Every other mark on this page is a
+                  stroked path at one weight, and a `›` is whatever the
+                  reader's fallback font decides it is. */}
+              <svg className="chev" viewBox="0 0 8 12" fill="none" aria-hidden="true">
+                <path d="M2 1.5 L6.5 6 L2 10.5" stroke="currentColor" strokeWidth="1.6"
+                  strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </Link>
+          </Reveal>
 
-            <h1>Run it before you build it.</h1>
-            <p className="hero-sub">
-              A bench you can put anything on. Boards, frames, screens, a whole desk and
-              the mains behind it — laid out in 3D, wired point to point, and solved.
-            </p>
-            <div className="hero-cta">
-              <Link className="btn btn-primary btn-lg" to="/projects">
-                Try Draftrig<span className="arr" aria-hidden="true" />
-              </Link>
-              <a className="btn btn-ghost btn-lg" href="#features">See how it works</a>
-            </div>
-          </Rise>
+          <h1>
+            <Reveal now delay={110} as="span" className="hero-line">
+              Run it before
+            </Reveal>
+            <Reveal now delay={190} as="span" className="hero-line">
+              you <Picked dim={parts === null ? '' : `${parts} parts`}>build</Picked> it.
+            </Reveal>
+          </h1>
 
-          {/*
-            * The build, selected.
-            *
-            * Not a screenshot in a rounded frame, which is what the category
-            * ships and what the deck below already does properly. This is the
-            * desk-setup document drawn as the editor would have it: picked,
-            * boxed, named, and measured. The millimetres are that build's.
-            */}
-          <Rise delay={110} className="hero-art">
-            <Selected label="Desk setup" dim="1600 × 740 mm">
-              <RigDesk />
-            </Selected>
-          </Rise>
+          <Reveal now delay={300} as="p" className="hero-sub">
+            Put the parts on a bench in 3D. Join them with wire. Switch on the power
+            and the circuit solves.
+          </Reveal>
+
+          <Reveal now delay={380} className="hero-cta">
+            <Link className="btn btn-primary btn-lg" to="/projects">
+              Try Draftrig<span className="arr" aria-hidden="true" />
+            </Link>
+            <a className="btn btn-ghost btn-lg" href="#how">
+              See how it works
+            </a>
+          </Reveal>
         </div>
 
-        <div className="lpw">
-          <Rise delay={170}>
-            <Carousel />
-          </Rise>
-        </div>
+        {/*
+          * Two of them, at opposite ends of the hero's floor.
+          *
+          * Not six in a row. Six figures side by side is a cast lineup, and
+          * six copies of one figure is a lineup of the same drawing — which
+          * is what this was, and it read as a borrowed arrangement with the
+          * thing that made it work left out.
+          *
+          * Two, far apart, facing in, on the line the grid stops at. They
+          * frame the headline and the action between them rather than
+          * forming a band under it, and the other two stand further down
+          * the page where there is something for them to be doing.
+          */}
+        <Reveal now delay={480} className="hero-floor">
+          <CrewSpot who="rig" act="solder" mood="happy" size={124} look={1} className="hero-floor-l" />
+          <CrewSpot who="dot" act="point" mood="idle" size={116} look={1} flip className="hero-floor-r" />
+        </Reveal>
       </section>
 
-      {/*
-        * The room first, then the socket arithmetic.
-        *
-        * The room is the picture that answers "what is this for" without
-        * anybody reading a word, so it goes directly under the hero. The
-        * socket demo is the better argument but it is an argument -- it
-        * wants a reader who has already decided to stay, and it reads far
-        * better as the answer to a room somebody has just looked at than as
-        * the first thing on the page after the fold.
-        */}
-      <RoomShow />
+      {/* ---- the product, full size ---- */}
+      <Showpiece parts={parts} builds={builds} />
 
-      {/* ---- what it does now that it did not last month ---- */}
-      <SetupShow />
+      {/* ---- how it works, driven by the scrollbar ---- */}
+      <Walk />
 
-      {/* ---- builds ---- */}
-      <BuildWall />
+      {/* ---- what people make ---- */}
+      <Showcase />
 
-      {/*
-        * Two more of him, at the two other kinds of work.
-        *
-        * The page had one claim about scope and a lot of boards. This is the
-        * scope: the same editor solders a board and bolts a frame, and the
-        * measurements under each are that build's own.
-        */}
-      <section className="sec works">
+      {/* ---- what is inside ---- */}
+      <section className="sec inside" id="inside">
         <div className="lpw">
-          <Rise className="sec-head center">
-            <h2>Same bench, either job.</h2>
-            <p>
-              A board of twenty-two parts and a rack a metre and a third tall are
-              the same document, drawn the same way, priced off the same list.
-            </p>
-          </Rise>
+          <Reveal className="sec-head center">
+            <h2>What is inside</h2>
+          </Reveal>
 
-          <div className="works-grid">
-            <Rise>
-              <Selected label="Bench clock" dim="22 parts · $37.89" live={false}>
-                <RigBench />
-              </Selected>
-              <h3>Boards, down to the pad</h3>
-              <p>
-                Perfboard, a vice, an iron. Parts sit where they sit on the real
-                thing, and the solver runs on what you joined.
-              </p>
-            </Rise>
-            <Rise delay={90}>
-              <Selected label="Extrusion rack" dim="600 × 400 × 1300 mm" live={false}>
-                <RigFrame />
-              </Selected>
-              <h3>Frames, down to the T-nut</h3>
-              <p>
-                2020 profile, corner brackets, every screw counted. It comes out
-                as a cut list you can order from.
-              </p>
-            </Rise>
-          </div>
-        </div>
-      </section>
-
-      {/* ---- features ---- */}
-      <section className="sec sec-alt" id="features">
-        {/* Presenting the list, and looking at it rather than at you. */}
-        <RigStand act="point" mood="happy" side="right" size={92} look={-1} />
-        <div className="lpw">
-          <Rise className="sec-head center">
-            <h2>What it does</h2>
-          </Rise>
-
-          <div className="feats">
+          <ul className="feats">
             {FEATURES.map((f, i) => (
-              <Rise key={f.title} delay={i * 50}>
-                <div className="feat">
-                  <span className="feat-ico">{f.icon}</span>
-                  <h3>{f.title}</h3>
-                </div>
-              </Rise>
+              <Reveal key={f.title} as="li" delay={i * 60} className="feat">
+                <span className="feat-ico">{f.icon}</span>
+                <h3>{f.title}</h3>
+                <p>{f.body}</p>
+              </Reveal>
             ))}
-          </div>
+          </ul>
         </div>
       </section>
 
-      {/* ---- the drawn circuit, beside the built one ---- */}
+      {/* ---- the drawn circuit beside the built one ---- */}
       <Trace />
-
-      {/* ---- wiring row ---- */}
-      <section className="sec">
-        <div className="lpw">
-          <div className="row flip">
-            <Rise className="row-copy">
-              <h2>Point-to-point wiring</h2>
-              <p>Click a pin, click another. The route finds its own way around.</p>
-              <ul className="row-list">
-                <li><Check /> Pins sit where they do on the real part</li>
-                <li><Check /> Parts snap into breadboards and perfboard holes</li>
-                <li><Check /> Current shows on the wire that is carrying it</li>
-              </ul>
-            </Rise>
-            <Rise className="row-art" delay={80}>
-              <div className="art">
-                <video
-                  src="/clips/clip-wire.mp4"
-                  poster="/clips/clip-wire.jpg"
-                  muted
-                  loop
-                  playsInline
-                  autoPlay
-                  aria-hidden="true"
-                />
-              </div>
-            </Rise>
-          </div>
-        </div>
-      </section>
 
       <Wave />
 
-      {/* ---- parts search ---- */}
+      {/* ---- build around a thing you already own ---- */}
+      <section className="sec pair">
+        <div className="lpw pair-grid">
+          <Reveal className="pair-art">
+            <img
+              src="/shots/cine-stand.jpg"
+              alt="A frame of aluminium extrusion built around an upright games console"
+              width={1280}
+              height={860}
+              loading="lazy"
+              decoding="async"
+            />
+            <span className="pair-tag mono">33 mm clear each side</span>
+          </Reveal>
+          <Reveal delay={90} className="pair-copy">
+            <h2>Build around what you own.</h2>
+            <p>
+              The console is a scanned model at its own size. The frame is 2020
+              extrusion around it.
+            </p>
+            <p>
+              You set the gap because you can see the shape. 33 mm each side lets
+              air into the intake, and lets you lift the console out past the back
+              rail.
+            </p>
+            <Link className="btn btn-ghost" to="/app?start=ps5-stand">
+              Open this stand<span className="arr" aria-hidden="true" />
+            </Link>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ---- the catalogue, searchable ---- */}
       <Find total={parts} />
 
-      {/*
-        * The close.
-        *
-        * It was a heading and two buttons on empty grid, which is a page
-        * trailing off rather than ending. A page needs a last beat with some
-        * weight in it, and the obvious one here is the bench with the lights
-        * off: the same dark the editor is, inset in the paper, so the last
-        * thing before the footer is the thing being sold.
-        *
-        * Rig stands on its top edge with his feet on the join, which is the
-        * one place on the page where he is lit from two sides.
-        */}
+      {/* ---- builds assembling themselves ---- */}
+      <BuildWall />
+
+      {/* ---- the close ---- */}
       <section className="sec end-wrap">
         <div className="lpw">
           <div className="end">
-            <RigStand act="game" mood="happy" side="left" size={118} inset={34} look={1} />
-            <Rise>
-              <h2>Start building</h2>
+            <Reveal className="end-copy">
+              <h2>The bench is open.</h2>
               <p>
-                The bench is open. Lay something out, wire it and run it without an
-                account — one is only needed to keep what you made.
+                Build, wire and run without an account. You need an account only to
+                keep your work.
               </p>
               <div className="end-cta">
                 <Link className="btn btn-primary btn-lg" to="/projects">
                   Try Draftrig<span className="arr" aria-hidden="true" />
                 </Link>
-                {accounts && <Link className="btn btn-ghost btn-lg" to="/signin">Sign in</Link>}
+                {accounts && (
+                  <Link className="btn btn-ghost btn-lg" to="/signin">
+                    Sign in
+                  </Link>
+                )}
               </div>
-            </Rise>
+            </Reveal>
+            <CrewSpot who="rig" act="point" mood="happy" size={132} look={-1} bare className="end-rig" />
           </div>
         </div>
       </section>
 
-      {/*
-        * A footer with the rest of the site in it.
-        *
-        * It was a copyright line and two links, which on a page this long
-        * reads as the site having run out rather than finished. Three short
-        * columns is the smallest thing that does the job a footer is for:
-        * somewhere to go next when the buttons above were not what you
-        * wanted.
-        *
-        * Nothing invented. Every link goes to a route that exists, which is
-        * why there is no Pricing, no Docs, no Careers and no social row.
-        */}
+      {/* ---- footer ---- */}
       <footer className="foot">
         <div className="lpw foot-grid">
           <div className="foot-brand">
             <Wordmark size={20} />
-            <p>
-              A bench for anything functional. Lay it out, wire it, and run it before
-              you buy a single part.
-            </p>
           </div>
 
           <nav className="foot-col">
@@ -433,8 +473,8 @@ export function Landing() {
 
           <nav className="foot-col">
             <h3>This page</h3>
-            <a href="#features">What it does</a>
-            <a href="#setup">Whole setups</a>
+            <a href="#how">How it works</a>
+            <a href="#inside">What is inside</a>
             <a href="#builds">Built with it</a>
           </nav>
 
