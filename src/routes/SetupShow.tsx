@@ -40,7 +40,7 @@ const KIT: Appliance[] = [
   { key: 'mon1', label: 'Monitor, 27"', defId: 'monitor-desk', params: { diagonal: '27', hz: '144' }, on: true },
   { key: 'mon2', label: 'Monitor, 27"', defId: 'monitor-desk', params: { diagonal: '27', hz: '60' }, on: true },
   { key: 'tv', label: 'Television, 55"', defId: 'tv-set', params: { diagonal: '55' }, on: true },
-  { key: 'console', label: 'Games console', defId: 'console-game', params: { load: 70 }, on: true },
+  { key: 'console', label: 'PlayStation 5', defId: 'console-game', params: { load: 70 }, on: true },
   { key: 'bar', label: 'Soundbar', defId: 'soundbar', params: { watts: 200 }, on: true },
   { key: 'psu', label: 'USB charger', defId: 'charger-usb-mains', params: { watts: '65', load: 70 }, on: true },
   { key: 'heat', label: 'Fan heater, 3 kW', defId: 'heater-fan', params: { watts: '3000' }, on: false, hint: 'Try this one' },

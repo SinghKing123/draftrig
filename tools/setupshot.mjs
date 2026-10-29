@@ -10,7 +10,7 @@ const BARE = `
   .app-center>.console,.topbar,.statusbar{display:none!important}
 `
 const b = await chromium.launch({ channel: 'msedge' })
-const p = await b.newPage({ viewport: { width: 900, height: 760 }, deviceScaleFactor: 2 })
+const p = await b.newPage({ viewport: { width: 1320, height: 700 }, deviceScaleFactor: 2 })
 const errs = []
 p.on('pageerror', (e) => errs.push(e.message))
 await p.addInitScript(() => { localStorage.setItem('tour.seen.v1','1'); localStorage.setItem('draftrig.nav.seen.v1','1') })
@@ -18,10 +18,10 @@ await p.goto(BASE + '/app', { waitUntil: 'domcontentloaded' })
 await p.waitForTimeout(10000)
 await p.evaluate(() => { const d = window.draftrig.doc.getState(); d.pinQuality('high'); d.setView({ gizmo:false, grid:false, ports:false }) })
 await p.addStyleTag({ content: BARE })
-await p.setViewportSize({ width: 899, height: 760 }); await p.waitForTimeout(500)
-await p.setViewportSize({ width: 900, height: 760 }); await p.waitForTimeout(600)
+await p.setViewportSize({ width: 1319, height: 700 }); await p.waitForTimeout(500)
+await p.setViewportSize({ width: 1320, height: 700 }); await p.waitForTimeout(600)
 
-for (const [id, az, pol, fill] of [['ps5-stand', 34, 68, 0.80]]) {
+for (const [id, az, pol, fill] of [['room-setup', 40, 66, 0.70]]) {
   const ok = await p.evaluate((s) => {
     const x = window.draftrig.starters.find((b) => b.id === s)
     if (!x) return false

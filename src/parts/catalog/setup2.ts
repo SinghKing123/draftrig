@@ -551,24 +551,27 @@ const console_: PartDef = {
     str(p, 'style', 'tower') === 'tower'
       ? { url: 'models/ps5-console.glb', fit: 'bbox', credit: { title: 'PS5', author: 'rtql8d', license: 'CC-BY-4.0', source: 'https://sketchfab.com/3d-models/ps5-d788de3735964151a3e24fd59c0f1956' } }
       : undefined,
-  name: 'Games console',
+  name: 'PlayStation 5',
   category: 'computer',
-  blurb: 'Upright or flat, and hot either way',
-  tags: ['console', 'games console', 'playstation', 'xbox', 'switch', 'gaming', 'hdmi', 'av', 'tv'],
+  blurb: '390 mm of console, upright or flat, and hot either way',
+  tags: ['ps5', 'playstation', 'playstation 5', 'console', 'games console', 'xbox', 'series x', 'switch', 'gaming', 'hdmi', 'av', 'tv'],
   doc: {
     price: 480,
     description:
-      'A console. It wants two things from a layout and they fight: clearance for the intake, and somewhere out of the way. This is a box of the right size with the vents on the right faces, so the clearance is something you can see.',
+      'A PlayStation 5, at 104 by 390 by 260 mm. It wants two things from a layout and they fight: clearance for the intake, and somewhere out of the way.\n\nUpright it is drawn with a scan of the real console, so the shape you build around is the shape. Lying flat it is the same object on its side, drawn as the box it is, because the scan is of a console standing up.\n\nUse it for any console of about this size. The name is the one it was measured from.',
   },
   params: [
     REGION_PARAM,
-    { key: 'style', label: 'Style', type: 'enum', default: 'tower', group: 'Console', options: [{ value: 'tower', label: 'Upright' }, { value: 'flat', label: 'Flat' }, { value: 'handheld-dock', label: 'Dock' }] },
+    { key: 'style', label: 'Standing', type: 'enum', default: 'tower', group: 'Console', options: [{ value: 'tower', label: 'Upright' }, { value: 'flat', label: 'On its side' }] },
     { key: 'on', label: 'On', type: 'bool', default: true, group: 'Control' },
     { key: 'load', label: 'Load', type: 'number', unit: '%', default: 70, min: 0, max: 100, step: 5, group: 'Control' },
   ],
   solids: (p) => {
     const style = str(p, 'style', 'tower')
-    const dim: Record<string, Vec3> = { tower: [104, 390, 260], flat: [301, 70, 151], 'handheld-dock': [104, 175, 50] }
+    /* One object, two ways up. Flat is the upright figure with width and
+       height swapped, which is what lying a console down actually does to
+       it; the old numbers here described a different, smaller console. */
+    const dim: Record<string, Vec3> = { tower: [104, 390, 260], flat: [390, 104, 260] }
     const [W, H, D] = dim[style] ?? dim.tower
     const on = bool(p, 'on', true)
     const out: Solid[] = [
@@ -587,7 +590,10 @@ const console_: PartDef = {
     return out
   },
   ports: (p) => {
-    const dim: Record<string, Vec3> = { tower: [104, 390, 260], flat: [301, 70, 151], 'handheld-dock': [104, 175, 50] }
+    /* One object, two ways up. Flat is the upright figure with width and
+       height swapped, which is what lying a console down actually does to
+       it; the old numbers here described a different, smaller console. */
+    const dim: Record<string, Vec3> = { tower: [104, 390, 260], flat: [390, 104, 260] }
     const [, H, D] = dim[str(p, 'style', 'tower')] ?? dim.tower
     return [
       ...mainsPorts([-40, H * 0.12, -D / 2 - 6], [0, 0, -1], '', [13, 0, 0]),

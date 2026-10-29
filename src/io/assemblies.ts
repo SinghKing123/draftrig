@@ -360,7 +360,7 @@ export function ps5Stand(): Doc {
   for (const sx of [-1, 1] as const) b.beamX(sx * 0, SHELF - 14, 0, PX * 2 - 20)
 
   /* --- the console --- */
-  b.add('console-game', [0, SHELF + 9, 0], { style: 'tower', on: true, load: 70 }, [0, 0, 0], 'Console')
+  b.add('console-game', [0, SHELF + 9, 0], { style: 'tower', on: true, load: 70 }, [0, 0, 0], 'PlayStation 5')
 
   /* --- what holds it together --- */
   const joints: [number, number, number][] = []

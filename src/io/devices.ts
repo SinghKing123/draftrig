@@ -957,8 +957,17 @@ export function roomSetup(): Doc {
   const psu = b.add('charger-usb-mains', [DX - 150, DH, DZ - DD / 2 + 120], { watts: '65', ports: '2', load: 70 }, [0, 0, 0], 'USB charger')
 
   /* --- under it --- */
-  const pc = b.add('pc-tower', [DX + 660, 0, DZ - DD / 2 + 250], { size: 'midi', psu: '850', gpu: true, load: 35 }, [0, -20, 0], 'Tower')
+  const pc = b.add('pc-tower', [DX + 660, 0, DZ - DD / 2 + 250], { size: 'midi', psu: '850', gpu: true, load: 35 }, [0, 0, 0], 'Tower')
   const net = b.add('router-wifi', [DX - 700, 0, DZ - DD / 2 + 160], { aerials: 4, ports: '4' }, [0, 8, 0], 'Router')
+  /*
+   * The router runs on 12 V, not on mains.
+   *
+   * Its only electrical ports are v12 and gnd, so wiring the three mains
+   * cores into it is wiring them into terminals that do not exist -- which
+   * is what the netlist test caught. It gets the brick it really comes
+   * with, and the brick is what sits on the floor.
+   */
+  const brick = b.add('power-adapter', [DX - 560, 0, DZ - DD / 2 + 120], { volts: '12', amps: 2, plug: 'uk' }, [0, 0, 0], 'Router supply')
 
   /* --- the media end of the same wall --- */
   /*
@@ -969,9 +978,22 @@ export function roomSetup(): Doc {
    * next to a photoscanned desk. Standing it on the floor is the honest way
    * to get the good picture, and it is what most of these actually do.
    */
-  const tv = b.add('tv-set', [3500, 0, 300], { diagonal: '55', stand: 'feet' }, [0, 0, 0], 'Television')
+  /*
+   * On the wall, not on feet.
+   *
+   * Feet put the panel on the floor with its inlet behind them, and every
+   * route to that inlet either goes under a foot or across the panel --
+   * which the clearance test counts as a cable through a part, correctly.
+   * Hung on the wall the cable drops straight down behind it to the socket,
+   * which is both what clears and what anybody with a wall-mounted
+   * television actually has.
+   *
+   * It costs the scan, which only fits the configuration with a stand. That
+   * is moot while models/tv.glb draws nothing anyway.
+   */
+  const tv = b.add('tv-set', [3500, 1150, 60], { diagonal: '55', stand: 'none' }, [0, 0, 0], 'Television')
   const bar = b.add('soundbar', [3500, 0, 620], { watts: 200 }, [0, 0, 0], 'Soundbar')
-  const con = b.add('console-game', [4050, 0, 470], { load: 70 }, [0, -14, 0], 'Console')
+  const con = b.add('console-game', [4050, 0, 470], { load: 70 }, [0, 0, 0], 'PlayStation 5')
 
   /* --- mains --- */
   /* Two sockets on the back wall at 450, one behind the desk and one behind
@@ -983,22 +1005,42 @@ export function roomSetup(): Doc {
   const CORES: [string, string][] = [['l', BROWN], ['n', BLUE_N], ['e', GREEN_E]]
   const FLOORY = 28
 
-  /** Down to the floor, across, and back up. */
-  const run = (from: string, to: string, ports: [string, string], col: string, mm2: number) => {
+  /**
+   * Down to the floor, across, and back up.
+   *
+   * `behind` is how far short of the target to come up, and it is not
+   * decoration. These parts carry their mains inlet on the back face, so a
+   * waypoint in front of one means the last leg crosses the whole body:
+   * the clearance test caught three cables through the tower and three
+   * through the television doing exactly that. Coming up behind the part
+   * is both what clears it and what actually happens behind a desk.
+   *
+   * Clamped to 70 so nothing routes into the wall, which is at zero.
+   */
+  const run = (
+    from: string,
+    to: string,
+    ports: [string, string],
+    col: string,
+    mm2: number,
+    behind = -80,
+  ) => {
     const a = at(from)
     const c = at(to)
+    const lane = Math.max(70, c[2] + behind)
     b.wireVia([from, ports[0]], [to, ports[1]], [
-      [a[0], FLOORY, a[2] + 80],
-      [c[0], FLOORY, c[2] + 80],
+      [a[0], FLOORY, Math.max(70, a[2] - 80)],
+      [c[0], FLOORY, lane],
     ], col, mm2)
   }
 
   /* Socket to lead, then everything at the desk off the lead's six ways. */
   for (const [core, col] of CORES) run(w1, lead, ['a' + core, core], col, 2.5)
-  for (const [core, col] of CORES) run(lead, pc, ['1' + core, core], col, 1.5)
+  for (const [core, col] of CORES) run(lead, pc, ['1' + core, core], col, 1.5, -280)
   for (const [core, col] of CORES) run(lead, mon1, ['2' + core, core], col, 0.75)
   for (const [core, col] of CORES) run(lead, mon2, ['3' + core, core], col, 0.75)
-  for (const [core, col] of CORES) run(lead, net, ['4' + core, core], col, 0.75)
+  b.wire([brick, 'p'], [net, 'v12'], WHITE, 0.5)
+  b.wire([brick, 'n'], [net, 'gnd'], BLACK, 0.5)
   /* The charger is plugged straight into the lead: no floor, no waypoints. */
   for (const [core, col] of CORES) b.wire([lead, '5' + core], [psu, core], col, 0.75)
 
@@ -1013,15 +1055,15 @@ export function roomSetup(): Doc {
    * technically a route, visibly nothing anybody has ever seen behind a
    * television. Down the wall, along it, then out to the device.
    */
-  const wallRun = (to: string, ports: [string, string], col: string, mm2: number) => {
+  const wallRun = (to: string, ports: [string, string], col: string, mm2: number, behind = 70) => {
     const c = at(to)
+    const lane = Math.max(70, c[2] - behind)
     b.wireVia([w2, ports[0]], [to, ports[1]], [
       [at(w2)[0], FLOORY, 70],
-      [c[0], FLOORY, 70],
-      [c[0], FLOORY, c[2] - 70],
+      [c[0], FLOORY, lane],
     ], col, mm2)
   }
-  for (const [core, col] of CORES) wallRun(tv, ['a' + core, core], col, 1.5)
+  for (const [core, col] of CORES) run(w2, tv, ['a' + core, core], col, 1.5, 0)
   for (const [core, col] of CORES) wallRun(bar, ['b' + core, core], col, 1.0)
   for (const [core, col] of CORES) wallRun(con, ['b' + core, core], col, 1.0)
 
