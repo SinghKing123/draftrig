@@ -33,72 +33,101 @@ import { CrewSpot } from '@/ui/CrewSpot'
 
 interface Step {
   n: string
+  /** One word. The reader is scanning four of these, not reading them. */
   title: string
-  body: string
-  /** The photograph, and whether it is a render or the editor around one. */
+  /**
+   * The step as specification, not as prose.
+   *
+   * Each of these was a three-sentence paragraph, and three sentences is
+   * the wrong form for a step in a list of four: a reader working out
+   * whether this tool does what they need is scanning for a number and a
+   * unit, and a sentence makes them read a clause to find out there is
+   * none. Two columns, a term and a value, is both shorter and says more.
+   *
+   * Every value here is either a real figure from the build in the picture
+   * beside it or a named method. Nothing is a claim.
+   */
+  spec: [string, string][]
   shot: string
   alt: string
-  /** A short true thing about the frame. Never a quantity the repository
-      could count for itself — those go stale, and this page has already
-      shipped one number that did. */
-  fact: string
 }
 
 const STEPS: Step[] = [
   {
     n: '01',
-    title: 'Put it where it goes',
-    body:
-      'Set the size of the room. Put the desk against the wall. The floor is at zero, so each part stands at its real height.',
+    title: 'Place',
+    spec: [
+      ['Room', '4600 × 3400 × 2400 mm'],
+      ['Floor', 'Z = 0, parts seat on it'],
+      ['Snap', '2.54 mm grid'],
+    ],
     shot: '/shots/cine-room.jpg',
     alt: 'A room with a desk against the wall, two screens on it and a tower below',
-    fact: 'The room is a part',
   },
   {
     n: '02',
-    title: 'Join the pins with wire',
-    body:
-      'Click one pin. Click the other. The wire goes around what is between them, and it has a length. You find out that 1.5 m does not reach before you buy it.',
+    title: 'Wire',
+    spec: [
+      ['Route', 'Pin to pin, around obstacles'],
+      ['Length', 'Reported, mm'],
+      ['Clearance', 'Checked against solids'],
+    ],
     shot: '/shots/cine-ui-wire.jpg',
     alt: 'The Draftrig editor, with a board, a resistor and an LED joined by wire',
-    fact: 'Pin to pin',
   },
   {
     n: '03',
-    title: 'Switch it on',
-    body:
-      'The solver calculates the circuit. A panel stays dark until something clocks it. A wrong pin number drives the wrong pin.',
+    title: 'Run',
+    spec: [
+      ['Method', 'Modified nodal analysis'],
+      ['Step', 'Continuous'],
+      ['Panels', 'Driven off real bus traffic'],
+    ],
     shot: '/shots/cine-board.jpg',
     alt: 'A large message board, lit, built from matrix modules on a stand',
-    fact: 'Solved, not played back',
   },
   {
     n: '04',
-    title: 'Read what it costs',
-    body:
-      'Every bracket, nut and screw is in the build. The list has a price and a weight. It changes when the build changes.',
+    title: 'Cost',
+    /* The three figures the editor reports for the cabinet in the picture
+       beside this step. Read off that build, not estimated. */
+    spec: [
+      ['Items', '34'],
+      ['Mass', '11.18 kg'],
+      ['Cost', '$214.74'],
+    ],
     shot: '/shots/cine-ui-bom.jpg',
     alt: 'The Draftrig editor with its bill of materials open beside an arcade cabinet',
-    fact: 'Priced and weighed',
   },
 ]
 
 function Shot({ s, eager }: { s: Step; eager?: boolean }) {
+  /* No caption. It used to carry the step's own title, which is already
+     set at 19px in the column beside it — the same words twice, one of
+     them over a photograph where they are harder to read. */
   return (
-    <>
-      <img
-        src={s.shot}
-        alt={s.alt}
-        width={1280}
-        height={800}
-        loading={eager ? 'eager' : 'lazy'}
-        decoding="async"
-      />
-      <figcaption>
-        <span className="walk-fact mono">{s.fact}</span>
-        <span className="walk-cap">{s.title}</span>
-      </figcaption>
-    </>
+    <img
+      src={s.shot}
+      alt={s.alt}
+      width={1280}
+      height={800}
+      loading={eager ? 'eager' : 'lazy'}
+      decoding="async"
+    />
+  )
+}
+
+/** A step's specification: a term and a value, in two columns. */
+function Spec({ s }: { s: Step }) {
+  return (
+    <dl className="walk-spec">
+      {s.spec.map(([k, v]) => (
+        <div key={k}>
+          <dt>{k}</dt>
+          <dd className="mono">{v}</dd>
+        </div>
+      ))}
+    </dl>
   )
 }
 
@@ -114,7 +143,7 @@ function Stacked() {
             <figure className="walk-shot" data-on>
               <Shot s={s} eager={k === 0} />
             </figure>
-            <p>{s.body}</p>
+            <Spec s={s} />
           </div>
         </li>
       ))}
@@ -151,11 +180,11 @@ function Pinned() {
                 <span className="walk-n">{s.n}</span>
                 <div>
                   <h3>{s.title}</h3>
-                  {/* The wrapper is what opens: a grid whose single row
-                      goes 0fr to 1fr, which interpolates to the
-                      paragraph's real height. See site-lp.css. */}
+                  {/* The wrapper is what opens: a grid whose single row goes
+                      0fr to 1fr, which interpolates to the specification's
+                      real height. See site-lp.css. */}
                   <div className="walk-open">
-                    <p>{s.body}</p>
+                    <Spec s={s} />
                   </div>
                 </div>
               </li>

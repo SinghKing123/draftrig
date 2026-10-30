@@ -47,32 +47,23 @@ import { BuildWall } from './BuildWall'
 /* Pieces                                                              */
 /* ------------------------------------------------------------------ */
 
-/**
- * A word inside the headline with the editor's selection chrome around it.
+/*
+ * There was a selection box around the word "build" here.
  *
- * The page's one piece of borrowed vocabulary, and it is borrowed from the
- * product rather than from the category: a selection box, four corner
- * handles and a dimension badge is what Draftrig draws around anything you
- * pick. Putting it round a word in the headline says what the thing is in
- * the same gesture as it says what the page is about, and it is the one
- * moment on the page that could not belong to any other product.
+ * The editor's own chrome — a blue rectangle, four corner handles and a
+ * dimension badge — drawn around one word of the headline. The idea was
+ * that the page says what the product is in the same gesture as it says
+ * what the page is about.
  *
- * It draws itself a beat after the line lands, so the reader sees the word
- * first and the box arrive on it — which is the order it happens in the
- * editor.
+ * It did not survive contact with anybody who had not used the editor.
+ * Without that context a blue box with handles around a word reads as a
+ * text field, a spellcheck error or a rendering fault, and the badge under
+ * it reads as a tooltip that failed to go away. The first thing a visitor
+ * sees should not be a thing they have to work out.
+ *
+ * The headline is a headline now. Kept here as a note so it does not get
+ * reinvented.
  */
-function Picked({ children, dim }: { children: React.ReactNode; dim: string }) {
-  const [ref, seen] = useInView<HTMLSpanElement>()
-  return (
-    <span className="picked" ref={ref} data-on={seen || undefined}>
-      <span className="picked-word">{children}</span>
-      <span className="picked-box" aria-hidden="true">
-        <i /><i /><i /><i />
-      </span>
-      {dim && <span className="picked-dim mono" aria-hidden="true">{dim}</span>}
-    </span>
-  )
-}
 
 /**
  * The two counts on this page, read from the thing they count.
@@ -146,13 +137,11 @@ function Showpiece({ parts, builds }: { parts: number | null; builds: number | n
         * under it moves.
         */}
       <p className="showpiece-cap">
-        {parts === null ? <span className="showpiece-wait">—</span> : <Tally to={parts} />} parts in
-        the catalogue
+        {parts === null ? <span className="showpiece-wait">—</span> : <Tally to={parts} />} parts
         <span className="showpiece-dot" aria-hidden="true" />
         {builds === null ? <span className="showpiece-wait">—</span> : <Tally to={builds} />} builds
-        you can open
         <span className="showpiece-dot" aria-hidden="true" />
-        no account needed to try it
+        no account
       </p>
     </div>
   )
@@ -193,43 +182,45 @@ const ICONS = {
 }
 
 /*
- * What is in it, one line each.
+ * What is in it: a term, and its specification.
  *
- * Every line is a sentence in the simplified technical English the rest of
- * the page is written in: one idea, active voice, present tense, and the
- * same word for the same thing throughout. "Wire" is a wire everywhere on
- * this page; it is never a lead, a link or a connection.
+ * These were sentences. Sentences are the wrong form here — a reader
+ * scanning a grid of six is not reading prose, they are looking for the
+ * one that answers their question, and a sentence makes them read a
+ * clause to find out it does not. So each is the name of the thing and
+ * then the line a datasheet would carry: the method, the parts, the
+ * units.
  */
 const FEATURES = [
   {
     icon: ICONS.solver,
-    title: 'A real solver',
-    body: 'Modified nodal analysis, stepped continuously.',
+    title: 'Solver',
+    spec: 'Modified nodal analysis, stepped continuously',
   },
   {
     icon: ICONS.display,
-    title: 'Panels that decode',
-    body: 'A panel reads the bus traffic on its own pins. An uninitialised panel stays dark.',
+    title: 'Displays',
+    spec: 'HD44780 and SSD1306, decoded off the bus',
   },
   {
     icon: ICONS.code,
-    title: 'Sketches that run',
-    body: 'Write a sketch for an Uno, a Nano or an ESP board. Each board has its own pin map.',
+    title: 'Sketches',
+    spec: 'Uno · Nano · ESP32 · ESP8266, real pin maps',
   },
   {
     icon: ICONS.wire,
-    title: 'Wire with a length',
-    body: 'A wire goes from pin to pin around what is in the way. It tells you how long it is.',
+    title: 'Wiring',
+    spec: 'Pin to pin, routed, length in mm',
   },
   {
     icon: ICONS.frame,
-    title: 'Structure in the same file',
-    body: 'Extrusion, panels and fasteners sit with the board they hold.',
+    title: 'Structure',
+    spec: '2020 extrusion, panels, fasteners, T-nuts',
   },
   {
     icon: ICONS.bom,
-    title: 'A list you can order',
-    body: 'Every part and every screw, with a price and a weight.',
+    title: 'Bill of materials',
+    spec: 'Priced, weighed, CSV',
   },
 ]
 
@@ -321,13 +312,12 @@ export function Landing() {
               Run it before
             </Reveal>
             <Reveal now delay={190} as="span" className="hero-line">
-              you <Picked dim={parts === null ? '' : `${parts} parts`}>build</Picked> it.
+              you build it.
             </Reveal>
           </h1>
 
           <Reveal now delay={300} as="p" className="hero-sub">
-            Put the parts on a bench in 3D. Join them with wire. Switch on the power
-            and the circuit solves.
+            3D layout, point-to-point wiring, and a solver that runs the circuit.
           </Reveal>
 
           <Reveal now delay={380} className="hero-cta">
@@ -380,7 +370,7 @@ export function Landing() {
               <Reveal key={f.title} as="li" delay={i * 60} className="feat">
                 <span className="feat-ico">{f.icon}</span>
                 <h3>{f.title}</h3>
-                <p>{f.body}</p>
+                <p className="mono">{f.spec}</p>
               </Reveal>
             ))}
           </ul>
@@ -408,15 +398,12 @@ export function Landing() {
           </Reveal>
           <Reveal delay={90} className="pair-copy">
             <h2>Build around what you own.</h2>
-            <p>
-              The console is a scanned model at its own size. The frame is 2020
-              extrusion around it.
-            </p>
-            <p>
-              You set the gap because you can see the shape. 33 mm each side lets
-              air into the intake, and lets you lift the console out past the back
-              rail.
-            </p>
+            <dl className="spec">
+              <div><dt>Console</dt><dd>Scanned model, 390 × 104 × 260 mm</dd></div>
+              <div><dt>Frame</dt><dd>2020 extrusion, bolted</dd></div>
+              <div><dt>Clearance</dt><dd>33 mm each side</dd></div>
+              <div><dt>Shelf</dt><dd>Plywood, on brackets and T-nuts</dd></div>
+            </dl>
             <Link className="btn btn-ghost" to="/app?start=ps5-stand">
               Open this stand<span className="arr" aria-hidden="true" />
             </Link>
@@ -437,8 +424,7 @@ export function Landing() {
             <Reveal className="end-copy">
               <h2>The bench is open.</h2>
               <p>
-                Build, wire and run without an account. You need an account only to
-                keep your work.
+                Build, wire and run without an account. An account keeps your work.
               </p>
               <div className="end-cta">
                 <Link className="btn btn-primary btn-lg" to="/projects">

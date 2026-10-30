@@ -83,7 +83,7 @@
   --gut: clamp(20px, 5vw, 44px);
   --max: 1240px;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
-  --sec: clamp(68px, 10vh, 132px);
+  --sec: clamp(52px, 6.5vh, 96px);
 
   position: relative;
   min-height: 100dvh;
@@ -308,7 +308,7 @@
 
 .lp .hero {
   position: relative;
-  padding-top: clamp(118px, 17vh, 184px);
+  padding-top: clamp(104px, 13vh, 150px);
   padding-bottom: 0;
   /*
    * The bench grid, very faint.
@@ -377,70 +377,59 @@
 
 .lp .hero-cast { margin-top: clamp(34px, 6vh, 72px); }
 
-/* ---- the picked word ---- */
+/* ==================================================================
+   Specification lists
+   ------------------------------------------------------------------
+   A term and a value, in two columns, with a hairline between rows.
+   This replaced the paragraphs: a reader working out whether the tool
+   does what they need is looking for a number and a unit, and a
+   sentence makes them read a clause to find out there is not one.
 
-/*
- * The editor's selection chrome, around a word.
- *
- * Padding rather than a margin, so the box sits off the glyphs instead of
- * on them, and the whole thing is inline-block so a line break never puts
- * the box on one line and the dimension badge on the next.
- */
-.lp .picked {
-  position: relative;
-  display: inline-block;
-  padding: 0 0.1em;
+   The value is mono with tabular figures, because every value in one
+   of these is a measurement, a quantity or a designation.
+   ================================================================== */
+
+.lp .spec,
+.lp .walk-spec {
+  display: grid;
+  margin-top: 22px;
 }
-.lp .picked-word { position: relative; z-index: 1; }
-
-.lp .picked-box {
-  position: absolute;
-  inset: 0.06em -0.08em 0.1em -0.08em;
-  border: 1.5px solid var(--accent);
-  border-radius: 2px;
-  opacity: 0;
-  transform: scale(1.06);
-  transition: opacity 320ms var(--ease) 620ms, transform 420ms var(--ease) 620ms;
+.lp .spec > div,
+.lp .walk-spec > div {
+  display: grid;
+  grid-template-columns: minmax(84px, 0.34fr) minmax(0, 1fr);
+  gap: 16px;
+  padding: 11px 0;
+  border-top: 1px solid var(--line);
+  align-items: baseline;
 }
-.lp .picked[data-on] .picked-box { opacity: 1; transform: none; }
+.lp .spec > div:last-child,
+.lp .walk-spec > div:last-child { border-bottom: 1px solid var(--line); }
 
-/* Four corner handles, drawn as the editor draws them: filled squares,
-   centred on the corners, not floating inside them. */
-.lp .picked-box i {
-  position: absolute;
-  width: 7px;
-  height: 7px;
-  background: var(--bg);
-  border: 1.5px solid var(--accent);
-  border-radius: 1px;
+.lp .spec dt,
+.lp .walk-spec dt {
+  font-size: 0.8125rem;
+  color: var(--ink-3);
 }
-.lp .picked-box i:nth-child(1) { top: -4px; left: -4px; }
-.lp .picked-box i:nth-child(2) { top: -4px; right: -4px; }
-.lp .picked-box i:nth-child(3) { bottom: -4px; left: -4px; }
-.lp .picked-box i:nth-child(4) { bottom: -4px; right: -4px; }
-
-.lp .picked-dim {
-  position: absolute;
-  left: 50%;
-  bottom: -0.1em;
-  transform: translate(-50%, 100%) translateY(4px);
-  padding: 2px 7px;
-  border-radius: 4px;
-  background: var(--accent);
-  color: var(--accent-ink);
-  font-size: 0.68rem;
-  font-weight: 500;
-  letter-spacing: 0;
-  white-space: nowrap;
-  opacity: 0;
-  transition: opacity 300ms var(--ease) 820ms, transform 380ms var(--ease) 820ms;
+.lp .spec dd,
+.lp .walk-spec dd {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
 }
-.lp .picked[data-on] .picked-dim { opacity: 1; transform: translate(-50%, 100%); }
 
-@media (max-width: 620px) {
-  /* At this size the badge is wider than the word it labels, and it
-     collides with the line under it. The box alone still reads. */
-  .lp .picked-dim { display: none; }
+@media (max-width: 520px) {
+  /* On a phone the term column was taking a third of the width and the
+     longest value — a room's three dimensions — was reaching the edge.
+     Stacked, the value gets the whole measure. */
+  .lp .spec > div,
+  .lp .walk-spec > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+  .lp .spec dd,
+  .lp .walk-spec dd { font-size: 0.875rem; }
 }
 
 /* ==================================================================
@@ -482,12 +471,20 @@
  * screen they stay beside the headline instead of drifting out to the
  * edges of the window and becoming two unrelated figures in the corners.
  */
+/*
+ * The band the two of them stand in.
+ *
+ * It was 168px tall with 40px of air above it, which left the pair marooned
+ * in a screen of nothing with the buttons a long way above their heads.
+ * They are on the floor the hero's grid stops at, close under the action,
+ * and the floor is drawn firmly enough to be a floor.
+ */
 .lp .hero-floor {
   position: relative;
   max-width: var(--max);
-  margin: clamp(18px, 3.4vh, 40px) auto 0;
+  margin: clamp(10px, 1.6vh, 22px) auto 0;
   padding-inline: var(--gut);
-  height: 168px;
+  height: 150px;
 }
 .lp .hero-floor::after {
   /* The floor the pair stand on, and the line the hero's grid stops at. */
@@ -497,7 +494,7 @@
   right: var(--gut);
   bottom: 2px;
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--line-2) 18%, var(--line-2) 82%, transparent);
+  background: linear-gradient(90deg, transparent, var(--line-2) 24%, var(--line-2) 76%, transparent);
 }
 .lp .hero-floor .spot { position: absolute; bottom: 0; }
 .lp .hero-floor .spot-floor { display: none; }
@@ -510,8 +507,8 @@
  * they frame it instead, and the space between them belongs to the thing
  * they are standing either side of.
  */
-.lp .hero-floor-l { left: calc(var(--gut) + 12%); }
-.lp .hero-floor-r { right: calc(var(--gut) + 12%); }
+.lp .hero-floor-l { left: calc(var(--gut) + 15%); }
+.lp .hero-floor-r { right: calc(var(--gut) + 15%); }
 
 @media (max-width: 1180px) {
   .lp .hero-floor-l { left: calc(var(--gut) + 3%); }
@@ -536,7 +533,7 @@
 
 .lp .showpiece {
   max-width: calc(var(--max) + 80px);
-  margin: clamp(26px, 5vh, 56px) auto 0;
+  margin: clamp(16px, 2.6vh, 34px) auto 0;
   padding-inline: var(--gut);
   perspective: 1800px;
 }
@@ -655,7 +652,13 @@
    ================================================================== */
 
 .lp .walk { padding-block: var(--sec) 0; }
-.lp .walk-body { height: 420vh; }
+/* The head is close to the section it heads. It was a section's worth of
+   air above a column that then scrolled past on its own. */
+.lp .walk-head { margin-bottom: clamp(10px, 1.6vh, 22px); }
+/* One screen of scroll per step, plus the screen the column is pinned
+   for. It was 420vh, which held each step for a screen and a quarter and
+   made the section feel like it had stopped. */
+.lp .walk-body { height: 330vh; }
 .lp .walk-pin {
   position: sticky;
   top: 0;
@@ -664,7 +667,7 @@
   align-items: center;
   /* Clear of the floating nav, which otherwise sits on the top of the
      picture for the whole time the column is pinned. */
-  padding-top: 56px;
+  padding-top: 40px;
 }
 /*
  * Wider than the rest of the page, and weighted hard towards the picture.
@@ -678,11 +681,11 @@
  */
 .lp .walk-grid {
   display: grid;
-  grid-template-columns: minmax(0, 0.64fr) minmax(0, 1.36fr);
+  grid-template-columns: minmax(0, 0.62fr) minmax(0, 1.38fr);
   gap: clamp(24px, 3.4vw, 54px);
   align-items: center;
   width: 100%;
-  max-width: 1480px;
+  max-width: 1560px;
 }
 
 .lp .walk-steps { display: grid; gap: 2px; }
@@ -703,7 +706,7 @@
   display: grid;
   grid-template-columns: 34px minmax(0, 1fr);
   gap: 14px;
-  padding: 18px 0;
+  padding: 16px 0;
   border-top: 1px solid var(--line);
 }
 .lp .walk-step:last-child { border-bottom: 1px solid var(--line); }
@@ -724,7 +727,9 @@
 }
 .lp .walk-step[data-on] .walk-n { color: var(--accent); }
 
-.lp .walk-step h3 { font-size: 1.1875rem; letter-spacing: -0.022em; }
+/* One word, set large. Four of these are a table of contents for the
+   section, and a reader scans them rather than reading them. */
+.lp .walk-step h3 { font-size: 1.5rem; letter-spacing: -0.028em; }
 /*
  * The body of a step that is not current is closed up rather than hidden:
  * the reader can still see the whole procedure, which is the point of
@@ -742,18 +747,20 @@
   transition: grid-template-rows 420ms var(--ease);
 }
 .lp .walk-step[data-on] .walk-open { grid-template-rows: 1fr; }
-.lp .walk-open > p { overflow: hidden; }
-.lp .walk-step p {
-  font-size: 0.9375rem;
-  line-height: 1.55;
-  color: var(--ink-2);
-  max-width: 38ch;
-  padding-top: 8px;
+.lp .walk-open > * { overflow: hidden; }
+.lp .walk-step .walk-spec {
+  margin-top: 0;
+  padding-top: 6px;
   opacity: 0;
   transition: opacity 320ms var(--ease);
 }
-.lp .walk-step[data-on] p { opacity: 1; }
-.lp .walk-stacked p { opacity: 1; }
+.lp .walk-step[data-on] .walk-spec { opacity: 1; }
+.lp .walk-stacked .walk-spec { opacity: 1; }
+/* Inside a step the rows are tighter than a standalone spec list, and the
+   first one does not draw a rule because the step's own rule is above it. */
+.lp .walk-spec > div { padding: 8px 0; }
+.lp .walk-spec > div:first-child { border-top: 0; }
+.lp .walk-spec > div:last-child { border-bottom: 0; }
 
 .lp .walk-art {
   position: relative;
@@ -776,27 +783,6 @@
 }
 .lp .walk-shot[data-on] { opacity: 1; transform: none; }
 .lp .walk-shot img { width: 100%; height: 100%; object-fit: cover; }
-
-.lp .walk-shot figcaption {
-  position: absolute;
-  left: 14px;
-  bottom: 14px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 7px 12px;
-  border-radius: 999px;
-  /* Dense enough to hold its own over the brightest frame in the set,
-     which is the lit room: at 0.72 the caption composited to about 3.9:1
-     over it. */
-  background: rgba(21, 19, 15, 0.86);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-  font-size: 0.78rem;
-  color: var(--dark-ink);
-}
-.lp .walk-fact { color: var(--accent-on-dark); font-size: 0.72rem; }
-.lp .walk-cap { color: var(--dark-ink-2); }
 
 .lp .walk-rail {
   position: absolute;
@@ -827,7 +813,7 @@
   gap: 10px;
   align-items: flex-end;
   justify-content: center;
-  padding-block: clamp(34px, 6vh, 64px) var(--sec);
+  padding-block: clamp(20px, 3vh, 40px) var(--sec);
 }
 /* Far enough left that the figure's floor line clears the button rather
    than running under it, which is what -300px did. */
@@ -868,7 +854,7 @@
   aspect-ratio: 16 / 10;
   object-fit: cover;
 }
-.lp .walk-stacked .walk-shot figcaption { left: 10px; bottom: 10px; }
+.lp .walk-stacked .walk-spec { margin-top: 12px; }
 
 /* ==================================================================
    The gallery
@@ -949,8 +935,14 @@
   color: var(--ink);
 }
 .lp .feat-ico svg { width: 18px; height: 18px; }
-.lp .feat h3 { margin-bottom: 7px; }
-.lp .feat p { font-size: 0.9375rem; line-height: 1.55; color: var(--ink-2); max-width: 36ch; }
+.lp .feat h3 { margin-bottom: 7px; font-size: 1.125rem; }
+.lp .feat p {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--ink-2);
+  max-width: 32ch;
+  font-variant-numeric: tabular-nums;
+}
 
 @media (max-width: 880px) {
   .lp .feats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -1467,8 +1459,6 @@
   /* Everything that arrives is simply already there. */
   .lp .mo-rise,
   .lp .showpiece-frame,
-  .lp .picked-box,
-  .lp .picked-dim,
   .lp .walk-shot,
   .lp .trace-art .seg,
   .lp .trace-sym .sym,
@@ -1505,7 +1495,7 @@
 
   /* Every step open and readable, with no transition to get there. */
   .lp .walk-open { grid-template-rows: 1fr; transition: none; }
-  .lp .walk-step p { opacity: 1; transition: none; }
+  .lp .walk-step .walk-spec { opacity: 1; transition: none; }
   .lp .walk-step h3 { color: var(--ink); }
 
   .lp * { scroll-behavior: auto; }
