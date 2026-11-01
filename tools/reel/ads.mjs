@@ -1,122 +1,80 @@
 /**
- * The ads.
+ * The ads. Two of them, and no words until the last card.
  *
- * An ad is not the same thing as the reels beside it. A reel is footage of
- * the tool being worked and it can afford to be admired in silence; an ad has
- * to say what the thing is to somebody who has never heard of it, who is
- * scrolling, and whose phone is muted. So three things are true here that are
- * not true of `reels.mjs`:
+ * An earlier cut carried a burned-in caption over every beat on the theory
+ * that a muted viewer needs telling what they are looking at. They do not,
+ * when the footage is this literal: a desk with a monitor on it and a cable
+ * running to a socket does not need a line of type explaining that it is a
+ * desk. The captions covered the bottom third of a render that took real work
+ * to make, and the one that tried hardest — a figure quoted over a panel
+ * showing a different figure — was simply wrong. So the footage is left
+ * alone, and the only words in either ad are the name and the address at the
+ * end.
  *
- * - **It is cut from footage that already exists.** Every source below is a
- *   finished clip in the reels folder, so making an ad costs a minute of
- *   ffmpeg rather than fifteen of recording and a few gigabytes of frames.
- * - **It carries words.** Burned in, because captions on the platform are
- *   optional, late and ugly, and because nobody has the sound on.
- * - **It ends on the address.** An ad that does not say where to go is a
- *   showreel.
+ * That raises the bar on the footage rather than lowering it. A beat with no
+ * caption has to be legible on its own, which is why the beats here are
+ * longer than the captioned ones were — four to five seconds, enough for a
+ * build to visibly assemble rather than merely appear.
  *
- * Beats are short on purpose. Three and a half seconds is long enough to read
- * six words and see one thing happen, and a beat that outstays that is where
- * the thumb moves on.
+ * ## Picking a beat
  *
- * ## Two rules that cost a rebuild to learn
- *
- * **Every `at` is read off the footage, not guessed.** The `cine-*` clips are
- * assembly animations: they open on an empty stage and converge. The first
- * cut of these took the captions at face value and put "A control cabinet."
- * over four bare posts, because at 3.4 seconds the cabinet is still four bare
- * posts. The eleven-second clips finish assembling around t=7 and the
- * twenty-three-second ones around t=16, so anything that claims to show a
- * finished object starts after that. `tools/reel/strips.mjs` prints the
- * timeline of any clip if a new one needs placing.
- *
- * **Every `spec` is readable off the frame it sits on.** The same first cut
- * put "34 items · 11.18 kg · $214.74" over a bill of materials panel that
- * plainly read 22 items, 165.6 g and $37.89 — the arcade cabinet's figures
- * over the bench clock's panel. In an ad whose whole claim is that the costing
- * is real, a number that disagrees with the picture behind it is the worst
- * sentence on the screen. If the figure is not in the frame or not true of the
- * thing in the frame, the beat has no `spec`.
+ * Every `at` is read off the footage, never guessed. The `cine-*` clips are
+ * assembly animations: they open on an empty stage and converge, so a
+ * timestamp chosen by reading the clip's name lands on bare posts. The
+ * eleven-second clips finish assembling around t=7 and the longer ones around
+ * t=16. `strips.mjs` prints any clip's timeline as one picture.
  */
 
-/** The clips these are cut from, relative to the reels folder. */
-const R1_HOOK = '_reel1-wire-and-run-r1-hook.mp4'
-const R1_WIRE = '_reel1-wire-and-run-r1-wire.mp4'
-const R1_RUN = '_reel1-wire-and-run-r1-run.mp4'
-const R3_HOOK = '_reel3-bill-of-materials-r3-hook.mp4'
-const R3_BOM = '_reel3-bill-of-materials-r3-bom.mp4'
-const R4_DISPLAY = '_reel4-led-display-display-build.mp4'
+/* ---- the room, the desk, the console. Recorded for these ads. ---- */
+/* 13.4s: walls, floor, a desk against one of them, a television on another,
+   and the mains running back to two sockets. */
+const ROOM = 'cinematic/cine-room-setup.mp4'
+/* 13.4s: one desk, and whether one socket can carry what is plugged into it.
+   The extension lead and its cables land last. */
+const DESK = 'cinematic/cine-desk-setup.mp4'
+/* 13.4s: 45 parts and not one a circuit — extrusion, brackets, T-nuts,
+   screws, a plywood shelf, and a console at its real size. */
+const STAND = 'cinematic/cine-ps5-stand.mp4'
+
+/* ---- electronics. Already in the folder. ---- */
+/* 7.3s: a macro of a populated board, close enough to read as texture. */
+const BOARD = '_reel1-wire-and-run-r1-hook.mp4'
+/* 16.8s: an LED matrix placing itself — LEDs to t≈9, wiring to t≈13, lit
+   from t≈10.5. The best footage in the folder. */
+const MATRIX = '_reel4-led-display-display-build.mp4'
+/* 6.7s: the 555 running, framed on the lamp. */
+const LIT = '_reel1-wire-and-run-r1-run.mp4'
 /* 23.4s, assembled from t≈16: a DIN rail, an LCD and a red switch behind a
    clear door. */
 const CABINET = 'cinematic/cine-control-cabinet.mp4'
-/* 11s, assembled from t≈7: two white decks on standoffs over a row of cells. */
-const STACK = 'cinematic/cine-control-stack.mp4'
-/* 11s, assembled from t≈7: a black 2020 frame carrying a motor and a board. */
-const THRUST = 'cinematic/cine-thrust-rig.mp4'
-/* 11s, assembled from t≈7: a 2020 gantry over a ply bed. */
-const ROUTER = 'cinematic/cine-cnc-router.mp4'
 
-/**
- * Copy is the page's register, shortened.
- *
- * Specification where there is a number to give, plain statement where there
- * is not, and never a sentence that argues with the reader. `lead` is read in
- * about a second at this size; `spec` is the line under it and is the one
- * that carries the fact.
- */
 export const ADS = [
   {
-    id: 'ad-run-it',
-    note: 'The promise: wire it, switch it on, watch it work.',
+    id: 'ad-the-setup',
+    note: 'The room one: a desk, a television, the sockets, and a frame bolted round a console.',
     beats: [
-      { src: R1_HOOK, at: 0.2, dur: 3.1, lead: 'Run it before\nyou build it.' },
-      { src: R1_WIRE, at: 1.1, dur: 3.5, lead: 'Wire it pin to pin.', spec: 'In 3D · length in mm' },
-      { src: R1_RUN, at: 1.4, dur: 3.6, lead: 'It actually runs.', spec: 'Modified nodal analysis' },
+      // The room builds itself around the viewer before anything is explained.
+      // Not from the top: the first two seconds are an empty floor, because
+      // the camera is already inside the shell when the reveal starts.
+      { src: ROOM, at: 2.4, dur: 5.0 },
+      // Then in to the desk, where the cable reaching the socket is the point.
+      { src: DESK, at: 4.0, dur: 4.6 },
+      // Then the extrusion, which is the part nobody expects a circuit tool
+      // to do at all.
+      { src: STAND, at: 3.6, dur: 4.4 },
+      // Finished, lit, held.
+      { src: STAND, at: 10.4, dur: 3.0 },
     ],
   },
   {
-    id: 'ad-what-it-costs',
-    note: 'The bill of materials: the thing no other 3D tool gives you.',
+    id: 'ad-the-electronics',
+    note: 'The electronics one: a board, a matrix laying itself out, wiring, and light.',
     beats: [
-      { src: R3_HOOK, at: 0.6, dur: 3.0, lead: 'Every part.\nEvery screw.' },
-      // The figures the panel in this very frame is showing.
-      { src: R3_BOM, at: 1.2, dur: 3.6, lead: 'Priced and weighed.', spec: '22 items · 165.6 g · $37.89' },
-      { src: CABINET, at: 17.2, dur: 3.4, lead: 'Know the cost\nbefore you order.' },
-    ],
-  },
-  {
-    id: 'ad-the-whole-build',
-    note: 'Structure, not just circuits. Frames, enclosures and the parts inside.',
-    beats: [
-      { src: THRUST, at: 6.8, dur: 3.3, lead: 'Not just\nthe circuit.', spec: '2020 extrusion · brackets' },
-      { src: CABINET, at: 16.6, dur: 3.3, lead: 'The enclosure too.', spec: 'DIN rail · clear door' },
-      { src: STACK, at: 7.2, dur: 3.3, lead: 'And everything\ninside it.', spec: 'Panels · standoffs · cells' },
-    ],
-  },
-  {
-    id: 'ad-watch-it-build',
-    note: 'The hypnotic one. A matrix placing itself, wired, then lit. No interface.',
-    beats: [
-      { src: R4_DISPLAY, at: 1.6, dur: 4.0, lead: 'An LED matrix,\none at a time.' },
-      { src: R4_DISPLAY, at: 9.0, dur: 3.6, lead: 'Then the wiring.' },
-      { src: R4_DISPLAY, at: 12.8, dur: 3.8, lead: 'Then switch it on.', spec: 'Panels decode the real bus' },
-    ],
-  },
-  {
-    id: 'ad-what-you-can-make',
-    note: 'Range. Four very different builds, so nobody thinks it does one thing.',
-    beats: [
-      { src: ROUTER, at: 6.8, dur: 2.7, lead: 'A router.' },
-      { src: CABINET, at: 17.6, dur: 2.7, lead: 'A control cabinet.' },
-      { src: THRUST, at: 7.2, dur: 2.7, lead: 'A thrust rig.' },
-      /*
-       * The payoff is the lit matrix rather than the desk terminal it used to
-       * be. The terminal is a grey box with an LCD in it and so is the
-       * cabinet two beats earlier — in an ad whose whole argument is range,
-       * closing on something that looks like a shot already shown is the one
-       * mistake it cannot afford. This is red, lit and unlike anything above.
-       */
-      { src: R4_DISPLAY, at: 14.2, dur: 3.4, lead: 'All of it\nin one tool.', spec: '194 parts · 34 builds' },
+      { src: BOARD, at: 0.4, dur: 3.4 },
+      { src: MATRIX, at: 2.0, dur: 4.6 },
+      { src: MATRIX, at: 9.2, dur: 4.0 },
+      { src: LIT, at: 1.6, dur: 3.4 },
+      { src: CABINET, at: 17.4, dur: 3.2 },
     ],
   },
 ]

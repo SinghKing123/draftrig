@@ -265,13 +265,23 @@ export const cineTake = (id, starter, target, camera, legs, opts = {}) => {
     async setup(page) {
       await page.addScriptTag({ content: CINEMA })
       await page.evaluate(
-        ([s, t]) => {
+        ([s, t, maxDist]) => {
           window.__cinema.stage(s)
           const c = window.draftrig.camera.controls
+          /*
+           * The orbit control clamps to 4 metres (`maxDistance` in
+           * Viewport.tsx), which is the right limit for someone working and
+           * the wrong one for photographing a room 4.6 metres across: the
+           * first recording of `cine-room-setup` asked for 5600 and silently
+           * got 4000, and every leg of it clamped to the same number, so the
+           * camera orbited at one distance for the whole shot. Lifted here
+           * for the capture only — nothing about the editor changes.
+           */
+          if (maxDist) c.maxDistance = maxDist
           c.target.set(t[0], t[1], t[2])
           c.update()
         },
-        [starter, target],
+        [starter, target, opts.maxDist ?? 0],
       )
     },
     async perform(page) {
@@ -389,5 +399,95 @@ export const CINE_SHOTS = [
       [-34, 58, 780, 3200],
     ],
     { rise: 160, partWin: 6.2, wireWin: 3.0 },
+  ),
+
+  /* ================================================================
+     The room three
+     ----------------------------------------------------------------
+     Not electronics. These are for the ad that has to say the tool is
+     for the space a build sits in as well as the build — a desk, the
+     television on the other wall, the two sockets everything has to
+     reach, and a frame bolted round a console.
+
+     They are an order of magnitude bigger than anything above, so the
+     distances are in metres rather than hundreds of millimetres and
+     `rise` is scaled with them: a part that falls 150mm into a thrust
+     rig has to fall most of a metre into a room or the drop does not
+     read at this distance. Every framing here was chosen off a
+     picture — see `aim.mjs` — because the arithmetic route does not
+     work headless.
+     ================================================================ */
+
+  /*
+   * A whole room: the walls, the floor, the desk against one of them,
+   * the television on another, and the mains running back to two
+   * sockets. The widest thing in the catalog by a long way.
+   */
+  /*
+   * Shot from inside, and that is the whole trick.
+   *
+   * The first cut of this framed the room the way every other take here is
+   * framed — stand well back and fit the subject — and at 5600mm, with legs
+   * reaching 6600, the camera spent most of the take outside a room 4600 ×
+   * 3400 × 2400. From out there a shell is an unlit box, so the clip opened
+   * on two good seconds and then went to black for eleven.
+   *
+   * There is no distance that both fits a room and stays inside it. So this
+   * does not fit it: the camera sits in the volume, about two and a half
+   * metres off the desk, and shows a corner of the room the way a photograph
+   * of a room does. Every leg is kept under 2600 for the same reason, which
+   * is also why this one needs no `maxDist` — it never approaches the
+   * editor's own 4000mm clamp.
+   */
+  take(
+    'room-setup',
+    'room-setup',
+    [2000, 1000, 900],
+    [40, 68, 2300],
+    [
+      [62, 70, 2500, 4600],
+      [16, 64, 2600, 4200],
+      [42, 68, 2200, 3200],
+    ],
+    { rise: 700, partWin: 6.4, wireWin: 3.2 },
+  ),
+
+  /*
+   * One desk, and the question of whether one socket can carry what is
+   * plugged into it. The extension lead and its cables land last, which
+   * is the beat worth watching: the cable goes in and the reach of it
+   * is suddenly a real measurement rather than a guess.
+   */
+  take(
+    'desk-setup',
+    'desk-setup',
+    [0, 750, 0],
+    [40, 60, 4000],
+    [
+      [70, 64, 4400, 4600],
+      [6, 54, 4800, 4200],
+      [40, 58, 3800, 3200],
+    ],
+    { rise: 500, partWin: 6.2, wireWin: 3.2 },
+  ),
+
+  /*
+   * Forty-five parts and not one of them a circuit: extrusion, corner
+   * brackets, T-nuts, button-head screws, a plywood shelf and a console
+   * that is a scanned model at its real size. The frame assembles round
+   * the console rather than the console landing in a finished frame,
+   * which is the whole argument of the build.
+   */
+  take(
+    'ps5-stand',
+    'ps5-stand',
+    [0, 380, 0],
+    [55, 58, 1250],
+    [
+      [84, 64, 1380, 4600],
+      [22, 54, 1500, 4200],
+      [58, 58, 1180, 3200],
+    ],
+    { rise: 240, partWin: 6.6, wireWin: 2.6 },
   ),
 ]

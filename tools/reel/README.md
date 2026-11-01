@@ -131,64 +131,74 @@ than stock.
 
 ## Ads
 
-Five of them, in `~/Videos/Draftrig reels/ads/`. They are a different job from
-the reels above: a reel is footage of the tool being worked and can afford to
-be admired in silence, while an ad has to say what the thing is to somebody
-who has never heard of it, who is scrolling, and whose phone is muted.
+Two of them, in `~/Videos/Draftrig reels/ads/`.
 
 ```bash
-npm run dev                                   # the captions need the fonts
-node tools/reel/ads-build.mjs                 # all of them
-node tools/reel/ads-build.mjs ad-run-it       # or one
+npm run dev                                   # the card needs the fonts
+node tools/reel/ads-build.mjs                 # both
+node tools/reel/ads-build.mjs ad-the-setup    # or one
 ```
 
-| Ad | The argument |
+| Ad | What it shows |
 | --- | --- |
-| `ad-run-it` | Wire it, switch it on, it works |
-| `ad-what-it-costs` | Every part and every screw, priced and weighed |
-| `ad-the-whole-build` | Frames and enclosures, not only circuits |
-| `ad-watch-it-build` | A matrix placing itself, wired, then lit |
-| `ad-what-you-can-make` | Range — four builds that look nothing alike |
+| `ad-the-setup` | A room, a desk and its sockets, then a 2020 frame built round a console |
+| `ad-the-electronics` | A board, an LED matrix laying itself out, wiring, light |
 
-Nothing is recorded. Every beat is cut out of a finished clip that is already
-in the reels folder, so a change to a word costs about a minute of ffmpeg
-instead of fifteen minutes of capture and a few gigabytes of frames. Edit
-`ads.mjs` and run it again.
+**No words until the last card.** An earlier cut burned a caption over every
+beat, on the theory that a muted viewer needs telling what they are looking
+at. They do not, when the footage is this literal — a desk with a cable
+running to a socket does not need a line of type explaining that it is a
+desk. The captions covered the bottom third of renders that took real work to
+make, and the one that tried hardest quoted a figure over a panel showing a
+different figure. The footage is left alone now.
 
-### Why the captions are drawn in a browser
+That raises the bar on the footage rather than lowering it. A beat with no
+caption has to be legible on its own, so the beats are four to five seconds —
+long enough for a build to visibly assemble rather than merely appear.
 
-The brand's type is four woff2 files. ffmpeg's `drawtext` reads neither woff2
-nor a line of CSS, and an ad set in Arial is an ad for somebody else — so
-Chromium renders each caption to a transparent PNG at 1080 × 1920 with the
-real faces, the real tracking, and a gradient scrim that keeps white type
-legible over a frame that is near-black in one second and a lit breadboard in
-the next. ffmpeg then does what ffmpeg is good at: trim, overlay, join.
+The closing card is the page's paper, the mark, and the address. There was a
+line of sell under it and it is gone: the ad has just spent twelve seconds
+showing the thing work, and a claim after that reads as a pitch stapled to
+the end of something that did not need one.
 
-Nothing sits below about 15% of the frame height, because Instagram draws its
-own interface over the bottom of a reel.
+Nothing is recorded by `ads-build.mjs`. Every beat is trimmed out of a
+finished clip already in the reels folder, so changing the cut costs a minute
+of ffmpeg instead of fifteen minutes of capture and a gigabyte of frames.
 
-### Two rules, both learned by shipping them wrong
+### The room three
+
+`cine-room-setup`, `cine-desk-setup` and `cine-ps5-stand` were recorded for
+these ads and are in `cinematic.mjs` with the rest. They are an order of
+magnitude bigger than anything else there — distances in metres rather than
+hundreds of millimetres — and `rise` is scaled with them, because a part that
+falls 150mm into a thrust rig has to fall most of a metre into a room before
+the drop reads at that distance.
+
+### Aiming a take
+
+Two rules, both learned by shipping them wrong.
 
 **Read every timestamp off the footage.** The `cine-*` clips are assembly
-animations: they open on an empty stage and converge. The first cut of these
-guessed, and put "A control cabinet." over four bare posts, because at 3.4
-seconds the cabinet *is* four bare posts. The eleven-second clips finish
-assembling around t=7 and the twenty-three-second ones around t=16.
+animations that open on an empty stage. A guess put "A control cabinet." over
+four bare posts, because at 3.4 seconds the cabinet *is* four bare posts.
 
 ```bash
 node tools/reel/strips.mjs cine-control-cabinet 2   # the timeline, as a picture
 ```
 
-**Every number must be readable off the frame it sits on.** The same first cut
-put `34 items · 11.18 kg · $214.74` over a bill-of-materials panel plainly
-showing 22 items, 165.6 g and $37.89 — the arcade cabinet's figures over the
-bench clock's panel. In an ad whose whole claim is that the costing is real, a
-number that disagrees with the picture behind it is the worst sentence on the
-screen. If the figure is not in the frame, the beat gets no `spec`.
+**Choose the framing from a picture, not from arithmetic.** `measure.mjs`
+tries to do it by loading a build, asking the editor to frame it and reading
+the camera back; headless the re-frame never lands and every build reports
+the default 4000mm, including a stand half a metre tall. `aim.mjs` renders
+candidates instead:
+
+```bash
+node tools/reel/aim.mjs ps5-stand 0,380,0  30,62,900  55,58,1250
+```
 
 ### Posting them
 
-1080 × 1920, 30 fps, H.264, no audio, 12–14 seconds. That is within spec for
-Instagram Reels, TikTok and YouTube Shorts as they stand. They are silent on
-purpose — add a track in the app you post from, where the platform's own
-licensed library will not earn the account a copyright strike.
+1080 × 1920, 30 fps, H.264, no audio, around 19 seconds. Within spec for
+Instagram Reels, TikTok and YouTube Shorts. They are silent on purpose — add
+a track in the app you post from, where the platform's own licensed library
+will not earn the account a copyright strike.

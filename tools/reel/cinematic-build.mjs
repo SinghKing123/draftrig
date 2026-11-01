@@ -45,9 +45,24 @@ const FPS = 30
 
 mkdirSync(OUT, { recursive: true })
 
-const shots = readdirSync(SRC).filter((d) => d.startsWith('cine-') && existsSync(join(SRC, d)))
+/*
+ * Which takes to encode.
+ *
+ * Named ids narrow it, the way `run.mjs record` does. Without that this
+ * rebuilt every folder it could see, which is wrong whenever one of them is
+ * being recorded at that moment: the encoder reads a half-written directory
+ * and produces a clip that stops partway through, for a take that was never
+ * asked for.
+ */
+const wanted = process.argv.slice(2)
+const all = readdirSync(SRC).filter((d) => d.startsWith('cine-') && existsSync(join(SRC, d)))
+const shots = wanted.length ? all.filter((d) => wanted.some((w) => d.includes(w))) : all
 if (!shots.length) {
-  console.log(`no cine- frame folders in ${SRC}`)
+  console.log(
+    wanted.length
+      ? `no cine- frame folders in ${SRC} matching: ${wanted.join(', ')}`
+      : `no cine- frame folders in ${SRC}`,
+  )
   process.exit(0)
 }
 
