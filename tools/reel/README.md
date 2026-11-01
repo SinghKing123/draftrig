@@ -128,3 +128,67 @@ take the file off the page.
 A phone on your own bench beats all of it. Eight seconds of a real iron and a
 real board, shot vertically, is free, unambiguously yours, and more convincing
 than stock.
+
+## Ads
+
+Five of them, in `~/Videos/Draftrig reels/ads/`. They are a different job from
+the reels above: a reel is footage of the tool being worked and can afford to
+be admired in silence, while an ad has to say what the thing is to somebody
+who has never heard of it, who is scrolling, and whose phone is muted.
+
+```bash
+npm run dev                                   # the captions need the fonts
+node tools/reel/ads-build.mjs                 # all of them
+node tools/reel/ads-build.mjs ad-run-it       # or one
+```
+
+| Ad | The argument |
+| --- | --- |
+| `ad-run-it` | Wire it, switch it on, it works |
+| `ad-what-it-costs` | Every part and every screw, priced and weighed |
+| `ad-the-whole-build` | Frames and enclosures, not only circuits |
+| `ad-watch-it-build` | A matrix placing itself, wired, then lit |
+| `ad-what-you-can-make` | Range — four builds that look nothing alike |
+
+Nothing is recorded. Every beat is cut out of a finished clip that is already
+in the reels folder, so a change to a word costs about a minute of ffmpeg
+instead of fifteen minutes of capture and a few gigabytes of frames. Edit
+`ads.mjs` and run it again.
+
+### Why the captions are drawn in a browser
+
+The brand's type is four woff2 files. ffmpeg's `drawtext` reads neither woff2
+nor a line of CSS, and an ad set in Arial is an ad for somebody else — so
+Chromium renders each caption to a transparent PNG at 1080 × 1920 with the
+real faces, the real tracking, and a gradient scrim that keeps white type
+legible over a frame that is near-black in one second and a lit breadboard in
+the next. ffmpeg then does what ffmpeg is good at: trim, overlay, join.
+
+Nothing sits below about 15% of the frame height, because Instagram draws its
+own interface over the bottom of a reel.
+
+### Two rules, both learned by shipping them wrong
+
+**Read every timestamp off the footage.** The `cine-*` clips are assembly
+animations: they open on an empty stage and converge. The first cut of these
+guessed, and put "A control cabinet." over four bare posts, because at 3.4
+seconds the cabinet *is* four bare posts. The eleven-second clips finish
+assembling around t=7 and the twenty-three-second ones around t=16.
+
+```bash
+node tools/reel/strips.mjs cine-control-cabinet 2   # the timeline, as a picture
+```
+
+**Every number must be readable off the frame it sits on.** The same first cut
+put `34 items · 11.18 kg · $214.74` over a bill-of-materials panel plainly
+showing 22 items, 165.6 g and $37.89 — the arcade cabinet's figures over the
+bench clock's panel. In an ad whose whole claim is that the costing is real, a
+number that disagrees with the picture behind it is the worst sentence on the
+screen. If the figure is not in the frame, the beat gets no `spec`.
+
+### Posting them
+
+1080 × 1920, 30 fps, H.264, no audio, 12–14 seconds. That is within spec for
+Instagram Reels, TikTok and YouTube Shorts as they stand. They are silent on
+purpose — add a track in the app you post from, where the platform's own
+licensed library will not earn the account a copyright strike.

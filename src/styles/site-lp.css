@@ -870,12 +870,23 @@
 }
 .lp .show-tile[data-wide] { width: 470px; }
 
+/*
+ * A fixed height, not a fixed ratio.
+ *
+ * These were `aspect-ratio: 16 / 10`, which made the wide tile 94px taller as
+ * well as 150px wider, and a row of four then had one caption sitting below
+ * the other three — a row that reads as broken rather than as a rhythm.
+ *
+ * Height is the thing that has to hold across a row; width is the thing that
+ * varies. So a wide tile is a wider crop of the same scene at the same
+ * height, which is what a wide tile is for.
+ */
 .lp .show-pic {
   display: block;
   overflow: hidden;
   border-radius: var(--r);
   background: var(--dark);
-  aspect-ratio: 16 / 10;
+  height: 200px;
   box-shadow: var(--shadow);
 }
 .lp .show-pic img {
@@ -900,6 +911,9 @@
 @media (max-width: 620px) {
   .lp .show-tile { width: 240px; }
   .lp .show-tile[data-wide] { width: 330px; }
+  /* Scaled with the width, so the row keeps the same proportion it has on a
+     desktop, and both tile widths keep sharing one baseline. */
+  .lp .show-pic { height: 150px; }
 }
 
 /* ==================================================================
