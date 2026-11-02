@@ -2,7 +2,10 @@ node_modules
 dist
 .DS_Store
 *.local
-shots
+# The tools in tools/ write their captures here. Anchored, because
+# a bare `shots` matches any directory of that name at any depth,
+# which silently swallowed public/shots/, the landing page's renders.
+/shots
 
 .env
 .env.local
@@ -11,7 +14,6 @@ names.txt
 free*.txt
 coined.txt
 err*.txt
-shots
 cerr.txt
 
 # Name-search scratch output
