@@ -213,6 +213,22 @@ const PLUG_AT = (bodyLen: number): Vec3 => [-bodyLen / 2 - 170, 6, 120]
 
 const extensionLead: PartDef = {
   id: 'extension-lead',
+  /*
+   * The scan is a four-way UK strip. Ask for two, six or eight ways, or
+   * another region's sockets, and the solids draw that at the real pitch,
+   * because a mesh showing four UK sockets under a part that says six Schuko
+   * is worse than a plain box.
+   *
+   * The scan came with its own coiled flex, which has been taken out of the
+   * file: it was one fixed length under a part whose length is a parameter,
+   * and it was in the box the strip was fitted to, so the strip drew at a
+   * fifth of its size with every socket's port in the air beside it. The
+   * flex below is drawn with the model and follows the length.
+   */
+  model: (p) =>
+    str(p, 'ways', '4') === '4' && str(p, 'region', 'uk') === 'uk'
+      ? { url: 'models/extension-lead-uk.glb', fit: 'bbox', rot: [90, 90, 0], axes: { y: 'fill', z: 'fill' }, credit: { title: 'Power strip extension lead', author: 'Sousinho', license: 'CC-BY-4.0', source: 'https://sketchfab.com/3d-models/power-strip-extension-lead-2180b1f7b55b433285cbe08181a9e88a' } }
+      : undefined,
   name: 'Extension lead',
   category: 'mains',
   blurb: 'Four or six ways behind one plug and one fuse',
@@ -231,7 +247,9 @@ const extensionLead: PartDef = {
   ],
   solids: (p) => {
     const n = parseInt(str(p, 'ways', '4'), 10) || 4
-    const pitch = 56
+    // A BS 1363 face is wider than a Schuko one, and a UK strip is spaced to
+    // suit: four ways is about 300 mm, not 250.
+    const pitch = str(p, 'region', 'uk') === 'uk' ? 70 : 56
     const L = n * pitch + 26
     const out: Solid[] = [
       { kind: 'box', mat: DARK, size: [L, 52, 34], at: [0, 0, 17], bevel: 4 },
@@ -281,13 +299,16 @@ const extensionLead: PartDef = {
       // A cable, not a wall: it is drawn, it is weighed, and nothing routes
       // around it.
       noCollide: true,
+      withModel: true,
       kind: 'tube', mat: { color: '#111318', rough: 0.85, density: 1.3 }, r: 4, seg: 10, path,
     })
     return out
   },
   ports: (p) => {
     const n = parseInt(str(p, 'ways', '4'), 10) || 4
-    const pitch = 56
+    // A BS 1363 face is wider than a Schuko one, and a UK strip is spaced to
+    // suit: four ways is about 300 mm, not 250.
+    const pitch = str(p, 'region', 'uk') === 'uk' ? 70 : 56
     const L = n * pitch + 26
     const out: Port[] = mainsPorts(PLUG_AT(L), [-1, 0, 0], '', [0, 7, 0])
     for (let i = 0; i < n; i++) {

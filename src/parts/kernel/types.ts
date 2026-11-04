@@ -94,6 +94,17 @@ interface SolidBase {
   noCollide?: boolean
   /** Tag for runtime lookup, e.g. an LED lens that must glow. */
   tag?: string
+  /**
+   * Still drawn while the part's model is shown, and left out of the box the
+   * model is fitted into.
+   *
+   * For the pieces a fixed mesh cannot show: a flex as long as the parameter
+   * says, a boom mic that is fitted or not. Without this a part had two bad
+   * choices — a mesh with a coiled cable baked in that ignored the length it
+   * was given, or the cable counted into the fitting box, which shrank the
+   * mesh to make room for a coil it then did not draw.
+   */
+  withModel?: boolean
 }
 
 export interface Profile {
@@ -329,6 +340,40 @@ export type PartCategory =
   | 'av'
   | 'computer'
   | 'furniture'
+  /*
+   * Everything else on a technical desk.
+   *
+   * The catalogue was a circuit library with a room bolted on, and the room
+   * was nine things. A workstation is not nine things: it is the machine, the
+   * screens, what you touch, what you hear, what feeds it a network, what
+   * lights it, what is on the wall behind it, and the instruments beside it.
+   * Each of these is a category rather than a tag because they answer
+   * different questions — a peripheral asks whether your hands reach it, a
+   * network part asks whether the cable run does, a light asks what it draws
+   * and what it covers, decor asks what space is left.
+   *
+   * `decor` is the one with no electrical content at all, and it is here
+   * deliberately: a shelf, a panel and a plant take up the volume that
+   * decides whether the rest of the layout is real.
+   */
+  /*
+   * The space itself, and the things that define it rather than sit in it.
+   *
+   * A room was one part in the furniture category, which had it the wrong
+   * way round: the room is not something you put in a plan, it is the plan.
+   * Walls, openings and the swing of a door decide what else can exist, and
+   * nothing else in the catalogue can answer a question about them.
+   */
+  | 'space'
+  /* Projection, seating and the geometry between them. */
+  | 'cinema'
+  | 'peripheral'
+  | 'audio'
+  | 'network'
+  | 'lighting'
+  | 'decor'
+  | 'instrument'
+  | 'tooling'
 
 export interface PartDoc {
   manufacturer?: string
@@ -386,6 +431,43 @@ export interface ModelSpec {
   rot?: Vec3
   /** Attribution. Required, including for CC0, so credit is never lost. */
   credit: ModelCredit
+  /**
+   * How each axis of the mesh meets the box, after `rot`. Unlisted axes scale
+   * uniformly with the others.
+   *
+   * 'fill' scales that axis on its own to fill the box: right for a dimension
+   * that is a plain extrusion, such as a television's depth. A pair of
+   * fractions [a, b] stretches only the band between them, measured from the
+   * mesh's low side, and moves what lies outside it rigidly: a desk widens
+   * through its top while the legs keep their section, and rises through its
+   * columns while the feet and top keep their thickness.
+   *
+   * Without this a parametric box could only be met by scaling the whole mesh
+   * until its tightest axis fitted, so a desk asked to stand at 1250 mm drew
+   * as a desk half its width.
+   */
+  axes?: Partial<Record<'x' | 'y' | 'z', 'fill' | [number, number]>>
+  /**
+   * Material changes for this configuration, matched by a case-insensitive
+   * substring of the mesh's material names. How a screen goes dark when the
+   * part is off, and a lamp's bulb lights when it is on.
+   */
+  paint?: ModelPaint[]
+  /**
+   * Node or material names (case-insensitive substrings) left out for this
+   * configuration, before fitting. One file can then serve a part with and
+   * without an accessory the file models separately.
+   */
+  hide?: string[]
+}
+
+export interface ModelPaint {
+  match: string
+  color?: string
+  emissive?: string
+  emissiveIntensity?: number
+  /** False drops the material's colour texture, for a picture on a screen that is off. */
+  map?: false
 }
 
 export interface PartDef {
@@ -463,6 +545,16 @@ export interface Connection {
   color?: string
   /** Conductor cross-section, mm^2 (0.2 ~ 24AWG, 0.5 ~ 20AWG). */
   gauge?: number
+  /**
+   * What the insulation is rated to stand, volts.
+   *
+   * Separate from the conductor, because they fail differently and for
+   * different reasons. Too thin a conductor runs hot under current; too thin
+   * an insulator breaks down under voltage, and it does that at no current at
+   * all. Hook-up wire is 300 V, mains flex is 500 V, and running 230 V down a
+   * 300 V jumper is the mistake this exists to show.
+   */
+  insulationV?: number
   /** Optional user-dragged midpoints, world mm. */
   waypoints?: Vec3[]
 }

@@ -56,33 +56,65 @@ export function partsByCategory(cat: PartCategory): PartDef[] {
   return allParts().filter((p) => p.category === cat)
 }
 
+/**
+ * The library's top-level sections, in the order they are offered.
+ *
+ * The order is the product's claim about itself, so it is worth stating what
+ * changed and why. This catalogue began as an electronics library with a
+ * room bolted onto the end of it, and read that way: Passives first, the
+ * space you are actually planning somewhere below the fold. That is a
+ * breadboard simulator with furniture in it, and there are several of those.
+ *
+ * What Draftrig is for is the space and everything in it — a room, what goes
+ * in it, whether it fits, what it draws, and whether you can see the screen
+ * from the back row. So Space leads, the things people are usually planning
+ * come next, and Electronics is one section of several at the end: still
+ * complete, no longer the point.
+ */
+export type LibrarySection =
+  | 'Space'
+  | 'AV & cinema'
+  | 'Workstation'
+  | 'Build'
+  | 'Lab'
+  | 'Electronics'
+
 export interface CategoryMeta {
   label: string
   /** Grouping in the library sidebar. */
-  section: 'Electronics' | 'Build' | 'Setup'
+  section: LibrarySection
   order: number
 }
 
 export const CATEGORY_META: Record<PartCategory, CategoryMeta> = {
-  passive: { label: 'Passives', section: 'Electronics', order: 10 },
-  semiconductor: { label: 'Semiconductors', section: 'Electronics', order: 20 },
-  ic: { label: 'ICs', section: 'Electronics', order: 30 },
-  module: { label: 'Boards & modules', section: 'Electronics', order: 40 },
-  power: { label: 'Power', section: 'Electronics', order: 50 },
-  connector: { label: 'Connectors', section: 'Electronics', order: 60 },
-  electromech: { label: 'Switches & relays', section: 'Electronics', order: 70 },
-  display: { label: 'Displays & indicators', section: 'Electronics', order: 80 },
-  sensor: { label: 'Sensors', section: 'Electronics', order: 90 },
-  prototyping: { label: 'Prototyping', section: 'Electronics', order: 100 },
-  wire: { label: 'Wire & cable', section: 'Electronics', order: 110 },
-  structural: { label: 'Framing & stock', section: 'Build', order: 200 },
-  panel: { label: 'Sheet & panel', section: 'Build', order: 210 },
-  fastener: { label: 'Fasteners', section: 'Build', order: 220 },
-  motion: { label: 'Motion', section: 'Build', order: 230 },
-  mains: { label: 'Mains & sockets', section: 'Setup', order: 300 },
-  computer: { label: 'Computers & consoles', section: 'Setup', order: 310 },
-  av: { label: 'Screens & AV', section: 'Setup', order: 320 },
-  furniture: { label: 'Desk & room', section: 'Setup', order: 330 },
+  space: { label: 'Rooms & openings', section: 'Space', order: 10 },
+  furniture: { label: 'Furniture', section: 'Space', order: 20 },
+  lighting: { label: 'Lighting', section: 'Space', order: 30 },
+  mains: { label: 'Mains & sockets', section: 'Space', order: 40 },
+  decor: { label: 'Finish & decor', section: 'Space', order: 50 },
+  av: { label: 'Screens & projection', section: 'AV & cinema', order: 100 },
+  cinema: { label: 'Seating & theatre', section: 'AV & cinema', order: 110 },
+  audio: { label: 'Speakers & audio', section: 'AV & cinema', order: 120 },
+  computer: { label: 'Computers & consoles', section: 'Workstation', order: 200 },
+  peripheral: { label: 'Input & peripherals', section: 'Workstation', order: 210 },
+  network: { label: 'Network', section: 'Workstation', order: 220 },
+  structural: { label: 'Framing & stock', section: 'Build', order: 300 },
+  panel: { label: 'Sheet & panel', section: 'Build', order: 310 },
+  fastener: { label: 'Fasteners', section: 'Build', order: 320 },
+  motion: { label: 'Motion', section: 'Build', order: 330 },
+  instrument: { label: 'Test & measurement', section: 'Lab', order: 400 },
+  tooling: { label: 'Soldering & fabrication', section: 'Lab', order: 410 },
+  passive: { label: 'Passives', section: 'Electronics', order: 500 },
+  semiconductor: { label: 'Semiconductors', section: 'Electronics', order: 510 },
+  ic: { label: 'ICs', section: 'Electronics', order: 520 },
+  module: { label: 'Boards & modules', section: 'Electronics', order: 530 },
+  power: { label: 'Power', section: 'Electronics', order: 540 },
+  connector: { label: 'Connectors', section: 'Electronics', order: 550 },
+  electromech: { label: 'Switches & relays', section: 'Electronics', order: 560 },
+  display: { label: 'Displays & indicators', section: 'Electronics', order: 570 },
+  sensor: { label: 'Sensors', section: 'Electronics', order: 580 },
+  prototyping: { label: 'Prototyping', section: 'Electronics', order: 590 },
+  wire: { label: 'Wire & cable', section: 'Electronics', order: 600 },
 }
 
 const escapeRe = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')

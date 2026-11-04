@@ -1,95 +1,115 @@
 import { chromium } from 'playwright'
+import { mkdirSync } from 'node:fs'
 
 /**
- * Contact sheet for reviewing part models.
+ * Photographs one part at a time, framed, so a new part can be checked by eye.
  *
- * Lays a list of parts out on a grid in the editor and photographs the lot in
- * one frame, so a batch of new geometry can be looked at without opening the
- * app twenty times. Spacing is per part because a resistor and a two-metre
- * cable do not share a sensible cell size.
+ * A part that typechecks and passes the catalog tests can still be wrong in
+ * the only way that matters: a mesh fitted to the wrong axis, a scan that
+ * came with a backdrop in it, a model nine times the size of the solids it
+ * replaced. None of that is visible from the test suite, and all of it is
+ * obvious in a picture.
  *
- *   node tools/shoot-parts.mjs out.png 'wire-hookup@260' 'led-5mm@40'
+ *   node tools/shoot-parts.mjs chair-task keyboard-desk desk-lamp
+ *   node tools/shoot-parts.mjs chair-task:style=gaming
  *
- * The number after @ is the cell size in millimetres. Default 90.
+ * A `:key=value` suffix sets parameters, which is how a part whose mesh is
+ * gated on a configuration gets checked in that configuration.
+ *
+ * BASE  dev server (default http://localhost:5174)
  */
 
-const base = process.env.BASE ?? 'http://localhost:5173'
-const [outFile, ...specs] = process.argv.slice(2)
-if (!outFile || specs.length === 0) {
-  console.error('usage: node tools/shoot-parts.mjs <out.png> <partId[@cell]> ...')
+const BASE = process.env.BASE ?? 'http://localhost:5174'
+const OUT = 'shots/parts'
+
+const args = process.argv.slice(2)
+if (!args.length) {
+  console.log('usage: shoot-parts.mjs <partId[:key=value,key=value]> …')
   process.exit(1)
 }
 
-const items = specs.map((s) => {
-  const [id, cell] = s.split('@')
-  const [defId, ...pairs] = id.split(':')
-  const params = {}
-  for (const kv of pairs) {
-    const [k, v] = kv.split('=')
-    params[k] = /^-?\d+(\.\d+)?$/.test(v) ? Number(v) : v === 'true' ? true : v === 'false' ? false : v
-  }
-  return { defId, params, cell: cell ? Number(cell) : 90 }
+/** Chrome off, canvas full bleed — the same stripping the reel shots use. */
+const BARE = `
+  .app { grid-template-rows: 1fr !important; }
+  .app-body { grid-template-columns: 1fr !important; }
+  .panel, .console, .statusbar, .topbar, .ai-fab, .bom-tab,
+  .vp-toolbar, .vp-hint, .vp-modes, .wire-colors, .vp-stats { display: none !important; }
+  .app-center { border: 0 !important; }
+`
+
+mkdirSync(OUT, { recursive: true })
+
+/*
+ * Edge, and a long shutter. The bundled headless shell reports its fonts
+ * loaded and then never returns a frame of a live WebGL canvas this size.
+ */
+const browser = await chromium.launch({ channel: 'msedge' })
+const page = await browser.newPage({ viewport: { width: 1100, height: 900 }, deviceScaleFactor: 1 })
+await page.addInitScript(() => {
+  localStorage.setItem('tour.seen.v1', '1')
+  localStorage.setItem('draftrig.nav.seen.v1', '1')
+  localStorage.setItem('draftrig.console.open.v1', '0')
+  localStorage.setItem('draftrig.bom.open.v1', '0')
 })
 
-const b = await chromium.launch({ channel: 'msedge' })
-const page = await b.newPage({ viewport: { width: 1500, height: 950 }, deviceScaleFactor: 2 })
 const errors = []
-page.on('pageerror', (e) => errors.push(e.message))
-page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()) })
-
-await page.goto(base + '/app', { waitUntil: 'networkidle' })
-await page.evaluate(() => localStorage.setItem('tour.seen.v1', '1'))
-await page.reload({ waitUntil: 'networkidle' })
-await page.waitForTimeout(2400)
-await page.addStyleTag({
-  content: `
-    .vp-toolbar, .vp-hint, .vp-stats, .ai-fab, .wire-palette, .vp-empty { display: none !important; }
-    .app-body { grid-template-columns: 1fr !important; }
-    .app-body > aside, .app-body > .panel, .app-body > :last-child { display: none !important; }
-    .app-body > .app-center { display: flex !important; flex-direction: column; }
-    .app-center > :last-child { display: none !important; }
-  `,
+page.on('console', (m) => {
+  if (m.type() === 'error') errors.push(m.text().slice(0, 160))
 })
 
-const missing = await page.evaluate((list) => {
-  const d = window.draftrig.doc.getState()
-  d.loadDoc({ name: 'Sheet', instances: {}, order: [], connections: {}, connectionOrder: [] })
+await page.goto(BASE + '/app', { waitUntil: 'networkidle' })
+await page.waitForFunction(() => typeof window.draftrig?.doc?.getState === 'function', { timeout: 30000 })
+await page.addStyleTag({ content: BARE })
 
-  // Square-ish grid, laid out left to right then front to back.
-  const cols = Math.ceil(Math.sqrt(list.length))
-  const cell = Math.max(...list.map((i) => i.cell))
-  const bad = []
-  list.forEach((item, i) => {
-    const cx = (i % cols) - (cols - 1) / 2
-    const cz = Math.floor(i / cols) - (Math.ceil(list.length / cols) - 1) / 2
-    const id = d.addPart(item.defId, [cx * cell, 0, cz * cell], item.params)
-    if (!id) bad.push(item.defId)
-    // Keep the height the editor seated it at. Forcing y = 0 buried every
-    // part whose origin is not on its underside, screws first.
-    else d.moveInstance(id, [cx * cell, window.draftrig.doc.getState().doc.instances[id].pos[1], cz * cell], true)
-  })
-  d.select([])
-  d.requestFrame('all')
-  return bad
-}, items)
+for (const arg of args) {
+  const [id, paramStr] = arg.split(':')
+  const params = Object.fromEntries(
+    (paramStr ?? '')
+      .split(',')
+      .filter(Boolean)
+      .map((kv) => {
+        const [k, v] = kv.split('=')
+        return [k, v === 'true' ? true : v === 'false' ? false : /^-?\d+(\.\d+)?$/.test(v) ? Number(v) : v]
+      }),
+  )
 
-await page.waitForTimeout(2000)
+  const before = errors.length
+  const placed = await page.evaluate(
+    ([partId, overrides]) => {
+      const d = window.draftrig.doc.getState()
+      d.newDoc()
+      const inst = d.addPart(partId, [0, 0, 0], Object.keys(overrides).length ? overrides : undefined)
+      if (!inst) return null
+      window.draftrig.doc.getState().select([])
+      window.draftrig.doc.getState().requestFrame('all')
+      return inst
+    },
+    [id, params],
+  )
 
-// Framing the whole document leaves a generous margin, which on a sheet of
-// small parts means they are photographed as specks. Close in afterwards.
-{
-  const zoom = Number(process.env.ZOOM ?? 3)
-  const box = await page.locator('canvas').first().boundingBox()
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
-  for (let i = 0; i < zoom; i++) {
-    await page.mouse.wheel(0, -220)
-    await page.waitForTimeout(140)
+  if (!placed) {
+    console.log(`  ${arg.padEnd(34)} NO SUCH PART`)
+    continue
   }
-  await page.waitForTimeout(700)
+  // The model loader fetches the glb after the part lands, and the frame
+  // request is a token the viewport acts on next tick — so wait for both.
+  await page.waitForTimeout(2600)
+  await page.evaluate(() => window.draftrig.doc.getState().requestFrame('all'))
+  await page.waitForTimeout(1200)
+
+  const name = arg.replace(/[:=,]/g, '-') + '.png'
+  /*
+   * The viewport, not the canvas element.
+   *
+   * An element screenshot waits for the element to hold still, and a live
+   * WebGL canvas never does — it reports "waiting for element to be stable"
+   * until it times out. The chrome is hidden above, so the viewport is the
+   * canvas anyway.
+   */
+  await page.screenshot({ path: `${OUT}/${name}` })
+  const fresh = errors.slice(before)
+  console.log(`  ${arg.padEnd(34)} ${name}${fresh.length ? `  ERRORS: ${fresh.join(' | ')}` : ''}`)
 }
 
-await page.locator('canvas').first().screenshot({ path: outFile })
-console.log('wrote', outFile)
-if (missing.length) console.log('unknown part ids:', missing)
-console.log('errors:', errors.length ? errors.slice(0, 5) : 'none')
-await b.close()
+await browser.close()
+console.log(`\n${args.length} parts in ${OUT}/`)

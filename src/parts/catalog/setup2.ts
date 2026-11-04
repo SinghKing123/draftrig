@@ -1,4 +1,4 @@
-import type { DeviceModel, PartDef, Port, Solid, Vec3 } from '../kernel/types'
+import type { DeviceModel, ModelSpec, PartDef, Port, Solid, Vec3 } from '../kernel/types'
 import { registerParts } from '../kernel/registry'
 import { bool, num, str } from './_helpers'
 import { ALU, DARK, PLASTIC, REGION_PARAM, STEEL, amps, dutyWatts, load, mainsPorts, screen, volts } from './setup'
@@ -70,21 +70,29 @@ const panel169 = (inches: number): [number, number] => {
 const television: PartDef = {
   id: 'tv-set',
   /*
-   * No mesh: models/tv.glb does not draw.
+   * The mesh needed turning, not fixing.
    *
-   * The file fetches (200), the loader accepts it, and the part's selection
-   * box comes out the right size -- and nothing is rendered inside it. The
-   * other seven scans in this catalogue work through the same path, so the
-   * loader and the fit are not the fault; this one file is. It is the only
-   * one carrying a node scale (0.01) and the only one with a single
-   * untextured material, which is where to start looking.
+   * This was recorded as a file that would not draw: it fetched, the loader
+   * took it, the selection box came out right, and nothing appeared inside
+   * it. It was drawing the whole time, at about a fiftieth of its size.
+   * tv.glb is modelled with the screen width running along Z, so its longest
+   * axis is 1.161 against 0.366 across. `fit: 'bbox'` scales uniformly, so
+   * the longest model axis was being matched to the part's 60 mm depth and a
+   * 1200 mm television came out 19 mm wide — present, and invisible.
    *
-   * Until it draws, the television uses the geometry below. A part that
-   * looks plainer is a part; a part that renders nothing is a hole in the
-   * room. The credit is removed with it, because we are not showing the
-   * author's work and crediting them for a blank space would be worse than
-   * not crediting them at all.
+   * A quarter turn about Y puts the width on X, and the same uniform fit then
+   * lands it on the panel. Nothing about the file was wrong.
+   *
+   * Still only the configuration with feet: the scan has them, so a
+   * wall-mounted set draws itself. The scan's feet reach further back than a
+   * real set's, so the depth is fitted on its own rather than shrinking the
+   * whole television to make the feet fit — which drew a 55 inch set at two
+   * fifths of its width.
    */
+  model: (p) =>
+    str(p, 'stand', 'feet') === 'feet'
+      ? { url: 'models/tv.glb', fit: 'bbox', rot: [0, -90, 0], axes: { z: 'fill' }, credit: { title: 'Flat Screen Television', author: 'HippoStance', license: 'CC-BY-4.0', source: 'https://sketchfab.com/3d-models/flat-screen-television-f90d4fb91dd34b6791e8d66d00f96591' } }
+      : undefined,
   name: 'Television',
   category: 'av',
   blurb: 'A flat panel on feet, sized by the diagonal',
@@ -116,7 +124,9 @@ const television: PartDef = {
     if (stand === 'feet') {
       for (const sx of [-1, 1] as const) {
         out.push({ kind: 'box', mat: ALU, size: [12, lift, 90], at: [sx * (w / 2 - 70), lift / 2, -10] })
-        out.push({ kind: 'box', mat: ALU, size: [40, 8, 150], at: [sx * (w / 2 - 70), 4, -10], bevel: 2 })
+        // 240 deep: what the feet of a 55 inch set actually take up on the
+        // unit it stands on, which is the number that decides if it fits.
+        out.push({ kind: 'box', mat: ALU, size: [40, 8, 240], at: [sx * (w / 2 - 70), 4, -10], bevel: 2 })
       }
     } else if (stand === 'pedestal') {
       out.push({ kind: 'box', mat: ALU, size: [60, lift, 40], at: [0, lift / 2, -14] })
@@ -168,10 +178,13 @@ const desktopMonitor: PartDef = {
   /* Same as the television: the scan has a stand in it, so it is only the
      right picture for the configuration that has one. On an arm the panel
      draws itself. */
-  model: (p) =>
-    bool(p, 'stand', true)
-      ? { url: 'models/monitor-27.glb', fit: 'bbox', credit: { title: 'LG moniter', author: 'Mohamed Ahmed', license: 'CC-BY-4.0', source: 'https://sketchfab.com/3d-models/lg-moniter-f899bb43701f4e95b1e44c4bf21ed29c' } }
-      : undefined,
+  model: (p) => {
+    // On an arm the panel draws itself: both scans have a stand in them.
+    if (!bool(p, 'stand', true)) return undefined
+    return bool(p, 'ultrawide', false)
+      ? { url: 'models/monitor-ultrawide.glb', fit: 'bbox', axes: { z: 'fill' }, credit: { title: 'Ultrawide Monitor', author: 'dylanheyes', license: 'CC-BY-4.0', source: 'https://sketchfab.com/3d-models/ultrawide-monitor-f84d24b6df3648d884fd9be9c8007dd4' } }
+      : { url: 'models/monitor-27.glb', fit: 'bbox', axes: { z: 'fill' }, credit: { title: 'LG moniter', author: 'Mohamed Ahmed', license: 'CC-BY-4.0', source: 'https://sketchfab.com/3d-models/lg-moniter-f899bb43701f4e95b1e44c4bf21ed29c' } }
+  },
   name: 'Desktop monitor',
   category: 'av',
   blurb: 'A monitor on a stand, DisplayPort and USB-C in',
@@ -313,7 +326,10 @@ const projector: PartDef = {
 
 const soundbar: PartDef = {
   id: 'soundbar',
-  model: { url: 'models/soundbar.glb', fit: 'bbox', credit: { title: 'Q-Acoustics M3 Soundbar', author: 'Q-Acoustics', license: 'CC-BY-4.0', source: 'https://sketchfab.com/3d-models/7cf33febf603401586ffa5e18c312d31' } },
+  /* The length is a parameter, so the bar stretches between its end caps
+     rather than the whole mesh scaling to the length and taking the height
+     with it. */
+  model: { url: 'models/soundbar.glb', fit: 'bbox', axes: { x: [0.08, 0.92], z: 'fill' }, credit: { title: 'Q-Acoustics M3 Soundbar', author: 'Q-Acoustics', license: 'CC-BY-4.0', source: 'https://sketchfab.com/3d-models/7cf33febf603401586ffa5e18c312d31' } },
   name: 'Soundbar',
   category: 'av',
   blurb: 'A bar under the screen, on eARC',
@@ -361,7 +377,9 @@ const soundbar: PartDef = {
 
 const pcTower: PartDef = {
   id: 'pc-tower',
-  model: { url: 'models/pc-tower.glb', fit: 'bbox', credit: { title: 'Fractal Design Meshify C — PC Case', author: 'MUSHROOM_BUILDS', license: 'CC-BY-4.0', source: 'https://sketchfab.com/3d-models/a46526af2ac84fa098edc3f01c012450' } },
+  /* The scan was modelled with its front facing +x, so unturned it lay
+     across the part sideways and fitted at half height. */
+  model: { url: 'models/pc-tower.glb', fit: 'bbox', rot: [0, -90, 0], axes: { y: 'fill', z: 'fill' }, credit: { title: 'Fractal Design Meshify C — PC Case', author: 'MUSHROOM_BUILDS', license: 'CC-BY-4.0', source: 'https://sketchfab.com/3d-models/a46526af2ac84fa098edc3f01c012450' } },
   name: 'Desktop PC',
   category: 'computer',
   blurb: 'A tower, its supply, and what it pulls under load',
@@ -459,9 +477,14 @@ const pcTower: PartDef = {
   },
 }
 
+const LAPTOP_MODEL: ModelSpec = { url: 'models/laptop.glb', fit: 'bbox', axes: { y: 'fill', z: 'fill' }, credit: { title: 'MacBook Pro 16" 2021', author: 'rtql8d', license: 'CC-BY-4.0', source: 'https://sketchfab.com/3d-models/macbook-pro-16-2021-8ac16bda501c4bcc8ba93ac3eb63a8e1' } }
+
 const laptop: PartDef = {
   id: 'laptop',
-  model: { url: 'models/laptop.glb', fit: 'bbox', credit: { title: 'MacBook Pro 16" 2021', author: 'rtql8d', license: 'CC-BY-4.0', source: 'https://sketchfab.com/3d-models/macbook-pro-16-2021-8ac16bda501c4bcc8ba93ac3eb63a8e1' } },
+  /* The scan's lid is open at one angle. Near it, the lid's height and reach
+     are fitted on their own; well away from it the solids draw the lid where
+     the parameter puts it. */
+  model: (p) => (num(p, 'lid', 105) < 95 || num(p, 'lid', 105) > 125 ? undefined : LAPTOP_MODEL),
   name: 'Laptop',
   category: 'computer',
   blurb: 'Open on the desk, charging over USB-C',
@@ -549,7 +572,10 @@ const console_: PartDef = {
   // console flat or docks a handheld falls back to the built-in box.
   model: (p) =>
     str(p, 'style', 'tower') === 'tower'
-      ? { url: 'models/ps5-console.glb', fit: 'bbox', credit: { title: 'PS5', author: 'rtql8d', license: 'CC-BY-4.0', source: 'https://sketchfab.com/3d-models/ps5-d788de3735964151a3e24fd59c0f1956' } }
+      // The scan is half as wide again as the real 104 mm console, so its
+      // width is brought in to the real one rather than the whole console
+      // shrunk to it.
+      ? { url: 'models/ps5-console.glb', fit: 'bbox', axes: { x: 'fill' }, credit: { title: 'PS5', author: 'rtql8d', license: 'CC-BY-4.0', source: 'https://sketchfab.com/3d-models/ps5-d788de3735964151a3e24fd59c0f1956' } }
       : undefined,
   name: 'PlayStation 5',
   category: 'computer',
@@ -623,7 +649,7 @@ const phone: PartDef = {
   model: (p) =>
     bool(p, 'stand', false)
       ? undefined
-      : { url: 'models/phone.glb', fit: 'bbox', rot: [90, 0, 0], credit: { title: 'Apple iPhone 13 Pro Max', author: 'DatSketch', license: 'CC-BY-4.0', source: 'https://sketchfab.com/3d-models/apple-iphone-13-pro-max-4328dea00e47497dbeac73c556121bc9' } },
+      : { url: 'models/phone.glb', fit: 'bbox', rot: [90, 0, 0], axes: { y: 'fill' }, credit: { title: 'Apple iPhone 13 Pro Max', author: 'DatSketch', license: 'CC-BY-4.0', source: 'https://sketchfab.com/3d-models/apple-iphone-13-pro-max-4328dea00e47497dbeac73c556121bc9' } },
   name: 'Phone',
   category: 'computer',
   blurb: 'A handset, flat or in a stand',
@@ -690,9 +716,14 @@ const phone: PartDef = {
   },
 }
 
+const ROUTER_MODEL: ModelSpec = { url: 'models/router-wifi.glb', fit: 'bbox', axes: { y: 'fill', z: 'fill' }, credit: { title: '3D Router', author: 'SanForge Studio', license: 'CC-BY-4.0', source: 'https://sketchfab.com/3d-models/3d-router-fc90c018647c4fd1a3a9f62559bf67f0' } }
+
 const router: PartDef = {
   id: 'router-wifi',
-  model: { url: 'models/router-wifi.glb', fit: 'bbox', credit: { title: '3D Router', author: 'SanForge Studio', license: 'CC-BY-4.0', source: 'https://sketchfab.com/3d-models/3d-router-fc90c018647c4fd1a3a9f62559bf67f0' } },
+  /* The scan has two aerials. Ask for any other number and the solids draw
+     that many, because a picture with two under a part that says four is the
+     kind of mismatch nobody notices until they count. */
+  model: (p) => (Math.round(num(p, 'aerials', 2)) === 2 ? ROUTER_MODEL : undefined),
   name: 'Router',
   category: 'computer',
   blurb: 'Four ports, a WAN, and the aerials that decide where it goes',
@@ -703,12 +734,12 @@ const router: PartDef = {
       'A domestic router. It wants to be high, central and not in a cupboard, and the aerials are modelled because they are the reason the last of those is true.',
   },
   params: [
-    { key: 'aerials', label: 'Aerials', type: 'number', default: 4, min: 0, max: 8, step: 1, group: 'Router' },
+    { key: 'aerials', label: 'Aerials', type: 'number', default: 2, min: 0, max: 8, step: 1, group: 'Router' },
     { key: 'ports', label: 'LAN ports', type: 'enum', default: '4', group: 'Router', options: ['2', '4', '8'].map((v) => ({ value: v, label: v })) },
     { key: 'on', label: 'On', type: 'bool', default: true, group: 'Control' },
   ],
   solids: (p) => {
-    const n = Math.round(num(p, 'aerials', 4))
+    const n = Math.round(num(p, 'aerials', 2))
     const W = 240
     const D = 160
     const H = 38
@@ -762,11 +793,15 @@ const desk: PartDef = {
   id: 'desk',
   // The scan is one desk: an oak top on a sit-stand column. It stands in only
   // for that configuration — a walnut top or a four-legged frame is a different
-  // object, and the solids draw those at whatever width is set. Uniform fit
-  // keeps the mesh honest at the default size; very wide tops it cannot follow.
+  // object, and the solids draw those at whatever width is set.
+  //
+  // Width and height stretch through bands — the top between the legs, the
+  // columns between the feet and the top — so a wider desk is a longer top
+  // on the same legs and a standing desk is the same desk raised. Scaled
+  // whole, raising it to 1250 mm drew a desk half as wide.
   model: (p) =>
     str(p, 'top', 'oak') === 'oak' && str(p, 'frame', 'sit-stand') === 'sit-stand'
-      ? { url: 'models/desk.glb', fit: 'bbox', credit: { title: 'Adjustable Wooden Desk', author: 'twopixels', license: 'CC-BY-4.0', source: 'https://sketchfab.com/3d-models/57ba9e7b17464b58998e91f05dae9035' } }
+      ? { url: 'models/desk.glb', fit: 'bbox', axes: { x: [0.25, 0.75], y: [0.12, 0.88] }, credit: { title: 'Adjustable Wooden Desk', author: 'twopixels', license: 'CC-BY-4.0', source: 'https://sketchfab.com/3d-models/57ba9e7b17464b58998e91f05dae9035' } }
       : undefined,
   name: 'Desk',
   category: 'furniture',
@@ -880,3 +915,5 @@ registerParts([television, desktopMonitor, projector, soundbar, pcTower, laptop,
 void PLASTIC
 void DARK
 void volts
+
+export { signalPorts, socketBlocks, BLACK_PLASTIC, SOFT, panel169 }

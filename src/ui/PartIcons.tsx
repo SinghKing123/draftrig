@@ -626,7 +626,81 @@ const Desk = (p: Props) => (
   </G>
 )
 
+const Mouse = (p: Props) => (
+  <G {...p}>
+    <rect x="5.6" y="2.4" width="8.8" height="15.2" rx="4.4" />
+    <path d="M10 2.6v5.2" />
+  </G>
+)
+
+const Speaker = (p: Props) => (
+  <G {...p}>
+    <rect x="4.6" y="2.4" width="10.8" height="15.2" rx="1.6" />
+    <circle cx="10" cy="12.2" r="3" />
+    <circle cx="10" cy="6.2" r="1.3" />
+  </G>
+)
+
+const Network = (p: Props) => (
+  <G {...p}>
+    <rect x="2.4" y="12.6" width="4.4" height="4.4" rx="1" />
+    <rect x="13.2" y="12.6" width="4.4" height="4.4" rx="1" />
+    <rect x="7.8" y="3" width="4.4" height="4.4" rx="1" />
+    <path d="M10 7.4v3.2M4.6 12.6V10.6h10.8v2" />
+  </G>
+)
+
+/* A luminaire: a shade with light leaving it. */
+const Lamp = (p: Props) => (
+  <G {...p}>
+    <path d="M4.4 10.4 10 3l5.6 7.4z" />
+    <path d="M10 12.2v1.8M6.2 13.4l-.9 1.6M13.8 13.4l.9 1.6" />
+  </G>
+)
+
+/* A framed print on a wall, which is the whole of this category's point:
+   the volume in front of it is space you cannot put anything in. */
+const Decor = (p: Props) => (
+  <G {...p}>
+    <rect x="3" y="3" width="14" height="14" rx="1.2" />
+    <path d="M5.6 13.6 8.8 9.4l2.4 2.8 1.8-2.2 1.4 3.6z" />
+  </G>
+)
+
+const Scope = (p: Props) => (
+  <G {...p}>
+    <rect x="2" y="3.6" width="16" height="12.8" rx="1.5" />
+    <path d="M4.6 12.6h2.6l1.6-5.2 1.6 5.2h1.4l1.4-2.6h2.6" />
+  </G>
+)
+
+const Iron = (p: Props) => (
+  <G {...p}>
+    <path d="M3 17 7.6 12.4" />
+    <path d="M6.4 11.2 9 8.6l2.4 2.4-2.6 2.6z" />
+    <path d="M10.2 7.4 15 2.6l2.4 2.4-4.8 4.8z" />
+  </G>
+)
+
+/* A plan: walls in outline, with an opening in one of them. */
+const Plan = (p: Props) => (
+  <G {...p}>
+    <path d="M3 3h14v14H3z" />
+    <path d="M3 11h4M11 17v-6h6" />
+  </G>
+)
+
+const Recliner = (p: Props) => (
+  <G {...p}>
+    <path d="M4.6 16v-3.4h10.8V16" />
+    <path d="M6 12.6V6.4a1.6 1.6 0 0 1 1.6-1.6h4.8A1.6 1.6 0 0 1 14 6.4v6.2" />
+    <path d="M3.4 12.6h1.2M15.4 12.6h1.2" />
+  </G>
+)
+
 const BY_CATEGORY: Record<PartCategory, Glyph> = {
+  space: Plan,
+  cinema: Recliner,
   passive: Resistor,
   semiconductor: Diode,
   ic: Chip,
@@ -646,6 +720,13 @@ const BY_CATEGORY: Record<PartCategory, Glyph> = {
   computer: Tower,
   av: Screen,
   furniture: Desk,
+  peripheral: Mouse,
+  audio: Speaker,
+  network: Network,
+  lighting: Lamp,
+  decor: Decor,
+  instrument: Scope,
+  tooling: Iron,
 }
 
 export function PartIcon({ def, size = 18 }: { def: PartDef; size?: number }) {
