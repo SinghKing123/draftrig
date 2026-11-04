@@ -11,6 +11,7 @@ import { devUserOn } from '@/auth/devUser'
 import { newProjectId, projects, type ProjectSummary } from '@/cloud/projects'
 import { getThumb, removeThumb, setThumb } from '@/cloud/thumbs'
 import { STARTERS, type Starter } from '@/io/starters'
+import { StartPanel } from '@/ui/StartPanel'
 
 /**
  * The dashboard.
@@ -428,6 +429,20 @@ export function Dashboard() {
         <main className="dmain">
           {section === 'home' && (
             <>
+              {/*
+                * First on the page, above the files.
+                *
+                * What was here was a row of templates and a list of builds —
+                * the shape of a folder. A folder is the right thing to find
+                * on your second visit and the wrong thing to meet on your
+                * first: it says where your work is kept and nothing about
+                * what the thing does.
+                */}
+              <StartPanel
+                onBlank={startBlank}
+                onOpenPart={(defId) => navigate(`/app?part=${encodeURIComponent(defId)}`)}
+              />
+
               <section className="dsec">
                 <div className="dsec-head">
                   <h2>Start a new build</h2>

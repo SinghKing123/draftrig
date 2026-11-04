@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { Viewport } from '@/scene/Viewport'
 import { fbKey, peekFramebuffer, type CharBuffer } from '@/sim/display/framebuffer'
-import { TopBar } from '@/ui/TopBar'
+import { TopBar, Workspaces } from '@/ui/TopBar'
+import { CodeBoards, CodeCentre } from '@/ui/CodeWorkspace'
 import { Library } from '@/ui/Library'
 import { Outline } from '@/ui/Outline'
 import { useSidePanel } from '@/ui/PanelTabs'
@@ -21,9 +22,11 @@ import { NameDialog, type FileActions } from '@/ui/FileMenu'
 import { useShortcuts } from './shortcuts'
 import { useBomPanel } from '@/state/bom'
 import { Tour, hasSeenTour, markTourSeen } from '@/ui/Tour'
+import { markEditorUsed } from '@/ui/firstRun'
 import { Welcome } from '@/ui/Welcome'
 import { engine } from '@/sim/engine'
 import { registerSeating, useDoc, type Doc } from '@/state/doc'
+import { getPart } from '@/parts/kernel/registry'
 import { buildPart } from '@/parts/kernel/build'
 import { newProjectId, projects } from '@/cloud/projects'
 import { setThumb } from '@/cloud/thumbs'
@@ -33,6 +36,7 @@ import { BRAND, FILE_EXT, pageTitle } from '@/brand'
 // Registers the part catalog. The editor is the entry point that needs it;
 // the marketing routes deliberately do not import this.
 import '@/parts'
+import { allParts, CATEGORY_META, searchParts } from '@/parts/kernel/registry'
 import { useSim } from '@/state/sim'
 import { STARTERS } from '@/io/starters'
 
@@ -47,6 +51,14 @@ declare global {
       sim: typeof useSim
       engine: typeof engine
       starters: typeof STARTERS
+      /**
+       * The catalogue, for tools/.
+       *
+       * It cannot be counted from the source: parts register themselves at
+       * import time and several files register a family from a loop, so the
+       * registry is the only place that knows how many there are.
+       */
+      parts: { allParts: typeof allParts; CATEGORY_META: typeof CATEGORY_META; getPart: typeof getPart; searchParts: typeof searchParts }
       /** What a panel is actually showing, for tools/ and for bug reports. */
       screen: (instanceId: string, screen?: string) => unknown
     }
@@ -57,6 +69,7 @@ window.draftrig = {
   sim: useSim,
   engine,
   starters: STARTERS,
+  parts: { allParts, CATEGORY_META, getPart, searchParts },
   /*
    * A display's contents, read out of the simulation rather than off the
    * screen. Whether a panel is stale because nothing was sent to it or
@@ -117,14 +130,24 @@ export function Editor() {
   // /app?start=cnc opens a starter straight away. The front page links to
   // these, so the picture of a build and the build itself are one click apart.
   const [startId] = useState(() => params.get('start'))
+  /*
+   * /app?part=led-5mm opens an empty bench with one part already on it.
+   *
+   * The dashboard's search offers catalogue parts, and an offer you cannot
+   * act on is a list. This is what makes each one a way in.
+   */
+  const [partId] = useState(() => params.get('part'))
   const [id, setId] = useState(() => projectId ?? newProjectId())
   const [saveState, setSaveState] = useState<SaveState>('idle')
   const [ready, setReady] = useState(false)
   const [prompt, setPrompt] = useState<Prompt>(null)
+  /** A one-line, dismissable report of something that did not work. */
+  const [notice, setNotice] = useState<string | null>(null)
   const [onboarding, setOnboarding] = useState<Onboarding>(() =>
-    projectId || startId || hasSeenTour() ? 'done' : 'intro',
+    projectId || startId || partId || hasSeenTour() ? 'done' : 'intro',
   )
   const loadDoc = useDoc((s) => s.loadDoc)
+  const mode = useDoc((s) => s.mode)
   const doc = useDoc((s) => s.doc)
   const bomOpen = useBomPanel((s) => s.open)
   const sideTab = useSidePanel((s) => s.tab)
@@ -191,20 +214,54 @@ export function Editor() {
     return () => engine.stop()
   }, [])
 
-  // Open the requested project, if there is one to open.
+  /*
+   * Open the requested project, if there is one to open.
+   *
+   * The bench is cleared before the fetch rather than after it, and that is
+   * the whole fix for a long-standing complaint: opening a project showed
+   * whatever you had been working on before.
+   *
+   * The document lives in a module-level store, so it outlives the route.
+   * Going from one project to another remounts this component but leaves the
+   * previous build sitting in the store, and the load that replaces it is
+   * asynchronous. So the old build was on screen for as long as the fetch
+   * took, under the new project's name — and when the fetch returned nothing,
+   * which it does for a project this browser has never seen and the signed-in
+   * account does not hold, the old build simply stayed. Nothing said so. The
+   * autosave then treated it as this project's contents, so the next edit
+   * wrote the wrong document into the project you had opened.
+   *
+   * Clearing first makes the sequence honest: the bench you opened is empty
+   * until the thing you asked for arrives, and if it never arrives it stays
+   * empty and says why.
+   */
   useEffect(() => {
     let cancelled = false
     ;(async () => {
       if (projectId) {
+        useDoc.getState().newDoc()
+        engine.reset()
         const rec = await projects.load(projectId).catch(() => null)
-        if (!cancelled && rec) {
+        if (cancelled) return
+        if (rec) {
           loadDoc(rec.doc)
           engine.reset()
+        } else {
+          setNotice('That project could not be found, so this is an empty bench.')
         }
       } else if (startId) {
         const starter = STARTERS.find((s) => s.id === startId)
         if (!cancelled && starter) {
           loadDoc(starter.build())
+          engine.reset()
+        }
+      } else if (partId) {
+        if (!cancelled && getPart(partId)) {
+          const d = useDoc.getState()
+          d.newDoc()
+          const placed = d.addPart(partId)
+          if (placed) d.select([placed])
+          d.requestFrame('all')
           engine.reset()
         }
       }
@@ -218,7 +275,7 @@ export function Editor() {
     return () => {
       cancelled = true
     }
-  }, [projectId, startId, loadDoc])
+  }, [projectId, startId, partId, loadDoc])
 
   useEffect(() => {
     document.title = pageTitle(doc.name || 'Editor')
@@ -264,6 +321,12 @@ export function Editor() {
   useEffect(() => {
     if (!ready) return
     if (isEmpty(doc)) return
+    /*
+     * Something is on the bench, so this is not somebody's first minute here.
+     * Recorded against the browser rather than the document, because what it
+     * decides is whether the editor keeps introducing itself.
+     */
+    markEditorUsed()
     // Loaded and left alone. An example being read is not a change.
     if (doc === pristine.current) return
     if (doc === savedAs.current) return
@@ -390,14 +453,29 @@ export function Editor() {
   return (
     <div className="app">
       <TopBar saveState={saveState} file={file} />
+      <Workspaces />
       {/* The bill of materials is a column of its own rather than something
           laid over the bench: you open it to decide what to order, and
           covering up the thing you are pricing while you do that is no
           help. */}
-      <div className="app-body" data-bom={bomOpen} data-sketch={sketchOpen} data-sheet={sheet ?? 'none'}>
-        {/* One column, two panels: the catalogue of what you could add and
-            the list of what you have. */}
-        {sideTab === 'parts' ? <Library /> : <Outline />}
+      {/*
+        * One body, four arrangements.
+        *
+        * `data-ws` is what the stylesheet switches on, so the difference
+        * between workspaces is a column width and a hidden panel rather than
+        * four copies of this tree. Code is the one that genuinely differs:
+        * its left column lists the boards that run a program and its centre
+        * is the editor, so the bench is not in it at all.
+        */}
+      <div
+        className="app-body"
+        data-ws={mode}
+        data-bom={bomOpen}
+        data-sketch={sketchOpen}
+        data-sheet={sheet ?? 'none'}
+      >
+        {mode === 'code' ? <CodeBoards /> : sideTab === 'parts' ? <Library /> : <Outline />}
+        {mode === 'code' && <CodeCentre />}
         <div className="app-center">
           <div className="viewport-wrap" data-tour="viewport">
             <Viewport />
@@ -464,6 +542,13 @@ export function Editor() {
             void saveCopy(name, follow)
           }}
         />
+      )}
+
+      {notice && (
+        <div className="app-notice" role="status">
+          {notice}
+          <button className="btn ghost icon" aria-label="Dismiss" onClick={() => setNotice(null)}>×</button>
+        </div>
       )}
 
       <StatusBar />

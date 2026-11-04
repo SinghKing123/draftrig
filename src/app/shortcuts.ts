@@ -63,6 +63,9 @@ export function useShortcuts(): void {
           doc.setMode('wire')
           break
         case '3':
+          doc.setMode('code')
+          break
+        case '4':
           doc.setMode('sim')
           break
         case ' ':
@@ -73,6 +76,16 @@ export function useShortcuts(): void {
         case 'f':
         case 'F':
           doc.requestFrame(doc.selection.length ? 'selection' : 'all')
+          break
+        /*
+         * The tool, on one key, the way the rest of the trade binds it.
+         * G and R are taken by the modal transform, which is the better
+         * gesture when you already know which axis you want; this picks
+         * which tool the mouse is holding.
+         */
+        case 'w':
+        case 'W':
+          doc.setDragStyle(doc.dragStyle === 'direct' ? 'handles' : 'direct')
           break
         case 'x':
         case 'X':

@@ -3,7 +3,8 @@ import { Wordmark } from './Logo'
 import { AccountMenu } from './AccountMenu'
 import { FileMenu, type FileActions } from './FileMenu'
 import {
-  IconCursor, IconPause, IconPlay, IconRedo, IconReset, IconSave, IconUndo, IconWire, IconZap,
+  IconCursor,
+  IconPencil, IconPause, IconPlay, IconRedo, IconReset, IconSave, IconUndo, IconWire, IconZap,
 } from './Icons'
 import { useMayKeep } from '@/auth/gate'
 import { useDoc, type EditorMode } from '@/state/doc'
@@ -14,7 +15,8 @@ import type { SaveState } from '@/app/App'
 const MODES: { id: EditorMode; label: string; icon: typeof IconCursor; hint: string }[] = [
   { id: 'build', label: 'Build', icon: IconCursor, hint: 'Place and arrange parts' },
   { id: 'wire', label: 'Wire', icon: IconWire, hint: 'Connect terminals' },
-  { id: 'sim', label: 'Simulate', icon: IconZap, hint: 'Power it up' },
+  { id: 'code', label: 'Code', icon: IconPencil, hint: 'Write the program a board runs' },
+  { id: 'sim', label: 'Simulate', icon: IconZap, hint: 'Power it up and measure it' },
 ]
 
 const SPEEDS = [
@@ -32,6 +34,43 @@ const SAVE_LABEL: Record<SaveState, string> = {
   saving: 'Saving…',
   saved: 'Saved',
   error: 'Could not save',
+}
+
+/**
+ * The workspace tabs.
+ *
+ * Their own strip under the top bar, drawn as tabs that join the page below
+ * them, because that is what they are: four arrangements of one document,
+ * not four settings of one screen. They were a segmented pill floating in the
+ * middle of the top bar between the undo buttons and the run button — the
+ * shape a toolbar uses for a three-way option, which is how they read, and
+ * which is why nobody could tell that switching to Wire changes what the
+ * whole application is for.
+ */
+export function Workspaces() {
+  const mode = useDoc((s) => s.mode)
+  const setMode = useDoc((s) => s.setMode)
+  return (
+    <nav className="ws" role="tablist" aria-label="Workspace" data-tour="modes">
+      {MODES.map((m, i) => {
+        const Icon = m.icon
+        return (
+          <button
+            key={m.id}
+            role="tab"
+            aria-selected={mode === m.id}
+            className="ws-tab"
+            data-on={mode === m.id}
+            title={`${m.hint}  (${i + 1})`}
+            onClick={() => setMode(m.id)}
+          >
+            <Icon size={13} />
+            {m.label}
+          </button>
+        )
+      })}
+    </nav>
+  )
 }
 
 export function TopBar({ saveState = 'idle', file }: { saveState?: SaveState; file: FileActions }) {
@@ -120,29 +159,6 @@ export function TopBar({ saveState = 'idle', file }: { saveState?: SaveState; fi
       <div className="sep-v" />
       <button className="btn ghost icon" title="Undo (Ctrl+Z)" disabled={!canUndo} onClick={undo}><IconUndo /></button>
       <button className="btn ghost icon" title="Redo (Ctrl+Shift+Z)" disabled={!canRedo} onClick={redo}><IconRedo /></button>
-
-      <div className="grow" />
-
-      <div className="modes" role="tablist" data-tour="modes">
-        {MODES.map((m) => {
-          const Icon = m.icon
-          return (
-            <button
-              key={m.id}
-              role="tab"
-              aria-selected={mode === m.id}
-              className="mode-btn"
-              data-on={mode === m.id}
-              title={m.hint}
-              onClick={() => setMode(m.id)}
-            >
-              <span className="mode-dot" />
-              <Icon />
-              {m.label}
-            </button>
-          )
-        })}
-      </div>
 
       <div className="grow" />
 

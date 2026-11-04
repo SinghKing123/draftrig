@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Rig } from './Rig'
 import {
-  IconEye, IconEyeOff, IconFrame, IconGrid, IconHelp, IconMagnet, IconMove, IconRotate,
+  IconEye, IconEyeOff, IconFrame, IconGrid, IconHelp, IconMagnet, IconCursor,
+  IconMove, IconRotate,
   IconX, IconXray, IconZap,
 } from './Icons'
-import { hasSeenTour } from './Tour'
+import { hasUsedEditor } from './firstRun'
 import { useDoc, WIRE_COLORS } from '@/state/doc'
 import { useSim } from '@/state/sim'
 import { usePortHover } from '@/scene/portHover'
@@ -216,6 +217,8 @@ export function ViewportOverlay({
   const setSnap = useDoc((s) => s.setSnap)
   const transformMode = useDoc((s) => s.transformMode)
   const setTransformMode = useDoc((s) => s.setTransformMode)
+  const dragStyle = useDoc((s) => s.dragStyle)
+  const setDragStyle = useDoc((s) => s.setDragStyle)
   const empty = useDoc((s) => s.doc.order.length === 0)
   /*
    * The empty bench used to carry a card offering a tour. Every time.
@@ -231,7 +234,7 @@ export function ViewportOverlay({
    * the tour, and a card vanishing out from under the button you are reaching
    * for is its own small annoyance.
    */
-  const [firstVisit] = useState(() => !hasSeenTour())
+  const [firstVisit] = useState(() => !hasUsedEditor())
   const requestFrame = useDoc((s) => s.requestFrame)
   const pendingWire = useDoc((s) => s.pendingWire)
   const setStandardView = useDoc((s) => s.setStandardView)
@@ -259,22 +262,51 @@ export function ViewportOverlay({
       {mode === 'wire' && <WirePalette />}
       <ModalReadout />
       <div className="vp-toolbar">
-        <button
-          className="btn ghost icon"
-          data-on={transformMode === 'move'}
-          title="Translate (G)"
-          onClick={() => setTransformMode('move')}
-        >
-          <IconMove />
-        </button>
-        <button
-          className="btn ghost icon"
-          data-on={transformMode === 'rotate'}
-          title="Rotate (R)"
-          onClick={() => setTransformMode('rotate')}
-        >
-          <IconRotate />
-        </button>
+        {/*
+          * One tool at a time.
+          *
+          * These were two independent switches — a gizmo that was always
+          * live on the selection, and a direct drag that was also always
+          * live on the part under it. Both started on the same press, the
+          * arrows are a few pixels wide and the part behind them is not, so
+          * aiming at an axis and missing picked the whole part up and put it
+          * somewhere else. There was no way to ask for one and not the
+          * other.
+          *
+          * Now it is one exclusive choice, which is how every tool that
+          * edits geometry presents it: Drag moves the part under the
+          * pointer and shows no handles; Move and Rotate show the handles
+          * and leave a press on the part meaning only "select this".
+          */}
+        <span className="vp-tools" role="group" aria-label="Transform tool">
+          <button
+            className="btn ghost icon"
+            data-on={dragStyle === 'direct'}
+            title="Drag (W) — press a part and it follows the pointer. No handles to miss."
+            aria-pressed={dragStyle === 'direct'}
+            onClick={() => setDragStyle('direct')}
+          >
+            <IconCursor />
+          </button>
+          <button
+            className="btn ghost icon"
+            data-on={dragStyle === 'handles' && transformMode === 'move'}
+            title="Move (G) — drag an axis to slide along it. A press on the part only selects it."
+            aria-pressed={dragStyle === 'handles' && transformMode === 'move'}
+            onClick={() => { setDragStyle('handles'); setTransformMode('move') }}
+          >
+            <IconMove />
+          </button>
+          <button
+            className="btn ghost icon"
+            data-on={dragStyle === 'handles' && transformMode === 'rotate'}
+            title="Rotate (R) — drag a ring to turn about that axis."
+            aria-pressed={dragStyle === 'handles' && transformMode === 'rotate'}
+            onClick={() => { setDragStyle('handles'); setTransformMode('rotate') }}
+          >
+            <IconRotate />
+          </button>
+        </span>
 
         <div className="sep" />
 
@@ -354,9 +386,9 @@ export function ViewportOverlay({
           onChange={(e) => pinQuality(e.target.value as 'off' | 'balanced' | 'high')}
           title="Render quality. Drop this if the view feels slow."
         >
-          <option value="high">Best look</option>
+          <option value="high">High</option>
           <option value="balanced">Balanced</option>
-          <option value="off">Fastest</option>
+          <option value="off">Performance</option>
         </select>
 
         <div className="sep" />

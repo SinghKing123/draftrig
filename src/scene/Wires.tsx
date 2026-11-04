@@ -8,6 +8,7 @@ import { getPart } from '@/parts/kernel/registry'
 import { useSim } from '@/state/sim'
 import { usePortIndex } from './portIndex'
 import { wireCurve, type Obstacle } from './wirePath'
+import { wasClick } from './pointer'
 
 /**
  * Wires are drawn as swept tubes that leave each terminal along its normal and
@@ -157,6 +158,21 @@ function WireMesh({
           setHovered(conn.id)
         }}
         onPointerOut={() => setHovered(null)}
+        /*
+         * A wire is a thing you can pick up and look at, not just something
+         * drawn between two parts. Everything needed to inspect one has been
+         * in the solver all along — it is already a resistor sized from its
+         * gauge, and its current is already published per connection — and
+         * none of it was reachable because nothing could select a wire.
+         *
+         * Guarded on `wasClick` for the same reason parts are: a drag that
+         * happens to finish over a wire is a camera move, not a pick.
+         */
+        onPointerUp={(e) => {
+          if (!wasClick()) return
+          e.stopPropagation()
+          useDoc.getState().selectWire(conn.id)
+        }}
         userData={{ connectionId: conn.id }}
       >
         <meshBasicMaterial transparent opacity={0} depthWrite={false} colorWrite={false} />
@@ -169,12 +185,18 @@ export function Wires() {
   const connections = useConnectionList()
   const show = useDoc((s) => s.view.wires)
   const hovered = useDoc((s) => s.hovered)
+  const selectedWire = useDoc((s) => s.selectedWire)
   const obstacles = useObstacles()
   if (!show) return null
   return (
     <group>
       {connections.map((c) => (
-        <WireMesh key={c.id} conn={c} selected={hovered === c.id} obstacles={obstacles} />
+        <WireMesh
+          key={c.id}
+          conn={c}
+          selected={hovered === c.id || selectedWire === c.id}
+          obstacles={obstacles}
+        />
       ))}
     </group>
   )

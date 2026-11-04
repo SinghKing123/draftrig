@@ -7,7 +7,7 @@
   position: fixed;
   inset: 0;
   display: grid;
-  grid-template-rows: var(--topbar-h) 1fr var(--statusbar-h);
+  grid-template-rows: var(--topbar-h) var(--ws-h) 1fr var(--statusbar-h);
   background: var(--bg-0);
   overflow: hidden;
 }
@@ -191,6 +191,148 @@
   box-shadow: 0 2px 12px rgba(255, 176, 32, 0.3);
 }
 
+/*
+ * Code puts the program in the middle.
+ *
+ * The sketch editor is otherwise a panel laid over the bench, which is the
+ * right shape when you are glancing at a loop while looking at the board and
+ * the wrong one when writing the program is the job. Here it takes the centre
+ * and the 3D view is not on screen at all.
+ */
+/*
+ * Code's own column template, written to outrank the panel-open rules.
+ *
+ * `[data-sketch='true']` further down adds a fourth column for the sketch
+ * panel, because everywhere else the sketch is a panel beside the bench.
+ * Here it *is* the centre, so that column must not exist — and since both
+ * selectors have the same specificity, the one further down the file wins
+ * unless this one carries the extra attribute too.
+ */
+.app-body[data-ws='code'],
+.app-body[data-ws='code'][data-sketch='true'] {
+  grid-template-columns: 220px 1fr var(--inspector-w, 300px);
+}
+.app-body[data-ws='code'][data-bom='true'],
+.app-body[data-ws='code'][data-bom='true'][data-sketch='true'] {
+  grid-template-columns: 220px 1fr var(--inspector-w, 300px) var(--bom-w);
+}
+.app-body[data-ws='code'] .app-center { display: none; }
+/*
+ * Explicit columns, because the hidden centre breaks auto-placement.
+ *
+ * Grid places children in source order into the next free cell. With the
+ * bench hidden there are three columns and two visible children, so the
+ * properties column landed in the middle and stretched across the space the
+ * editor was supposed to occupy.
+ */
+/*
+ * Row as well as column, on every one of them.
+ *
+ * Grid packs sparsely: once an item has been placed in column 3, the cursor
+ * is past column 2 and the next item goes to a second row even though the
+ * cell beside it is empty. The editor was landing under the boards list
+ * rather than beside it.
+ */
+.app-body[data-ws='code'] .code-boards { grid-column: 1; grid-row: 1; }
+.app-body[data-ws='code'] .code-centre { grid-column: 2; grid-row: 1; }
+.app-body[data-ws='code'] .inspector { grid-column: 3; grid-row: 1; }
+.app-body[data-ws='code'] .bom-panel { grid-column: 4; grid-row: 1; }
+.app-body[data-ws='code'] .sketch-panel {
+  position: static;
+  grid-column: 2;
+  grid-row: 1;
+  width: auto;
+  height: auto;
+  min-height: 0;
+  border-radius: 0;
+  border-top: 0;
+  border-bottom: 0;
+  box-shadow: none;
+}
+
+.code-boards { border-right: 0; }
+.code-board {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 7px 10px;
+  text-align: left;
+  color: var(--tx-1);
+  border-left: 2px solid transparent;
+}
+.code-board:hover { background: var(--bg-2); }
+.code-board[data-on='true'] { background: var(--bg-2); border-left-color: var(--brand); color: var(--tx-0); }
+.code-board svg { color: var(--tx-3); flex: 0 0 auto; }
+.code-board[data-on='true'] svg { color: var(--brand); }
+.code-board-text { min-width: 0; }
+.code-board-name { display: block; font-size: var(--fs-md); }
+.code-board-kind { display: block; font-size: var(--fs-xs); color: var(--tx-3); }
+
+/* Column two when no board is open. It holds the column open and says why
+   it is empty, rather than letting the properties panel slide into it. */
+.code-centre {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  background: var(--bg-0);
+  border-left: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+}
+.code-centre .code-none { max-width: 340px; text-align: center; }
+
+.code-none { padding: 22px 16px; color: var(--tx-3); font-size: var(--fs-sm); line-height: 1.6; }
+.code-none svg { color: var(--tx-3); margin-bottom: 8px; }
+.code-none p { margin-bottom: 6px; }
+.code-none .sub { color: var(--tx-3); }
+
+/* ============================================================
+   Workspace tabs
+   ------------------------------------------------------------
+   Four arrangements of one document. Drawn as tabs that join
+   the page below them, so switching reads as changing what the
+   application is for rather than as setting an option.
+   ============================================================ */
+
+.ws {
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  padding: 0 8px;
+  background: var(--bg-0);
+  border-bottom: 1px solid var(--line);
+}
+
+.ws-tab {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 25px;
+  padding: 0 14px;
+  border-radius: var(--r-sm) var(--r-sm) 0 0;
+  font-size: var(--fs-md);
+  font-weight: 500;
+  color: var(--tx-2);
+  transition: color var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+.ws-tab:hover { color: var(--tx-0); background: var(--bg-2); }
+.ws-tab svg { color: var(--tx-3); }
+.ws-tab:hover svg { color: var(--tx-2); }
+
+/*
+ * The selected tab is the page. It takes the panel colour, loses its bottom
+ * corners into the content, and covers the rule under the strip by one pixel
+ * so there is no line between the tab and what it opened.
+ */
+.ws-tab[data-on='true'] {
+  background: var(--bg-1);
+  color: var(--tx-0);
+  box-shadow: inset 0 1px 0 var(--line-2), inset 1px 0 0 var(--line), inset -1px 0 0 var(--line);
+  margin-bottom: -1px;
+  padding-bottom: 1px;
+}
+.ws-tab[data-on='true'] svg { color: var(--brand); }
+
 /* ============================================================
    Panels
    ============================================================ */
@@ -250,21 +392,45 @@
 
 /* --- library --- */
 
+/*
+ * Section headers stick.
+ *
+ * The catalogue is five sections and twenty-six categories deep, so a scroll
+ * through it leaves you looking at a list of names with nothing saying which
+ * section they belong to. The header staying put is the cheapest fix and the
+ * one every file browser uses.
+ */
 .lib-section {
-  padding: 10px 10px 2px;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 9px 10px 4px;
+  background: linear-gradient(var(--bg-1) 72%, transparent);
   font-size: var(--fs-xs);
   font-weight: 700;
   letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--tx-3);
 }
+.lib-count {
+  margin-left: auto;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--tx-3);
+}
+button.lib-count:hover { color: var(--tx-1); }
 
 .lib-group {
   display: flex;
   align-items: center;
   gap: 6px;
   width: 100%;
-  padding: 5px 10px;
+  height: 26px;
+  padding: 0 10px;
   color: var(--tx-1);
   font-size: var(--fs-md);
   font-weight: 550;
@@ -277,12 +443,24 @@
 .lib-group .lib-glyph { display: inline-grid; place-items: center; color: var(--tx-3); }
 .lib-group:hover .lib-glyph { color: var(--tx-2); }
 
+/*
+ * One line a part, 26 px tall.
+ *
+ * This was a two-line row with a 26 px tile on it, which came to 42 px and
+ * meant eleven parts on a screen. A category of forty was then a list you
+ * scrolled rather than one you read. Name and blurb on one line, with the
+ * blurb taking whatever space is left and truncating, puts twenty-two on the
+ * same screen and loses nothing: the full description is still in the
+ * tooltip and the inspector.
+ */
 .part-item {
   display: flex;
-  align-items: flex-start;
-  gap: 9px;
+  align-items: center;
+  gap: 8px;
   width: 100%;
-  padding: 7px 10px 7px 22px;
+  min-width: 0;
+  height: 26px;
+  padding: 0 10px 0 20px;
   text-align: left;
   border-left: 2px solid transparent;
   transition: background var(--dur) var(--ease);
@@ -290,18 +468,32 @@
 .part-item:hover { background: var(--bg-2); border-left-color: var(--brand); }
 .part-item .swatch {
   flex: 0 0 auto;
-  width: 26px; height: 26px;
-  border-radius: var(--r-xs);
-  background: var(--bg-3);
-  border: 1px solid var(--line-2);
+  width: 18px; height: 18px;
   display: grid; place-items: center;
   color: var(--tx-2);
-  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+  transition: color var(--dur) var(--ease);
 }
-.part-item:hover .swatch { color: var(--brand); border-color: var(--line-3, var(--line-2)); }
-.part-item .pi-text { display: block; min-width: 0; }
-.part-item .pi-name { display: block; color: var(--tx-0); font-size: var(--fs-md); font-weight: 500; line-height: 1.3; }
-.part-item .pi-blurb { display: block; color: var(--tx-3); font-size: var(--fs-xs); line-height: 1.35; margin-top: 1px; }
+.part-item:hover .swatch { color: var(--brand); }
+.part-item .pi-name {
+  flex: 0 0 auto;
+  max-width: 62%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--tx-1);
+  font-size: var(--fs-md);
+  font-weight: 500;
+}
+.part-item:hover .pi-name { color: var(--tx-0); }
+.part-item .pi-blurb {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--tx-3);
+  font-size: var(--fs-xs);
+}
 
 .lib-empty { padding: 24px 16px; text-align: center; color: var(--tx-3); font-size: var(--fs-md); line-height: 1.6; }
 
@@ -310,9 +502,9 @@
    ============================================================ */
 
 .insp-empty {
-  padding: 28px 18px;
+  padding: 18px 14px;
   color: var(--tx-3);
-  font-size: var(--fs-md);
+  font-size: var(--fs-sm);
   line-height: 1.7;
   text-align: center;
 }
@@ -342,22 +534,30 @@
 }
 .group-head {
   display: flex; align-items: center; gap: 6px;
-  width: 100%; padding: 7px 12px;
+  width: 100%; padding: 6px 10px;
   font-size: var(--fs-xs); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
   color: var(--tx-3);
 }
 .group-head:hover { color: var(--tx-1); }
 .group-head .chev { transition: transform var(--dur) var(--ease); }
 .group-head[data-open='true'] .chev { transform: rotate(90deg); }
-.group-body { padding: 2px 12px 10px; }
+.group-body { padding: 2px 10px 8px; }
 
+/*
+ * A labelled property row.
+ *
+ * The label column is narrower and the gap tighter than they were: at 104px
+ * and 9px, a 300px panel spent more than a third of its width on words, and
+ * the controls lined up far enough right to read as a second column rather
+ * than as the same row.
+ */
 .field {
   display: grid;
-  grid-template-columns: 104px 1fr;
+  grid-template-columns: 86px 1fr;
   align-items: center;
-  gap: 9px;
+  gap: 6px;
   min-height: var(--field-h);
-  margin-bottom: 6px;
+  margin-bottom: 3px;
 }
 .field > label {
   font-size: var(--fs-sm);
@@ -391,6 +591,46 @@ select.input option { background: var(--bg-2); }
   font-size: var(--fs-xs); color: var(--tx-3); pointer-events: none;
 }
 .input-unit .input { padding-right: 26px; }
+
+/*
+ * A value widget that carries its own name.
+ *
+ * The name sits inside the box at the left, the number is set right against
+ * the unit, and the whole box is the drag target. That is one row per value
+ * instead of a label column and a control column, and it is the shape anyone
+ * who has used a 3D tool already knows how to grab.
+ */
+.input-unit.named .scrub-label {
+  position: absolute; left: 8px; top: 50%; transform: translateY(-50%);
+  font-size: var(--fs-sm); color: var(--tx-2);
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
+}
+.input-unit.named .input {
+  padding-left: 26px;
+  text-align: right;
+  font-family: var(--mono);
+  font-size: var(--fs-sm);
+}
+.input-unit.named:hover .scrub-label { color: var(--tx-1); }
+.input-unit.named[data-editing='true'] .scrub-label { color: var(--brand); }
+
+/*
+ * A block of axes under one name.
+ *
+ * Location and rotation each get a heading and three rows butted together,
+ * so the set reads as one property with three components rather than as six
+ * unrelated fields in a column.
+ */
+.axis-set { margin-bottom: 8px; }
+.axis-set:last-child { margin-bottom: 2px; }
+.axis-head {
+  font-size: var(--fs-xs);
+  color: var(--tx-3);
+  letter-spacing: 0.04em;
+  margin-bottom: 3px;
+}
+.axis-set .input-unit + .input-unit { margin-top: 2px; }
 
 /* Number scrubber. The resize cursor is a promise that dragging does
    something; once the caret is in the field, dragging selects text instead,
@@ -447,23 +687,58 @@ select.input option { background: var(--bg-2); }
    Viewport overlay
    ============================================================ */
 
+/*
+ * The viewport header.
+ *
+ * This was a rounded, translucent, drop-shadowed slab floating 12px inside
+ * the corner of the render — the shape a web app uses for a floating action
+ * bar, and the single loudest thing in here saying this was a web app. Tools
+ * that edit geometry put their view controls in a header strip that belongs
+ * to the view: flush to the edge, square, opaque, one hairline separating it
+ * from the scene. It stops being an object sitting on the render and becomes
+ * part of the frame around it.
+ *
+ * Opaque rather than blurred, too. A translucent bar over a moving 3D scene
+ * makes its own labels swim as the camera turns.
+ */
 .vp-toolbar {
   position: absolute;
-  top: 12px; left: 12px;
-  display: flex; gap: 4px; padding: 4px;
-  background: rgba(20, 19, 17, 0.86);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--line-2);
-  border-radius: var(--r-md);
-  box-shadow: var(--sh-2);
+  top: 0; left: 0; right: 0;
+  display: flex; align-items: center; gap: 2px;
+  padding: 0 6px;
+  height: 30px;
+  background: var(--bg-1);
+  border-bottom: 1px solid var(--line);
 }
-.vp-toolbar .sep { width: 1px; margin: 4px 2px; background: var(--line-2); }
+.vp-toolbar .sep { width: 1px; height: 16px; margin: 0 5px; background: var(--line-2); flex: 0 0 auto; }
+
+/*
+ * The transform tools, as one control rather than three.
+ *
+ * They are mutually exclusive, so they are drawn as one well with the
+ * active one raised out of it. Three separate buttons that happen to be
+ * adjacent say nothing about only one of them being on.
+ */
+.vp-tools {
+  display: inline-flex;
+  gap: 1px;
+  padding: 1px;
+  background: var(--bg-3);
+  border-radius: var(--r-sm);
+}
+.vp-tools .btn[data-on='true'] { background: var(--bg-0); color: var(--brand-hi); }
+/* The controls inside a 30px strip are shorter than the ones in a panel. */
+.vp-toolbar .btn { height: 22px; }
+.vp-toolbar .input { height: 22px; font-size: var(--fs-sm); }
+/* Everything after this is pushed to the trailing end, the way a header
+   separates view controls from display controls. */
+.vp-toolbar .grow { flex: 1 1 auto; }
 
 .vp-hint {
   position: absolute;
-  /* Below the toolbar rather than beside it. Centred at the same height, it
+  /* Below the header rather than beside it. Centred at the same height, it
      overlapped the buttons as soon as the viewport was narrow. */
-  top: 62px; left: 50%; transform: translateX(-50%);
+  top: 42px; left: 50%; transform: translateX(-50%);
   max-width: min(560px, calc(100% - 32px));
   padding: 6px 13px;
   background: rgba(20, 19, 17, 0.9);
@@ -489,7 +764,7 @@ select.input option { background: var(--bg-2); }
 
 .vp-stats {
   position: absolute;
-  bottom: 12px; left: 12px;
+  bottom: 10px; left: 12px;
   display: flex; flex-direction: column; gap: 3px;
   font-family: var(--mono);
   font-size: var(--fs-xs);
@@ -2126,3 +2401,95 @@ kbd {
  * position field was invisible.
  */
 .inspector .panel-body { padding-right: 26px; }
+
+/* ============================================================
+   Notice
+   ------------------------------------------------------------
+   One line, at the top of the editor, for something that did
+   not work and that the person would otherwise have to infer
+   from an empty bench. Not a toast: it does not time out, and
+   it does not stack. If there is ever a second kind of notice
+   worth showing at once, that is the moment to build a queue,
+   and not before.
+   ============================================================ */
+
+.app-notice {
+  position: absolute;
+  top: calc(var(--topbar-h) + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: min(620px, calc(100% - 32px));
+  padding: 6px 6px 6px 13px;
+  background: var(--bg-2);
+  /* One hairline the whole way round. A thick coloured edge down one side is
+     the default shape of a callout and it is a sticker on the box, not a
+     property of it; the state is carried by the dot instead. */
+  border: 1px solid var(--line-3);
+  border-radius: var(--r-sm);
+  box-shadow: var(--sh-2);
+  font-size: var(--fs-md);
+  color: var(--tx-1);
+}
+/* The state, as a dot the size of a status light. */
+.app-notice::before {
+  content: '';
+  flex: 0 0 auto;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--warn);
+}
+.app-notice .btn { color: var(--tx-3); }
+.app-notice .btn:hover { color: var(--tx-0); }
+
+/* ============================================================
+   The wire panel
+   ------------------------------------------------------------
+   A wire is a thing you can pick up and look at. Everything it
+   reports was already in the solver — it has always been a
+   resistor sized from its gauge, and its current has always
+   been published per connection — and none of it was reachable
+   because nothing could select one.
+   ============================================================ */
+
+.wire-ends {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 2px 6px;
+  font-size: var(--fs-md);
+  color: var(--tx-0);
+}
+.wire-arrow {
+  font-size: var(--fs-xs);
+  color: var(--tx-3);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Over a rating is a fact about the build, not a UI error, so it sits in
+   the flow of the panel rather than arriving as an alert. */
+.wire-warn {
+  margin: 8px 10px 10px;
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  background: var(--bg-2);
+  border: 1px solid var(--line-3);
+  font-size: var(--fs-sm);
+  line-height: 1.55;
+  color: var(--tx-1);
+}
+
+/*
+ * In Code, the sketch is the workspace, not a panel visiting it.
+ *
+ * Its edge tab opens a panel that is already open, and its close button
+ * empties the page you just switched to. Both are right everywhere else and
+ * wrong here.
+ */
+.app-body[data-ws='code'] ~ .sketch-tab,
+.app-body[data-ws='code'] .sketch-tab { display: none; }
+.app-body[data-ws='code'] .sketch-head > button { display: none; }

@@ -16,9 +16,45 @@ export interface Doc {
   connectionOrder: string[]
 }
 
-export type EditorMode = 'build' | 'wire' | 'sim'
+/**
+ * The workspaces.
+ *
+ * Four pages over one document, the way a tool with four jobs is laid out:
+ * each one keeps the panels that job needs and puts away the ones it does
+ * not. Build is parts and placement, Wire is terminals and cable, Code is
+ * the program a board runs, Sim is running it and measuring it.
+ *
+ * `code` is new. The sketch editor existed before it as a panel floating
+ * over the bench, reachable only by selecting a board and pressing a button
+ * inside its properties, which is a long way to go for the half of this
+ * product that is software.
+ */
+export type EditorMode = 'build' | 'wire' | 'code' | 'sim'
 
 export type TransformMode = 'move' | 'rotate'
+
+/**
+ * How a press on a part moves it.
+ *
+ * These were both on at once, and they fight. The gizmo's arrows are a few
+ * pixels wide; the part behind them is the size of the part. Aim at an axis,
+ * miss by three pixels, and instead of sliding along X you have picked the
+ * whole object up and dropped it somewhere on the ground plane — or picked
+ * up a different part that happened to be under the arrow. The two gestures
+ * start the same way and there is no way for either to know which one was
+ * meant, so the only fix is to stop asking.
+ *
+ *   'handles'  the gizmo moves the part, and only the gizmo. A press on the
+ *              part selects it; a drag from it orbits the camera. This is
+ *              the default, and it is what a press on an axis can finally
+ *              be trusted to do.
+ *   'direct'   no gizmo. Press a part and it follows the pointer across the
+ *              bench. Faster for roughing a layout out, and unambiguous
+ *              because there is no handle to miss.
+ *
+ * G and R still work in both: the modal transform needs no handle at all.
+ */
+export type DragStyle = 'handles' | 'direct'
 
 /**
  * The standard views.
@@ -65,10 +101,21 @@ export interface DocState {
   doc: Doc
   mode: EditorMode
   transformMode: TransformMode
+  dragStyle: DragStyle
   selection: string[]
   hovered: string | null
   /** Wire-mode: the port we started dragging from. */
   pendingWire: PortRef | null
+  /**
+   * The wire being looked at, if any.
+   *
+   * Kept apart from `selection`, which holds parts. A wire and a part are
+   * not interchangeable — they have no properties in common and nothing
+   * sensible happens if you move, duplicate or mate a wire — so one list
+   * holding both would be a list every reader has to type-test. They are
+   * mutually exclusive instead: selecting either clears the other.
+   */
+  selectedWire: string | null
   snap: Snap
   /** Colour the next wire is drawn in. */
   wireColor: string
@@ -91,6 +138,17 @@ export interface DocState {
   /** Bumped to ask for a standard view. Same arrangement as framing. */
   viewToken: number
   viewPreset: ViewPreset
+  /**
+   * Bumped to move the orbit centre somewhere, without changing the
+   * direction the camera looks from or how far away it is.
+   *
+   * Framing is the other thing and does not do this job: framing moves the
+   * camera until a thing fills the view, which is a zoom you did not ask
+   * for. This only moves the point everything pivots and zooms around, and
+   * pans the camera by the same amount so the view does not swing.
+   */
+  focusToken: number
+  focusPoint: Vec3
 
   past: Doc[]
   future: Doc[]
@@ -98,6 +156,7 @@ export interface DocState {
   /* actions */
   setMode: (m: EditorMode) => void
   setTransformMode: (m: TransformMode) => void
+  setDragStyle: (d: DragStyle) => void
   addPart: (defId: string, at?: Vec3, params?: Params) => string | null
   duplicateSelection: () => void
   removeInstances: (ids: string[]) => void
@@ -114,6 +173,9 @@ export interface DocState {
   disconnect: (ids: string[]) => void
   setConnectionColor: (id: string, color: string) => void
   setWireColor: (color: string) => void
+  selectWire: (id: string | null) => void
+  /** Change one wire's properties. `commit` false while a field is dragged. */
+  setConnectionProps: (id: string, patch: Partial<Connection>, commit?: boolean) => void
   setPendingWire: (p: PortRef | null) => void
 
   select: (ids: string[], additive?: boolean) => void
@@ -122,6 +184,8 @@ export interface DocState {
   setHovered: (id: string | null) => void
 
   requestFrame: (target?: 'all' | 'selection') => void
+  /** Put the orbit centre here. See `focusToken`. */
+  focusOn: (point: Vec3) => void
   setStandardView: (preset: ViewPreset) => void
   setSnap: (s: Partial<Snap>) => void
   setView: (v: Partial<ViewFlags>) => void
@@ -221,11 +285,13 @@ export const useDoc = create<DocState>()((set, get) => {
     doc: emptyDoc(),
     mode: 'build',
     transformMode: 'move',
+    dragStyle: 'handles',
     selection: [],
     hovered: null,
     pendingWire: null,
     snap: { enabled: true, grid: 2.54, angle: 15, ports: true },
     wireColor: WIRE_COLORS[0].value,
+    selectedWire: null,
     /*
      * 'balanced', not 'high'.
      *
@@ -242,12 +308,15 @@ export const useDoc = create<DocState>()((set, get) => {
     frameToken: 0,
     frameTarget: 'all',
     viewToken: 0,
+    focusToken: 0,
+    focusPoint: [0, 0, 0],
     viewPreset: 'iso',
     past: [],
     future: [],
 
     setMode: (m) => set({ mode: m, pendingWire: null }),
     setTransformMode: (m) => set({ transformMode: m }),
+    setDragStyle: (d) => set({ dragStyle: d }),
 
     addPart: (defId, at = [0, 0, 0], params) => {
       const def = getPart(defId)
@@ -391,6 +460,7 @@ export const useDoc = create<DocState>()((set, get) => {
 
     disconnect: (ids) => {
       const kill = new Set(ids)
+      if (kill.has(get().selectedWire ?? '')) set({ selectedWire: null })
       edit((d) => {
         for (const id of ids) delete d.connections[id]
         d.connectionOrder = d.connectionOrder.filter((c) => !kill.has(c))
@@ -405,18 +475,34 @@ export const useDoc = create<DocState>()((set, get) => {
 
     setPendingWire: (p) => set({ pendingWire: p }),
 
+    selectWire: (id) => set({ selectedWire: id, selection: [] }),
+
+    setConnectionProps: (id, patch, commit = true) => {
+      if (commit) get().beginEdit()
+      set((s) => {
+        const c = s.doc.connections[id]
+        if (!c) return s
+        return { doc: { ...s.doc, connections: { ...s.doc.connections, [id]: { ...c, ...patch } } } }
+      })
+    },
+
     select: (ids, additive = false) =>
-      set((s) => ({ selection: additive ? [...new Set([...s.selection, ...ids])] : ids })),
+      set((s) => ({
+        selection: additive ? [...new Set([...s.selection, ...ids])] : ids,
+        // Picking a part puts the wire down.
+        selectedWire: ids.length ? null : s.selectedWire,
+      })),
 
     toggleSelect: (id) =>
       set((s) => ({
         selection: s.selection.includes(id) ? s.selection.filter((x) => x !== id) : [...s.selection, id],
       })),
 
-    clearSelection: () => set({ selection: [] }),
+    clearSelection: () => set({ selection: [], selectedWire: null }),
     setHovered: (id) => set({ hovered: id }),
 
     requestFrame: (target = 'all') => set((s) => ({ frameToken: s.frameToken + 1, frameTarget: target })),
+    focusOn: (point) => set((s) => ({ focusToken: s.focusToken + 1, focusPoint: [...point] as Vec3 })),
     setStandardView: (preset) => set((s) => ({ viewToken: s.viewToken + 1, viewPreset: preset })),
 
     setSnap: (s) => set((st) => ({ snap: { ...st.snap, ...s } })),

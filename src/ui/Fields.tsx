@@ -15,6 +15,18 @@ interface NumberFieldProps {
   /** Show and accept engineering notation (4k7, 100n). */
   eng?: boolean
   disabled?: boolean
+  /**
+   * The name of the value, drawn inside the widget rather than in a column
+   * beside it.
+   *
+   * A label in its own column makes a property sheet a web form: half the
+   * width is spent on words, the controls are a ragged second column, and
+   * nothing about the row says it can be dragged. Every tool that edits
+   * geometry for a living puts the name, the number and the unit in one
+   * draggable box, and that box is the whole row. Use it where the name is
+   * short — an axis, a channel. A long name still wants the column.
+   */
+  label?: string
 }
 
 /** How far the pointer must travel before a press counts as a scrub, px. */
@@ -26,7 +38,7 @@ const clamp = (v: number, min?: number, max?: number): number => {
   return v
 }
 
-export function NumberField({ value, onChange, unit, min, max, step = 1, eng: useEng, disabled }: NumberFieldProps) {
+export function NumberField({ value, onChange, unit, min, max, step = 1, eng: useEng, disabled, label }: NumberFieldProps) {
   const format = (v: number) => (useEng ? eng(v, '', 4) : String(Math.round(v * 1000) / 1000))
   const [text, setText] = useState(() => format(value))
   const [editing, setEditing] = useState(false)
@@ -90,13 +102,14 @@ export function NumberField({ value, onChange, unit, min, max, step = 1, eng: us
 
   return (
     <div
-      className="input-unit scrub"
+      className={label === undefined ? 'input-unit scrub' : 'input-unit scrub named'}
       data-editing={editing}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
     >
+      {label !== undefined && <span className="scrub-label">{label}</span>}
       <input
         className="input"
         value={text}

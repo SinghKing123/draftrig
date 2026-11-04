@@ -84,7 +84,8 @@
   --ease: cubic-bezier(.22,.61,.36,1);
 
   /* --- layout --- */
-  --topbar-h: 48px;
+  --topbar-h: 44px;
+  --ws-h: 32px;
   --statusbar-h: 26px;
   --rail-w: 48px;
 
