@@ -10,6 +10,7 @@ import { Solder } from './Solder'
 import { PortIndexProvider } from './portIndex'
 import { CameraRig } from './CameraRig'
 import { publishControls, publishRenderer } from './debugCamera'
+import { clearAnchor, publishAnchor } from './anchor'
 import { Lights, PostFx, StudioEnvironment } from './Render'
 import { useDoc, useInstanceList } from '@/state/doc'
 import { installPointerTracker, wasClick } from './pointer'
@@ -162,7 +163,15 @@ function SelectionTransform({
    * drags, against 8 for the same drags with it left mounted. On a laptop
    * sharing its memory with the GPU that ends as a stalled viewport.
    */
-  const active = mode === 'build' && selection.length > 0
+  /*
+   * The gizmo belongs to one tool, not to the selection.
+   *
+   * In direct mode there is no gizmo at all, which is the entire point: with
+   * nothing to aim at, a press on a part cannot miss a handle and move the
+   * part by accident instead.
+   */
+  const dragStyle = useDoc((s) => s.dragStyle)
+  const active = mode === 'build' && selection.length > 0 && dragStyle === 'handles'
 
   // Park the gizmo at the centroid of the selection, but never mid-drag, or
   // it fights the pointer as the parts it is measuring move under it.
@@ -300,6 +309,7 @@ function SceneContents() {
   const selection = useDoc((s) => s.selection)
   const hovered = useDoc((s) => s.hovered)
   const mode = useDoc((s) => s.mode)
+  const dragStyle = useDoc((s) => s.dragStyle)
   const select = useDoc((s) => s.select)
   const toggleSelect = useDoc((s) => s.toggleSelect)
   const clearSelection = useDoc((s) => s.clearSelection)
@@ -341,10 +351,14 @@ function SceneContents() {
       ? 'grabbing'
       : mode === 'wire'
         ? 'crosshair'
-        : hovered
+        : // An open hand over a part is a promise that pressing will pick it
+          // up. In handles mode it will not — it selects, and the gizmo does
+          // the moving — so the hand would be lying about the one gesture
+          // this mode exists to make unambiguous.
+          hovered && dragStyle === 'direct'
           ? 'grab'
           : 'default'
-  }, [gl, mode, hovered, grabbing])
+  }, [gl, mode, hovered, grabbing, dragStyle])
 
   const selectionSet = useMemo(() => new Set(selection), [selection])
 
@@ -375,6 +389,16 @@ function SceneContents() {
       }
 
       if (mode !== 'build' || e.button !== 0) return
+      /*
+       * In handles mode the press has already done its job: it selected the
+       * part. Moving is the gizmo's, and the rest of this gesture is the
+       * camera's, so it is handed straight back to the orbit controls.
+       *
+       * This is the half of the fix that matters. Both gestures used to
+       * start here, and a press three pixels off an arrow picked the whole
+       * part up instead of sliding it along an axis.
+       */
+      if (dragStyle !== 'direct') return
       if (!(e.shiftKey || e.ctrlKey) && !selectionSet.has(id)) collapseTo.current = null
       /*
        * Take the gesture away from the orbit controls immediately, not once it
@@ -386,7 +410,7 @@ function SceneContents() {
       drag.current = beginDrag(ids, e.point)
       if (drag.current) setGrabbing(true)
     },
-    [mode, select, toggleSelect, selectionSet, selection],
+    [mode, select, toggleSelect, selectionSet, selection, dragStyle],
   )
 
   /*
@@ -486,6 +510,14 @@ function SceneContents() {
           // that does not depend on synthesising a drag; a drag has to get
           // past the picking handlers first, and silently does not.
           publishControls(c)
+          // And the library needs to know where the camera is pointed, so a
+          // part it places lands in front of you rather than at the origin.
+          if (c) publishAnchor(c.target.x, c.target.y, c.target.z)
+          else clearAnchor()
+        }}
+        onChange={() => {
+          const c = controls.current
+          if (c) publishAnchor(c.target.x, c.target.y, c.target.z)
         }}
         makeDefault
         /*

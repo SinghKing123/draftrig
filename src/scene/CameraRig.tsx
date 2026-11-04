@@ -53,6 +53,9 @@ export function CameraRig({ controls }: { controls: React.MutableRefObject<Orbit
   const viewToken = useDoc((s) => s.viewToken)
   const viewPreset = useDoc((s) => s.viewPreset)
 
+  const focusToken = useDoc((s) => s.focusToken)
+  const focusPoint = useDoc((s) => s.focusPoint)
+
   const anim = useRef<{ from: THREE.Vector3; to: THREE.Vector3; fromT: THREE.Vector3; toT: THREE.Vector3; t: number } | null>(null)
 
   /*
@@ -141,6 +144,31 @@ export function CameraRig({ controls }: { controls: React.MutableRefObject<Orbit
     persp.far = dist * 12
     persp.updateProjectionMatrix()
   }, [viewToken, viewPreset, camera, size, controls])
+
+  /*
+   * Move the pivot, and nothing else.
+   *
+   * The camera is translated by the same vector as the target, so the view
+   * pans across to the new centre at the distance and angle it was already
+   * at. Moving the target on its own would swing the camera round to look at
+   * it from wherever it happened to be standing, which from close in reads
+   * as the scene lurching sideways.
+   */
+  useEffect(() => {
+    if (focusToken === 0) return
+    const to = new THREE.Vector3(focusPoint[0], focusPoint[1], focusPoint[2])
+    const from = (controls.current?.target ?? new THREE.Vector3()).clone()
+    const delta = to.clone().sub(from)
+    // A pivot already within a millimetre of the point is no move at all.
+    if (delta.lengthSq() < 1) return
+    anim.current = {
+      from: camera.position.clone(),
+      to: camera.position.clone().add(delta),
+      fromT: from,
+      toT: to,
+      t: 0,
+    }
+  }, [focusToken, focusPoint, camera, controls])
 
   useFrame((_, delta) => {
     const a = anim.current

@@ -31,7 +31,10 @@ build, circuit and structure, before you spend anything."
 
 What actually runs today:
 
-- a 3D scene with ~172 parts, placed, oriented and snapped into boards
+- a 3D scene with ~256 parts, placed, oriented and snapped into boards — half
+  of them electronics, the other half the workstation and the room it is in:
+  peripherals, audio, network, lighting, instruments, bench tooling, and the
+  finish parts that take up the space the rest has to fit into
 - wires routed between real pins, with a path that goes around obstacles
 - a modified-nodal-analysis circuit solver, stepped continuously
 - behavioural devices on top of it: an NE555, logic gates, regulators,
