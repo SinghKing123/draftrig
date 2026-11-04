@@ -307,7 +307,7 @@ export function Landing() {
             <p>Opens empty. Free. No account until you save.</p>
             <div className="dr-end-cta">
               <Link className="dr-btn dr-btn-go" to="/projects">
-                Start a room<span className="arr" aria-hidden="true" />
+                Open the editor<span className="arr" aria-hidden="true" />
               </Link>
               <Link className="dr-btn dr-btn-ghost" to="/signin">
                 Sign in
@@ -331,20 +331,19 @@ export function Landing() {
           </nav>
 
           <nav className="dr-foot-col">
-            <h3>This page</h3>
+            <h3>On this page</h3>
             <a href="#floor">The live floor</a>
             <a href="#screens">Workspaces</a>
             <a href="#asked">Solvers</a>
             <a href="#code">Code editor</a>
             <a href="#bom">Bill of materials</a>
-            <a href="#built">Viewport</a>
-            <a href={BRAND.social.github} target="_blank" rel="noreferrer">
-              GitHub
-            </a>
           </nav>
 
           <nav className="dr-foot-col">
-            <h3>Account</h3>
+            <h3>Elsewhere</h3>
+            <a href={BRAND.social.github} target="_blank" rel="noreferrer">
+              GitHub
+            </a>
             <Link to="/signin">Sign in</Link>
             <a href={`mailto:${BRAND.support}`}>Contact</a>
           </nav>

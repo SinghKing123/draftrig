@@ -700,7 +700,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(214px, 1fr));
   gap: 1px;
-  background: var(--rule-2);
+  background: var(--paper-1);
   border: 1px solid var(--rule-2);
   border-radius: 5px;
   overflow: hidden;
@@ -709,6 +709,7 @@
   display: flex; flex-direction: column; gap: 4px;
   padding: 14px 15px 13px;
   background: var(--paper-1);
+  box-shadow: 0 0 0 1px var(--rule-2);
   transition: background 0.16s;
 }
 .dr-item:hover { background: var(--paper-2); }
@@ -738,6 +739,7 @@
 /* --- the close ---------------------------------------------------- */
 
 .dr-end { position: relative; padding-block: clamp(82px, 13vh, 160px); text-align: center; overflow: hidden; border-top: 1px solid var(--rule-2); }
+.dr-end > .dr-w { position: relative; z-index: 1; }
 .dr-end h2 { font-size: clamp(36px, 6.4vw, 88px); }
 .dr-end p { margin: 18px auto 0; color: var(--ink-1); font-size: 18px; }
 .dr-end-cta { display: flex; gap: 12px; justify-content: center; margin-top: 32px; }
@@ -1103,7 +1105,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(258px, 1fr));
   gap: 1px;
-  background: var(--rule-2);
+  background: var(--paper-1);
   border: 1px solid var(--rule-2);
   border-radius: 5px;
   overflow: hidden;
@@ -1111,6 +1113,7 @@
 .dr-gal-item {
   margin: 0;
   background: var(--paper-1);
+  box-shadow: 0 0 0 1px var(--rule-2);
   display: flex;
   flex-direction: column;
 }
@@ -1181,18 +1184,51 @@
  * have been absolutely positioned into the corner, and inserting any
  * element before the four handles shifts every nth-child under it.
  */
-.dr-caret {
+/*
+ * The typed word, with a width it can be given rather than one it has
+ * to grow into.
+ *
+ * At a hundred-pixel headline a single glyph is fifty pixels of
+ * reflow, so retyping the word was shoving the full stop after it
+ * sideways forty times in a row. The letters appear one at a time, as
+ * a typewriter should; the edge they push against is transitioned, so
+ * the line glides instead of juddering and nothing after it moves in
+ * steps at all.
+ *
+ * Linear, and quick. An eased width would lag behind the glyphs it is
+ * supposed to be containing, which looks like the box chasing the
+ * text; linear at a shade under one character's worth keeps them
+ * together.
+ */
+.dr-type {
+  position: relative;
   display: inline-block;
-  width: 0.06em;
+  white-space: pre;
+  transition: width 90ms linear;
+}
+/* Laid out so it can be measured, never drawn. */
+.dr-type-sizer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  visibility: hidden;
+  pointer-events: none;
+  white-space: pre;
+}
+.dr-caret {
+  position: absolute;
+  top: 0.1em;
+  width: 0.055em;
   min-width: 2px;
-  height: 0.78em;
-  margin-left: 0.04em;
-  vertical-align: baseline;
+  height: 0.74em;
   background: var(--sel);
   opacity: 0;
+  translate: 0.06em 0;
 }
-.dr-sel[data-live] .dr-caret { opacity: 1; animation: dr-blink 1s steps(1) infinite; }
-@keyframes dr-blink { 50% { opacity: 0; } }
+/* Steady, not blinking. A caret that flashes while the keys are going
+   is two rhythms at once and reads as the flicker it is; a real editor
+   holds the caret solid while you type for the same reason. */
+.dr-sel[data-live] .dr-caret { opacity: 1; }
 /* While it is being retyped the word can be empty, and a selection box
    collapsed to nothing reads as a glitch rather than as an edit. */
 .dr-sel[data-live] { min-width: 0.5em; }
@@ -1263,9 +1299,79 @@
 
 @media (prefers-reduced-motion: reduce) {
   .dr-caret { animation: none; }
+  .dr-type { transition: none; }
   .dr-car-track { scroll-behavior: auto; }
 }
 
 /* The headline and the editor were touching once the sub-head and the
    buttons between them were removed. */
 .dr-hero #floor { margin-top: clamp(26px, 4.5vh, 56px); }
+
+/* --- model credits ----------------------------------------------- */
+
+/*
+ * Every rule for this component was written under `.lp`, so on this
+ * page it rendered with no styling at all: the author ran straight
+ * into the title, giving "Old Beamer (Low-Poly)3DHaupt", and the list
+ * kept its browser bullets. CC-BY asks for the author to be credited
+ * wherever the work is shown, and a credit that reads as a typo is not
+ * much of a credit. Third time a shared component has arrived on this
+ * page without its stylesheet; the others were the reveal animation
+ * and the button reset.
+ */
+.dr .credits {
+  margin-top: 40px;
+  padding-top: 22px;
+  border-top: 1px solid var(--rule-2);
+}
+.dr .credits h3 {
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.dr .credits-lede {
+  margin-top: 8px;
+  max-width: 60ch;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.dr .credits ul {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  columns: 3 230px;
+  column-gap: 30px;
+}
+.dr .credits li {
+  break-inside: avoid;
+  padding: 4px 0;
+  font-size: 13px;
+  line-height: 1.35;
+}
+.dr .credits li a {
+  color: var(--ink-1);
+  text-decoration: none;
+  border-bottom: 1px solid var(--rule-2);
+  transition: color 0.16s, border-color 0.16s;
+}
+.dr .credits li a:hover { color: var(--ink-0); border-bottom-color: var(--ink-2); }
+.dr .credits-by {
+  display: block;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: var(--ink-3);
+}
+
+/* The close reads as a sheet, not as a cut-off sheet of graph paper.
+   The shared grid mask is struck from the top of its container, which
+   is right under a hero and wrong under a section that has to settle. */
+.dr-end .dr-grid {
+  -webkit-mask-image: radial-gradient(86% 120% at 50% 50%, #000 0%, transparent 72%);
+  mask-image: radial-gradient(86% 120% at 50% 50%, #000 0%, transparent 72%);
+  opacity: 0.55;
+}
