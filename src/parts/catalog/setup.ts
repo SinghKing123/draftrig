@@ -1,6 +1,7 @@
 import type { DeviceModel, ElectricalSpec, Material, Params, PartDef, Port, Solid, Vec3 } from '../kernel/types'
 import { registerParts } from '../kernel/registry'
 import { bool, num, str } from './_helpers'
+import { WALL, connectorPorts } from './_mains'
 
 /**
  * The things on a desk and in a room, and the mains that feeds them.
@@ -46,16 +47,44 @@ import { bool, num, str } from './_helpers'
 /* Shared bits                                                         */
 /* ------------------------------------------------------------------ */
 
-const REGIONS: Record<string, { v: number; label: string; amps: number }> = {
-  uk: { v: 230, label: 'UK, 230 V', amps: 13 },
-  eu: { v: 230, label: 'Europe, 230 V', amps: 16 },
-  us: { v: 120, label: 'US, 120 V', amps: 15 },
+/*
+ * A region is a country, and a country is a plug.
+ *
+ * This used to be three hand-written rows carrying a voltage and a
+ * current. It is now derived from the plug standards table, because
+ * they were the same fact written twice: a socket in Japan is 100 V
+ * because it is a NEMA 1-15 socket, and keeping the voltage next to
+ * the connector is what stops the two drifting apart.
+ */
+const REGION_STANDARD: Record<string, string> = {
+  uk: 'bs1363',
+  eu: 'schuko',
+  us: 'nema5-15',
+  au: 'as3112',
+  jp: 'nema1-15',
+  cn: 'gb2099',
+  in: 'bs546',
+  ch: 'sev1011',
+  it: 'cei23-50',
+  br: 'nbr14136',
 }
+
+const REGIONS: Record<string, { v: number; label: string; amps: number; standard: string }> =
+  Object.fromEntries(
+    Object.entries(REGION_STANDARD).map(([code, standard]) => {
+      const w = WALL[standard]
+      return [code, { v: w.v ?? 230, label: w.label, amps: w.amps, standard }]
+    }),
+  )
 
 const REGION_PARAM = {
   key: 'region', label: 'Region', type: 'enum' as const, default: 'uk', group: 'Mains',
   options: Object.entries(REGIONS).map(([value, r]) => ({ value, label: r.label })),
 }
+
+/** The wall standard a part's region implies. */
+const regionStandard = (p: Params): string =>
+  (REGIONS[str(p, 'region', 'uk')] ?? REGIONS.uk).standard
 
 const volts = (p: Params): number => (REGIONS[str(p, 'region', 'uk')] ?? REGIONS.uk).v
 
@@ -71,19 +100,31 @@ const screen = (on: boolean, tint = '#3A5878'): Material =>
     ? { color: '#1E2836', rough: 0.14, clearcoat: 0.8, density: 2.4, emissive: tint, emissiveIntensity: 0.55 }
     : GLASS_OFF
 
-/** Live, neutral and earth, leaving a face. */
-function mainsPorts(at: Vec3, dir: Vec3, prefix = '', spread: Vec3 = [8, 0, 0]): Port[] {
-  const names: [string, string][] = [['l', 'Live'], ['n', 'Neutral'], ['e', 'Earth']]
-  return names.map(([id, label], i) => ({
-    id: prefix + id,
-    label: prefix ? `${label} ${prefix.toUpperCase()}` : label,
-    kind: 'electrical' as const,
-    pos: [at[0] + spread[0] * (i - 1), at[1] + spread[1] * (i - 1), at[2] + spread[2] * (i - 1)] as Vec3,
-    dir,
-    role: id === 'e' ? ('gnd' as const) : ('passive' as const),
-    imax: 16,
-    solderable: false,
-  }))
+/**
+ * Live, neutral and earth, leaving a face, as one connector.
+ *
+ * The default is an IEC C14 inlet, because that is what the back of a
+ * monitor, a PC, an amplifier or a bench supply actually has: a male
+ * three-pin inlet that a kettle lead goes into. Forty-odd parts call
+ * this, so the default is what decides whether plugging something in
+ * is one click or six, and an appliance inlet is the right guess for
+ * nearly all of them. Sockets and plugs say otherwise explicitly.
+ *
+ * `imax` stays at 16 rather than taking the connector's own rating.
+ * The port figure feeds the wire-gauge warning and the part's own
+ * `limits.imax` is what enforces the rating, so lowering it here would
+ * change what the existing builds report without telling anybody
+ * anything new.
+ */
+function mainsPorts(
+  at: Vec3,
+  dir: Vec3,
+  prefix = '',
+  spread: Vec3 = [8, 0, 0],
+  standard = 'iec-c14',
+  end: 'plug' | 'socket' = 'plug',
+): Port[] {
+  return connectorPorts({ at, dir, standard, end, prefix, spread, imax: 16 })
 }
 
 /**
@@ -160,7 +201,10 @@ const wallOutlet: PartDef = {
   ports: (p) => {
     const two = str(p, 'ways', '2') === '2'
     const faces: [number, string][] = two ? [[-36, 'a'], [36, 'b']] : [[0, '']]
-    return faces.flatMap(([fx, prefix]) => mainsPorts([fx, -2, 14], [0, 0, 1], prefix, [11, 0, 0]))
+    const std = regionStandard(p)
+    return faces.flatMap(([fx, prefix]) =>
+      mainsPorts([fx, -2, 14], [0, 0, 1], prefix, [11, 0, 0], std, 'socket'),
+    )
   },
   electrical: {
     devices: (p) => {
@@ -310,10 +354,11 @@ const extensionLead: PartDef = {
     // suit: four ways is about 300 mm, not 250.
     const pitch = str(p, 'region', 'uk') === 'uk' ? 70 : 56
     const L = n * pitch + 26
-    const out: Port[] = mainsPorts(PLUG_AT(L), [-1, 0, 0], '', [0, 7, 0])
+    const std = regionStandard(p)
+    const out: Port[] = mainsPorts(PLUG_AT(L), [-1, 0, 0], '', [0, 7, 0], std, 'plug')
     for (let i = 0; i < n; i++) {
       const x = -L / 2 + 13 + pitch / 2 + i * pitch
-      out.push(...mainsPorts([x, 0, 36], [0, 0, 1], String(i + 1), [9, 0, 0]))
+      out.push(...mainsPorts([x, 0, 36], [0, 0, 1], String(i + 1), [9, 0, 0], std, 'socket'))
     }
     return out
   },
@@ -569,4 +614,4 @@ const fanHeater: PartDef = {
 
 registerParts([wallOutlet, extensionLead, breaker, usbCharger, smartPlug, fanHeater])
 
-export { REGIONS, REGION_PARAM, volts, load, dutyWatts, amps, mainsPorts, screen, PLASTIC, DARK, ALU, STEEL, GLASS_OFF }
+export { REGIONS, REGION_PARAM, regionStandard, volts, load, dutyWatts, amps, mainsPorts, screen, PLASTIC, DARK, ALU, STEEL, GLASS_OFF }

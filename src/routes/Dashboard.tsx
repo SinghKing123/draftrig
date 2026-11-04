@@ -12,6 +12,7 @@ import { newProjectId, projects, type ProjectSummary } from '@/cloud/projects'
 import { getThumb, removeThumb, setThumb } from '@/cloud/thumbs'
 import { STARTERS, type Starter } from '@/io/starters'
 import { StartPanel } from '@/ui/StartPanel'
+import { AI_ENABLED } from '@/ai/assistant'
 
 /**
  * The dashboard.
@@ -438,10 +439,12 @@ export function Dashboard() {
                 * first: it says where your work is kept and nothing about
                 * what the thing does.
                 */}
-              <StartPanel
-                onBlank={startBlank}
-                onOpenPart={(defId) => navigate(`/app?part=${encodeURIComponent(defId)}`)}
-              />
+              {AI_ENABLED && (
+                <StartPanel
+                  onBlank={startBlank}
+                  onOpenPart={(defId) => navigate(`/app?part=${encodeURIComponent(defId)}`)}
+                />
+              )}
 
               <section className="dsec">
                 <div className="dsec-head">

@@ -19,6 +19,8 @@ export interface BuiltMesh {
   geometry: THREE.BufferGeometry
   /** Tags collected from the solids merged into this mesh. */
   tags: string[]
+  /** Built from `withModel` solids: drawn alongside a model, not replaced by it. */
+  withModel?: boolean
 }
 
 /**
@@ -63,6 +65,11 @@ export interface BuiltPart {
    * clearance use this one.
    */
   hull: THREE.Box3
+  /**
+   * The box a model is fitted into: everything but the `withModel` solids,
+   * which are drawn beside the model rather than inside it.
+   */
+  body: THREE.Box3
   /** cm^3 */
   volume: number
   /** grams */
@@ -313,6 +320,7 @@ interface Bucket {
   material: Material
   geos: THREE.BufferGeometry[]
   tags: Set<string>
+  withModel: boolean
 }
 
 function walk(
@@ -322,12 +330,14 @@ function walk(
   acc: { volume: number; moment: THREE.Vector3; mass: number },
   surfaces: BuiltSurface[],
   hull: THREE.Box3,
+  inherited = false,
 ): void {
   for (const s of solids) {
     const world = new THREE.Matrix4().multiplyMatrices(parent, localMatrix(s))
+    const withModel = inherited || !!s.withModel
 
     if (s.kind === 'group') {
-      walk(s.children, world, buckets, acc, surfaces, hull)
+      walk(s.children, world, buckets, acc, surfaces, hull, withModel)
       continue
     }
 
@@ -358,10 +368,12 @@ function walk(
     if (!geo) continue
     geo.applyMatrix4(world)
 
-    const key = materialKey(s.mat)
+    // A solid kept beside the model cannot share a merged mesh with one the
+    // model replaces, or hiding one would hide both.
+    const key = materialKey(s.mat) + (withModel ? '|with-model' : '')
     let bucket = buckets.get(key)
     if (!bucket) {
-      bucket = { key, material: resolveMaterial(s.mat), geos: [], tags: new Set() }
+      bucket = { key, material: resolveMaterial(s.mat), geos: [], tags: new Set(), withModel }
       buckets.set(key, bucket)
     }
     bucket.geos.push(geo)
@@ -406,6 +418,8 @@ export function buildSolids(solids: Solid[]): BuiltPart {
   const meshes: BuiltMesh[] = []
   const bbox = new THREE.Box3()
   bbox.makeEmpty()
+  const body = new THREE.Box3()
+  body.makeEmpty()
 
   for (const b of buckets.values()) {
     const merged = b.geos.length === 1 ? b.geos[0] : mergeGeometries(normaliseIndexing(b.geos), false)
@@ -415,8 +429,11 @@ export function buildSolids(solids: Solid[]): BuiltPart {
     }
     merged.computeVertexNormals()
     merged.computeBoundingBox()
-    if (merged.boundingBox) bbox.union(merged.boundingBox)
-    meshes.push({ key: b.key, material: b.material, geometry: merged, tags: [...b.tags] })
+    if (merged.boundingBox) {
+      bbox.union(merged.boundingBox)
+      if (!b.withModel) body.union(merged.boundingBox)
+    }
+    meshes.push({ key: b.key, material: b.material, geometry: merged, tags: [...b.tags], withModel: b.withModel })
   }
 
   // A part that is only a display surface still has an extent worth knowing.
@@ -424,7 +441,9 @@ export function buildSolids(solids: Solid[]): BuiltPart {
     const half = new THREE.Vector3(s.size[0] / 2, s.size[1] / 2, 0)
     for (const sx of [-1, 1]) {
       for (const sy of [-1, 1]) {
-        bbox.expandByPoint(new THREE.Vector3(half.x * sx, half.y * sy, 0).applyMatrix4(s.matrix))
+        const corner = new THREE.Vector3(half.x * sx, half.y * sy, 0).applyMatrix4(s.matrix)
+        bbox.expandByPoint(corner)
+        body.expandByPoint(corner)
       }
     }
   }
@@ -432,7 +451,8 @@ export function buildSolids(solids: Solid[]): BuiltPart {
   const com = acc.mass > 0 ? acc.moment.clone().divideScalar(acc.mass) : new THREE.Vector3()
   // A part made of nothing but decals still has to keep wires out of itself.
   if (hull.isEmpty()) hull.copy(bbox)
-  return { meshes, surfaces, bbox, hull, volume: acc.volume / 1000, mass: acc.mass, com }
+  if (body.isEmpty()) body.copy(bbox)
+  return { meshes, surfaces, bbox, hull, body, volume: acc.volume / 1000, mass: acc.mass, com }
 }
 
 /* ------------------------------------------------------------------ */

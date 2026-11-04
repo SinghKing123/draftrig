@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { create } from 'zustand'
-import type { Connection, Instance, Params, ParamValue, PartDef, PortRef, Vec3 } from '@/parts/kernel/types'
+import type { Connection, Instance, Params, ParamValue, PartDef, Port, PortBundle, PortRef, Vec3 } from '@/parts/kernel/types'
 import { defaultParams, getPart } from '@/parts/kernel/registry'
 
 /* ------------------------------------------------------------------ */
@@ -207,6 +207,82 @@ export interface DocState {
 
 let counter = 0
 const uid = (prefix: string): string => `${prefix}_${(counter++).toString(36)}${Math.random().toString(36).slice(2, 6)}`
+
+/* ------------------------------------------------------------------ */
+/* Connectors                                                          */
+/* ------------------------------------------------------------------ */
+
+/* Flex colours, so a plugged lead reads as a lead rather than as three
+   red jumpers. Brown, blue and green are the harmonised set. */
+const LINE_COLOR: Record<string, string> = { l: '#6B4423', n: '#2F62B8', e: '#4E9A2F' }
+
+/** The ports a placed instance actually has, at its current parameters. */
+function portsOf(doc: Doc, instanceId: string): Port[] {
+  const inst = doc.instances[instanceId]
+  if (!inst) return []
+  const def = getPart(inst.defId)
+  if (!def) return []
+  try {
+    return def.ports({ ...defaultParams(def), ...inst.params })
+  } catch {
+    return []
+  }
+}
+
+function bundleAt(doc: Doc, ref: PortRef): { ports: Port[]; bundle: PortBundle } | null {
+  const ports = portsOf(doc, ref.instanceId)
+  const hit = ports.find((p) => p.id === ref.portId)
+  if (!hit || !hit.bundle) return null
+  return { ports, bundle: hit.bundle }
+}
+
+/**
+ * The conductor pairs of one plug action, or null if this is ordinary wiring.
+ *
+ * Two connectors mate when the standard is the same and the ends are
+ * opposite: pins into holes, and a kettle lead does not go in a wall.
+ * Anything else falls through to the single wire that was asked for,
+ * which is deliberate. This is a shortcut over the existing behaviour,
+ * never a veto on it.
+ */
+function connectorPairs(doc: Doc, a: PortRef, b: PortRef): [PortRef, PortRef][] | null {
+  if (a.instanceId === b.instanceId) return null
+  const A = bundleAt(doc, a)
+  const B = bundleAt(doc, b)
+  if (!A || !B) return null
+  if (A.bundle.standard !== B.bundle.standard) return null
+  if (A.bundle.end === B.bundle.end) return null
+
+  const sideA = A.ports.filter((p) => p.bundle && p.bundle.id === A.bundle.id)
+  const sideB = B.ports.filter((p) => p.bundle && p.bundle.id === B.bundle.id)
+  const pairs: [PortRef, PortRef][] = []
+  for (const pa of sideA) {
+    const pb = sideB.find((q) => q.bundle && pa.bundle && q.bundle.line === pa.bundle.line)
+    if (!pb) continue
+    pairs.push([
+      { instanceId: a.instanceId, portId: pa.id },
+      { instanceId: b.instanceId, portId: pb.id },
+    ])
+  }
+  return pairs.length > 1 ? pairs : null
+}
+
+/** Whether these two terminals are already joined, either way round. */
+function joined(doc: Doc, a: PortRef, b: PortRef): boolean {
+  return doc.connectionOrder.some((cid) => {
+    const c = doc.connections[cid]
+    return (
+      (c.a.instanceId === a.instanceId &&
+        c.a.portId === a.portId &&
+        c.b.instanceId === b.instanceId &&
+        c.b.portId === b.portId) ||
+      (c.a.instanceId === b.instanceId &&
+        c.a.portId === b.portId &&
+        c.b.instanceId === a.instanceId &&
+        c.b.portId === a.portId)
+    )
+  })
+}
 
 export const emptyDoc = (): Doc => ({
   name: 'Untitled build',
@@ -441,15 +517,46 @@ export const useDoc = create<DocState>()((set, get) => {
     connect: (a, b, opts) => {
       if (a.instanceId === b.instanceId && a.portId === b.portId) return null
       const { doc } = get()
-      // Reject exact duplicates in either direction.
-      const dupe = doc.connectionOrder.find((cid) => {
-        const c = doc.connections[cid]
-        return (
-          (c.a.instanceId === a.instanceId && c.a.portId === a.portId && c.b.instanceId === b.instanceId && c.b.portId === b.portId) ||
-          (c.a.instanceId === b.instanceId && c.a.portId === b.portId && c.b.instanceId === a.instanceId && c.b.portId === a.portId)
-        )
-      })
-      if (dupe) return null
+
+      /*
+       * A connector goes in as a connector.
+       *
+       * Clicking the live pin of a plug and the live hole of a socket
+       * means "plug this in", not "join these two terminals and leave
+       * the neutral and the earth for later". Every conductor of the
+       * pair is joined in one edit and they share a link, so one undo
+       * and one delete take the whole lead out again.
+       */
+      const pairs = connectorPairs(doc, a, b)
+      if (pairs) {
+        const fresh = pairs.filter(([pa, pb]) => !joined(doc, pa, pb))
+        if (!fresh.length) return null
+        const link = uid('k')
+        const ids: string[] = []
+        edit((d) => {
+          for (const [pa, pb] of fresh) {
+            const id = uid('c')
+            ids.push(id)
+            /* Mains flex, not hook-up wire: 0.75 mm2 rated to 500 V,
+               which is what the gauge and insulation checks read. */
+            d.connections[id] = {
+              id,
+              kind: 'wire',
+              a: pa,
+              b: pb,
+              color: LINE_COLOR[pb.portId.slice(-1)] ?? '#E34B4B',
+              gauge: 0.75,
+              insulationV: 500,
+              link,
+              ...opts,
+            }
+            d.connectionOrder.push(id)
+          }
+        })
+        return ids[0] ?? null
+      }
+
+      if (joined(doc, a, b)) return null
       const id = uid('c')
       edit((d) => {
         d.connections[id] = { id, kind: 'wire', a, b, color: '#E34B4B', gauge: 0.2, ...opts }
@@ -459,10 +566,24 @@ export const useDoc = create<DocState>()((set, get) => {
     },
 
     disconnect: (ids) => {
-      const kill = new Set(ids)
+      const { doc } = get()
+      /* Pulling one conductor of a plug pulls the plug. A live and a
+         neutral left joined with the earth gone is not a state anybody
+         asked for, and it is the one that is dangerous in the real
+         world, so it is not reachable here either. */
+      const links = new Set(
+        ids.map((id) => doc.connections[id]?.link).filter((l): l is string => Boolean(l)),
+      )
+      const kill = new Set([
+        ...ids,
+        ...doc.connectionOrder.filter((cid) => {
+          const l = doc.connections[cid]?.link
+          return l ? links.has(l) : false
+        }),
+      ])
       if (kill.has(get().selectedWire ?? '')) set({ selectedWire: null })
       edit((d) => {
-        for (const id of ids) delete d.connections[id]
+        for (const id of kill) delete d.connections[id]
         d.connectionOrder = d.connectionOrder.filter((c) => !kill.has(c))
       })
     },

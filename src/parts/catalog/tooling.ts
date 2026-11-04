@@ -38,6 +38,12 @@ const TOOL_BLUE = { color: '#1E5A8C', rough: 0.5, density: 1.4 }
 
 const printer3d: PartDef = {
   id: 'printer-3d',
+  model: {
+    url: 'models/printer-3d.glb',
+    fit: 'bbox',
+    axes: { y: 'fill', z: 'fill' },
+    credit: { title: 'Prusa 3D Printer', author: 'Alvaro A.', license: 'CC-BY-4.0', source: 'https://sketchfab.com/3d-models/prusa-3d-printer-2a15897d26c94941bc0132cf130169da' },
+  },
   name: '3D printer',
   category: 'tooling',
   blurb: 'A build volume, a heated bed, and nine hours at 120 W',
@@ -153,6 +159,14 @@ const printer3d: PartDef = {
 
 const solderStation: PartDef = {
   id: 'station-solder',
+  // The iron, its holder and the sponge, with the cable looping back. The
+  // cable is in the box, which is why the station is deeper than its case.
+  model: {
+    url: 'models/soldering-station.glb',
+    fit: 'bbox',
+    axes: { y: [0.1, 0.9], z: 'fill' },
+    credit: { title: '[CC0] Generic Soldering Station', author: 'literallylara', license: 'CC-BY-4.0', source: 'https://sketchfab.com/3d-models/cc0-generic-soldering-station-87789d4f4c5b43069a5dd47819f4b4a8' },
+  },
   name: 'Soldering station',
   category: 'tooling',
   blurb: 'An earthed tip, and the watts to hold it there',

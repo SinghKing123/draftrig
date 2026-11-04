@@ -266,6 +266,15 @@ const desktopMonitor: PartDef = {
 
 const projector: PartDef = {
   id: 'projector',
+  // A clean box with a lens in it. The throw ratio and the lens offset are
+  // parameters, not geometry, so the one shape serves every projector the
+  // part can be set to.
+  model: {
+    url: 'models/projector.glb',
+    fit: 'bbox',
+    axes: { y: 'fill', z: 'fill' },
+    credit: { title: 'Old Beamer (Low-Poly)', author: '3DHaupt', license: 'CC-BY-4.0', source: 'https://sketchfab.com/3d-models/old-beamer-low-poly-c1c504db02e445d3bcd421cdc4d063d2' },
+  },
   name: 'Projector',
   category: 'av',
   blurb: 'Lumens, a throw ratio, and the image that follows from them',
@@ -280,6 +289,11 @@ const projector: PartDef = {
     { key: 'lumens', label: 'Brightness', type: 'enum', default: '2500', group: 'Projector', options: ['1000', '2000', '2500', '3500', '5000'].map((v) => ({ value: v, label: `${v} lm` })) },
     { key: 'throw', label: 'Throw ratio', type: 'number', default: 1.5, min: 0.25, max: 3, step: 0.05, group: 'Projector', help: 'Distance divided by image width. Under 0.5 is short throw; under 0.3 is the kind that sits under the screen.' },
     { key: 'image', label: 'Image width', type: 'number', unit: 'mm', default: 2200, min: 600, max: 6000, step: 100, group: 'Projector' },
+    { key: 'aspect', label: 'Aspect', type: 'enum', default: '16:9', group: 'Projector', options: [{ value: '16:9', label: '16:9' }, { value: '2.35', label: '2.35:1, scope' }, { value: '4:3', label: '4:3' }] },
+    { key: 'gain', label: 'Screen gain', type: 'number', unit: '', default: 1.1, min: 0.6, max: 2.4, step: 0.05, group: 'Image', help: 'What it is throwing at. A matt white screen is 1.0 to 1.1.' },
+    { key: 'hours', label: 'Lamp hours', type: 'number', unit: 'h', default: 0, min: 0, max: 20000, step: 100, group: 'Image', help: 'A lamp loses a quarter of its output in the first 1,500 hours. A laser holds for 20,000.' },
+    { key: 'source', label: 'Light source', type: 'enum', default: 'laser', group: 'Projector', options: [{ value: 'lamp', label: 'Lamp' }, { value: 'laser', label: 'Laser' }, { value: 'led', label: 'LED' }] },
+    { key: 'shift', label: 'Lens shift', type: 'number', unit: '%', default: 0, min: -120, max: 120, step: 5, group: 'Mount', help: 'Vertical, as a percentage of image height. This is what lets a ceiling-mounted projector put a level image on a screen below it.' },
     { key: 'on', label: 'Lamp on', type: 'bool', default: true, group: 'Control' },
   ],
   solids: (p) => {
@@ -315,10 +329,41 @@ const projector: PartDef = {
   readouts: (p) => {
     const t = num(p, 'throw', 1.5)
     const img = num(p, 'image', 2200)
+    const ratio = str(p, 'aspect', '16:9') === '2.35' ? 2.35 : str(p, 'aspect', '16:9') === '4:3' ? 4 / 3 : 16 / 9
+    const imgH = img / ratio
     const run = dutyWatts(p, (parseInt(str(p, 'lumens', '2500'), 10) || 2500) * 0.1 + 30, 0.4)
+
+    /*
+     * What actually lands on the screen.
+     *
+     * Rated lumens are measured in the brightest picture mode a projector
+     * has, which nobody watches a film in — it is the green-tinted one.
+     * A calibrated mode is about 70% of the rating. A lamp then loses a
+     * quarter of what is left in its first 1,500 hours; a laser holds.
+     *
+     * Foot-lamberts are those lumens over the image area in square feet,
+     * times screen gain. The standard for a dark room is 12 to 22, and the
+     * gap between the number on the box and the number on the wall is the
+     * single most useful thing this part can tell anybody.
+     */
+    const rated = parseInt(str(p, 'lumens', '2500'), 10) || 2500
+    const source = str(p, 'source', 'laser')
+    const age = source === 'lamp' ? Math.max(0.6, 1 - num(p, 'hours', 0) / 6000) : Math.max(0.85, 1 - num(p, 'hours', 0) / 60000)
+    /* 0.6, not 0.7: a calibrated picture mode on a home projector closes
+       the iris and drops the colour wheel's white segment, and measured
+       output lands between half and two thirds of the rating. */
+    const real = rated * 0.6 * age
+    const areaFt2 = (img / 304.8) * (imgH / 304.8)
+    const fl = (real * num(p, 'gain', 1.1)) / Math.max(0.1, areaFt2)
+
+    const shift = (num(p, 'shift', 0) / 100) * imgH
     return [
-      { label: 'Stand it back', value: `${(t * img / 1000).toFixed(2)} m from the screen` },
-      { label: 'Image', value: `${(img / 1000).toFixed(2)} x ${(img * 9 / 16 / 1000).toFixed(2)} m, ${(Math.hypot(img, img * 9 / 16) / 25.4).toFixed(0)}"` },
+      { label: 'Stand it back', value: `${((t * img) / 1000).toFixed(2)} m from the screen` },
+      { label: 'Image', value: `${(img / 1000).toFixed(2)} × ${(imgH / 1000).toFixed(2)} m, ${(Math.hypot(img, imgH) / 25.4).toFixed(0)}"` },
+      { label: 'Calibrated output', value: `${Math.round(real)} lm of ${rated} rated${source === 'lamp' && num(p, 'hours', 0) > 0 ? `, after ${num(p, 'hours', 0)} h` : ''}` },
+      { label: 'On the screen', value: `${fl.toFixed(1)} fL — ${fl < 12 ? 'dim for a dark room' : fl <= 22 ? 'in the 12 to 22 cinema window' : fl <= 40 ? 'brighter than reference, which most people prefer' : 'very bright, close the iris'}` },
+      ...(fl < 12 ? [{ label: 'Wants', value: `${Math.round((12 * areaFt2) / num(p, 'gain', 1.1) / 0.6)} lm rated, or a smaller image` }] : []),
+      { label: 'Lens shift', value: shift === 0 ? 'None, the lens is level with the image centre' : `${Math.abs(Math.round(shift))} mm ${shift > 0 ? 'above' : 'below'} the image centre` },
       { label: 'Drawing', value: `${run.toFixed(0)} W, ${amps(p, run)}` },
     ]
   },

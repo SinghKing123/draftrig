@@ -1287,7 +1287,7 @@ export function arcadeCabinet(): Doc {
   const psu = b.add('power-adapter', [16, T + 6, 18], { volts: '12', amps: 5, plug: 'uk' }, [0, 0, 0], '12 V supply')
   /* Short, and behind. A real 1.8 m lead is a metre and a half of flex lying
      across the bench, which is the largest thing in any picture of this. */
-  b.add('cable-power-cord', [185, T + 4, D / 2 + 70], { plug: 'uk', length: 600 }, [0, 90, 0], 'Mains lead')
+  b.add('cable-power-cord', [185, T + 4, D / 2 + 70], { plug: 'bs1363', length: 600 }, [0, 90, 0], 'Mains lead')
 
   // Sound, either side of the screen.
   for (const sx of [-1, 1] as const) {

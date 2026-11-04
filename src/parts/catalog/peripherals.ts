@@ -148,6 +148,12 @@ const mouse: PartDef = {
 
 const webcam: PartDef = {
   id: 'webcam-usb',
+  model: {
+    url: 'models/webcam.glb',
+    fit: 'bbox',
+    axes: { x: 'fill', y: 'fill' },
+    credit: { title: 'Logitech Webcam', author: 'Qoodrat', license: 'CC-BY-4.0', source: 'https://sketchfab.com/3d-models/logitech-webcam-0523fbf537cd4ea4a41e96b8293312ac' },
+  },
   name: 'Webcam',
   category: 'peripheral',
   blurb: 'A sensor on a monitor lip, covering a width at a distance',

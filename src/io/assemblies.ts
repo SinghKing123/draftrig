@@ -145,7 +145,7 @@ export function workbench(): Doc {
     b.add('terminal-block', [-120 + i * 60, H - 76, D / 2 - 30], { ways: 4, pitch: '5.08' }, [0, 0, 0], `Terminals ${i + 1}`)
   }
   const psu = b.add('power-adapter', [220, H + 40, D / 2 - 90], { volts: '24', amps: 5, plug: 'uk' }, [0, 0, 0], 'Supply')
-  b.add('cable-power-cord', [340, H + 34, D / 2 - 40], { plug: 'uk', length: 1800 }, [0, 0, 0], 'Mains lead')
+  b.add('cable-power-cord', [340, H + 34, D / 2 - 40], { plug: 'bs1363', length: 1800 }, [0, 0, 0], 'Mains lead')
   void rail
   void psu
 

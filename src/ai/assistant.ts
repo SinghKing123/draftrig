@@ -39,6 +39,21 @@ import type { PartDef } from '@/parts/kernel/types'
  * described as having been taken.
  */
 
+/**
+ * Whether the assistant is shown at all.
+ *
+ * Off, deliberately, and not because the panel misbehaves: it is honest
+ * about having no model and the catalogue search behind it is real. It
+ * is off because a box that invites you to describe a build, on a site
+ * whose key is not connected, reads to a first-time visitor as a
+ * feature that is broken rather than as one that is pending — and the
+ * dashboard has a perfectly good "Start a new build" underneath it.
+ *
+ * Nothing is deleted. Turn this to true when the Worker route in the
+ * notes above exists, and the panel comes back as it was.
+ */
+export const AI_ENABLED = false
+
 /** A part the assistant thinks is relevant, and why it was offered. */
 export interface Suggestion {
   def: PartDef

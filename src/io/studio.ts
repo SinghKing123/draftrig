@@ -70,7 +70,7 @@ export function studioDesk(): Doc {
 
   /* --- What the hands are on. */
   b.add('mat-desk', [-640, DH, 60], { width: 900, depth: 400, material: 'cloth' }, [0, 0, 0], 'Desk mat')
-  b.add('keyboard-desk', [-760, DH + 4, 40], { layout: 'tkl', switches: 'tactile' }, [0, 0, 0], 'Keyboard')
+  b.add('keyboard-desk', [-760, DH + 4, 40], { layout: 'tkl', backlit: true }, [0, 0, 0], 'Keyboard')
   b.add('mouse-desk', [-330, DH + 4, 60], { link: 'dongle', swing: 300 }, [0, -8, 0], 'Mouse')
   b.add('light-bar-monitor', [-120, DH + ARM_POST - 70 + 10, REAR + 20 + ARM_REACH + 10], { length: 500, kelvin: 4000 }, [0, 0, 0], 'Light bar')
 

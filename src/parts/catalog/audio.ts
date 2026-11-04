@@ -37,6 +37,12 @@ const MESH = { color: '#8E949C', metal: 1, rough: 0.55, density: 7.8 }
 
 const studioMonitor: PartDef = {
   id: 'monitor-studio',
+  model: {
+    url: 'models/studio-monitor.glb',
+    fit: 'bbox',
+    axes: { z: 'fill' },
+    credit: { title: 'Yamaha HS5 Studio Monitor', author: 'Ivan_WSK', license: 'CC-BY-4.0', source: 'https://sketchfab.com/3d-models/yamaha-hs5-studio-monitor-eec7203e4f964fa5976df3afee33f946' },
+  },
   name: 'Studio monitor',
   category: 'audio',
   blurb: 'An active nearfield, which has to be placed rather than put',
@@ -128,6 +134,12 @@ const studioMonitor: PartDef = {
 
 const subwoofer: PartDef = {
   id: 'subwoofer-desk',
+  model: {
+    url: 'models/subwoofer.glb',
+    fit: 'bbox',
+    axes: { z: 'fill' },
+    credit: { title: 'Subwoofer Sealed Speaker', author: 'Eveston - Elite Big Speakerman - Hugo', license: 'CC-BY-4.0', source: 'https://sketchfab.com/3d-models/subwoofer-sealed-speaker-948dc1d2461c4ddfba2538fc3f8429b6' },
+  },
   name: 'Subwoofer',
   category: 'audio',
   blurb: 'A box under the desk with a crossover and 200 W behind it',
@@ -296,6 +308,12 @@ const audioInterface: PartDef = {
 
 const condenserMic: PartDef = {
   id: 'mic-condenser',
+  model: {
+    url: 'models/mic-condenser.glb',
+    fit: 'bbox',
+    axes: { y: 'fill' },
+    credit: { title: 'Audio Technica AT2020 Condenser Microphone', author: 'Javild', license: 'CC-BY-4.0', source: 'https://sketchfab.com/3d-models/audio-technica-at2020-condenser-microphone-5129df55cf16458eaf747591b009eabf' },
+  },
   name: 'Condenser microphone',
   category: 'audio',
   blurb: 'A capsule that needs feeding, on a body that needs clearance',

@@ -192,6 +192,12 @@ const monitorRiser: PartDef = {
 
 const plant: PartDef = {
   id: 'plant-potted',
+  model: {
+    url: 'models/plant-monstera.glb',
+    fit: 'bbox',
+    axes: { y: 'fill', z: 'fill' },
+    credit: { title: 'Monstera plant', author: 'INTERIA', license: 'CC-BY-4.0', source: 'https://sketchfab.com/3d-models/monstera-plant-5b6b86b22c09491fb456e0bfde86cc9a' },
+  },
   name: 'Potted plant',
   category: 'decor',
   blurb: 'A pot diameter of surface, and a canopy above it',
@@ -462,6 +468,19 @@ const framedPrint: PartDef = {
 
 const acousticPanel: PartDef = {
   id: 'panel-acoustic',
+  // Foam is drawn as foam: the file has the pyramids in its geometry, so a
+  // foam panel reads as one across a room. A wool or felt panel is a
+  // fabric-wrapped rectangle and its solids already say that better than a
+  // scan of somebody else's fabric would.
+  model: (p) =>
+    str(p, 'fill', 'wool') === 'foam'
+      ? {
+          url: 'models/acoustic-panel.glb',
+          fit: 'bbox',
+          axes: { x: 'fill', y: 'fill', z: 'fill' },
+          credit: { title: 'acoustic panel', author: 'photon (that one larry)', license: 'CC-BY-4.0', source: 'https://sketchfab.com/3d-models/acoustic-panel-0e20721988894b8eac7b71cf3cdfef4b' },
+        }
+      : undefined,
   name: 'Acoustic panel',
   category: 'decor',
   blurb: 'Absorption, by coverage and by thickness',
@@ -546,6 +565,15 @@ const acousticPanel: PartDef = {
 
 const wallShelf: PartDef = {
   id: 'shelf-wall',
+  model: {
+    url: 'models/wall-shelf.glb',
+    fit: 'bbox',
+    // The board's thickness is a parameter, so it is a parameter of the
+    // mesh too: without that, a 60 mm board drew a 40 mm one and the
+    // port on its top surface sat 31 mm above nothing.
+    axes: { x: 'fill', y: 'fill' },
+    credit: { title: 'Wooden Wall Bookshelf', author: 'Sanzid', license: 'CC-BY-4.0', source: 'https://sketchfab.com/3d-models/wooden-wall-bookshelf-96a804790eff41b3b2376f3608fde7df' },
+  },
   name: 'Wall shelf',
   category: 'decor',
   blurb: 'A span, a load, and two fixings carrying it',
@@ -649,6 +677,22 @@ const wallShelf: PartDef = {
 
 const rug: PartDef = {
   id: 'rug-floor',
+  // Rectangular only. The file is a woven rectangle and a round rug is a
+  // different object, not this one scaled.
+  model: (p) =>
+    str(p, 'shape', 'rect') === 'rect'
+      ? {
+          url: 'models/rug.glb',
+          fit: 'bbox',
+          // Width and pile each follow their own parameter. The file is
+          // 8 mm thick, so with the thickness left to scale with the
+          // length a 2 m rug came out 7 mm short of its own pile and fell
+          // back to solids. A deep shag is a different object and still
+          // does.
+          axes: { x: 'fill', y: 'fill' },
+          credit: { title: 'Kuuma YE rug by Kristiina Lassus', author: 'mfb64', license: 'CC-BY-4.0', source: 'https://sketchfab.com/3d-models/kuuma-ye-rug-by-kristiina-lassus-5f5de1ba643746fc9da76d2cac94fbb3' },
+        }
+      : undefined,
   name: 'Rug',
   category: 'decor',
   blurb: 'Floor area, and whether a chair will roll on it',

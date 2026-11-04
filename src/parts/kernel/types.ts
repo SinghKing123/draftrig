@@ -197,10 +197,45 @@ export type MateType =
   | 'rail' // DIN rail / drawer slide
   | 'peg' // breadboard / perfboard hole
 
+/**
+ * One terminal's membership of a multi-conductor connector.
+ *
+ * Mains is three conductors that always travel together and only ever
+ * go in one way round, and modelling it as three loose terminals made
+ * plugging a monitor in a six-click wiring job — three at the wall and
+ * three at the back of the monitor. That is circuit work, and a power
+ * lead is not circuit work: it is one action with a shape that either
+ * fits the socket or does not.
+ *
+ * So the conductors keep their own terminals, because the solver needs
+ * three nodes and a build needs to be able to show a broken earth, but
+ * they also say which connector they belong to. `connect` joins the
+ * whole connector when both halves agree, and leaves everything else
+ * exactly as it was.
+ *
+ * `standard` names the coupling rather than either half of it — the
+ * pair C13/C14 is `iec-c14` on both sides — and `end` says which half
+ * this is. Two connectors mate when the standards match and the ends
+ * are opposite, which is the whole of the compatibility rule and the
+ * reason a kettle lead will not go into a wall.
+ */
+export interface PortBundle {
+  /** Groups the terminals of one connector on one part. */
+  id: string
+  /** The coupling standard: bs1363, schuko, iec-c14, and so on. */
+  standard: string
+  /** Which conductor, matched across the two halves. */
+  line: 'l' | 'n' | 'e'
+  /** The pins, or the holes they go into. */
+  end: 'plug' | 'socket'
+}
+
 export interface Port {
   id: string
   label: string
   kind: PortKind
+  /** The multi-conductor connector this terminal is part of, if any. */
+  bundle?: PortBundle
   /** Local position, mm. */
   pos: Vec3
   /** Outward direction, used for wire launch angle and mate alignment. */
@@ -541,6 +576,14 @@ export interface Connection {
   kind: 'wire' | 'mate'
   a: PortRef
   b: PortRef
+  /**
+   * The connector this conductor was plugged in as part of.
+   *
+   * Shared by every conductor of one plug action, so that unplugging
+   * takes the whole lead out rather than leaving a live and a neutral
+   * joined and the earth hanging.
+   */
+  link?: string
   /** Wire colour, hex. */
   color?: string
   /** Conductor cross-section, mm^2 (0.2 ~ 24AWG, 0.5 ~ 20AWG). */

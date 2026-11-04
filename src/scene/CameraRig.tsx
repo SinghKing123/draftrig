@@ -77,14 +77,25 @@ export function CameraRig({ controls }: { controls: React.MutableRefObject<Orbit
     if (box.isEmpty()) box = new THREE.Box3(new THREE.Vector3(-60, 0, -60), new THREE.Vector3(60, 60, 60))
 
     const centre = box.getCenter(new THREE.Vector3())
-    const radius = Math.max(box.getSize(new THREE.Vector3()).length() / 2, 20)
+    const extent = box.getSize(new THREE.Vector3())
+    /*
+     * Fit to the largest dimension, not to the bounding sphere.
+     *
+     * The sphere's radius is half the diagonal, which for anything flat and
+     * wide — a desk, a room, every setup in the catalogue — is about 1.6
+     * times the largest dimension. Fitting that put the build at a third of
+     * the frame with empty grid around it, and reliably got reported as
+     * "Fit doesn't fit". Half the largest dimension, plus a tenth, frames
+     * the thing with air rather than with a field.
+     */
+    const radius = Math.max(Math.max(extent.x, extent.y, extent.z) / 2, 20) * 1.1
 
     const persp = camera as THREE.PerspectiveCamera
     const vFov = (persp.fov * Math.PI) / 180
     const aspect = size.width / Math.max(size.height, 1)
     const hFov = 2 * Math.atan(Math.tan(vFov / 2) * aspect)
     // Fit on whichever axis is tighter, with a margin so nothing kisses the edge.
-    const dist = (radius / Math.sin(Math.min(vFov, hFov) / 2)) * 1.18
+    const dist = (radius / Math.sin(Math.min(vFov, hFov) / 2)) * 1.06
 
     const dir = camera.position.clone().sub(controls.current?.target ?? new THREE.Vector3())
     if (dir.lengthSq() < 1e-6) dir.set(0.8, 0.62, 0.95)
@@ -98,7 +109,7 @@ export function CameraRig({ controls }: { controls: React.MutableRefObject<Orbit
       t: 0,
     }
     persp.near = Math.max(dist / 4000, 0.5)
-    persp.far = dist * 12
+    persp.far = Math.max(dist * 12, 20000)
     persp.updateProjectionMatrix()
   }, [token, target, camera, size, controls])
 
@@ -125,13 +136,14 @@ export function CameraRig({ controls }: { controls: React.MutableRefObject<Orbit
     if (box.isEmpty()) box = new THREE.Box3(new THREE.Vector3(-60, 0, -60), new THREE.Vector3(60, 60, 60))
 
     const centre = box.getCenter(new THREE.Vector3())
-    const radius = Math.max(box.getSize(new THREE.Vector3()).length() / 2, 20)
+    const extent = box.getSize(new THREE.Vector3())
+    const radius = Math.max(Math.max(extent.x, extent.y, extent.z) / 2, 20) * 1.1
 
     const persp = camera as THREE.PerspectiveCamera
     const vFov = (persp.fov * Math.PI) / 180
     const aspect = size.width / Math.max(size.height, 1)
     const hFov = 2 * Math.atan(Math.tan(vFov / 2) * aspect)
-    const dist = (radius / Math.sin(Math.min(vFov, hFov) / 2)) * 1.18
+    const dist = (radius / Math.sin(Math.min(vFov, hFov) / 2)) * 1.06
 
     anim.current = {
       from: camera.position.clone(),
@@ -141,7 +153,7 @@ export function CameraRig({ controls }: { controls: React.MutableRefObject<Orbit
       t: 0,
     }
     persp.near = Math.max(dist / 4000, 0.5)
-    persp.far = dist * 12
+    persp.far = Math.max(dist * 12, 20000)
     persp.updateProjectionMatrix()
   }, [viewToken, viewPreset, camera, size, controls])
 

@@ -84,6 +84,15 @@ function lanPorts(n: number, at: Vec3, dir: Vec3, pitch = 18, prefix = 'lan'): P
 
 const rack: PartDef = {
   id: 'rack-network',
+  // A 42U rack with a pull-out console tray, brought down to whatever
+  // height the part is set to through its middle, so the plinth and the
+  // top cap keep their proportions.
+  model: {
+    url: 'models/server-rack.glb',
+    fit: 'bbox',
+    axes: { x: [0.1, 0.9], y: 'fill' },
+    credit: { title: 'Server V2 +console', author: 'FlevasGR', license: 'CC-BY-4.0', source: 'https://sketchfab.com/3d-models/server-v2-console-f24594ece9634cec9c1210c041838371' },
+  },
   name: 'Network rack',
   category: 'network',
   blurb: 'Nineteen inches wide, however many U tall',

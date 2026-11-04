@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
-import { Canvas, useThree, type ThreeEvent } from '@react-three/fiber'
+import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
 import { GizmoHelper, GizmoViewport, Grid, OrbitControls, TransformControls } from '@react-three/drei'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import { PartObject } from './PartObject'
@@ -34,8 +34,12 @@ import type { Vec3 } from '@/parts/kernel/types'
 /* ------------------------------------------------------------------ */
 
 /**
- * Extent of the ground plane and the grid, mm. Six metres is far larger than
- * anything anyone builds here, and the fade hides the edge long before it.
+ * Extent of the ground plane and the grid, mm.
+ *
+ * Twenty-four metres. Six was right while the biggest thing anybody placed
+ * was a desk, and wrong as soon as the catalogue grew rooms: a 6.6 metre
+ * room framed from outside had the grid stop a metre past its walls and
+ * black void beyond, which reads as the floor having run out.
  *
  * Deliberately finite. The infinite mode of drei's grid scales the plane by
  * one plus the fade distance, which at a 2.6 metre fade made two triangles
@@ -44,7 +48,48 @@ import type { Vec3 } from '@/parts/kernel/types'
  * to pixel: it speckled every solid in the scene and drew its own lines across
  * them, and the pattern crawled as the camera moved.
  */
-const GROUND = 6000
+const GROUND = 24000
+
+/* The fog the bench was tuned with, and the camera distance it was tuned
+   at — the default rig sits about 500 mm out. HorizonFog scales this
+   pair with distance and never tightens it. */
+const FOG_NEAR = 2200
+const FOG_FAR = 6000
+const FOG_AT = 500
+
+/**
+ * Fog that pulls back as the camera does.
+ *
+ * The fog was a fixed 2.2 m to 6 m, chosen when the biggest thing on the
+ * bench was a desk and the camera could not get further than 4 m away.
+ * Both of those limits have since been lifted — the orbit rig now goes
+ * to 60 m so that a room can be framed at all — and the fog was left
+ * behind. Place a 4.3 m room, pull back far enough to see it, and every
+ * pixel is past the far plane of the fog: the viewport goes to the fog
+ * colour, which is very nearly black. It reads as the renderer dying.
+ *
+ * Fog here is not atmosphere, it is the device that fades the ground
+ * grid into the horizon band instead of ending it at a hard edge, so
+ * the distance that matters is how far away you are standing, not an
+ * absolute. Holding the ratio constant keeps the horizon in the same
+ * apparent place at every scale.
+ *
+ * Floored at the old pair rather than purely proportional, so nothing
+ * closer than the old working distance fogs any more than it did
+ * before: at bench scale this is exactly the previous behaviour.
+ */
+function HorizonFog({ controls }: { controls: React.MutableRefObject<OrbitControlsImpl | null> }) {
+  const { scene, camera } = useThree()
+  useFrame(() => {
+    const fog = scene.fog as THREE.Fog | null
+    if (!fog) return
+    const target = controls.current?.target
+    const d = target ? camera.position.distanceTo(target) : camera.position.length()
+    fog.near = Math.max(FOG_NEAR, d * (FOG_NEAR / FOG_AT))
+    fog.far = Math.max(FOG_FAR, d * (FOG_FAR / FOG_AT))
+  })
+  return null
+}
 
 function Ground({ onPointerUp }: { onPointerUp: (e: ThreeEvent<PointerEvent>) => void }) {
   const showGrid = useDoc((s) => s.view.grid)
@@ -474,7 +519,8 @@ function SceneContents() {
           ever be seen for the one frame before it draws. Kept as the colour
           the fog fades into, which has to match the horizon band. */}
       <color attach="background" args={['#0D1117']} />
-      <fog attach="fog" args={['#0D1117', 2200, 6000]} />
+      <fog attach="fog" args={['#0D1117', FOG_NEAR, FOG_FAR]} />
+      <HorizonFog controls={controls} />
       <StudioEnvironment />
       <Lights />
       <Ground onPointerUp={onMiss} />
@@ -532,7 +578,20 @@ function SceneContents() {
         panSpeed={1.1}
         zoomSpeed={1.15}
         minDistance={8}
-        maxDistance={4000}
+        /*
+         * Far enough out to see a room.
+         *
+         * This was 4000, from when the largest thing in the catalogue was a
+         * desk. It is a hard clamp, so a 6.6 metre room could not be framed
+         * at all: Fit would ask for ten metres of distance, the controls
+         * would silently give four, and the camera sat inside the back row
+         * with no way to pull out. The symptom read as "the editor breaks on
+         * big parts", and it was this line.
+         *
+         * 60 metres covers a house. The cost of the larger range is depth
+         * precision, which is paid for by the near plane below.
+         */
+        maxDistance={60000}
         /*
          * Zoom toward the pointer rather than the orbit centre. Without it,
          * getting a close look at a corner of a large build means zoom, pan
@@ -621,10 +680,20 @@ export function Viewport() {
        * not others.
        */
       gl={{ antialias: true, alpha: false, powerPreference: 'high-performance', preserveDrawingBuffer: true }}
-      // A near-to-far ratio of fifty thousand spends most of the depth buffer
-      // on space nothing occupies. The camera cannot get closer than 8 mm or
-      // further than 4 m, so this covers it with room to spare.
-      camera={{ position: [300, 230, 340], fov: 36, near: 1, far: 12000 }}
+      /*
+       * Near and far, against a camera that now ranges from 8 mm to 60 m.
+       *
+       * The old pair were 1 and 12,000, sized for a four metre maximum. The
+       * far plane has to clear the new range or a room disappears as you
+       * pull back from it. The near plane moves out with it, because the
+       * ratio is what a depth buffer actually cares about: 5 mm to 180 m is
+       * 36,000:1, which a 24-bit buffer holds without z-fighting, and
+       * nothing in this editor is examined from closer than 5 mm.
+       *
+       * CameraRig narrows both around whatever it has just framed, so this
+       * pair only has to be sane before the first fit.
+       */
+      camera={{ position: [300, 230, 340], fov: 36, near: 5, far: 180000 }}
       onCreated={({ gl }) => {
         registerCanvas(gl.domElement)
         gl.toneMapping = THREE.NoToneMapping

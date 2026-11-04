@@ -8,7 +8,7 @@ import { threeMaterial } from './materials'
 import { Surfaces } from './Surfaces'
 import { useDoc } from '@/state/doc'
 import { useSim } from '@/state/sim'
-import { instantiate, loadModel, peekModel } from './modelCache'
+import { instantiate, loadModel, peekModel, release } from './modelCache'
 
 const SELECT_COLOR = new THREE.Color('#4C8DFF')
 const HOVER_COLOR = new THREE.Color('#9CC2FF')
@@ -52,21 +52,71 @@ function PartObjectImpl({ inst, selected, hovered, onPointerDown }: Props) {
   }, [def, inst.params])
   const [model, setModel] = useState<THREE.Object3D | null>(null)
   useEffect(() => {
-    if (!spec || !built || built.bbox.isEmpty()) {
+    if (!spec || !built || built.body.isEmpty()) {
       setModel(null)
       return
     }
     let live = true
+    let made: THREE.Object3D | null = null
     const use = (proto: THREE.Object3D) => {
-      if (live) setModel(instantiate(proto, built.bbox, spec.fit))
+      if (!live) return
+      // Fitted to the body, not the whole box: a flex or an accessory drawn
+      // beside the model must not shrink the model to make room for itself.
+      made = instantiate(proto, built.body, spec)
+      setModel(made)
     }
-    const ready = peekModel(spec.url)
+    const ready = peekModel(spec)
     if (ready) use(ready)
     else loadModel(spec).then(use).catch(() => {})
     return () => {
       live = false
+      release(made)
     }
   }, [spec, built])
+
+  /*
+   * X-ray and the selection tint, on the model as on the solids.
+   *
+   * X-ray exists so the wires behind and inside a part can be followed. A
+   * model that ignored it stayed opaque and hid exactly the thing the button
+   * was pressed to show. The model's own materials are shared by every
+   * instance of the part, so the see-through and tinted ones are copies made
+   * here and dropped when the state goes back.
+   */
+  useEffect(() => {
+    if (!model || !(xray || selected || hovered)) return
+    const swapped: [THREE.Mesh, THREE.Material | THREE.Material[]][] = []
+    const made: THREE.Material[] = []
+    model.traverse((o) => {
+      const mesh = o as THREE.Mesh
+      if (!mesh.isMesh) return
+      const tint = (base: THREE.Material) => {
+        const m = base.clone() as THREE.MeshStandardMaterial
+        made.push(m)
+        if (m.emissive) {
+          if (selected) {
+            m.emissive = m.emissive.clone().lerp(SELECT_COLOR, 0.3)
+            m.emissiveIntensity = Math.max(m.emissiveIntensity, 0.07)
+          } else if (hovered) {
+            m.emissive = m.emissive.clone().lerp(HOVER_COLOR, 0.22)
+            m.emissiveIntensity = Math.max(m.emissiveIntensity, 0.04)
+          }
+        }
+        if (xray) {
+          m.transparent = true
+          m.opacity = Math.min(m.opacity, 0.35)
+          m.depthWrite = false
+        }
+        return m
+      }
+      swapped.push([mesh, mesh.material])
+      mesh.material = Array.isArray(mesh.material) ? mesh.material.map(tint) : tint(mesh.material)
+    })
+    return () => {
+      for (const [mesh, mat] of swapped) mesh.material = mat
+      for (const m of made) m.dispose()
+    }
+  }, [model, xray, selected, hovered])
 
   const materials = useMemo(() => {
     if (!built) return []
@@ -143,14 +193,15 @@ function PartObjectImpl({ inst, selected, hovered, onPointerDown }: Props) {
       onPointerOut={() => setHovered(null)}
       userData={{ instanceId: inst.id }}
     >
-      {model ? (
-        // The model is the picture; the solids underneath still own the ports,
-        // the mass and the bounding box, so nothing else changes with it.
-        <primitive object={model} />
-      ) : (
-        built.meshes.map((m, i) => (
+      {/* The model is the picture; the solids underneath still own the
+          ports, the mass and the bounding box, so nothing else changes with
+          it. The solids marked withModel are the parametric pieces the mesh
+          cannot show, and are drawn either way. */}
+      {model && <primitive object={model} />}
+      {built.meshes.map((m, i) =>
+        model && !m.withModel ? null : (
           <mesh key={m.key} geometry={m.geometry} material={materials[i]} castShadow receiveShadow />
-        ))
+        ),
       )}
       {!model && built.surfaces.length > 0 && <Surfaces surfaces={built.surfaces} instanceId={inst.id} />}
       {emitter && (

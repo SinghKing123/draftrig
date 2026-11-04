@@ -47,9 +47,10 @@ export const BRAND = {
 
   support: 'hello@draftrig.com',
 
+  /** The public repository. The front page links it from the nav and the footer. */
   social: {
     x: '',
-    github: '',
+    github: 'https://github.com/draftrig',
     discord: '',
   },
 } as const

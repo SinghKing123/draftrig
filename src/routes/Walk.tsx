@@ -55,7 +55,7 @@ interface Step {
 const STEPS: Step[] = [
   {
     n: '01',
-    title: 'Place',
+    title: 'Measure',
     spec: [
       ['Room', '4600 × 3400 × 2400 mm'],
       ['Floor', 'Z = 0, parts seat on it'],
@@ -66,9 +66,9 @@ const STEPS: Step[] = [
   },
   {
     n: '02',
-    title: 'Wire',
+    title: 'Route',
     spec: [
-      ['Route', 'Pin to pin, around obstacles'],
+      ['Path', 'Terminal to terminal, around obstacles'],
       ['Length', 'Reported, mm'],
       ['Clearance', 'Checked against solids'],
     ],
@@ -77,11 +77,11 @@ const STEPS: Step[] = [
   },
   {
     n: '03',
-    title: 'Run',
+    title: 'Power',
     spec: [
-      ['Method', 'Modified nodal analysis'],
-      ['Step', 'Continuous'],
-      ['Panels', 'Driven off real bus traffic'],
+      ['Loads', 'Solved against the socket they are on'],
+      ['Drop', 'Per conductor, at its cross-section'],
+      ['Panels', 'Lit off real bus traffic'],
     ],
     shot: '/shots/cine-board.jpg',
     alt: 'A large message board, lit, built from matrix modules on a stand',
@@ -223,7 +223,7 @@ export function Walk() {
   return (
     <section className="walk" id="how">
       <div className="lpw walk-head center">
-        <h2>Four steps to a real build.</h2>
+        <h2>Four steps to a room that fits.</h2>
       </div>
 
       {narrow ? (

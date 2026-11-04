@@ -299,6 +299,409 @@
 }
 
 /* ==================================================================
+   The loop
+   ------------------------------------------------------------------
+   The showpiece's picture, which plays itself. A poster underneath
+   and a canvas over it, so the frame is never empty and never
+   shifts: the poster holds the space, the canvas takes over when
+   the whole sequence has decoded, and with reduced motion the
+   canvas never arrives and the poster is the picture.
+   ================================================================== */
+
+.lp .loop-poster,
+.lp .loop-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+}
+
+.lp .loop-canvas {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 500ms var(--ease);
+}
+.lp .loop-canvas[data-on] { opacity: 1; }
+
+/* Left in place under the canvas rather than removed: it is what the
+   browser prints, what a reader on a metered connection keeps, and what
+   fills the frame for the half second the first draw takes. */
+.lp .loop-poster { transition: opacity 500ms var(--ease); }
+.lp .loop-poster[data-off] { opacity: 0; }
+
+/* ==================================================================
+   The stage
+   ------------------------------------------------------------------
+   The first screen is a place rather than a panel: a floor ruled in
+   millimetres running back to a horizon, with the headline standing
+   on it and two of the crew further back. Three custom properties,
+   written by one rAF loop in Hero.tsx, drive everything that moves:
+   --px and --py are the eased pointer, −1 to 1 from centre; --sy is
+   the first 700px of scroll, 0 to 1.
+   ================================================================== */
+
+.lp .stage {
+  position: relative;
+  isolation: isolate;
+  padding-top: clamp(118px, 15vh, 190px);
+  overflow: clip;
+  --px: 0; --py: 0; --sy: 0; --drift: 0;
+}
+
+/*
+ * The floor. A plane laid down in 3D with a ruled gradient on it, which
+ * is a real perspective projection rather than a picture of one: the
+ * lines converge because the plane is tilted, so they stay correct at
+ * every width without a single media query.
+ */
+.lp .stage-floor {
+  position: absolute;
+  left: 50%;
+  /* The horizon sits just under the headline, so the first screen is a
+     floor you are standing on rather than a band at the bottom of a long
+     section. Anchored to the top of the stage, not its foot: the stage is
+     two screens tall and the foot of it is nowhere near the fold. */
+  top: 54vh;
+  width: 320vw;
+  height: 86vh;
+  transform: translateX(-50%);
+  perspective: 300px;
+  perspective-origin: 50% 0%;
+  pointer-events: none;
+  z-index: -2;
+  /* Fades out before it reaches the content, so the page is paper at the
+     top and a floor at the bottom with no seam between them. */
+  mask-image: linear-gradient(180deg, transparent 0%, #000 22%, #000 72%, transparent 100%);
+}
+
+.lp .stage-grid {
+  position: absolute;
+  inset: -100% 0 0 0;
+  transform: rotateX(78deg) translateY(calc(var(--sy) * -40px)) translateZ(0);
+  transform-origin: 50% 100%;
+  background-image:
+    repeating-linear-gradient(90deg, rgba(110, 100, 88, 0.46) 0 1px, transparent 1px 64px),
+    repeating-linear-gradient(0deg, rgba(110, 100, 88, 0.46) 0 1px, transparent 1px 64px),
+    repeating-linear-gradient(90deg, rgba(110, 100, 88, 0.2) 0 1px, transparent 1px 8px),
+    repeating-linear-gradient(0deg, rgba(110, 100, 88, 0.2) 0 1px, transparent 1px 8px);
+  /* Towards the viewer, one 64 mm square every four seconds. The drift is
+     what makes the floor a surface rather than a texture. */
+  animation: floor-drift 4s linear infinite;
+}
+
+@keyframes floor-drift {
+  to { background-position: 0 64px, 0 64px, 0 64px, 0 64px; }
+}
+
+/* The air above the floor: warm at the top, picking up a breath of the
+   accent where it meets the horizon. */
+.lp .stage-sky {
+  position: absolute;
+  inset: 0 0 38% 0;
+  z-index: -3;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 90% at 50% 108%, rgba(30, 111, 255, 0.07) 0%, transparent 62%),
+    linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
+}
+
+.lp .stage-copy {
+  position: relative;
+  text-align: center;
+  /* The scene leans towards the pointer. One and a half degrees: enough
+     to be felt on a mouse, not enough to notice as an effect. */
+  transform: rotateY(calc(var(--px) * 1.4deg)) rotateX(calc(var(--py) * -0.9deg));
+  transform-style: preserve-3d;
+}
+
+.lp .stage-copy h1 { margin: 0; }
+.lp .stage-sub {
+  max-width: 44ch;
+  margin: clamp(20px, 2.6vh, 30px) auto 0;
+  font-size: clamp(1.0625rem, 1.5vw, 1.1875rem);
+  line-height: 1.52;
+  color: var(--ink-2);
+  text-wrap: balance;
+}
+.lp .stage-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  margin-top: clamp(26px, 3.4vh, 38px);
+}
+
+.lp .stage-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 26px;
+  justify-content: center;
+  margin-top: clamp(22px, 3vh, 32px);
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.78rem;
+  color: var(--ink-3);
+}
+.lp .stage-facts span { display: inline-flex; align-items: center; gap: 8px; }
+.lp .stage-facts span + span::before {
+  content: '';
+  width: 3px; height: 3px;
+  border-radius: 50%;
+  background: var(--line-2);
+}
+
+/*
+ * The cast, standing on the floor at two depths.
+ *
+ * They move at different rates against the scroll, which is the whole
+ * reason there are two of them: one rate is a moving picture, two rates
+ * is distance. Hidden under 900px, where there is no room for them to
+ * stand anywhere that is not on top of the copy.
+ */
+.lp .stage-cast {
+  position: relative;
+  max-width: var(--max);
+  margin: clamp(14px, 2vh, 26px) auto 0;
+  padding-inline: var(--gut);
+  height: clamp(96px, 13vh, 140px);
+  pointer-events: none;
+}
+.lp .stage-cast .cast-l,
+.lp .stage-cast .cast-r { position: absolute; bottom: 0; }
+.lp .stage-cast .cast-l {
+  left: clamp(8px, 7vw, 120px);
+  transform: translate3d(calc(var(--px) * -14px), calc(var(--sy) * -34px), 0);
+}
+.lp .stage-cast .cast-r {
+  right: clamp(8px, 7vw, 120px);
+  left: auto;
+  transform: translate3d(calc(var(--px) * -26px), calc(var(--sy) * -62px), 0) scale(0.86);
+}
+
+@media (max-width: 900px) {
+  .lp .stage-cast { display: none; }
+}
+
+/* ---- the product, overlapping the floor it was drawn on ---------- */
+
+.lp .stage-piece {
+  position: relative;
+  margin-top: clamp(26px, 4vh, 54px);
+  padding-bottom: clamp(10px, 2vh, 24px);
+}
+
+.lp .piece-frame {
+  position: relative;
+  overflow: visible;
+  border-radius: var(--r-lg);
+  background: var(--dark);
+  box-shadow: var(--shadow-lg);
+  /* Rights itself as it arrives, the one piece of three-dimensional
+     movement on the page. */
+  transform: perspective(1400px) rotateX(calc(4deg - var(--sy) * 4deg)) scale(calc(0.975 + var(--sy) * 0.025));
+  transform-origin: 50% 0%;
+}
+.lp .piece-frame > img,
+.lp .piece-frame > video { display: block; width: 100%; height: auto; border-radius: var(--r-lg); }
+
+/* ---- dimensions, drawn over a photograph ------------------------ */
+
+.lp .dim { position: absolute; inset: 0; pointer-events: none; }
+.lp .dim-line {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.lp .dim-line line {
+  stroke: var(--accent-on-dark);
+  stroke-width: 0.22;
+  stroke-dasharray: 1.4 1.1;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.85;
+}
+.lp .dim-tick {
+  position: absolute;
+  width: 1px;
+  height: 13px;
+  margin: -6px 0 0 0;
+  background: var(--accent-on-dark);
+  opacity: 0.9;
+}
+.lp .dim-label {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: rgba(21, 19, 15, 0.9);
+  color: var(--dark-ink);
+  font-size: 0.7rem;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+.lp .dim-label[data-under] { transform: translate(-50%, -50%) translateY(0); }
+
+/*
+ * The callouts.
+ *
+ * Written the way the inspector writes them, dark on the render's own
+ * ground, each one anchored off an edge so it reads as attached to the
+ * picture rather than laid on it. They drift a few pixels against the
+ * pointer, at a different rate from the frame, which is what stops them
+ * looking like stickers.
+ */
+.lp .chip {
+  position: absolute;
+  z-index: 2;
+  padding: 8px 13px;
+  border-radius: var(--rounded-pill, 999px);
+  background: rgba(21, 19, 15, 0.86);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 6px rgba(62, 48, 30, 0.14), 0 14px 34px rgba(62, 48, 30, 0.18);
+  color: var(--dark-ink);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+.lp .chip-b {
+  top: 11%;
+  right: -18px;
+  transform: translate3d(calc(var(--px) * -12px), calc(var(--py) * 8px), 0);
+}
+
+@media (max-width: 720px) {
+  .lp .chip { font-size: 0.68rem; padding: 6px 10px; }
+  .lp .chip-b { right: 6px; top: 8%; }
+  /* The vertical dimension has nowhere to go at this width. */
+  .lp .dim:last-of-type { display: none; }
+}
+
+/* ==================================================================
+   Three things it is for
+   ================================================================== */
+
+.lp .three { padding-block: var(--sec); }
+.lp .three-grid {
+  display: grid;
+  gap: clamp(28px, 3.4vw, 46px);
+  grid-template-columns: repeat(3, 1fr);
+}
+.lp .use-n {
+  display: block;
+  margin-bottom: 14px;
+  font-size: 0.78rem;
+  color: var(--accent);
+}
+.lp .use h3 {
+  font-size: clamp(1.5rem, 2.4vw, 2rem);
+  letter-spacing: -0.032em;
+  margin-bottom: 12px;
+}
+.lp .use p {
+  color: var(--ink-2);
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  max-width: 38ch;
+}
+.lp .use-shot {
+  display: block;
+  margin-top: 22px;
+  border-radius: var(--r);
+  overflow: hidden;
+  background: var(--dark);
+  box-shadow: var(--shadow);
+}
+.lp .use-shot img { display: block; width: 100%; height: auto; }
+
+@media (max-width: 900px) {
+  .lp .three-grid { grid-template-columns: 1fr; }
+}
+
+/* ==================================================================
+   Templates, moving past
+   ================================================================== */
+
+.lp .tpls {
+  padding-block: var(--sec);
+  background: var(--bg-2);
+  border-block: 1px solid var(--line);
+}
+.lp .tpls-head { text-align: center; margin-bottom: clamp(28px, 4vh, 48px); }
+.lp .tpls-head p {
+  max-width: 54ch;
+  margin: 14px auto 0;
+  color: var(--ink-2);
+  line-height: 1.55;
+}
+.lp .tpls-rows { display: grid; gap: 18px; min-height: 420px; }
+.lp .tpls-rows:not([data-on]) { opacity: 0; }
+.lp .tpl-row { padding-block: 2px; }
+
+.lp .tpl {
+  display: block;
+  width: clamp(240px, 26vw, 330px);
+  margin-right: 18px;
+  border-radius: var(--r);
+  background: var(--bg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: transform 260ms var(--ease), box-shadow 260ms var(--ease);
+}
+.lp .tpl:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
+.lp .tpl-shot { display: block; background: var(--dark); }
+.lp .tpl-shot img { display: block; width: 100%; height: auto; }
+.lp .tpl-name {
+  display: block;
+  padding: 13px 15px 0;
+  font-weight: 600;
+  letter-spacing: -0.016em;
+  color: var(--ink);
+}
+.lp .tpl-fact {
+  display: block;
+  padding: 4px 15px 15px;
+  font-size: 0.72rem;
+  color: var(--ink-3);
+}
+
+/* ==================================================================
+   The statement
+   ------------------------------------------------------------------
+   One sentence, pinned for two screens, lighting a word at a time
+   against the scroll.
+   ================================================================== */
+
+.lp .say { height: 190vh; }
+.lp .say-pin {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: grid;
+  place-items: center;
+}
+.lp .say-line {
+  margin: 0;
+  text-align: center;
+  font-size: clamp(2.1rem, 6.4vw, 5rem);
+  font-weight: 600;
+  line-height: 1.04;
+  letter-spacing: -0.042em;
+  text-wrap: balance;
+}
+.lp .say-word { transition: opacity 120ms linear; }
+
+@media (prefers-reduced-motion: reduce) {
+  .lp .say { height: auto; padding-block: var(--sec); }
+  .lp .say-pin { position: static; height: auto; }
+  .lp .say-word { opacity: 1 !important; }
+  .lp .stage-grid { animation: none; }
+  .lp .piece-frame { transform: none; }
+  .lp .cast-l, .lp .cast-r { transform: none; }
+}
+
+/* ==================================================================
    Hero
    ------------------------------------------------------------------
    Centred, because the thing under it is a band of figures the full
@@ -539,6 +942,9 @@
 }
 
 .lp .showpiece-frame {
+  /* The loop's canvas is absolutely placed over its poster, so the frame
+     is the containing block for both. */
+  position: relative;
   overflow: hidden;
   border-radius: var(--r-lg);
   background: var(--dark);

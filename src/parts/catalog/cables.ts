@@ -2,6 +2,7 @@ import type { DeviceModel, PartDef, Port, Solid, Vec3 } from '../kernel/types'
 import { registerParts } from '../kernel/registry'
 import { eng } from '../kernel/units'
 import { num, str } from './_helpers'
+import { COUPLER, WALL, connectorPorts, couplerOptions, lines, wallOptions } from './_mains'
 
 /**
  * Cables with plugs on, and the hardware that manages them.
@@ -238,69 +239,126 @@ const powerCord: PartDef = {
   id: 'cable-power-cord',
   name: 'Mains power cord',
   category: 'wire',
-  blurb: 'Wall plug to an IEC C13, live, neutral and earth',
-  tags: ['power cord', 'mains lead', 'iec', 'c13', 'kettle lead', 'plug', 'ac cable', 'pc power cable'],
-  doc: { price: 7, description: 'The lead a PC, monitor or bench supply takes. Three 0.75 mm² conductors, good for 10 A, with the earth running through to the equipment chassis.' },
+  blurb: 'One end is your country, the other is whatever the thing has',
+  tags: ['power cord', 'mains lead', 'iec', 'c13', 'c7', 'c5', 'kettle lead', 'figure of eight', 'cloverleaf', 'plug', 'ac cable', 'pc power cable', 'uk', 'eu', 'us', 'schuko', 'nema'],
+  doc: {
+    price: 7,
+    description:
+      'The lead between a socket and a thing. One end is decided by where you live and the other by what you bought, which is the whole job of a mains lead and the reason it is the only part in the catalogue with a different standard on each end.\n\nIt plugs in as a connector, not as three wires: click the plug, click the socket, and live, neutral and earth all go across at once. A lead whose ends do not match what it is pointed at will not go in, which is also true of the real thing.',
+  },
   params: [
-    { key: 'plug', label: 'Plug', type: 'enum', default: 'uk', group: 'Cord', options: [{ value: 'uk', label: 'UK, BS 1363' }, { value: 'eu', label: 'EU, Schuko' }, { value: 'us', label: 'US, NEMA 5-15' }] },
+    { key: 'plug', label: 'Wall plug', type: 'enum', default: 'bs1363', group: 'Cord', options: wallOptions() },
+    { key: 'end', label: 'Appliance end', type: 'enum', default: 'iec-c14', group: 'Cord', options: couplerOptions() },
     { key: 'length', label: 'Length', type: 'number', unit: 'mm', default: 1800, min: 500, max: 5000, step: 100, group: 'Cord' },
+    { key: 'cores', label: 'Conductor', type: 'number', unit: 'mm²', default: 0.75, min: 0.5, max: 2.5, step: 0.25, group: 'Cord', help: 'Flex cross-section. 0.75 is a kettle lead, 1.5 carries a heater.' },
   ],
   solids: (p) => {
     const len = num(p, 'length', 1800)
     const body = Math.max(len - 90, 60)
-    const plug = str(p, 'plug', 'uk')
+    const wall = WALL[str(p, 'plug', 'bs1363')] ?? WALL['bs1363']
+    const coupler = COUPLER[str(p, 'end', 'iec-c14')] ?? COUPLER['iec-c14']
     const y = 22
     const out: Solid[] = [{ kind: 'tube', mat: jacket('black'), r: 3.6, seg: 12, path: drape(body, y, 0.05) }]
     const L = -body / 2
-    if (plug === 'uk') {
+
+    /*
+     * Four bodies cover ten standards.
+     *
+     * A BS 1363 and a GB 2099 are not the same plug and nobody is being
+     * told they are: the label, the rating and the pins all say which
+     * is which. What they share is a silhouette at the size this is
+     * ever drawn, and ten hand-modelled plug bodies would be ten things
+     * to maintain for a difference you cannot see from across a room.
+     */
+    if (wall.shape === 'rect3') {
       out.push({ kind: 'box', mat: 'abs-black', size: [30, 44, 50], at: [L - 15, y, 0], bevel: 4 })
       out.push({ kind: 'box', mat: 'brass', size: [18, 8, 4], at: [L - 39, y + 11, 0] })
-      for (const s of [-1, 1]) out.push({ kind: 'box', mat: 'brass', size: [17, 4, 6.3], at: [L - 38.5, y - 11, s * 11] })
-    } else if (plug === 'eu') {
+      for (const sgn of [-1, 1]) out.push({ kind: 'box', mat: 'brass', size: [17, 4, 6.3], at: [L - 38.5, y - 11, sgn * 11] })
+    } else if (wall.shape === 'round2') {
       out.push({ kind: 'cyl', mat: 'abs-black', r: 20, h: 36, rot: [0, 0, 90], at: [L - 18, y, 0], seg: 28, chamfer: 3 })
-      for (const s of [-1, 1]) out.push({ kind: 'cyl', mat: 'nickel', r: 2.4, h: 19, rot: [0, 0, 90], at: [L - 45.5, y, s * 9.5], seg: 12 })
+      for (const sgn of [-1, 1]) out.push({ kind: 'cyl', mat: 'nickel', r: 2.4, h: 19, rot: [0, 0, 90], at: [L - 45.5, y, sgn * 9.5], seg: 12 })
+    } else if (wall.shape === 'round3' || wall.shape === 'hex3') {
+      const r = wall.shape === 'hex3' ? 17 : 19
+      out.push({ kind: 'cyl', mat: 'abs-black', r, h: 32, rot: [0, 0, 90], at: [L - 16, y, 0], seg: wall.shape === 'hex3' ? 6 : 26, chamfer: 2 })
+      for (const [dy, dz] of [[10, 0], [-6, -9], [-6, 9]] as const) {
+        out.push({ kind: 'cyl', mat: 'brass', r: 2.2, h: 17, rot: [0, 0, 90], at: [L - 40, y + dy, dz], seg: 10 })
+      }
     } else {
+      /* Flat blades: NEMA, AS/NZS and GB. Angled where the standard is. */
+      const tilt = wall.shape === 'blade3' && str(p, 'plug', '') !== 'nema5-15' ? 30 : 0
       out.push({ kind: 'box', mat: 'abs-black', size: [30, 24, 34], at: [L - 15, y, 0], bevel: 4 })
-      for (const s of [-1, 1]) out.push({ kind: 'box', mat: 'brass', size: [16, 6.5, 1.5], at: [L - 38, y + 2, s * 6.35] })
-      out.push({ kind: 'cyl', mat: 'brass', r: 2.4, h: 18, rot: [0, 0, 90], at: [L - 39, y - 8, 0], seg: 12 })
+      for (const sgn of [-1, 1]) {
+        out.push({ kind: 'box', mat: 'brass', size: [16, 6.5, 1.5], at: [L - 38, y + 2, sgn * 6.35], rot: [sgn * tilt, 0, 0] })
+      }
+      if (wall.earth) out.push({ kind: 'cyl', mat: 'brass', r: 2.4, h: 18, rot: [0, 0, 90], at: [L - 39, y - 8, 0], seg: 12 })
     }
-    // IEC C13 on the other end.
+
+    /* The appliance end. A C5 is three lobes, a C7 is a flattened oval,
+       everything else is the familiar C13 box at its own size. */
     const R = body / 2
-    out.push({ kind: 'box', mat: 'abs-black', size: [34, 24, 28], at: [R + 17, y, 0], bevel: 3 })
-    for (const [dy, dz] of [[4, 0], [-4, -7], [-4, 7]] as const) {
-      out.push({ kind: 'box', mat: DARK, size: [0.6, 5, 2], at: [R + 34.2, y + dy, dz], noCollide: true })
+    if (str(p, 'end', '') === 'captive') {
+      out.push({ kind: 'cyl', mat: 'abs-black', r: 5.5, h: 26, rot: [0, 0, 90], at: [R + 13, y, 0], seg: 14 })
+    } else if (coupler.shape === 'coupler' && str(p, 'end', '') === 'iec-c8') {
+      out.push({ kind: 'cyl', mat: 'abs-black', r: 11, h: 30, rot: [0, 0, 90], at: [R + 15, y, 0], seg: 20, chamfer: 2 })
+    } else if (str(p, 'end', '') === 'iec-c6') {
+      out.push({ kind: 'cyl', mat: 'abs-black', r: 13, h: 28, rot: [0, 0, 90], at: [R + 14, y, 0], seg: 22, chamfer: 2 })
+    } else {
+      const big = str(p, 'end', '') === 'iec-c20'
+      const w = big ? 42 : 34
+      const h = big ? 30 : 24
+      out.push({ kind: 'box', mat: 'abs-black', size: [w, h, 28], at: [R + w / 2, y, 0], bevel: 3 })
+      for (const [dy, dz] of [[4, 0], [-4, -7], [-4, 7]] as const) {
+        out.push({ kind: 'box', mat: DARK, size: [0.6, 5, 2], at: [R + w + 0.2, y + dy, dz], noCollide: true })
+      }
     }
     return out
   },
   ports: (p) => {
     const body = Math.max(num(p, 'length', 1800) - 90, 60)
-    const plug = str(p, 'plug', 'uk')
-    const tipA = -body / 2 - (plug === 'eu' ? 55 : 48)
+    const plug = str(p, 'plug', 'bs1363')
+    const end = str(p, 'end', 'iec-c14')
+    const wall = WALL[plug] ?? WALL['bs1363']
+    const tipA = -body / 2 - (wall.shape === 'round2' ? 55 : 48)
     const tipB = body / 2 + 35
-    const out: Port[] = []
-    for (const [end, x, dir] of [['a', tipA, -1], ['b', tipB, 1]] as const) {
-      ;([['l', 'Live', 'power'], ['n', 'Neutral', 'passive'], ['e', 'Earth', 'shield']] as const).forEach(([id, label, role], i) => {
-        out.push({ id: `${end}_${id}`, label: `${end === 'a' ? 'Plug' : 'C13'} ${label}`, kind: 'electrical', pos: [x, 22 - 6 + i * 6, 0], dir: [dir, 0, 0], role, imax: 10 })
-      })
-    }
-    return out
+    return [
+      /* Pins at the wall, holes at the appliance: a lead is male at one
+         end and female at the other, and that is what stops two leads
+         being joined into something live and loose. */
+      ...connectorPorts({ at: [tipA, 22, 0], dir: [-1, 0, 0], standard: plug, end: 'plug', prefix: 'a_', name: 'Plug', spread: [0, 6, 0], imax: 13 }),
+      ...connectorPorts({ at: [tipB, 22, 0], dir: [1, 0, 0], standard: end, end: 'socket', prefix: 'b_', name: COUPLER[end]?.label.split(',')[0] ?? 'C13', spread: [0, 6, 0], imax: 13 }),
+    ]
   },
   electrical: {
     devices: (p) => {
-      const r = ohms(num(p, 'length', 1800), 0.75)
-      return [
-        { type: 'resistor', r, a: 'a_l', b: 'b_l' },
-        { type: 'resistor', r, a: 'a_n', b: 'b_n' },
-        { type: 'resistor', r, a: 'a_e', b: 'b_e' },
-      ] as DeviceModel[]
+      const r = ohms(num(p, 'length', 1800), num(p, 'cores', 0.75))
+      /* Only the conductors both ends actually have. A figure-of-eight
+         lead has no earth, so there is nothing for an earth to run
+         down, and a build that needed one should see that it has not
+         got one rather than be quietly given it. */
+      const carried = lines(str(p, 'plug', 'bs1363')).filter((l) => lines(str(p, 'end', 'iec-c14')).includes(l))
+      return carried.map((l) => ({ type: 'resistor', r, a: `a_${l}`, b: `b_${l}` })) as DeviceModel[]
     },
-    limits: { imax: 10, vmax: 250 },
+    limits: { imax: 13, vmax: 250 },
   },
-  readouts: (p) => [
-    { label: 'Conductors', value: '3 x 0.75 mm²' },
-    { label: 'Rating', value: str(p, 'plug', 'uk') === 'us' ? '10 A, 125 V' : '10 A, 250 V' },
-    { label: 'Per conductor', value: eng(ohms(num(p, 'length', 1800), 0.75), 'Ω') },
-  ],
+  readouts: (p) => {
+    const plug = str(p, 'plug', 'bs1363')
+    const end = str(p, 'end', 'iec-c14')
+    const wall = WALL[plug] ?? WALL['bs1363']
+    const coupler = COUPLER[end] ?? COUPLER['iec-c14']
+    const mm2 = num(p, 'cores', 0.75)
+    const carried = lines(plug).filter((l) => lines(end).includes(l))
+    /* The lead is only as good as its worst end, and the one people get
+       wrong is a 10 A coupler on a 13 A plug feeding a 3 kW heater. */
+    const rated = Math.min(wall.amps, coupler.amps)
+    return [
+      { label: 'Wall end', value: wall.label },
+      { label: 'Appliance end', value: coupler.label },
+      { label: 'Conductors', value: `${carried.length} x ${mm2} mm²` },
+      { label: 'Rating', value: `${rated} A at ${wall.v ?? 230} V` },
+      { label: 'Earth', value: carried.includes('e') ? 'Through' : 'None, two-core' },
+      { label: 'Per conductor', value: eng(ohms(num(p, 'length', 1800), mm2), 'Ω') },
+    ]
+  },
 }
 
 /* ================================================================== */

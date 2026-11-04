@@ -1,5 +1,5 @@
 import { chromium } from 'playwright'
-import { mkdirSync } from 'node:fs'
+import { mkdirSync, writeFileSync } from 'node:fs'
 
 /**
  * A card photograph of every preset, for the dashboard.
@@ -116,6 +116,22 @@ const SHOTS = [
   // A vertical face, so the camera comes down to meet it.
   ['panel', 0.46, 352, 62],
 
+  /* The two planning templates, which are what the catalogue is pointed at
+     now. Both want a low, wide angle: a room read from above is a plan, and
+     a plan is the thing these are photographed to prove you do not have to
+     imagine. */
+  /*
+   * The theatre is shot with two of its four walls taken away.
+   *
+   * A four-walled room photographed from outside is a photograph of a
+   * wall, which is what the first three attempts were. The template keeps
+   * its four walls, because that is the room; the photograph is a section
+   * through it, which is how every plan drawing of a room has ever been
+   * made.
+   */
+  ['home-theatre', { at: [1100, 1800, 2200], to: [2600, 1400, 6450] }, 0, 0, { 'room-shell': { walls: 'corner' } }],
+  ['studio-desk', 0.52, 34, 70],
+
   /* The motor builds are not here because they cannot be: this tool loads a
      build by asking the running app for the starter, and they are not
      offered any more. Their angles are kept in git, not in this list. */
@@ -153,6 +169,15 @@ await page.addStyleTag({
   content: `
     .vp-toolbar, .vp-hint, .vp-stats, .vp-modes, .wire-colors, .bom-tab,
     .sketch-tab, .mbar, .vp-empty, .empty-hint { display: none !important; }
+    /*
+     * The workspace bar has to go, not just the topbar and the status bar.
+     * The app is a four-row grid and this collapses it to one track; with
+     * the workspace bar still in the flow that single 1fr track went to
+     * the bar and the viewport dropped into an implicit auto row. The
+     * canvas came out 859 x 150 and every preset was photographed as a
+     * letterbox strip of a room, for months.
+     */
+    .ws, .ai-fab, .app-notice { display: none !important; }
     .app { grid-template-rows: 1fr !important; }
     .app-body { grid-template-columns: 1fr !important; }
     .app-body > .panel, .app-body > .bom-panel, .app-body > .sketch-panel { display: none !important; }
@@ -169,12 +194,20 @@ const vp = page.viewportSize()
 await page.setViewportSize({ width: vp.width - 1, height: vp.height })
 await page.waitForTimeout(700)
 
-for (const [id, fill, az, pol] of SHOTS) {
-  const ok = await page.evaluate((starter) => {
+for (const [id, fill, az, pol, set] of SHOTS) {
+  const ok = await page.evaluate(({ starter, set }) => {
     const s = window.draftrig.starters.find((x) => x.id === starter)
     if (!s) return false
     const d = window.draftrig.doc.getState()
     d.loadDoc(s.build())
+    if (set) {
+      const cur = window.draftrig.doc.getState()
+      for (const instId of cur.doc.order) {
+        const over = set[cur.doc.instances[instId].defId]
+        if (!over) continue
+        for (const [k, v] of Object.entries(over)) cur.setParam(instId, k, v)
+      }
+    }
     window.draftrig.engine.reset()
     /* Switch it on. Without this the solver never runs and every display in
        the set photographs as a blank panel — which is what the character LCD
@@ -182,7 +215,7 @@ for (const [id, fill, az, pol] of SHOTS) {
     window.draftrig.sim.getState().setRunning(true)
     d.select([])
     return true
-  }, id)
+  }, { starter: id, set: set ?? null })
   if (!ok) {
     console.log('no such preset:', id)
     continue
@@ -208,15 +241,36 @@ for (const [id, fill, az, pol] of SHOTS) {
   })
   await page.waitForTimeout(700)
 
-  // Swing to the angle, then pull in from whatever distance Fit settled on.
-  await page.evaluate(([a, p, f]) => {
-    window.draftrig.camera.view(a, p)
-    const c = window.draftrig.camera.controls
-    const v = c.object.position.clone().sub(c.target).multiplyScalar(f)
-    c.object.position.copy(c.target).add(v)
-    c.object.lookAt(c.target)
-    c.update()
-  }, [az, pol, fill])
+  /*
+   * Either swing to an angle and pull in from the fitted distance, or —
+   * for a room — place the camera outright.
+   *
+   * The orbit rig cannot photograph an interior. It puts the camera on a
+   * sphere around the document's centre, and in a 4.8 x 6.6 m room every
+   * radius short enough to be inside the room is short enough to be
+   * inside a wall. Worse, from the back of the room the screen is behind
+   * the seating and the riser, so the one lit surface in a cinema is
+   * occluded and the photograph is of a dark box. A room is shot from a
+   * position, looking at a thing.
+   */
+  if (typeof fill === 'object') {
+    await page.evaluate(({ at, to }) => {
+      const c = window.draftrig.camera.controls
+      c.target.set(to[0], to[1], to[2])
+      c.object.position.set(at[0], at[1], at[2])
+      c.object.lookAt(c.target)
+      c.update()
+    }, fill)
+  } else {
+    await page.evaluate(([a, p, f]) => {
+      window.draftrig.camera.view(a, p)
+      const c = window.draftrig.camera.controls
+      const v = c.object.position.clone().sub(c.target).multiplyScalar(f)
+      c.object.position.copy(c.target).add(v)
+      c.object.lookAt(c.target)
+      c.update()
+    }, [az, pol, fill])
+  }
 
   /*
    * How long to let it run before the shutter, per build.
@@ -236,9 +290,16 @@ for (const [id, fill, az, pol] of SHOTS) {
    * at about a frame a second, and the stability check ran out before the
    * page could answer it.
    */
-  await page.locator('canvas').first().screenshot({
-    path: `public/presets/${id}.jpg`, type: 'jpeg', quality: 90, timeout: 90_000,
-  })
+  /*
+   * Read the drawing buffer, rather than screenshotting the element.
+   * Playwright composites the page, and for a live WebGL canvas what it
+   * composites can be a frame or more stale — thirty identical frames
+   * came back from a scene that was visibly moving. `toDataURL` asks the
+   * context, which is only legal because the renderer is created with
+   * preserveDrawingBuffer.
+   */
+  const shot = await page.evaluate(() => document.querySelector('canvas').toDataURL('image/jpeg', 0.9))
+  writeFileSync(`public/presets/${id}.jpg`, Buffer.from(shot.split(',')[1], 'base64'))
 
   /* How much of the frame is the build, rather than the bench behind it.
      Measured against the background colour, not against black: the first

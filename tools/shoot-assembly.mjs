@@ -1,266 +1,227 @@
 import { chromium } from 'playwright'
-import { writeFileSync } from 'node:fs'
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 
 /**
- * The hero animation: a frame and the electronics on it coming together.
+ * Photographs a build assembling itself, one part at a time.
  *
- * Rendered from the running editor and recorded off its own canvas, so the
- * landing page can show real parts at full quality without shipping a 3D engine
- * to everyone who visits. The alternative, a live scene on the page, costs
- * three.js plus the part kernel plus the catalog, which is most of a megabyte
- * for a page people mostly scroll past.
+ * The output is a numbered frame sequence the landing page scrubs with the
+ * scroll wheel, which is the cheapest honest way to put the product in
+ * motion on a page that must not load a 3D engine. The marketing routes
+ * deliberately do not import three.js — a frame sequence keeps it that way
+ * and still shows the thing being built.
  *
- * Produces public/assembly.webm and a poster frame beside it.
+ * It is shot from the real editor with a real template, so what the page
+ * shows is what the application does. Nothing here is a mock-up.
+ *
+ *   node tools/shoot-assembly.mjs home-theatre --orbit=22 --hold=8
+ *
+ *   starter   id from window.draftrig.starters
+ *   --aim     mm to lower the orbit centre, to seat the subject in frame
+ *   --seed    parts already placed before the first frame, so the loop
+ *             opens on something rather than on an empty bench
+ *   --orbit   degrees of azimuth swept across the whole sequence
+ *   --hold    extra frames on the finished build at the end
+ *   --w --h   frame size, default 1440 x 810
+ *   --quality JPEG quality, default 72
+ *
+ * BASE  dev server (default http://localhost:5174)
  */
 
-const base = process.env.BASE ?? 'http://localhost:4173'
-const SECONDS = 10
-const FPS = 30
-
-const b = await chromium.launch({
-  channel: 'msedge',
-  args: ['--autoplay-policy=no-user-gesture-required'],
-})
-/*
- * Recorded at 1x. captureStream takes the canvas at its backing resolution, so
- * a 2x device pixel ratio records a 2560 wide video for a hero that is shown
- * about a thousand pixels wide, and costs three times the bytes for it.
- */
-const page = await b.newPage({ viewport: { width: 1700, height: 940 }, deviceScaleFactor: 1 })
-const errors = []
-page.on('pageerror', (e) => errors.push(e.message))
-page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()) })
-
-await page.goto(base + '/app', { waitUntil: 'networkidle' })
-await page.evaluate(() => localStorage.setItem('tour.seen.v1', '1'))
-await page.reload({ waitUntil: 'networkidle' })
-await page.waitForTimeout(2600)
-
-// The editor's own furniture has no business in a hero. Hide it for the take.
-await page.addStyleTag({
-  content: `
-    .vp-toolbar, .vp-hint, .vp-stats, .ai-fab, .wire-palette, .vp-empty { display: none !important; }
-    /* The canvas is what is being recorded, so give it the whole window. The
-       side panels were squeezing it to a third of the width, and the video
-       came out smaller than the space it is shown in. */
-    .app-body { grid-template-columns: 1fr !important; }
-    .app-body > aside, .app-body > .panel, .app-body > :last-child { display: none !important; }
-    .app-body > .app-center { display: flex !important; flex-direction: column; }
-    .app-center > :last-child { display: none !important; }
-  `,
-})
-
-/* ------------------------------------------------------------------ */
-/* Build the scene, then take it apart so it can come back together     */
-/* ------------------------------------------------------------------ */
-
-const plan = await page.evaluate(() => {
-  const d = window.draftrig.doc.getState()
-  d.loadDoc({ name: 'Assembly', instances: {}, order: [], connections: {}, connectionOrder: [] })
-
-  const S = 170 // frame side, mm
-  const H = 110 // post height
-  const half = S / 2
-
-  const put = (defId, pos, params, rot) => d.addPart(defId, pos, params)
-  const ids = {}
-
-  // Four corner posts.
-  ids.posts = []
-  for (const sx of [-1, 1]) {
-    for (const sz of [-1, 1]) {
-      const id = put('extrusion-tslot', [sx * half, 0, sz * half], { size: '2020', length: H, finish: 'alu-anod-black' })
-      d.rotateInstance(id, [0, 0, 90], true)
-      d.moveInstance(id, [sx * half, H / 2, sz * half], true)
-      ids.posts.push(id)
-    }
-  }
-
-  // Rails, bottom then top.
-  const rail = (y, axis, sign) => {
-    const id = put('extrusion-tslot', [0, y, 0], { size: '2020', length: S - 40, finish: 'alu-anod-black' })
-    if (axis === 'z') d.rotateInstance(id, [0, 90, 0], true)
-    d.moveInstance(id, axis === 'x' ? [0, y, sign * half] : [sign * half, y, 0], true)
-    return id
-  }
-  ids.lower = [rail(10, 'x', -1), rail(10, 'x', 1), rail(10, 'z', -1), rail(10, 'z', 1)]
-  ids.upper = [rail(H - 10, 'x', -1), rail(H - 10, 'x', 1), rail(H - 10, 'z', -1), rail(H - 10, 'z', 1)]
-
-  // Deck.
-  ids.deck = put('panel-sheet', [0, 20, 0], { material: 'plywood', width: S - 44, depth: S - 44, thickness: 12 })
-
-  // Electronics standing on the deck.
-  ids.board = put('mcu-board', [-18, 32, 26], { program: 'lcd-clock', text1: 'DRAFTRIG' })
-  ids.lcd = put('display-lcd-character', [22, 32, -26], { format: '1602' })
-
-  d.select([])
-  d.requestFrame('all')
-  return ids
-})
-
-await page.evaluate((ids) => { window.__ids = ids }, plan)
-await page.waitForTimeout(1500)
-
-// Fitting the document leaves the build small in a wide viewport.
-{
-  const box = await page.locator('canvas').first().boundingBox()
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
-  for (let i = 0; i < 3; i++) {
-    await page.mouse.wheel(0, -220)
-    await page.waitForTimeout(140)
-  }
-  await page.waitForTimeout(500)
+const BASE = process.env.BASE ?? 'http://localhost:5174'
+const args = process.argv.slice(2)
+const starter = args.find((a) => !a.startsWith('--')) ?? 'home-theatre'
+const flag = (name, def) => {
+  const hit = args.find((a) => a.startsWith(`--${name}=`))
+  return hit ? Number(hit.split('=')[1]) : def
 }
 
-// Remember where everything belongs, then scatter it.
-const home = await page.evaluate(() => {
-  const doc = window.draftrig.doc.getState().doc
-  const out = {}
-  for (const id of doc.order) out[id] = [...doc.instances[id].pos]
-  return out
+const ORBIT = flag('orbit', 22)
+/*
+ * Parts placed before the shutter opens.
+ *
+ * The sequence used to start on a black frame, which is correct — an empty
+ * bench is empty — and wrong for a loop at the top of a page, where the
+ * first second is a black rectangle and the restart is a hole. Three parts
+ * in, there is a desk on the floor and the loop reads as a build growing
+ * rather than as something failing to load.
+ */
+const SEED = flag('seed', 0)
+/** Millimetres to drop the orbit centre by before shooting. */
+const flagAim = flag('aim', 0)
+const HOLD = flag('hold', 8)
+const W = flag('w', 1440)
+const H = flag('h', 810)
+const QUALITY = flag('quality', 72)
+
+const OUT = `public/reel/${starter}`
+
+/** Chrome off, canvas full bleed — the same stripping the part shots use. */
+const BARE = `
+  .app { grid-template-rows: 1fr !important; }
+  .app-body { grid-template-columns: 1fr !important; }
+  .panel, .console, .statusbar, .topbar, .ws, .ai-fab, .bom-tab,
+  .vp-toolbar, .vp-hint, .vp-modes, .wire-colors, .vp-stats,
+  .app-notice, .sketch-panel { display: none !important; }
+  .app-center { border: 0 !important; }
+`
+
+rmSync(OUT, { recursive: true, force: true })
+mkdirSync(OUT, { recursive: true })
+
+const browser = await chromium.launch({ channel: 'msedge' })
+const page = await browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 1 })
+await page.addInitScript(() => {
+  localStorage.setItem('tour.seen.v1', '1')
+  localStorage.setItem('draftrig.nav.seen.v1', '1')
+  localStorage.setItem('draftrig.used.v1', '1')
+  localStorage.setItem('draftrig.console.open.v1', '0')
+  localStorage.setItem('draftrig.bom.open.v1', '0')
 })
 
-/* ------------------------------------------------------------------ */
-/* The timeline                                                        */
-/* ------------------------------------------------------------------ */
+const problems = []
+page.on('pageerror', (e) => problems.push(e.message.slice(0, 160)))
 
-const order = [
-  ...plan.posts.map((id, i) => ({ id, from: 0.25 + i * 0.12, lift: 260, out: 90 })),
-  ...plan.lower.map((id, i) => ({ id, from: 1.05 + i * 0.1, lift: 150, out: 150 })),
-  ...plan.upper.map((id, i) => ({ id, from: 1.75 + i * 0.1, lift: 230, out: 150 })),
-  { id: plan.deck, from: 2.55, lift: 210, out: 0 },
-  { id: plan.board, from: 3.1, lift: 150, out: 120 },
-  { id: plan.lcd, from: 3.5, lift: 150, out: 120 },
-]
-const TRAVEL = 0.85
+await page.goto(BASE + '/app', { waitUntil: 'networkidle' })
+await page.waitForFunction(() => typeof window.draftrig?.doc?.getState === 'function', { timeout: 30000 })
+await page.addStyleTag({ content: BARE })
 
-await page.evaluate(
-  ([home, order]) => {
-    // Park every part above and away from where it lives, so the first frame
-    // is an empty bench rather than a finished build.
-    const d = window.draftrig.doc.getState()
-    const start = {}
-    for (const step of order) {
-      const p = home[step.id]
-      const away = Math.hypot(p[0], p[2]) || 1
-      start[step.id] = [
-        p[0] + (p[0] / away) * step.out,
-        p[1] + step.lift,
-        p[2] + (p[2] / away) * step.out,
-      ]
-      d.moveInstance(step.id, start[step.id], false)
-    }
-    window.__assembly = { home, order, start }
-  },
-  [home, order],
-)
-await page.waitForTimeout(400)
+/*
+ * Frame the finished build first, then hide everything.
+ *
+ * The camera has to be the camera of the last frame from the first frame —
+ * a sequence that reframes as parts arrive is a sequence that lurches, and
+ * the whole effect depends on the viewpoint being still while the build
+ * grows into it.
+ */
+const order = await page.evaluate((id) => {
+  const s = window.draftrig.starters.find((x) => x.id === id)
+  if (!s) throw new Error('no starter ' + id)
+  const d = window.draftrig.doc.getState()
+  d.loadDoc(s.build())
+  d.select([])
+  d.requestFrame('all')
+  return window.draftrig.doc.getState().doc.order.slice()
+}, starter)
 
-/* ------------------------------------------------------------------ */
-/* Record                                                              */
-/* ------------------------------------------------------------------ */
+await page.waitForTimeout(4000)
 
-console.log('recording', SECONDS, 'seconds...')
+/*
+ * The film's frame, which is not the editor's frame.
+ *
+ * Fit leaves air on every side because it has to work for any shape from
+ * any angle. A film wants the subject large and the eye low — about 68
+ * degrees off vertical, which is a person standing in the room rather than
+ * a plan view of it. Both are applied once, here, and then the camera only
+ * orbits.
+ */
+const start = await page.evaluate((aim) => {
+  const c = window.draftrig.camera.controls
+  /*
+   * Drop the aim.
+   *
+   * Fit centres on the bounding box, and the box includes whatever is
+   * highest — a ceiling speaker, a cable run to one — so the build itself
+   * sits in the bottom of the frame with a third of the picture empty
+   * above it. Lowering the orbit centre by a fraction of the build's own
+   * height puts the subject where a photographer would put it.
+   */
+  c.target.y -= aim
+  const t = c.target.clone()
+  c.object.position.sub(t).multiplyScalar(0.70).add(t)
+  c.update()
+  const dir = c.object.position.clone().sub(t)
+  return { az: (Math.atan2(dir.x, dir.z) * 180) / Math.PI, pol: 68 }
+}, flagAim)
 
-const dataUrl = await page.evaluate(
-  async ([seconds, fps, travel]) => {
-    const canvas = document.querySelector('canvas')
-    const stream = canvas.captureStream(fps)
-    const chunks = []
-    const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
-      ? 'video/webm;codecs=vp9'
-      : 'video/webm'
-    const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 1_700_000 })
-    rec.ondataavailable = (e) => e.data.size && chunks.push(e.data)
-    rec.start()
+/* Grid off, and the axis widget with it. The page is showing a build, not
+   an editor, and the viewport's own furniture reads as clutter at this
+   size. */
+await page.evaluate(() => window.draftrig.doc.getState().setView({ grid: false, gizmo: false, ports: false }))
 
-    const { home, order, start } = window.__assembly
-    const d = window.draftrig.doc.getState()
-    const t0 = performance.now()
-    // Cubic ease out: fast in, settles rather than stopping dead.
-    const ease = (x) => 1 - Math.pow(1 - x, 3)
-
-    let wired = false
-    let powered = false
-
-    await new Promise((resolve) => {
-      const tick = () => {
-        const t = (performance.now() - t0) / 1000
-        const updates = []
-        for (const step of order) {
-          const k = Math.min(1, Math.max(0, (t - step.from) / travel))
-          const e = ease(k)
-          const a = start[step.id]
-          const bpos = home[step.id]
-          updates.push({
-            id: step.id,
-            pos: [
-              a[0] + (bpos[0] - a[0]) * e,
-              a[1] + (bpos[1] - a[1]) * e,
-              a[2] + (bpos[2] - a[2]) * e,
-            ],
-          })
-        }
-        d.transformInstances(updates, false)
-
-        // Wires, once everything has landed.
-        if (!wired && t > 4.3) {
-          wired = true
-          const s = window.draftrig.doc.getState()
-          const ids = window.__ids
-          const pairs = [
-            ['v5', 'vdd', '#E34B4B'], ['gnd', 'vss', '#1C1F24'],
-            ['v5', 'a', '#E34B4B'], ['gnd2', 'k', '#1C1F24'],
-            ['gnd3', 'rw', '#1C1F24'], ['d12', 'rs', '#3DD68C'],
-            ['d11', 'e', '#3DD68C'], ['d5', 'd4', '#4C8DFF'],
-            ['d4', 'd5', '#4C8DFF'], ['d3', 'd6', '#4C8DFF'],
-            ['d2', 'd7', '#4C8DFF'],
-          ]
-          for (const [a, bb, colour] of pairs) {
-            s.connect(
-              { instanceId: ids.board, portId: a },
-              { instanceId: ids.lcd, portId: bb },
-              { color: colour, gauge: 0.205 },
-            )
-          }
-        }
-
-        // Then switch it on, so the panel comes up before the clip ends.
-        if (!powered && t > 4.6) {
-          powered = true
-          window.draftrig.engine.reset()
-          window.draftrig.sim.getState().setRunning(true)
-        }
-
-        if (t >= seconds) {
-          rec.stop()
-          resolve()
-          return
-        }
-        requestAnimationFrame(tick)
-      }
-      requestAnimationFrame(tick)
-    })
-
-    await new Promise((r) => { rec.onstop = r })
-    const blob = new Blob(chunks, { type: 'video/webm' })
-    const buf = await blob.arrayBuffer()
-    let binary = ''
-    const bytes = new Uint8Array(buf)
-    for (let i = 0; i < bytes.length; i += 0x8000) {
-      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000))
-    }
-    return btoa(binary)
-  },
-  [SECONDS, FPS, TRAVEL],
-)
-
-writeFileSync('public/assembly.webm', Buffer.from(dataUrl, 'base64'))
-console.log('wrote public/assembly.webm', Math.round(Buffer.from(dataUrl, 'base64').length / 1024), 'kB')
-
-// A poster of the finished build, for before the video plays.
+await page.evaluate(() => {
+  const d = window.draftrig.doc.getState()
+  for (const id of d.doc.order) if (!d.doc.instances[id].hidden) d.toggleHidden(id)
+})
 await page.waitForTimeout(600)
-await page.locator('canvas').first().screenshot({ path: 'public/assembly-poster.png' })
-console.log('wrote public/assembly-poster.png')
-console.log('errors:', errors.length ? errors : 'none')
-await b.close()
+
+const shown = order.slice(0, SEED)
+if (shown.length) {
+  await page.evaluate((ids) => {
+    const d = window.draftrig.doc.getState()
+    for (const id of ids) d.toggleHidden(id)
+  }, shown)
+  await page.waitForTimeout(500)
+}
+const reveal = order.slice(SEED)
+
+const total = reveal.length + HOLD
+let n = 0
+
+/**
+ * Read the frame off the canvas, rather than photographing the page.
+ *
+ * `page.screenshot` goes through the browser's compositor, and on a live
+ * WebGL canvas it hands back whatever surface the compositor last cached —
+ * which in a headless window it stops refreshing after a few seconds. The
+ * symptom was a sequence where the build stopped growing at frame seven and
+ * thirty identical frames followed, while the application underneath was
+ * perfectly happy and had all thirty-six parts on screen.
+ *
+ * `toDataURL` reads the drawing buffer itself. The canvas is created with
+ * preserveDrawingBuffer, which is what makes that legal, and it was already
+ * on for the project thumbnails.
+ */
+const shoot = async () => {
+  n += 1
+  const data = await page.evaluate(async (q) => {
+    // Two frames, so anything queued this tick has been drawn.
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
+    const canvas = document.querySelector('canvas')
+    return canvas.toDataURL('image/jpeg', q)
+  }, QUALITY / 100)
+  writeFileSync(`${OUT}/${String(n).padStart(4, '0')}.jpg`, Buffer.from(data.split(',')[1], 'base64'))
+}
+
+for (let i = 0; i < reveal.length; i++) {
+  await page.evaluate(
+    ([id, az, pol]) => {
+      window.draftrig.doc.getState().toggleHidden(id)
+      window.draftrig.camera.view(az, pol)
+    },
+    [reveal[i], start.az + (ORBIT * i) / total, start.pol],
+  )
+  // Long enough for the geometry to compile and one frame to land.
+  await page.waitForTimeout(260)
+  await shoot()
+  if (process.env.VERBOSE) {
+    const shown = await page.evaluate(() => {
+      const d = window.draftrig.doc.getState()
+      return d.doc.order.filter((x) => !d.doc.instances[x].hidden).length
+    })
+    console.log(`  frame ${n}: ${shown} parts visible`)
+  }
+}
+
+for (let i = 0; i < HOLD; i++) {
+  await page.evaluate(
+    ([az, pol]) => window.draftrig.camera.view(az, pol),
+    [start.az + (ORBIT * (reveal.length + i)) / total, start.pol],
+  )
+  await page.waitForTimeout(180)
+  await shoot()
+}
+
+/*
+ * A manifest, so the page does not have to guess how many frames there are
+ * or hard-code a number that goes stale the moment a part is added to the
+ * template.
+ */
+writeFileSync(
+  `${OUT}/frames.json`,
+  JSON.stringify({ starter, frames: n, width: W, height: H, shot: new Date().toISOString().slice(0, 10) }, null, 2) + '\n',
+)
+
+console.log(`${n} frames -> ${OUT}`)
+if (problems.length) console.log('errors:\n  ' + problems.join('\n  '))
+
+await browser.close()

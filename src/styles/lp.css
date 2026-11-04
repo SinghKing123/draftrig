@@ -1,0 +1,1271 @@
+/* ============================================================
+   The front page: the drawing, not the dark room.
+
+   Five versions of this page failed in two different ways and it
+   took both failures to see the actual rule.
+
+   The first four were cream paper with renders of the editor pasted
+   on, and every render landed as a black rectangle punched into the
+   sheet. The fix looked obvious — build the page in the editor's own
+   near-blacks so the renders stop being holes — and it worked, and
+   the page was still a row of pictures with headlines over them.
+
+   So the ground was never the point. The point is what the page is
+   made of. A photograph of the editor is the weakest possible
+   evidence that the editor works: it is a still of a moving thing,
+   it cannot be poked, and it proves nothing a mock-up could not
+   fake. What the page is made of now is the arithmetic itself —
+   plans that draw themselves, a clearance you drag, a socket you
+   overload, a sightline you raise — and arithmetic drawn in line
+   belongs on paper. Hence light, and hence warm: this ramp is the
+   editor's own warm near-blacks turned inside out, so the two
+   surfaces read as one product seen from two sides.
+
+   Nothing on this page is an image of the product. Everything on it
+   is the product's own working, done live, in SVG.
+
+   Scoped under .dr so none of it reaches the old marketing sheets.
+   ============================================================ */
+
+.dr {
+  /* --- paper --- */
+  --paper:   #FCFBF8;
+  --paper-1: #FFFFFF;
+  --paper-2: #F4F1EB;
+  --paper-3: #EBE7DE;
+
+  /* --- ink --- */
+  --ink-0: #14110D;
+  --ink-1: #4A443C;
+  --ink-2: #857E72;
+  --ink-3: #A8A197;
+
+  --rule:   #E7E3D9;
+  --rule-2: #D7D2C6;
+  --rule-3: #BDB6A6;
+
+  /* The editor's two meanings, brought to a white ground. Blue is you
+     and amber is live current there as here; both are darkened until
+     they carry text at 4.5:1, with the undarkened amber kept for fills
+     where it is a quantity rather than a word. */
+  --sel:      #1A5FE0;
+  --sel-dim:  rgba(26, 95, 224, 0.09);
+  --live:     #A85C06;
+  --live-2:   #E79214;
+  --live-dim: rgba(231, 146, 20, 0.15);
+  --good:     #0B7A4B;
+  --bad:      #C02F1D;
+  --bad-dim:  rgba(192, 47, 29, 0.09);
+
+  /* One ramp for the whole page, so sections cannot drift apart. */
+  --gut: clamp(20px, 5vw, 76px);
+  --col: min(1320px, 100% - var(--gut) * 2);
+  --band: clamp(72px, 11vh, 144px);
+
+  background: var(--paper);
+  color: var(--ink-1);
+  font-family: 'Schibsted Grotesk', ui-sans-serif, system-ui, sans-serif;
+  font-size: 17px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+
+.dr ::selection { background: rgba(26, 95, 224, 0.17); color: var(--ink-0); }
+.dr ::-webkit-scrollbar { width: 11px; height: 11px; }
+.dr ::-webkit-scrollbar-track { background: var(--paper-2); }
+.dr ::-webkit-scrollbar-thumb { background: var(--rule-3); border-radius: 99px; }
+.dr ::-webkit-scrollbar-thumb:hover { background: var(--ink-3); }
+.dr :focus-visible { outline: 2px solid var(--sel); outline-offset: 3px; border-radius: 3px; }
+
+.dr-w { width: var(--col); margin-inline: auto; }
+
+/* --- type ------------------------------------------------------- */
+
+.dr h1, .dr h2, .dr h3 {
+  font-family: Archivo, ui-sans-serif, system-ui, sans-serif;
+  color: var(--ink-0);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 0.96;
+  text-wrap: balance;
+}
+.dr h1 { font-size: clamp(42px, 7.2vw, 104px); font-weight: 900; letter-spacing: -0.044em; }
+.dr h2 { font-size: clamp(30px, 4.2vw, 58px); }
+.dr h3 { font-size: clamp(19px, 1.5vw, 23px); letter-spacing: -0.02em; line-height: 1.15; }
+.dr p { max-width: 62ch; }
+
+/* Measurements. Mono here is data, never costume: every figure set in
+   it is one the editor worked out. */
+.dr .m {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.dr .m-live { color: var(--live); }
+.dr .m-sel { color: var(--sel); }
+
+/* --- the sheet -------------------------------------------------- */
+
+/*
+ * The construction grid: a 40 mm minor and a 200 mm major, the same
+ * two the editor snaps to. On paper it is scored rather than glowing,
+ * so the colours are the rule colours and the whole thing is masked
+ * away before it reaches any text.
+ */
+.dr-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, var(--rule) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--rule) 1px, transparent 1px),
+    linear-gradient(to right, var(--rule-2) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--rule-2) 1px, transparent 1px);
+  background-size: 40px 40px, 40px 40px, 200px 200px, 200px 200px;
+  -webkit-mask-image: radial-gradient(130% 92% at 50% 4%, #000 14%, transparent 76%);
+  mask-image: radial-gradient(130% 92% at 50% 4%, #000 14%, transparent 76%);
+}
+
+/* The construction geometry over it: struck radii, a swing, extension
+   lines. On paper these are pencil, so they are ink at low alpha. */
+.dr-arcs {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  color: var(--ink-0);
+  opacity: 0.085;
+}
+
+/* --- the editor's own chrome, as page furniture ----------------- */
+
+/* A selection box with four corner handles and a size badge. */
+.dr-sel { position: relative; display: inline-block; padding-inline: 0.1em; }
+.dr-sel::before {
+  content: '';
+  position: absolute;
+  inset: 0.08em -0.06em 0.12em;
+  border: 1.5px solid var(--sel);
+  border-radius: 1px;
+}
+.dr-sel i {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  background: var(--paper-1);
+  border: 1.5px solid var(--sel);
+  border-radius: 1px;
+}
+.dr-sel i:nth-of-type(1) { left: -0.06em; top: 0.08em; translate: -50% -50%; }
+.dr-sel i:nth-of-type(2) { right: -0.06em; top: 0.08em; translate: 50% -50%; }
+.dr-sel i:nth-of-type(3) { left: -0.06em; bottom: 0.12em; translate: -50% 50%; }
+.dr-sel i:nth-of-type(4) { right: -0.06em; bottom: 0.12em; translate: 50% 50%; }
+.dr-sel b {
+  position: absolute;
+  right: -0.06em;
+  bottom: 0.12em;
+  translate: 0 140%;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  color: #fff;
+  background: var(--sel);
+  padding: 2px 5px;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+.dr-sel[data-above] b { bottom: auto; top: 0.08em; translate: 0 -140%; }
+
+/* --- navigation -------------------------------------------------- */
+
+/*
+ * Three things, and only three. A front page whose nav lists its own
+ * sections is navigating a document; this one has one job per item:
+ * read the code, come back to your work, or start.
+ */
+.dr-nav {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  padding: 13px var(--gut);
+  background: color-mix(in srgb, var(--paper) 84%, transparent);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.3s, background 0.3s;
+}
+.dr-nav[data-stuck] { border-bottom-color: var(--rule-2); }
+.dr-nav-end { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.dr-mark { display: flex; text-decoration: none; }
+/*
+ * Scoped to the link row on purpose. As `.dr-nav a` this beat
+ * `.dr-btn-go` on specificity and painted the one button on the page
+ * that has to be unmissable in the same grey as the links beside it.
+ */
+.dr-nav-end .dr-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  color: var(--ink-1);
+  font-size: 14.5px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.18s, background 0.18s;
+}
+.dr-nav-end .dr-link:hover { color: var(--ink-0); background: var(--paper-2); }
+.dr-nav-end .dr-link svg { display: block; }
+
+@media (max-width: 560px) {
+  .dr-nav-end .dr-link-gh span { display: none; }
+}
+
+/* --- buttons ----------------------------------------------------- */
+
+.dr-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 13px 22px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s, color 0.18s, translate 0.18s, box-shadow 0.18s;
+}
+.dr-btn-go {
+  background: var(--ink-0);
+  color: var(--paper-1);
+  box-shadow: 0 1px 2px rgba(20, 17, 13, 0.3);
+}
+.dr-btn-go:hover { background: #2B251D; translate: 0 -1px; box-shadow: 0 6px 18px rgba(20, 17, 13, 0.18); }
+.dr-btn-ghost { border-color: var(--rule-2); color: var(--ink-0); background: var(--paper-1); }
+.dr-btn-ghost:hover { border-color: var(--rule-3); background: var(--paper-2); }
+.dr-btn-sm { padding: 8px 15px; font-size: 14px; }
+.dr-btn .arr { width: 7px; height: 7px; border-top: 1.5px solid currentColor; border-right: 1.5px solid currentColor; rotate: 45deg; transition: translate 0.18s; }
+.dr-btn:hover .arr { translate: 2px 0; }
+
+/* --- hero -------------------------------------------------------- */
+
+.dr-hero {
+  position: relative;
+  padding-top: clamp(30px, 4.6vh, 62px);
+  padding-bottom: clamp(36px, 5vh, 72px);
+  isolation: isolate;
+}
+.dr-hero-copy { position: relative; z-index: 2; }
+.dr-hero h1 { max-width: 15ch; }
+.dr-hero-sub {
+  margin-top: 20px;
+  max-width: 50ch;
+  font-size: clamp(17px, 1.4vw, 20px);
+  color: var(--ink-1);
+}
+.dr-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+.dr-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 26px;
+  margin-top: 28px;
+  padding-top: 17px;
+  border-top: 1px solid var(--rule-2);
+  max-width: 640px;
+}
+.dr-facts span { display: inline-flex; align-items: baseline; gap: 7px; color: var(--ink-2); font-size: 14px; }
+.dr-facts b {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 14px; font-weight: 500; color: var(--ink-0);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- the plate: the frame every live artifact sits in ------------ */
+
+.dr-plate {
+  position: relative;
+  border: 1px solid var(--rule-2);
+  border-radius: 7px;
+  overflow: hidden;
+  background: var(--paper-1);
+  box-shadow: 0 1px 2px rgba(20, 17, 13, 0.05), 0 18px 50px -24px rgba(20, 17, 13, 0.3);
+}
+.dr-hero .dr-plate { margin-top: clamp(34px, 6vh, 72px); }
+
+/* A title block along the bottom, the way a drawing carries one. */
+.dr-plate-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 22px;
+  align-items: center;
+  padding: 10px 15px;
+  border-top: 1px solid var(--rule);
+  background: var(--paper-2);
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.dr-plate-bar strong { color: var(--ink-0); font-weight: 600; font-size: 13.5px; }
+.dr-plate-bar .m { color: var(--ink-1); }
+.dr-plate-bar .spacer { margin-left: auto; }
+
+/* --- the plan: a drawing that draws itself ----------------------- */
+
+.dr-planner { display: grid; grid-template-columns: minmax(0, 1fr) 268px; }
+.dr-plan-stage { position: relative; min-width: 0; background: var(--paper-1); }
+.dr-plan-stage svg { display: block; width: 100%; height: auto; }
+
+/* The tab row that chooses which room is on the board. */
+.dr-plan-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--rule);
+  background: var(--paper-2);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.dr-plan-tabs::-webkit-scrollbar { display: none; }
+.dr-plan-tabs button {
+  appearance: none;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  padding: 6px 11px;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink-2);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.16s, background 0.16s;
+}
+.dr-plan-tabs button:hover { color: var(--ink-0); background: var(--paper-3); }
+.dr-plan-tabs button[aria-selected='true'] { color: var(--ink-0); background: var(--paper-1); box-shadow: inset 0 0 0 1px var(--rule-2); }
+/* The progress of the auto-advance, as a hairline under the live tab. */
+.dr-plan-tabs button[aria-selected='true']::after {
+  content: '';
+  display: block;
+  height: 1.5px;
+  margin-top: 5px;
+  background: var(--sel);
+  transform-origin: left;
+  animation: dr-tick var(--dr-dwell, 9s) linear forwards;
+}
+.dr-plan-tabs[data-held] button::after { animation-play-state: paused; }
+@keyframes dr-tick { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* The stroke-on. Every wall, dimension and swing in a plan carries
+   pathLength="1", so these two rules draw anything at any scale
+   without measuring a single path in JavaScript. */
+.dr-ink [data-draw] {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: dr-draw 880ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: calc(var(--i, 0) * 90ms);
+}
+@keyframes dr-draw { to { stroke-dashoffset: 0; } }
+
+/* The things in the room land after the shell is drawn, from slightly
+   below, one a beat behind the last. */
+.dr-ink [data-drop] {
+  opacity: 0;
+  animation: dr-drop 520ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: calc(380ms + var(--i, 0) * 46ms);
+}
+@keyframes dr-drop {
+  from { opacity: 0; transform: translateY(9px); }
+  to   { opacity: 1; transform: none; }
+}
+.dr-ink [data-fade] {
+  opacity: 0;
+  animation: dr-fade 600ms ease forwards;
+  animation-delay: calc(760ms + var(--i, 0) * 70ms);
+}
+@keyframes dr-fade { to { opacity: 1; } }
+
+/* Plan ink. Named, so the SVG carries classes rather than colours. */
+.dr-ink .wall  { stroke: var(--ink-0); stroke-width: 2.4; fill: none; stroke-linejoin: round; stroke-linecap: square; }
+.dr-ink .swing { stroke: var(--live-2); stroke-width: 1.6; fill: none; stroke-dasharray: 10 9; }
+.dr-ink .swing-bad { stroke: var(--bad); }
+.dr-ink .leaf  { stroke: var(--live-2); stroke-width: 2.4; fill: none; }
+.dr-ink .box   { fill: var(--paper-2); stroke: var(--ink-0); stroke-width: 1.4; }
+.dr-ink .box-soft { fill: var(--paper-2); stroke: var(--rule-3); stroke-width: 1.4; stroke-dasharray: 7 6; }
+.dr-ink .box-sel  { fill: var(--sel-dim); stroke: var(--sel); stroke-width: 1.8; }
+.dr-ink .box-live { fill: var(--live-dim); stroke: var(--live-2); stroke-width: 1.6; }
+.dr-ink .box-ghost { fill: none; stroke: rgba(20, 17, 13, 0.52); stroke-width: 1.3; stroke-dasharray: 6 5; }
+.dr-ink .box-bad { fill: var(--bad-dim); stroke: var(--bad); stroke-width: 1.8; }
+.dr-ink .dim   { stroke: var(--live); stroke-width: 1.2; fill: none; }
+.dr-ink .ext   { stroke: rgba(168, 92, 6, 0.55); stroke-width: 1; fill: none; }
+.dr-ink .ray   { stroke: var(--sel); stroke-width: 1.8; fill: none; }
+.dr-ink .ray-bad { stroke: var(--bad); }
+/* The tint is in the fill, not in `opacity`: these elements are faded
+   in, and an opacity animation lands on 1 and wipes out an opacity
+   rule. That is how every wall on the page came out a solid slab. */
+.dr-ink .hatch { fill: rgba(20, 17, 13, 0.06); }
+/* The two ends of a sightline: the eye it starts at and the headrest it
+   has to get over. Needs its own class because the ray rule sets
+   fill:none, and a filled circle given that rule is an invisible one. */
+.dr-ink .pt { fill: var(--sel); stroke: none; }
+.dr-ink .pt-bad { fill: var(--bad); }
+.dr-ink .pt-live { fill: var(--live); stroke: none; }
+.dr-ink .glow  { fill: var(--live-dim); }
+.dr-ink text {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  fill: var(--ink-2);
+  letter-spacing: 0.02em;
+}
+.dr-ink text.fig { fill: var(--live); font-weight: 500; }
+.dr-ink text.tag { fill: var(--ink-2); }
+.dr-ink text.tag-sel { fill: var(--sel); }
+.dr-ink text.fig-bad { fill: var(--bad); font-weight: 500; }
+.dr-ink text.fig-ok { fill: var(--good); font-weight: 500; }
+
+/* --- the readout column beside a plan ---------------------------- */
+
+.dr-panel {
+  border-left: 1px solid var(--rule);
+  background: var(--paper-2);
+  display: flex;
+  flex-direction: column;
+}
+.dr-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--rule);
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  font-weight: 600;
+}
+.dr-panel-head .dot {
+  width: 7px; height: 7px; border-radius: 99px;
+  background: var(--live-2);
+  box-shadow: 0 0 0 3px var(--live-dim);
+  animation: dr-pulse 2.4s ease-in-out infinite;
+}
+@keyframes dr-pulse { 50% { box-shadow: 0 0 0 5px rgba(231, 146, 20, 0.07); } }
+.dr-read {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 14px;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--rule);
+  font-size: 13px;
+}
+.dr-read span { color: var(--ink-2); }
+.dr-read b {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 12.5px; font-weight: 500; color: var(--ink-0);
+  font-variant-numeric: tabular-nums; text-align: right;
+}
+.dr-read[data-live] b { color: var(--live); }
+.dr-read[data-warn] b { color: var(--bad); }
+.dr-read[data-ok] b { color: var(--good); }
+.dr-panel-foot {
+  margin-top: auto;
+  padding: 12px 14px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--ink-2);
+  border-top: 1px solid var(--rule);
+}
+
+@media (max-width: 920px) {
+  .dr-planner { grid-template-columns: minmax(0, 1fr); }
+  .dr-panel { border-left: 0; border-top: 1px solid var(--rule); }
+  .dr-panel-foot { display: none; }
+}
+
+/* --- a section ---------------------------------------------------- */
+
+.dr-sec { padding-block: var(--band); position: relative; }
+.dr-sec-head { margin-bottom: clamp(30px, 4.5vh, 56px); }
+.dr-sec-head p { margin-top: 15px; color: var(--ink-2); font-size: 17.5px; }
+
+/* --- the bench: a question with its own working under it --------- */
+
+/*
+ * Not cards. Each of the three is a different instrument, because
+ * each answers a different question, and the only thing they share is
+ * that you can move something and watch the figure change. That is
+ * the whole argument of the page, so it is made three times in three
+ * mechanisms rather than asserted three times in prose.
+ */
+.dr-bench { border-top: 1px solid var(--rule-2); }
+/*
+ * Named areas rather than source order, because there are three
+ * things in a bench now and only two of them sit side by side. The
+ * screenshot spans the full width underneath: at column width a
+ * 1600-pixel frame of the editor renders its own 12px type at four
+ * pixels, which is a picture of a screenshot rather than a
+ * screenshot. If it is there to show the product it has to be
+ * readable, and readable means the whole measure.
+ */
+.dr-bench-item {
+  display: grid;
+  grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
+  grid-template-areas:
+    "copy rig"
+    "shot shot";
+  gap: clamp(22px, 3.4vw, 52px);
+  align-items: center;
+  padding-block: clamp(32px, 4.6vh, 56px);
+  border-bottom: 1px solid var(--rule-2);
+}
+.dr-bench-copy { grid-area: copy; }
+.dr-bench-rig { grid-area: rig; }
+/*
+ * The alternation swaps the columns as well as the order, which it did
+ * not at first. Ordering the copy second moves it into the second
+ * grid column, and the second column was the wide one, so every other
+ * bench handed its instrument the narrow side and its paragraph the
+ * generous one. The drawing is the argument; it gets the room.
+ */
+.dr-bench-item:nth-child(even) {
+  grid-template-columns: minmax(0, 1.18fr) minmax(0, 0.82fr);
+  grid-template-areas:
+    "rig copy"
+    "shot shot";
+}
+.dr-bench-copy h3 { font-size: clamp(26px, 3vw, 40px); font-weight: 800; }
+.dr-bench-copy p { margin-top: 13px; color: var(--ink-1); max-width: 44ch; }
+.dr-bench-rig { min-width: 0; }
+
+/* The control under a bench: a real input, labelled like an input. */
+.dr-ctl { margin-top: 22px; max-width: 400px; }
+.dr-ctl-top {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  font-size: 13px; color: var(--ink-2); margin-bottom: 8px;
+}
+.dr-ctl-top b {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 14px; font-weight: 600; color: var(--ink-0);
+  font-variant-numeric: tabular-nums;
+}
+.dr-ctl input[type='range'] {
+  appearance: none; -webkit-appearance: none;
+  width: 100%; height: 20px; background: transparent; cursor: ew-resize; display: block;
+}
+.dr-ctl input[type='range']::-webkit-slider-runnable-track {
+  height: 3px; border-radius: 99px;
+  background: linear-gradient(to right, var(--ink-0) var(--p, 50%), var(--rule-2) var(--p, 50%));
+}
+.dr-ctl input[type='range']::-moz-range-track { height: 3px; border-radius: 99px; background: var(--rule-2); }
+.dr-ctl input[type='range']::-moz-range-progress { height: 3px; border-radius: 99px; background: var(--ink-0); }
+.dr-ctl input[type='range']::-webkit-slider-thumb {
+  appearance: none; -webkit-appearance: none;
+  width: 17px; height: 17px; margin-top: -7px;
+  border-radius: 99px; background: var(--paper-1);
+  border: 1.5px solid var(--ink-0);
+  box-shadow: 0 1px 3px rgba(20, 17, 13, 0.25);
+  transition: scale 0.14s;
+}
+.dr-ctl input[type='range']::-moz-range-thumb {
+  width: 15px; height: 15px; border-radius: 99px;
+  background: var(--paper-1); border: 1.5px solid var(--ink-0);
+  box-shadow: 0 1px 3px rgba(20, 17, 13, 0.25);
+}
+.dr-ctl input[type='range']:hover::-webkit-slider-thumb,
+.dr-ctl input[type='range']:active::-webkit-slider-thumb { scale: 1.12; }
+.dr-ctl-ends { display: flex; justify-content: space-between; margin-top: 1px; }
+.dr-ctl-ends span { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; color: var(--ink-3); }
+
+/* The verdict a bench arrives at. */
+.dr-verdict {
+  display: inline-flex; align-items: baseline; gap: 10px;
+  margin-top: 20px; padding: 8px 13px;
+  border: 1px solid var(--rule-2); border-radius: 3px;
+  background: var(--paper-1);
+  transition: border-color 0.25s, background 0.25s;
+}
+.dr-verdict b {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 15px; font-weight: 600; color: var(--ink-0);
+  font-variant-numeric: tabular-nums;
+}
+.dr-verdict em { font-style: normal; font-size: 13px; color: var(--ink-2); }
+.dr-verdict[data-tone='ok'] { border-color: color-mix(in srgb, var(--good) 36%, transparent); background: rgba(11, 122, 75, 0.05); }
+.dr-verdict[data-tone='ok'] b { color: var(--good); }
+.dr-verdict[data-tone='bad'] { border-color: color-mix(in srgb, var(--bad) 40%, transparent); background: var(--bad-dim); }
+.dr-verdict[data-tone='bad'] b { color: var(--bad); }
+
+/* --- the socket bench: toggles and a stacked load bar ------------ */
+
+.dr-plugs { display: flex; flex-wrap: wrap; gap: 6px; padding: 15px 15px 0; }
+.dr-plug {
+  appearance: none;
+  display: inline-flex; align-items: baseline; gap: 8px;
+  padding: 7px 11px;
+  border: 1px solid var(--rule-2); border-radius: 3px;
+  background: var(--paper-1);
+  font: inherit; font-size: 13.5px; color: var(--ink-2);
+  cursor: pointer;
+  transition: border-color 0.16s, background 0.16s, color 0.16s;
+}
+.dr-plug .w {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 11.5px; color: var(--ink-3); font-variant-numeric: tabular-nums;
+}
+.dr-plug:hover { border-color: var(--rule-3); }
+.dr-plug[aria-pressed='true'] {
+  border-color: color-mix(in srgb, var(--live-2) 55%, transparent);
+  background: var(--live-dim);
+  color: var(--ink-0);
+}
+.dr-plug[aria-pressed='true'] .w { color: var(--live); }
+
+.dr-load { padding: 15px; }
+.dr-load-bar {
+  position: relative;
+  display: flex;
+  height: 46px;
+  border: 1px solid var(--rule-2);
+  border-radius: 3px;
+  background: var(--paper-2);
+  overflow: hidden;
+}
+.dr-load-seg {
+  background: var(--live-2);
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.6);
+  transition: width 420ms cubic-bezier(0.16, 1, 0.3, 1), background 240ms;
+  min-width: 0;
+}
+.dr-load-seg[data-over] { background: var(--bad); }
+/* The rating the lead is sold at, struck across the bar where it falls. */
+.dr-load-limit {
+  position: absolute; top: -1px; bottom: -1px;
+  width: 0; border-left: 1.5px dashed var(--ink-0);
+  transition: left 420ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.dr-load-limit b {
+  position: absolute; left: 7px; top: 5px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 11px; color: var(--ink-0); background: var(--paper-1);
+  padding: 1px 4px; border-radius: 2px; white-space: nowrap;
+  box-shadow: 0 0 0 1px var(--rule-2);
+}
+.dr-load-foot {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 18px; margin-top: 12px;
+  font-size: 13px; color: var(--ink-2);
+}
+.dr-load-foot b {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 20px; font-weight: 600; color: var(--ink-0);
+  font-variant-numeric: tabular-nums; letter-spacing: -0.015em;
+}
+.dr-load-foot[data-over] b { color: var(--bad); }
+.dr-load-foot .sp { margin-left: auto; }
+
+/* --- the shelf: what is actually in the catalogue ---------------- */
+
+/*
+ * The one section whose content cannot be written, only read off the
+ * registry. Every tile carries the part's real footprint drawn to one
+ * shared scale, so a wall socket is a chip and a rug fills its tile:
+ * the claim "real sizes" is made by the drawing rather than by the
+ * sentence above it.
+ */
+.dr-shelf { border-block: 1px solid var(--rule-2); padding-block: var(--band); background: var(--paper-2); }
+.dr-shelf-top { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-end; justify-content: space-between; margin-bottom: 24px; }
+.dr-shelf-top .dr-sec-head { margin-bottom: 0; }
+.dr-find {
+  display: flex; align-items: center; gap: 9px;
+  padding: 9px 13px; min-width: 258px;
+  border: 1px solid var(--rule-2); border-radius: 4px; background: var(--paper-1);
+}
+.dr-find:focus-within { border-color: var(--sel); }
+.dr-find input {
+  appearance: none; border: 0; background: transparent; outline: 0;
+  font: inherit; font-size: 14.5px; color: var(--ink-0); width: 100%; min-width: 0;
+}
+.dr-find input::placeholder { color: var(--ink-3); }
+.dr-find svg { flex: none; color: var(--ink-3); }
+.dr-find .n { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11.5px; color: var(--ink-3); white-space: nowrap; }
+
+.dr-shelf-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(214px, 1fr));
+  gap: 1px;
+  background: var(--rule-2);
+  border: 1px solid var(--rule-2);
+  border-radius: 5px;
+  overflow: hidden;
+}
+.dr-item {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 14px 15px 13px;
+  background: var(--paper-1);
+  transition: background 0.16s;
+}
+.dr-item:hover { background: var(--paper-2); }
+.dr-item-fig { height: 100px; margin-bottom: 8px; display: flex; align-items: flex-end; }
+.dr-item-fig svg { display: block; overflow: visible; }
+.dr-item-fig rect { fill: var(--paper-3); stroke: var(--ink-0); stroke-width: 1; transition: fill 0.16s, stroke 0.16s; }
+.dr-item:hover .dr-item-fig rect { fill: var(--live-dim); stroke: var(--live-2); }
+.dr-item strong { color: var(--ink-0); font-size: 14.5px; font-weight: 600; letter-spacing: -0.01em; }
+.dr-item > span { color: var(--ink-2); font-size: 12px; }
+.dr-item .m { color: var(--ink-2); font-size: 11.5px; }
+.dr-item:hover .m { color: var(--live); }
+.dr-shelf-none { padding: 46px 18px; text-align: center; color: var(--ink-2); background: var(--paper-1); grid-column: 1 / -1; }
+
+/* --- the drifting strip of what is in the box -------------------- */
+
+.dr-strip { border-bottom: 1px solid var(--rule-2); padding-block: 14px; background: var(--paper); overflow: hidden; }
+.dr-strip-track { display: flex; width: max-content; animation: dr-slide 56s linear infinite; }
+.dr-strip:hover .dr-strip-track { animation-play-state: paused; }
+@keyframes dr-slide { to { transform: translateX(-50%); } }
+.dr-strip-run { display: flex; align-items: center; gap: 28px; padding-right: 28px; }
+.dr-strip-run i {
+  font-style: normal; font-size: 13.5px; color: var(--ink-2); white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 9px;
+}
+.dr-strip-run i::before { content: ''; width: 4px; height: 4px; border-radius: 99px; background: var(--rule-3); }
+
+/* --- the close ---------------------------------------------------- */
+
+.dr-end { position: relative; padding-block: clamp(82px, 13vh, 160px); text-align: center; overflow: hidden; border-top: 1px solid var(--rule-2); }
+.dr-end h2 { font-size: clamp(36px, 6.4vw, 88px); }
+.dr-end p { margin: 18px auto 0; color: var(--ink-1); font-size: 18px; }
+.dr-end-cta { display: flex; gap: 12px; justify-content: center; margin-top: 32px; }
+
+/* --- footer ------------------------------------------------------- */
+
+.dr-foot { border-top: 1px solid var(--rule-2); padding-block: 50px 28px; font-size: 14px; background: var(--paper-2); }
+.dr-foot-grid { display: grid; grid-template-columns: 1.6fr repeat(3, 1fr); gap: 34px 24px; }
+.dr-foot-col { display: flex; flex-direction: column; gap: 9px; }
+.dr-foot-col h3 { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2); font-family: inherit; margin-bottom: 3px; }
+.dr-foot a { color: var(--ink-1); text-decoration: none; transition: color 0.16s; }
+.dr-foot a:hover { color: var(--ink-0); }
+.dr-foot-base {
+  display: flex; flex-wrap: wrap; gap: 10px 20px; justify-content: space-between;
+  margin-top: 40px; padding-top: 19px; border-top: 1px solid var(--rule-2);
+  color: var(--ink-2); font-size: 13px;
+}
+
+@media (max-width: 880px) {
+  .dr-bench-item,
+  .dr-bench-item:nth-child(even) {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "copy" "rig" "shot";
+  }
+}
+@media (max-width: 760px) { .dr-foot-grid { grid-template-columns: 1fr 1fr; } }
+
+/* --- arrival ------------------------------------------------------ */
+
+/*
+ * `Reveal` from ui/motion, same curve and distance as the rest of the
+ * site. These rules had only ever been written under `.lp`, so every
+ * Reveal on this page was inert — the content sat at its final
+ * position with no transition, which is the reduced-motion state,
+ * served to everybody.
+ */
+.dr .mo-rise {
+  opacity: 0;
+  transform: translate3d(0, var(--mo-rise, 18px), 0);
+  filter: blur(6px);
+  transition:
+    opacity 620ms cubic-bezier(0.16, 1, 0.3, 1) var(--mo-delay, 0ms),
+    transform 760ms cubic-bezier(0.16, 1, 0.3, 1) var(--mo-delay, 0ms),
+    filter 620ms cubic-bezier(0.16, 1, 0.3, 1) var(--mo-delay, 0ms);
+}
+.dr .mo-rise[data-on] { opacity: 1; transform: none; filter: none; }
+.dr .dr-line { display: block; }
+
+/*
+ * Somebody who asked for less motion asked for less motion, not for a
+ * worse page. Everything lands at its final state with no transition,
+ * the plans are simply drawn rather than drawing themselves, and the
+ * benches keep every control: they are the content, and dragging a
+ * slider is the reader's own motion, not the page's.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .dr .mo-rise { opacity: 1 !important; transform: none !important; filter: none !important; transition: none !important; }
+  .dr-ink [data-draw], .dr-ink [data-drop], .dr-ink [data-fade] {
+    opacity: 1 !important;
+    stroke-dashoffset: 0 !important;
+    transform: none !important;
+    animation: none !important;
+  }
+  .dr-plan-tabs button[aria-selected='true']::after { animation: none; transform: scaleX(1); }
+  .dr-strip-track { animation: none; }
+  .dr-panel-head .dot { animation: none; }
+  .dr-load-seg, .dr-load-limit { transition: none; }
+}
+
+/* ============================================================
+   The editor, live on the page.
+
+   A dark window on a light sheet, and the one place this page shows
+   the product as itself rather than as a drawing of itself. It earns
+   the contrast because it is not a picture: it is the repository's
+   own meshes in the renderer the editor ships, and the frame round it
+   is doing what a frame does in a catalogue — saying this is the
+   object, and everything else on the page is the page talking about
+   the object.
+
+   The ramp inside is the editor's own, out of tokens.css, so the
+   window and the application cannot drift apart. Ported from the
+   advert artifact and retokenised; nothing here is a second opinion
+   about what the editor looks like.
+   ============================================================ */
+
+.dr .fl {
+  --ed-bg: var(--void);
+  --ed-panel: var(--bg-1);
+  --ed-raise: var(--bg-2);
+  --ed-line: var(--line);
+  --ed-line-2: var(--line-2);
+  --ed-ink: var(--tx-0);
+  --ed-ink-2: var(--tx-1);
+  --ed-ink-3: var(--tx-2);
+  --ed-accent: var(--brand);
+  --ed-wash: var(--brand-dim);
+  --ed-amber: var(--volt);
+  --ed-green: var(--ok);
+  --left: 236px;
+  --right: 262px;
+
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--left) minmax(0, 1fr) var(--right);
+  grid-template-rows: 46px minmax(0, 1fr) auto 28px;
+  grid-template-areas:
+    "top    top    top"
+    "left   vp     right"
+    "left   checks right"
+    "status status status";
+  height: clamp(540px, 48vw, 760px);
+  color: var(--ed-ink);
+  background: var(--ed-bg);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(20, 17, 13, 0.1), 0 40px 80px -40px rgba(20, 17, 13, 0.55);
+  font-size: 13px;
+  line-height: 1.35;
+}
+/*
+ * No `padding: 0` in this reset, however tidy it looks.
+ *
+ * At (0,2,1) it outranked every button rule in the frame — the list
+ * items, the room headers, the view buttons, the check line and the
+ * poster's own call to action are all buttons, all written at (0,1,0),
+ * and all of them lost their padding to it. The result reads as a
+ * panel that has not been styled at all, which is a long way from the
+ * one declaration that caused it. Third time this exact trap has been
+ * sprung on this page; the lesson is to reset what a button looks
+ * like, never how big it is.
+ */
+.dr .fl button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+.dr .fl b,
+.dr .fl em,
+.dr .fl small {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-style: normal;
+}
+
+/* --- title bar --- */
+.fl-top { grid-area: top; display: flex; align-items: center; gap: 13px; padding: 0 12px 0 15px; background: var(--ed-panel); border-bottom: 1px solid var(--ed-line); min-width: 0; }
+.fl-brand { height: 17px; width: auto; display: block; }
+.fl-sep { width: 1px; height: 19px; background: var(--ed-line-2); }
+.fl-proj { font-weight: 500; white-space: nowrap; }
+.fl-saved { display: flex; align-items: center; gap: 6px; color: var(--ed-ink-3); font-size: 12px; white-space: nowrap; }
+.fl-saved i { width: 6px; height: 6px; border-radius: 50%; background: var(--ed-green); }
+.fl-tabs { margin-inline: auto; display: flex; gap: 2px; padding: 3px; background: var(--ed-bg); border: 1px solid var(--ed-line); border-radius: 8px; }
+.fl-tabs span { padding: 5px 12px; border-radius: 5px; color: var(--ed-ink-3); }
+.fl-tabs span.on { background: var(--ed-raise); color: var(--ed-ink); box-shadow: inset 0 0 0 1px var(--ed-line-2); }
+.fl-run { display: flex; align-items: center; gap: 7px; height: 30px; padding: 0 14px; border-radius: 6px; background: var(--ed-amber); color: #1A1406; font-weight: 600; white-space: nowrap; }
+.fl-run svg { width: 11px; height: 11px; }
+
+/* --- build list --- */
+.fl-left { grid-area: left; display: flex; flex-direction: column; min-height: 0; background: var(--ed-panel); border-right: 1px solid var(--ed-line); }
+.fl-ltabs { display: flex; gap: 18px; padding: 0 14px; height: 38px; align-items: center; border-bottom: 1px solid var(--ed-line); flex: none; }
+.fl-ltabs span { display: flex; align-items: center; gap: 7px; height: 100%; font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ed-ink-3); }
+.fl-ltabs span.on { color: var(--ed-ink); box-shadow: inset 0 -2px 0 var(--ed-accent); }
+.fl-ltabs b { font-weight: 500; font-size: 10.5px; color: var(--ed-ink-2); background: var(--ed-raise); padding: 1px 6px; border-radius: 5px; letter-spacing: 0; }
+.fl-find { display: flex; align-items: center; gap: 8px; margin: 10px 10px 6px; padding: 0 10px; height: 32px; border: 1px solid var(--ed-line-2); border-radius: 7px; background: var(--ed-bg); flex: none; }
+.fl-find svg { width: 14px; height: 14px; color: var(--ed-ink-3); flex: none; }
+.fl-find input { all: unset; flex: 1; min-width: 0; color: var(--ed-ink); font-size: 12.5px; }
+.fl-find input::placeholder { color: var(--ed-ink-3); }
+.fl-list { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 10px; scrollbar-width: thin; scrollbar-color: var(--ed-line-2) transparent; }
+.fl-list::-webkit-scrollbar { width: 9px; }
+.fl-list::-webkit-scrollbar-track { background: transparent; }
+.fl-list::-webkit-scrollbar-thumb { background: var(--ed-line-2); border-radius: 99px; }
+.fl-room { display: flex; width: 100%; align-items: center; justify-content: space-between; padding: 11px 14px 4px; font-size: 10.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ed-ink-3); text-align: left; }
+.fl-room:hover { color: var(--ed-ink); }
+.fl-room b { font-weight: 400; letter-spacing: 0; }
+.fl-item { position: relative; display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; align-items: center; gap: 8px; width: 100%; padding: 5px 14px; text-align: left; color: var(--ed-ink); }
+.fl-item:hover { background: var(--ed-raise); }
+.fl-item.on { background: var(--ed-wash); }
+.fl-item.on::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: var(--ed-accent); }
+.fl-item svg { width: 15px; height: 15px; color: var(--ed-ink-3); }
+.fl-item.on svg { color: var(--ed-accent); }
+.fl-item span { font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fl-item em { font-size: 10px; color: var(--ed-ink-3); }
+
+/* --- viewport --- */
+.fl-vp { grid-area: vp; position: relative; min-width: 0; min-height: 0; overflow: hidden; background: radial-gradient(120% 90% at 50% 38%, #262A31 0%, #181B20 55%, #101215 100%); }
+.fl-vp canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; touch-action: pan-y; }
+.fl-vp canvas.hover { cursor: pointer; }
+.fl-vp canvas:active { cursor: grabbing; }
+.fl-tags { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+.fl-tag {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(14, 16, 19, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--ed-ink);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: auto;
+  cursor: pointer;
+  will-change: transform;
+  transition: border-color 0.15s;
+}
+.fl-tag:hover { border-color: rgba(76, 141, 255, 0.7); }
+.fl-tag b { font-weight: 400; font-size: 10.5px; color: var(--ed-ink-3); }
+.fl-tag-sel { background: var(--ed-accent); border-color: var(--ed-accent); color: #fff; pointer-events: none; }
+.fl-tag-sel b { color: rgba(255, 255, 255, 0.78); }
+.fl-tools { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; gap: 6px; z-index: 3; pointer-events: none; }
+.fl-group { display: flex; align-items: center; gap: 1px; padding: 3px; background: rgba(20, 22, 25, 0.86); border: 1px solid var(--ed-line-2); border-radius: 8px; pointer-events: auto; backdrop-filter: blur(6px); }
+.fl-group button, .fl-group span { display: flex; align-items: center; height: 28px; padding: 0 10px; border-radius: 5px; color: var(--ed-ink-2); font-size: 12.5px; white-space: nowrap; }
+.fl-group button:hover { background: var(--ed-raise); color: var(--ed-ink); }
+.fl-group button.on { background: var(--ed-wash); color: var(--ed-accent); box-shadow: inset 0 0 0 1px rgba(76, 141, 255, 0.45); }
+.fl-snap span { color: var(--ed-ink); font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 12px; }
+.fl-tick { position: absolute; left: 14px; bottom: 12px; z-index: 3; font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 12px; color: var(--ed-amber); font-variant-numeric: tabular-nums; }
+.fl-load {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  z-index: 4;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 7px;
+  white-space: nowrap;
+  background: rgba(20, 22, 25, 0.86);
+  border: 1px solid var(--ed-line-2);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--ed-ink-2);
+}
+
+/* The still, for a phone or a connection that has asked for less. */
+.fl-poster { position: absolute; inset: 0; }
+.fl-poster img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.fl-poster-ask {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 20px;
+  text-align: center;
+  background: linear-gradient(to bottom, rgba(10, 9, 8, 0.2), rgba(10, 9, 8, 0.66));
+}
+.fl-poster-ask .m { color: var(--ed-ink-2); }
+
+/* --- checks --- */
+.fl-checks { grid-area: checks; display: flex; align-items: center; gap: 13px; padding: 7px 12px; min-height: 38px; background: var(--ed-panel); border-top: 1px solid var(--ed-line); min-width: 0; }
+.fl-chk-tab { display: flex; align-items: center; gap: 7px; padding: 4px 10px; border-radius: 6px; background: var(--ed-raise); font-weight: 600; white-space: nowrap; }
+.fl-chk-tab b { font-size: 10.5px; font-weight: 500; color: #1A1406; background: var(--ed-amber); border-radius: 999px; padding: 0 6px; }
+.fl-chk { display: flex; align-items: center; gap: 9px; min-width: 0; color: var(--ed-ink); text-align: left; }
+.fl-chk i { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--ed-amber); box-shadow: 0 0 0 3px rgba(255, 176, 32, 0.18); }
+.fl-chk span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fl-chk:hover span { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--ed-ink-3); }
+
+/* --- inspector --- */
+.fl-right { grid-area: right; overflow-y: auto; min-height: 0; background: var(--ed-panel); border-left: 1px solid var(--ed-line); scrollbar-width: thin; scrollbar-color: var(--ed-line-2) transparent; }
+.fl-in-head { display: flex; align-items: center; height: 38px; padding: 0 14px; border-bottom: 1px solid var(--ed-line); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ed-ink-3); }
+.fl-in-name { margin: 0; padding: 14px 14px 6px; font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
+.fl-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px 12px; border-bottom: 1px solid var(--ed-line); }
+.fl-chips span { font-size: 11.5px; padding: 2px 8px; border-radius: 5px; border: 1px solid var(--ed-line-2); color: var(--ed-ink-2); }
+.fl-chips span.live { border-color: rgba(255, 176, 32, 0.5); color: var(--ed-amber); }
+.fl-in-sec { padding: 10px 14px 12px; border-bottom: 1px solid var(--ed-line); }
+.fl-in-sec h4 { margin: 0 0 8px; font-family: inherit; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ed-ink-3); }
+.fl-in-row { display: grid; grid-template-columns: 80px minmax(0, 1fr); align-items: center; gap: 8px; min-height: 30px; }
+.fl-in-row label { color: var(--ed-ink-2); font-size: 12.5px; }
+.fl-field { display: flex; justify-content: space-between; align-items: center; height: 28px; padding: 0 9px; border: 1px solid var(--ed-line-2); border-radius: 5px; background: var(--ed-bg); font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 12px; font-variant-numeric: tabular-nums; }
+.fl-field small { color: var(--ed-ink-3); font-size: 10.5px; }
+.fl-spec { display: flex; justify-content: space-between; gap: 10px; padding: 4px 0; font-size: 12.5px; }
+.fl-spec span { color: var(--ed-ink-2); white-space: nowrap; }
+.fl-spec b { font-weight: 400; font-size: 12px; text-align: right; }
+.fl-credit { margin: 0; padding: 10px 14px 16px; font-size: 11.5px; line-height: 1.45; color: var(--ed-ink-3); }
+.fl-credit a { color: var(--ed-ink-2); text-decoration: underline; text-underline-offset: 2px; }
+
+/* --- status --- */
+.fl-status { grid-area: status; display: flex; align-items: center; gap: 17px; padding: 0 14px; background: var(--ed-bg); border-top: 1px solid var(--ed-line); font-size: 11.5px; color: var(--ed-ink-3); white-space: nowrap; overflow: hidden; }
+.fl-status b { font-weight: 500; font-size: 11px; color: var(--ed-ink); }
+.fl-status .run { display: flex; align-items: center; gap: 6px; }
+.fl-status .run i { width: 6px; height: 6px; border-radius: 50%; background: var(--ed-amber); animation: dr-pulse 2.4s ease-in-out infinite; }
+.fl-push { margin-left: auto; }
+
+/* Narrow: drop the build list, keep the inspector. */
+@media (max-width: 1180px) {
+  .dr .fl {
+    --right: 248px;
+    grid-template-columns: minmax(0, 1fr) var(--right);
+    grid-template-areas:
+      "top top"
+      "vp right"
+      "checks right"
+      "status status";
+  }
+  .fl-left, .fl-proj, .fl-saved, .fl-sep { display: none; }
+}
+/* Phone: stack the viewport over the inspector. */
+@media (max-width: 760px) {
+  .dr .fl {
+    height: auto;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 44px auto auto auto 28px;
+    grid-template-areas: "top" "vp" "checks" "right" "status";
+  }
+  .fl-vp { aspect-ratio: 4 / 3.4; }
+  .fl-tabs { display: none; }
+  .fl-run { margin-left: auto; }
+  .fl-right { border-left: 0; border-top: 1px solid var(--ed-line); overflow: visible; }
+  .fl-in-tr, .fl-in-head, .fl-chk-tab, .fl-hide-s { display: none; }
+  .fl-chk span { white-space: normal; }
+  .fl-tag:not(.fl-tag-sel) b { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fl-status .run i { animation: none; }
+  .fl-tag { transition: none; }
+}
+
+/* --- schematic ink, for the one circuit left on the page --------- */
+
+.dr-ink .wire { stroke: var(--rule-3); stroke-width: 3; fill: none; }
+.dr-ink .sym { stroke: var(--ink-0); stroke-width: 2.2; fill: none; stroke-linecap: round; }
+.dr-ink .sym-fill { stroke: var(--ink-0); stroke-width: 2.2; fill: var(--paper-2); }
+/*
+ * The current, drawn as current. The dashes run at a speed set from
+ * the figure beside them, so the one animated thing in this drawing is
+ * also the one being measured — turn the resistor up and they slow.
+ */
+.dr-ink .flow {
+  stroke: var(--live-2);
+  stroke-width: 3;
+  fill: none;
+  stroke-dasharray: 14 12;
+  stroke-linecap: round;
+  animation: dr-flow 0.5s linear infinite;
+}
+.dr-ink .flow-bad { stroke: var(--bad); }
+@keyframes dr-flow { to { stroke-dashoffset: -26; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .dr-ink .flow { animation: none; }
+}
+
+.dr-sec-floor { background: var(--paper-2); border-block: 1px solid var(--rule-2); }
+.dr-floor-note { margin-top: 16px; color: var(--ink-2); font-size: 14px; max-width: 70ch; }
+
+/* --- the gallery: twelve frames out of the viewport ------------- */
+
+/*
+ * The one place on the page that is renders rather than drawings. A
+ * dark frame on light paper was the thing that sank four earlier
+ * versions of this page, and it works here for a reason worth
+ * writing down: there it was a single hero shot asked to prove the
+ * product on its own, with nothing around it to give it scale. Twelve
+ * of them in a register, each under a line of counts off the
+ * registry, is a contact sheet — the darkness is the subject, not a
+ * hole in the page.
+ */
+.dr-gal {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(258px, 1fr));
+  gap: 1px;
+  background: var(--rule-2);
+  border: 1px solid var(--rule-2);
+  border-radius: 5px;
+  overflow: hidden;
+}
+.dr-gal-item {
+  margin: 0;
+  background: var(--paper-1);
+  display: flex;
+  flex-direction: column;
+}
+.dr-gal-item img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  background: var(--void);
+}
+/* Stacked, not wrapped: on one row the short names kept their counts
+   beside them and the long ones pushed theirs to a second line, so a
+   register of twelve had captions on two different baselines. */
+.dr-gal-item figcaption {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 13px 12px;
+  border-top: 1px solid var(--rule);
+}
+.dr-gal-item strong {
+  color: var(--ink-0);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.dr-gal-item .m { color: var(--ink-2); font-size: 11.5px; }
+.dr-gal-item:hover .m { color: var(--live); }
+
+/* --- the product, under the sum --------------------------------- */
+
+/*
+ * Each bench had a drawing and a paragraph and a hole under the
+ * verdict where the column ran out of things to say. The hole is the
+ * screenshot: the editor frame the figure above it came out of, in
+ * the same column so the two are read together rather than filed in a
+ * gallery three screens down.
+ *
+ * A thin light rule and a caption bar, so a dark frame on light paper
+ * reads as a plate in a catalogue rather than as a hole in the sheet.
+ */
+.dr-bench-shot {
+  grid-area: shot;
+  margin: clamp(10px, 2vh, 26px) 0 0;
+  border: 1px solid var(--rule-2);
+  border-radius: 5px;
+  overflow: hidden;
+  background: var(--void);
+  box-shadow: 0 1px 2px rgba(20, 17, 13, 0.05), 0 12px 32px -20px rgba(20, 17, 13, 0.4);
+}
+.dr-bench-shot img { display: block; width: 100%; height: auto; }
+.dr-bench-shot figcaption {
+  padding: 8px 12px 9px;
+  border-top: 1px solid var(--rule);
+  background: var(--paper-2);
+  color: var(--ink-2);
+}
+
+/* A screenshot standing on its own, in the same plate the drawings use. */
+.dr-shot { margin: 0; }
+.dr-shot img { display: block; width: 100%; height: auto; }
+
+/* --- the caret on the retyped word ------------------------------ */
+
+/*
+ * An <em>, not a <b>, and the handles are matched by type rather than
+ * by position. The badge is the <b> in this box, so a second one would
+ * have been absolutely positioned into the corner, and inserting any
+ * element before the four handles shifts every nth-child under it.
+ */
+.dr-caret {
+  display: inline-block;
+  width: 0.06em;
+  min-width: 2px;
+  height: 0.78em;
+  margin-left: 0.04em;
+  vertical-align: baseline;
+  background: var(--sel);
+  opacity: 0;
+}
+.dr-sel[data-live] .dr-caret { opacity: 1; animation: dr-blink 1s steps(1) infinite; }
+@keyframes dr-blink { 50% { opacity: 0; } }
+/* While it is being retyped the word can be empty, and a selection box
+   collapsed to nothing reads as a glitch rather than as an edit. */
+.dr-sel[data-live] { min-width: 0.5em; }
+
+/* --- the carousel ------------------------------------------------ */
+
+.dr-car { position: relative; }
+.dr-car-track {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  /* The slides are plates with shadows; without this the shadow is
+     clipped flat against the scroller's edge. */
+  padding-bottom: 4px;
+}
+.dr-car-track::-webkit-scrollbar { display: none; }
+.dr-car-slide {
+  flex: 0 0 100%;
+  scroll-snap-align: center;
+  margin: 0;
+  border: 1px solid var(--rule-2);
+  border-radius: 7px;
+  overflow: hidden;
+  background: var(--void);
+  box-shadow: 0 1px 2px rgba(20, 17, 13, 0.05), 0 18px 50px -28px rgba(20, 17, 13, 0.35);
+}
+.dr-car-slide img { display: block; width: 100%; height: auto; }
+
+.dr-car-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 18px;
+}
+.dr-car-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--rule-2);
+  border-radius: 4px;
+  background: var(--paper-1);
+  color: var(--ink-0);
+  cursor: pointer;
+  transition: border-color 0.16s, background 0.16s, opacity 0.16s;
+}
+.dr-car-btn svg { width: 16px; height: 16px; }
+.dr-car-btn:hover:not(:disabled) { border-color: var(--rule-3); background: var(--paper-2); }
+.dr-car-btn:disabled { opacity: 0.32; cursor: default; }
+
+.dr-car-dots { display: flex; gap: 6px; }
+.dr-car-dots button {
+  width: 7px;
+  height: 7px;
+  padding: 0;
+  border: 0;
+  border-radius: 99px;
+  background: var(--rule-3);
+  cursor: pointer;
+  transition: background 0.16s, width 0.2s;
+}
+.dr-car-dots button[aria-selected='true'] { width: 20px; background: var(--ink-0); }
+.dr-car-n { margin-left: auto; color: var(--ink-2); }
+
+@media (prefers-reduced-motion: reduce) {
+  .dr-caret { animation: none; }
+  .dr-car-track { scroll-behavior: auto; }
+}
+
+/* The headline and the editor were touching once the sub-head and the
+   buttons between them were removed. */
+.dr-hero #floor { margin-top: clamp(26px, 4.5vh, 56px); }

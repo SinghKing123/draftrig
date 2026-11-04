@@ -37,6 +37,7 @@ import './lighting'
 import './decor'
 import './instruments'
 import './tooling'
+import './cinema'
 import './room'
 
 export { allParts, defaultParams, getPart, partsByCategory, searchParts, CATEGORY_META } from '../kernel/registry'

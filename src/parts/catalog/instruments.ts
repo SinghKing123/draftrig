@@ -37,6 +37,12 @@ const BENCH_CASE = { color: '#D5D2CB', rough: 0.6, density: 1.5 }
 
 const oscilloscope: PartDef = {
   id: 'oscilloscope',
+  model: {
+    url: 'models/oscilloscope.glb',
+    fit: 'bbox',
+    axes: { x: 'fill', z: [0.05, 0.95] },
+    credit: { title: 'Oscilloscope', author: 'Neg0Die', license: 'CC-BY-4.0', source: 'https://sketchfab.com/3d-models/oscilloscope-54067b53146d467987bc2c72ec604645' },
+  },
   name: 'Oscilloscope',
   category: 'instrument',
   blurb: 'Bandwidth, channels, and a probe that loads the node',
