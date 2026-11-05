@@ -171,8 +171,22 @@ export function homeTheatre(): Doc {
 
   const sub = b.add('subwoofer-desk', [400, 0, SCREEN_Z - 700], { driver: '12', crossover: 80, on: true, level: 25 }, [0, 24, 0], 'Subwoofer')
 
-  const avr = b.add('receiver-av', [W - 700, 420, 700], { channels: '7.2', watts: 110, hdmi: 6, state: 'watch' }, [0, 180, 0], 'Receiver')
-  b.add('rack-network', [W - 700, 0, 700], { style: 'open', height: 6, depth: 500, used: 3 }, [0, 180, 0], 'Rack')
+  /*
+   * The equipment corner, standing on the riser rather than in it.
+   *
+   * The riser is 300 mm of platform filling the back 2.7 m of the room,
+   * and all three of these were inside that footprint at floor height:
+   * the rack buried to its third unit, the receiver floating 93 mm
+   * above the rack top, the LED driver somewhere inside the step.
+   *
+   * The receiver goes in the rack rather than on it, which is what an
+   * open 6U frame with three units used is for, and is also what stops
+   * seven pairs of speaker cable being drawn down through the frame on
+   * their way out of its back panel. Its terminals are then inside the
+   * rack's own hull, where the router leaves them alone.
+   */
+  const avr = b.add('receiver-av', [W - 700, RISER_H + 40, 700], { channels: '7.2', watts: 110, hdmi: 6, state: 'watch' }, [0, 180, 0], 'Receiver')
+  b.add('rack-network', [W - 700, RISER_H, 700], { style: 'open', height: 6, depth: 500, used: 3 }, [0, 180, 0], 'Rack')
 
   /* --- Treatment. First reflection points are halfway between the speaker
      and the seat on each side wall, which for this geometry is about 2.6 m
@@ -180,12 +194,13 @@ export function homeTheatre(): Doc {
   for (const x of [40, W - 40]) {
     b.add('panel-acoustic', [x, 0, SCREEN_Z - 2600], { width: 600, height: 1200, thickness: 50, gap: 40, count: 4, wallArea: 58 }, [0, x < 100 ? 90 : -90, 0], 'Acoustic panel')
   }
-  b.add('panel-acoustic', [CX - 900, 0, 60], { width: 1200, height: 1200, thickness: 100, gap: 0, count: 2, wallArea: 58 }, [0, 0, 0], 'Rear absorber')
+  /* On the back wall, which behind the back row starts at the riser. */
+  b.add('panel-acoustic', [CX - 900, RISER_H, 60], { width: 1200, height: 1200, thickness: 100, gap: 0, count: 2, wallArea: 58 }, [0, 0, 0], 'Rear absorber')
 
   /* --- Light. A strip under the riser nosing is part of the riser; this is
      the step lighting and the bias behind the screen. */
   const strip = b.add('strip-cob-24v', [CX, SCREEN_BOTTOM + IMG_H - 100, SCREEN_Z - 90], { length: 2400, wpm: 8, kelvin: 2700, feed: 'one', dim: 40 }, [0, 0, 0], 'Bias strip')
-  const driver = b.add('driver-led', [W - 700, 20, 1100], { vout: '24', rating: '30', loadW: 8, dimmable: true }, [0, 0, 0], 'LED driver')
+  const driver = b.add('driver-led', [W - 700, RISER_H + 20, 1100], { vout: '24', rating: '30', loadW: 8, dimmable: true }, [0, 0, 0], 'LED driver')
 
   /* ================================================================ */
   /* Wiring                                                            */
@@ -198,19 +213,51 @@ export function homeTheatre(): Doc {
     ['e', 'e', GREEN_E],
   ]
   const FLOOR = 24
+  /*
+   * The riser's front edge, which is where the front row stands. Its
+   * part draws a nosing and a step past the 2400 mm of depth it is
+   * given, and the hull reaches ROW1_Z.
+   */
+  const RISER_FRONT = ROW1_Z
+  /*
+   * Cable height on the platform, as against on the floor.
+   *
+   * Sixty millimetres rather than resting on the surface, because this
+   * is the height of the trunking these runs are in and because a
+   * drawn cable is a spline: at 12 mm proud the sag between two
+   * waypoints put every one of them back inside the riser, which is
+   * the thing the trunking exists to stop.
+   */
+  const ON_RISER = RISER_H + 60
 
   /* Four socket positions on the back wall; this build uses three of them. */
   const outlet = b.add('outlet-mains', [W - 1400, 450, 20], { region: 'uk', ways: '2', switched: true }, [0, 0, 0], 'Wall socket')
 
-  /** Along the floor and up behind whatever it feeds. */
+  /**
+   * Along the riser and up behind whatever it feeds.
+   *
+   * The socket is on the back wall 150 mm above the platform, and for
+   * the first 2.7 m of the room there is no floor to run along — there
+   * is riser. So the cable runs on the platform, and drops off the
+   * front edge only for the things that are past it. Routed along the
+   * floor instead, every one of these leads was drawn through the
+   * inside of the riser, and the three to the receiver through the
+   * rack as well.
+   */
   const run = (from: string, fromPins: [string, string, string], to: string, gauge: number): void => {
     const a = at(from)
     const c = at(to)
+    const beyond = c[2] > RISER_FRONT - 200
     CORES.forEach(([pa, pb, col], i) => {
-      b.wireVia([from, fromPins[i]], [to, pb], [
-        [a[0], FLOOR, a[2] + 160],
-        [c[0] - 120, FLOOR, c[2] - 160],
-      ], col, gauge)
+      const via: Vec3[] = [[a[0], ON_RISER, a[2] + 160]]
+      if (beyond) {
+        via.push([c[0] - 120, ON_RISER, RISER_FRONT - 160])
+        via.push([c[0] - 120, FLOOR, RISER_FRONT + 180])
+        via.push([c[0] - 120, FLOOR, c[2] - 160])
+      } else {
+        via.push([c[0] - 120, ON_RISER, c[2] - 160])
+      }
+      b.wireVia([from, fromPins[i]], [to, pb], via, col, gauge)
       void pa
     })
   }
@@ -221,8 +268,9 @@ export function homeTheatre(): Doc {
      which is why it is drawn rather than assumed. */
   CORES.forEach(([pa, pb, col]) => {
     b.wireVia([outlet, `a${pa}`], [proj, pb], [
-      [W - 1400, FLOOR, 200],
-      [W - 200, FLOOR, 200],
+      [W - 1400, ON_RISER, 200],
+      [W - 200, ON_RISER, 200],
+      [W - 200, ON_RISER + 500, 200],
       [W - 200, H - 100, 200],
       [W - 200, H - 100, SCREEN_Z - 3450],
     ], col, 1.0)
@@ -246,10 +294,31 @@ export function homeTheatre(): Doc {
     [topL, 6, 1.5],
     [topR, 7, 1.5],
   ]
+  /*
+   * Out of the rack, up the back corner and across the ceiling.
+   *
+   * Three routes were tried along the floor and all three are drawn
+   * through something: the first 2.7 m of floor is riser, the front
+   * edge is where the front row sits, and the gap beside the chairs is
+   * narrower than the bow the router needs. The ceiling is clear the
+   * whole way, it reaches a wall speaker, a ceiling speaker and a
+   * floor-standing one without a special case for each, and it is
+   * where this cable goes in a room that has been built rather than
+   * drawn: up the corner, along the void, down at the speaker.
+   */
+  const CEIL = H - 100
+  const SIDE = W - 200
+  const over = (x: number, z: number, lift: number): Vec3[] => [
+    [SIDE, ON_RISER, 400 + lift],
+    [SIDE, ON_RISER + 500, 400 + lift],
+    [SIDE, CEIL, 400 + lift],
+    [SIDE, CEIL, z],
+    [x, CEIL, z],
+  ]
   for (const [spk, ch, gauge] of CHANNELS) {
     const s = at(spk)
-    b.wireVia([avr, `ch${ch}p`], [spk, 'pos'], [[W - 700, FLOOR, 400], [s[0], FLOOR, s[2] - 200]], SPK_RED, gauge)
-    b.wireVia([avr, `ch${ch}n`], [spk, 'neg'], [[W - 680, FLOOR, 420], [s[0] + 30, FLOOR, s[2] - 200]], BLACK, gauge)
+    b.wireVia([avr, `ch${ch}p`], [spk, 'pos'], over(s[0], s[2] - 120, 0), SPK_RED, gauge)
+    b.wireVia([avr, `ch${ch}n`], [spk, 'neg'], over(s[0] + 30, s[2] - 90, 24), BLACK, gauge)
   }
 
   /* --- 24 V to the bias strip. */
@@ -259,8 +328,9 @@ export function homeTheatre(): Doc {
   /* --- Picture. One HDMI from the receiver to the projector, up the same
      route as its mains and nowhere near as long as people expect. */
   b.wireVia([avr, 'hdmiout'], [proj, 'hdmi1'], [
-    [W - 700, FLOOR, 300],
-    [W - 240, FLOOR, 300],
+    [W - 700, ON_RISER, 300],
+    [W - 240, ON_RISER, 300],
+    [W - 240, ON_RISER + 500, 300],
     [W - 240, H - 140, 300],
     [W - 240, H - 140, SCREEN_Z - 3450],
   ], '#2E3136', 0.5)
