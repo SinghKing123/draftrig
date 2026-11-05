@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { BRAND, pageTitle } from '@/brand'
 import { Wordmark } from '@/ui/Logo'
-import { Reveal, useScrolled } from '@/ui/motion'
+import { Reveal, useMedia, useScrolled } from '@/ui/motion'
 import { ModelCredits } from '@/ui/ModelCredits'
 import { Arcs, Grid } from './lp/Paper'
 import { Typer } from './lp/Typer'
@@ -42,6 +42,24 @@ import { Gallery } from './lp/Gallery'
  * cannot produce.
  */
 
+/*
+ * Wide enough for the room to be worth its download.
+ *
+ * The live scene is 26.2 MB of mesh, and on a phone that is most of a
+ * minute and somebody's data. Below this it is not loaded at all —
+ * not deferred, not a poster with a button, not there: the component
+ * never mounts, so nothing asks for a single .glb.
+ *
+ * A width rather than a user-agent, which is also the behaviour
+ * people expect from "request desktop site": that setting widens the
+ * viewport, so asking for the desktop site asks for the room with it.
+ *
+ * What a phone gets instead is the section below, which is the editor
+ * in six real frames and the whole catalogue to search. That is the
+ * same argument made out of 1.3 MB.
+ */
+const WIDE = '(min-width: 900px)'
+
 /** The catalogue's own section names, for the strip under the hero. */
 const SECTIONS = [
   'Rooms & openings',
@@ -68,6 +86,7 @@ function GithubGlyph() {
 
 export function Landing() {
   const scrolled = useScrolled()
+  const wide = useMedia(WIDE)
 
   useEffect(() => {
     document.title = pageTitle()
@@ -110,18 +129,18 @@ export function Landing() {
         </div>
 
         {/*
-          * The product itself, above the fold, loading as the page does.
-          * It costs twenty-six megabytes of mesh — see the note in
-          * `Floor` for why it fetches them anyway — and the shell and
-          * the floor paint at once, so what a reader sees first is the
-          * editor building the room.
+          * The product itself, above the fold, loading as the page
+          * does — on a screen wide enough to be worth 26.2 MB. See
+          * WIDE above, and the note in `Floor`.
           */}
-        <div id="floor">
-          <Reveal now delay={520} className="dr-w">
-            <Floor />
-            <p className="dr-floor-note">Drag to orbit, click a part.</p>
-          </Reveal>
-        </div>
+        {wide && (
+          <div id="floor">
+            <Reveal now delay={520} className="dr-w">
+              <Floor />
+              <p className="dr-floor-note">Drag to orbit, click a part.</p>
+            </Reveal>
+          </div>
+        )}
       </header>
 
       {/* ---- the editor, screen by screen, and the box it comes with ---- */}
@@ -215,7 +234,7 @@ export function Landing() {
 
           <nav className="dr-foot-col">
             <h3>On this page</h3>
-            <a href="#floor">The live floor</a>
+            {wide && <a href="#floor">The live floor</a>}
             <a href="#screens">Workspaces</a>
             <a href="#asked">Solvers</a>
             <a href="#built">Viewport</a>

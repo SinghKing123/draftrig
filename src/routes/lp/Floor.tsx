@@ -19,10 +19,17 @@ import { ROOMS } from './floor/rooms'
  * argument that 26 MB of mesh is not something to fetch without being
  * asked — but the room is the first thing on the page and a picture of
  * it behind a button is a picture, which is the one thing this page is
- * not supposed to be. So it loads on arrival, everywhere, and the
- * shell and the floor paint while the furniture is still coming: what
- * a reader sees in the first second is the editor building the room,
- * not a still of one it built earlier.
+ * not supposed to be. So it loads on arrival, and the shell and the
+ * floor paint while the furniture is still coming: what a reader sees
+ * in the first second is the editor building the room, not a still of
+ * one it built earlier.
+ *
+ * The mesh is why `Landing` does not render this below 900px. The
+ * answer to 26 MB on a phone is not a poster of the room, it is the
+ * rest of the page, which is the editor in six real frames and a
+ * catalogue of 266 parts. Nothing here is deferred or progressive:
+ * above the width it loads, below it this component never mounts and
+ * not one .glb is requested.
  *
  * The orbit rig never takes the wheel. Scroll belongs to the page.
  */
