@@ -1,7 +1,8 @@
-import type { DeviceModel, ModelSpec, PartDef, Port, Solid, Vec3 } from '../kernel/types'
+import type { DeviceModel, ModelSpec, Params, PartDef, Port, Solid, Vec3 } from '../kernel/types'
 import { registerParts } from '../kernel/registry'
 import { bool, num, str } from './_helpers'
 import { ALU, DARK, PLASTIC, REGION_PARAM, STEEL, amps, dutyWatts, load, mainsPorts, screen, volts } from './setup'
+import { GENERIC, dictates, effective, productOf, productOptions, productSize, productsFor } from '../products'
 
 /**
  * Screens, computers and the furniture they stand on.
@@ -264,6 +265,22 @@ const desktopMonitor: PartDef = {
   },
 }
 
+/**
+ * The projector body, in mm.
+ *
+ * Generic, it is a proxy off the brightness, because a brighter
+ * projector is a bigger one and a box that never changed size was the
+ * giveaway that nothing here was real. With a product chosen it is that
+ * product's stated size, which is the figure the shelf gets built to.
+ */
+function projectorBody(p: Params): Vec3 {
+  const real = productSize(p)
+  if (real) return real
+  const lm = parseInt(str(effective(p), 'lumens', '2500'), 10) || 2500
+  const s = 180 + lm * 0.024
+  return [s, s * 0.42, s * 0.78]
+}
+
 const projector: PartDef = {
   id: 'projector',
   // A clean box with a lens in it. The throw ratio and the lens offset are
@@ -286,47 +303,73 @@ const projector: PartDef = {
   },
   params: [
     REGION_PARAM,
-    { key: 'lumens', label: 'Brightness', type: 'enum', default: '2500', group: 'Projector', options: ['1000', '2000', '2500', '3500', '5000'].map((v) => ({ value: v, label: `${v} lm` })) },
-    { key: 'throw', label: 'Throw ratio', type: 'number', default: 1.5, min: 0.25, max: 3, step: 0.05, group: 'Projector', help: 'Distance divided by image width. Under 0.5 is short throw; under 0.3 is the kind that sits under the screen.' },
+    /*
+     * A real make and model, or generic.
+     *
+     * Hidden until there are products to choose, so the field never
+     * appears as a dropdown with one dead entry in it. Choosing one
+     * fixes the figures it decides and hides their fields: a body drawn
+     * at a real 312 mm beside a brightness slider still reading 2,500 lm
+     * would be a drawing of two different projectors.
+     */
+    { key: 'model', label: 'Model', type: 'enum', default: GENERIC, group: 'Projector', options: productOptions('projector'), showIf: () => productsFor('projector').length > 0 },
+    { key: 'lumens', label: 'Brightness', type: 'enum', default: '2500', group: 'Projector', options: ['1000', '2000', '2500', '3500', '5000'].map((v) => ({ value: v, label: `${v} lm` })), showIf: (p) => !dictates(p, 'lumens') },
+    { key: 'throw', label: 'Throw ratio', type: 'number', default: 1.5, min: 0.25, max: 3, step: 0.05, group: 'Projector', help: 'Distance divided by image width. Under 0.5 is short throw; under 0.3 is the kind that sits under the screen.', showIf: (p) => !dictates(p, 'throw') },
     { key: 'image', label: 'Image width', type: 'number', unit: 'mm', default: 2200, min: 600, max: 6000, step: 100, group: 'Projector' },
     { key: 'aspect', label: 'Aspect', type: 'enum', default: '16:9', group: 'Projector', options: [{ value: '16:9', label: '16:9' }, { value: '2.35', label: '2.35:1, scope' }, { value: '4:3', label: '4:3' }] },
     { key: 'gain', label: 'Screen gain', type: 'number', unit: '', default: 1.1, min: 0.6, max: 2.4, step: 0.05, group: 'Image', help: 'What it is throwing at. A matt white screen is 1.0 to 1.1.' },
     { key: 'hours', label: 'Lamp hours', type: 'number', unit: 'h', default: 0, min: 0, max: 20000, step: 100, group: 'Image', help: 'A lamp loses a quarter of its output in the first 1,500 hours. A laser holds for 20,000.' },
-    { key: 'source', label: 'Light source', type: 'enum', default: 'laser', group: 'Projector', options: [{ value: 'lamp', label: 'Lamp' }, { value: 'laser', label: 'Laser' }, { value: 'led', label: 'LED' }] },
-    { key: 'shift', label: 'Lens shift', type: 'number', unit: '%', default: 0, min: -120, max: 120, step: 5, group: 'Mount', help: 'Vertical, as a percentage of image height. This is what lets a ceiling-mounted projector put a level image on a screen below it.' },
+    { key: 'source', label: 'Light source', type: 'enum', default: 'laser', group: 'Projector', options: [{ value: 'lamp', label: 'Lamp' }, { value: 'laser', label: 'Laser' }, { value: 'led', label: 'LED' }], showIf: (p) => !dictates(p, 'source') },
+    { key: 'shift', label: 'Lens shift', type: 'number', unit: '%', default: 0, min: -120, max: 120, step: 5, group: 'Mount', help: 'Vertical, as a percentage of image height. This is what lets a ceiling-mounted projector put a level image on a screen below it.', showIf: (p) => !dictates(p, 'shift') },
     { key: 'on', label: 'Lamp on', type: 'bool', default: true, group: 'Control' },
   ],
   solids: (p) => {
-    const lm = parseInt(str(p, 'lumens', '2500'), 10) || 2500
-    const s = 180 + lm * 0.024
+    const [w, h, d] = projectorBody(p)
     const on = bool(p, 'on', true)
     return [
-      { kind: 'box', mat: { color: '#E9E7E2', rough: 0.5, density: 1.3 }, size: [s, s * 0.42, s * 0.78], at: [0, (s * 0.42) / 2, 0], bevel: 6 },
-      { kind: 'cyl', mat: BLACK_PLASTIC, r: s * 0.12, h: 16, seg: 28, at: [s * 0.26, s * 0.24, s * 0.39], rot: [90, 0, 0] },
+      { kind: 'box', mat: { color: '#E9E7E2', rough: 0.5, density: 1.3 }, size: [w, h, d], at: [0, h / 2, 0], bevel: 6 },
+      { kind: 'cyl', mat: BLACK_PLASTIC, r: w * 0.12, h: 16, seg: 28, at: [w * 0.26, h * 0.57, d * 0.5], rot: [90, 0, 0] },
       {
-        kind: 'cyl', seg: 28, r: s * 0.09, h: 2, at: [s * 0.26, s * 0.24, s * 0.4 + 8], rot: [90, 0, 0],
+        kind: 'cyl', seg: 28, r: w * 0.09, h: 2, at: [w * 0.26, h * 0.57, d * 0.5 + 8], rot: [90, 0, 0],
         mat: on
           ? { color: '#F2F6FF', rough: 0.1, density: 2.4, emissive: '#DCEBFF', emissiveIntensity: 2.4 }
           : { color: '#1A1E26', rough: 0.2, density: 2.4 },
       },
       // Exhaust, which is also the reason it cannot go in a cupboard.
-      { kind: 'box', mat: { color: '#3A3D44', rough: 0.8, density: 1.2 }, size: [6, s * 0.2, s * 0.3], at: [-s / 2 - 1, s * 0.22, 0] },
-      ...socketBlocks(3, [0, s * 0.12, -s * 0.4], 20),
-      { kind: 'cyl', mat: SOFT, r: 9, h: 6, seg: 14, at: [s * 0.38, 3, s * 0.28] },
-      { kind: 'cyl', mat: SOFT, r: 9, h: 6, seg: 14, at: [-s * 0.38, 3, -s * 0.28] },
+      { kind: 'box', mat: { color: '#3A3D44', rough: 0.8, density: 1.2 }, size: [6, h * 0.48, d * 0.39], at: [-w / 2 - 1, h * 0.52, 0] },
+      ...socketBlocks(3, [0, h * 0.29, -d * 0.51], 20),
+      { kind: 'cyl', mat: SOFT, r: 9, h: 6, seg: 14, at: [w * 0.38, 3, d * 0.36] },
+      { kind: 'cyl', mat: SOFT, r: 9, h: 6, seg: 14, at: [-w * 0.38, 3, -d * 0.36] },
     ]
   },
   ports: (p) => {
-    const lm = parseInt(str(p, 'lumens', '2500'), 10) || 2500
-    const s = 180 + lm * 0.024
+    const [w, h, d] = projectorBody(p)
     return [
-      ...mainsPorts([-s * 0.3, s * 0.12, -s * 0.41], [0, 0, -1], '', [14, 0, 0]),
-      ...signalPorts([['hdmi1', 'HDMI 1'], ['hdmi2', 'HDMI 2'], ['eth', 'Ethernet']], [0, s * 0.12, -s * 0.42], [0, 0, -1], 20),
+      ...mainsPorts([-w * 0.3, h * 0.29, -d * 0.53], [0, 0, -1], '', [14, 0, 0]),
+      ...signalPorts([['hdmi1', 'HDMI 1'], ['hdmi2', 'HDMI 2'], ['eth', 'Ethernet']], [0, h * 0.29, -d * 0.54], [0, 0, -1], 20),
     ]
   },
-  electrical: load((p) => dutyWatts(p, (parseInt(str(p, 'lumens', '2500'), 10) || 2500) * 0.1 + 30, 0.4)),
-  price: (p) => 150 + (parseInt(str(p, 'lumens', '2500'), 10) || 2500) * 0.16,
-  readouts: (p) => {
+  electrical: load((p) => dutyWatts(p, (parseInt(str(effective(p), 'lumens', '2500'), 10) || 2500) * 0.1 + 30, 0.4)),
+  price: (p) => productOf(p)?.price ?? 150 + (parseInt(str(effective(p), 'lumens', '2500'), 10) || 2500) * 0.16,
+  mass: (p) => {
+    const kg = productOf(p)?.mass
+    if (kg) return kg * 1000
+    const [w, h, d] = projectorBody(p)
+    // A projector is mostly air and a lens: about a fifth of the density
+    // of the solid block its outline suggests.
+    return (w * h * d) / 1e3 * 0.21
+  },
+  readouts: (raw) => {
+    /*
+     * Read the effective figures, not the raw ones.
+     *
+     * With a model chosen, the throw ratio and the brightness come from
+     * the product and the fields holding the old values are hidden. Every
+     * sum below has to be done on what the projector actually is, or the
+     * panel would quietly go on answering for the generic one.
+     */
+    const p = effective(raw)
+    const prod = productOf(raw)
     const t = num(p, 'throw', 1.5)
     const img = num(p, 'image', 2200)
     const ratio = str(p, 'aspect', '16:9') === '2.35' ? 2.35 : str(p, 'aspect', '16:9') === '4:3' ? 4 / 3 : 16 / 9
@@ -357,7 +400,14 @@ const projector: PartDef = {
     const fl = (real * num(p, 'gain', 1.1)) / Math.max(0.1, areaFt2)
 
     const shift = (num(p, 'shift', 0) / 100) * imgH
+    const [bw, bh, bd] = projectorBody(raw)
     return [
+      ...(prod
+        ? [
+            { label: 'Model', value: `${prod.make} ${prod.model}` },
+            { label: 'Body', value: `${Math.round(bw)} × ${Math.round(bh)} × ${Math.round(bd)} mm${prod.mass ? `, ${prod.mass} kg` : ''}` },
+          ]
+        : []),
       { label: 'Stand it back', value: `${((t * img) / 1000).toFixed(2)} m from the screen` },
       { label: 'Image', value: `${(img / 1000).toFixed(2)} × ${(imgH / 1000).toFixed(2)} m, ${(Math.hypot(img, imgH) / 25.4).toFixed(0)}"` },
       { label: 'Calibrated output', value: `${Math.round(real)} lm of ${rated} rated${source === 'lamp' && num(p, 'hours', 0) > 0 ? `, after ${num(p, 'hours', 0)} h` : ''}` },
