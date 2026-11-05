@@ -28,7 +28,7 @@ import { engine } from '@/sim/engine'
 import { registerSeating, useDoc, type Doc } from '@/state/doc'
 import { getPart } from '@/parts/kernel/registry'
 import { buildPart } from '@/parts/kernel/build'
-import { newProjectId, projects } from '@/cloud/projects'
+import { clearFreshProject, isFreshProject, newProjectId, projects } from '@/cloud/projects'
 import { setThumb } from '@/cloud/thumbs'
 import { captureThumbnail } from '@/scene/capture'
 import { downloadProject, openProject } from '@/io/project'
@@ -246,7 +246,13 @@ export function Editor() {
         if (rec) {
           loadDoc(rec.doc)
           engine.reset()
-        } else {
+        } else if (!isFreshProject(projectId)) {
+          /*
+           * Only for a project that was supposed to exist. An id this tab
+           * minted a moment ago has nothing saved under it yet by design,
+           * and saying so is both wrong and alarming: an empty bench is
+           * what was asked for.
+           */
           setNotice('That project could not be found, so this is an empty bench.')
         }
       } else if (startId) {
@@ -294,6 +300,8 @@ export function Editor() {
     setSaveState('saving')
     try {
       await projects.save(targetId, d)
+      // It exists now, so a later look for it is a real look.
+      clearFreshProject(targetId)
       // Photograph the bench alongside the save, so the project list shows
       // the build rather than a row of identical logos.
       const shot = captureThumbnail()

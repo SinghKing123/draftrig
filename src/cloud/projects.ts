@@ -264,7 +264,49 @@ export const projects = {
   },
 }
 
+/*
+ * Ids this tab has just minted for a build that has never been saved.
+ *
+ * "Start a blank build" makes an id and opens it before anything exists
+ * under it, so the opener then looked for a project that was never meant
+ * to be there and announced it could not be found — on the one path where
+ * an empty bench is exactly what was asked for. Session storage rather than
+ * router state because every entry point goes through newProjectId, and
+ * because it survives a reload: the second look is no more a missing
+ * project than the first was.
+ */
+const FRESH_KEY = 'draftrig.fresh'
+
+function freshIds(): string[] {
+  try {
+    const raw = sessionStorage.getItem(FRESH_KEY)
+    return raw ? (JSON.parse(raw) as string[]) : []
+  } catch {
+    return []
+  }
+}
+
+/** Whether this id was minted here and has nothing saved under it yet. */
+export function isFreshProject(id: string): boolean {
+  return freshIds().includes(id)
+}
+
+/** Forget an id once something is actually stored under it. */
+export function clearFreshProject(id: string): void {
+  try {
+    sessionStorage.setItem(FRESH_KEY, JSON.stringify(freshIds().filter((x) => x !== id)))
+  } catch {
+    /* No session storage is only a lost nicety, never a failed save. */
+  }
+}
+
 /** Fresh project id. crypto.randomUUID is available in every target browser. */
 export function newProjectId(): string {
-  return crypto.randomUUID()
+  const id = crypto.randomUUID()
+  try {
+    sessionStorage.setItem(FRESH_KEY, JSON.stringify([...freshIds(), id].slice(-32)))
+  } catch {
+    /* As above: the notice is wrong without this, nothing else breaks. */
+  }
+  return id
 }
