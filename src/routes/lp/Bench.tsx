@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Reveal } from '@/ui/motion'
-import { Dim, Swing, fitBox, type Frame } from './Paper'
+import { Dim, fitBox, type Frame } from './Paper'
+import { COUPLER, WALL, couplerOptions, wallOptions, type MainsStandard } from '@/parts/catalog/_mains'
 
 /**
  * Three questions, each with its own working you can move.
@@ -69,25 +70,6 @@ function Slider({
   )
 }
 
-/**
- * The editor, under the sum.
- *
- * The drawings prove how a figure is arrived at and show nothing about
- * what you are actually looking at while you work. Each bench carries
- * the frame its own arithmetic came out of — the desk whose knee
- * clearance is in the panel, the seat whose eye height the sightline
- * uses — so the abstraction and the thing it abstracts are on screen
- * together.
- */
-function Shot({ src, alt, cap }: { src: string; alt: string; cap: string }) {
-  return (
-    <figure className="dr-bench-shot">
-      <img src={src} alt={alt} width={1600} height={1000} loading="lazy" decoding="async" />
-      <figcaption className="m">{cap}</figcaption>
-    </figure>
-  )
-}
-
 function Verdict({ tone, figure, note }: { tone: 'ok' | 'bad'; figure: string; note: string }) {
   return (
     <p className="dr-verdict" data-tone={tone} role="status">
@@ -98,129 +80,262 @@ function Verdict({ tone, figure, note }: { tone: 'ok' | 'bad'; figure: string; n
 }
 
 /* ------------------------------------------------------------------ */
-/* 1. Will it fit?                                                     */
+/* 1. Will it plug in?                                                 */
 /* ------------------------------------------------------------------ */
 
 /**
- * A 3.4 m wide room with a 1400 x 700 desk against the back wall and a
- * door in the near one, and a slider on the one measurement a reader
- * actually has: how deep their room is.
+ * A wall socket, a lead, and whatever the thing you bought takes.
  *
- * Two things are solved from it. The walkway is what is left once the
- * desk and the chair pulled out behind it have taken theirs, and 760 mm
- * is the figure below which a person stops being able to get past. The
- * door swing is an 826 mm radius off its hinge, and it fouls the chair
- * the moment the room is shallower than 2426 mm — a clash that costs
- * nothing to find here and a returned desk to find in the room.
+ * This is the newest thing in the editor and the one that is hardest
+ * to believe from a sentence: drag an outlet into the room, drag a
+ * lead out of it, and set each end to what is actually there. The end
+ * at the wall is decided by the country you are in and the end at the
+ * appliance by what you bought, which is the whole reason a power lead
+ * is the only part in the catalogue with a different standard on each
+ * end.
+ *
+ * Both tables are the editor's own — `parts/catalog/_mains` — so the
+ * voltage, the ratings and the earth are not written here and cannot
+ * drift from the part that gets placed. What the instrument works out
+ * is the two things the tables do not say on their own: which end is
+ * the limit, and whether the earth survives the journey. A C13 kettle
+ * lead is rated 10 A whatever it is plugged into, so a 13 A British
+ * plug does not make it braver; and a two-pin Japanese outlet has no
+ * earth to give an appliance that expects one.
  */
-const DESK_D = 700
-const CHAIR_PULL = 900
-const LEAF = 826
-const PASS = 760
 
-function FitPlan({ depth, clash }: { depth: number; clash: boolean }) {
-  const W = 3400
-  /* The sheet holds the room, the depth figure struck 460 off its left
-     wall, and the door opening measured below it — not a symmetric
-     margin round the room, which would float the plan in the plate. */
-  const f = fitBox({ x0: -860, y0: -560, x1: 3680, y1: depth + 300 })
-  const back = DESK_D + CHAIR_PULL
-  const gap = depth - back
-  const ok = gap >= PASS
+/** Conductor colours, as `LINE_COLOR` in state/doc.ts draws them. */
+const CORE: Record<string, string> = { l: '#6B4423', n: '#2F62B8', e: '#4E9A2F' }
+const CORE_NAME: Record<string, string> = { l: 'Live', n: 'Neutral', e: 'Earth' }
 
-  const rect = (x: number, y: number, w: number, d: number, cls: string, key: string) => (
-    <rect key={key} className={cls} x={f.X(x)} y={f.Y(y)} width={f.L(w)} height={f.L(d)} rx={2} />
+/**
+ * One connector face, drawn at its own standard.
+ *
+ * A socket has holes and an appliance inlet has pins, which is not
+ * decoration: it is the reason you cannot plug a lead into a lead.
+ */
+function Face({ s, x, y, pins }: { s: MainsStandard; x: number; y: number; pins: boolean }) {
+  const hole = pins ? 'sym-fill' : 'hole'
+  const body = (
+    <>
+      {s.shape === 'round2' && <circle className="sym-fill" cx={0} cy={0} r={72} />}
+      {s.shape === 'hex3' && (
+        <path
+          className="sym-fill"
+          d="M0 -74 L64 -37 L64 37 L0 74 L-64 37 L-64 -37 Z"
+        />
+      )}
+      {s.shape === 'coupler' && !s.earth && (
+        <path className="sym-fill" d="M-66 0a34 34 0 0 1 34-34h2a34 34 0 0 1 0 68h-2a34 34 0 0 1-34-34M32 -34a34 34 0 0 1 0 68" />
+      )}
+      {s.shape === 'coupler' && s.earth && (
+        <path className="sym-fill" d="M-62 -40 L-40 -64 L40 -64 L62 -40 L62 58 L-62 58 Z" />
+      )}
+      {!['round2', 'hex3', 'coupler'].includes(s.shape) && (
+        <rect className="sym-fill" x={-72} y={-72} width={144} height={144} rx={16} />
+      )}
+    </>
   )
 
+  /* Pin and hole positions, in millimetres of nothing in particular:
+     these are drawings of a face, not a gauge drawing, and the only
+     thing that has to be right is which holes a reader recognises. */
+  const parts: Record<string, JSX.Element[]> = {
+    rect3: [
+      <rect key="e" className={hole} x={-8} y={-58} width={16} height={44} rx={2} />,
+      <rect key="l" className={hole} x={18} y={14} width={44} height={16} rx={2} />,
+      <rect key="n" className={hole} x={-62} y={14} width={44} height={16} rx={2} />,
+    ],
+    round2: [
+      <circle key="l" className={hole} cx={26} cy={0} r={13} />,
+      <circle key="n" className={hole} cx={-26} cy={0} r={13} />,
+      <rect key="e1" className="sym" x={-22} y={-74} width={44} height={8} rx={3} />,
+      <rect key="e2" className="sym" x={-22} y={66} width={44} height={8} rx={3} />,
+    ],
+    blade3: [
+      <rect key="l" className={hole} x={22} y={-44} width={11} height={44} rx={2} />,
+      <rect key="n" className={hole} x={-33} y={-44} width={11} height={44} rx={2} />,
+      <circle key="e" className={hole} cx={0} cy={34} r={14} />,
+    ],
+    blade2: [
+      <rect key="l" className={hole} x={22} y={-24} width={11} height={48} rx={2} />,
+      <rect key="n" className={hole} x={-33} y={-24} width={11} height={48} rx={2} />,
+    ],
+    round3: [
+      <circle key="e" className={hole} cx={0} cy={-38} r={14} />,
+      <circle key="n" className={hole} cx={-34} cy={26} r={14} />,
+      <circle key="l" className={hole} cx={34} cy={26} r={14} />,
+    ],
+    hex3: [
+      <circle key="e" className={hole} cx={0} cy={-34} r={12} />,
+      <circle key="n" className={hole} cx={-30} cy={20} r={12} />,
+      <circle key="l" className={hole} cx={30} cy={20} r={12} />,
+    ],
+    coupler: s.earth
+      ? [
+          <rect key="l" className={hole} x={20} y={-30} width={15} height={34} rx={2} />,
+          <rect key="n" className={hole} x={-35} y={-30} width={15} height={34} rx={2} />,
+          <rect key="e" className={hole} x={-7} y={14} width={15} height={34} rx={2} />,
+        ]
+      : [
+          <rect key="l" className={hole} x={24} y={-12} width={14} height={26} rx={2} />,
+          <rect key="n" className={hole} x={-38} y={-12} width={14} height={26} rx={2} />,
+        ],
+  }
+
   return (
-    <svg className="dr-ink" {...f.box} fill="none" role="img" aria-label="Plan of a desk in a room, with the walkway behind it and the door swing">
-      {/* shell */}
-      <path className="wall" d={`M${f.X(-110)} ${f.Y(-110)} H${f.X(W + 110)} V${f.Y(depth + 110)} H${f.X(-110)} Z`} />
-      <path className="wall" d={`M${f.X(0)} ${f.Y(0)} H${f.X(W)} V${f.Y(depth)} H${f.X(0)} Z`} />
+    <g transform={`translate(${x} ${y})`}>
+      {body}
+      {parts[s.shape]}
+    </g>
+  )
+}
 
-      {/* the walkway, as a zone rather than as a number alone */}
-      <rect
-        className={ok ? 'glow' : 'box-bad'}
-        x={f.X(0)}
-        y={f.Y(back)}
-        width={f.L(W)}
-        height={f.L(Math.max(0, gap))}
-      />
+/** The lead, with the cable opened up in the middle to show its cores. */
+function Lead({ wall, inlet }: { wall: string; inlet: string }) {
+  const w = WALL[wall]
+  const c = COUPLER[inlet]
+  const captive = inlet === 'captive'
+  /* The earth only travels if both ends have one. Two-core is not a
+     fault — a figure-of-eight lead is two-core by design — but an
+     earthed appliance on an unearthed supply is. */
+  const cores = w.earth && c.earth ? ['l', 'n', 'e'] : ['l', 'n']
+  const amps = Math.min(w.amps, c.amps)
 
-      {rect(1000, 0, 1400, DESK_D, 'box-sel', 'desk')}
-      {rect(1130, 130, 560, 190, 'box', 'm1')}
-      {rect(1740, 130, 560, 190, 'box', 'm2')}
-      {rect(1360, DESK_D + 160, 680, 680, clash ? 'box-bad' : 'box', 'chair')}
-      {rect(1000, DESK_D, 1400, CHAIR_PULL, 'box-ghost', 'pull')}
-      {rect(2460, 120, 216, 463, 'box', 'pc')}
+  return (
+    <svg
+      className="dr-ink"
+      viewBox="48 22 1104 330"
+      fill="none"
+      role="img"
+      aria-label={`A ${w.label} socket joined by a ${cores.length}-core lead to ${captive ? 'an appliance with a captive lead' : `a ${c.label} inlet`}`}
+    >
+      {/* the wall the socket is in */}
+      <path className="wall" d="M96 40 V300" />
+      <path className="hatch" d="M60 40 H96 V300 H60 Z" />
 
-      <Swing f={f} h={[300, depth]} len={LEAF} a0={0} a1={-90} bad={clash} />
+      <Face s={w} x={190} y={170} pins={false} />
+      {!captive && <Face s={c} x={1010} y={170} pins />}
+      {captive && (
+        <>
+          <rect className="sym-fill" x={948} y={116} width={124} height={108} rx={10} />
+          <rect className="sym" x={1072} y={152} width={26} height={36} rx={6} />
+        </>
+      )}
 
-      <Dim f={f} from={[-460, 0]} to={[-460, depth]} label={`${depth}`} off={-38} />
-      <Dim
-        f={f}
-        from={[2800, back]}
-        to={[2800, depth]}
-        label={`${Math.max(0, gap)}`}
-        cls={ok ? 'fig-ok' : 'fig-bad'}
-        off={42}
-      />
-      <Dim f={f} from={[0, -400]} to={[3400, -400]} label="3400" />
+      {/* the sheath, cut away in the middle */}
+      <path className="lead-sheath" d="M262 170 H470" />
+      <path className="lead-sheath" d={`M730 170 H${captive ? 948 : 938}`} />
 
-      <text className="tag" x={f.X(1700)} y={f.Y(DESK_D + CHAIR_PULL / 2)} fontSize={17} textAnchor="middle" dominantBaseline="central">
-        chair pulled out
+      {/* the cores, fanned out of the cut */}
+      {cores.map((k, i) => {
+        const dy = (i - (cores.length - 1) / 2) * 34
+        return (
+          <path
+            key={k}
+            className="lead-core"
+            stroke={CORE[k]}
+            d={`M470 170 C508 170 512 ${170 + dy} 548 ${170 + dy} H652 C692 ${170 + dy} 696 170 730 170`}
+          />
+        )
+      })}
+
+      {cores.map((k, i) => {
+        const dy = (i - (cores.length - 1) / 2) * 34
+        return (
+          <text key={k} className="tag" x={600} y={170 + dy - 15} fontSize={19} textAnchor="middle">
+            {CORE_NAME[k]}
+          </text>
+        )
+      })}
+
+      {/* what each end is, and what each end is good for */}
+      <text className="tag" x={190} y={296} fontSize={21} textAnchor="middle">
+        {w.label}
+      </text>
+      <text className="fig" x={190} y={326} fontSize={22} textAnchor="middle">
+        {w.v} V · {w.amps} A
+      </text>
+
+      <text className="tag" x={1010} y={296} fontSize={21} textAnchor="middle">
+        {captive ? 'Captive lead' : c.label}
+      </text>
+      <text className="fig" x={1010} y={326} fontSize={22} textAnchor="middle">
+        {c.amps} A
+      </text>
+
+      {/* the lead itself, labelled where it is cut */}
+      <text className="tag" x={600} y={{ 2: 262, 3: 288 }[cores.length] ?? 288} fontSize={21} textAnchor="middle">
+        {cores.length}-core · 0.75 mm² · {amps} A
       </text>
     </svg>
   )
 }
 
-export function FitBench() {
-  const [depth, setDepth] = useState(2400)
-  const gap = depth - DESK_D - CHAIR_PULL
-  const clash = depth - LEAF < DESK_D + CHAIR_PULL
-  const ok = gap >= PASS && !clash
+export function LeadBench() {
+  const [wall, setWall] = useState('bs1363')
+  const [inlet, setInlet] = useState('iec-c14')
+
+  const w = WALL[wall]
+  const c = COUPLER[inlet]
+  const amps = Math.min(w.amps, c.amps)
+  const volts = w.v ?? 230
+  /* An appliance that wants an earth, on a supply that has none. The
+     lead cannot invent one, and this is the only combination in the
+     two tables that is actually wrong rather than merely limited. */
+  const unearthed = c.earth && !w.earth
+  const capped = c.amps <= w.amps ? 'the appliance end' : 'the wall'
 
   return (
     <Reveal className="dr-bench-item">
       <div className="dr-bench-copy">
-        <h3>Clearance</h3>
+        <h3>Mains leads</h3>
         <p>
-          Desk 700 mm deep, chair 900 mm of pull-out, door swinging 826 mm off its
-          hinge. The walkway is what is left; below 760 mm nobody gets past.
+          One end is the country you are in, the other is what you bought. Both
+          tables are the editor&rsquo;s; the lead is what reconciles them.
         </p>
-        <Slider
-          label="Room depth"
-          value={depth}
-          set={setDepth}
-          min={2100}
-          max={3400}
-          ends={['2100', '3400']}
-        />
+
+        <div className="dr-picks">
+          <label className="dr-pick">
+            <span>Wall socket</span>
+            <select value={wall} onChange={(e) => setWall(e.target.value)}>
+              {wallOptions().map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="dr-pick">
+            <span>Appliance inlet</span>
+            <select value={inlet} onChange={(e) => setInlet(e.target.value)}>
+              {couplerOptions().map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
         <Verdict
-          tone={ok ? 'ok' : 'bad'}
-          figure={`${Math.max(0, gap)} mm`}
+          tone={unearthed ? 'bad' : 'ok'}
+          figure={unearthed ? 'No earth' : `${amps} A`}
           note={
-            clash
-              ? 'walkway — and the door hits the chair'
-              : ok
-                ? 'walkway, enough to get past'
-                : `walkway, ${PASS - gap} mm short of a way past`
+            unearthed
+              ? `at the wall, and a ${c.label.split(',')[0]} expects one`
+              : `at ${volts} V — ${(amps * volts).toLocaleString('en-GB')} W, capped by ${capped}`
           }
-        />
-        <Shot
-          src="/shots/ui/ui-desk.jpg"
-          alt="The Draftrig editor with a studio desk selected, the properties panel showing its width, depth and knee clearance"
-          cap="Studio desk · 36 parts · 45 conn · 152 kg"
         />
       </div>
       <div className="dr-bench-rig">
         <div className="dr-plate">
-          <FitPlan depth={depth} clash={clash} />
+          <Lead wall={wall} inlet={inlet} />
           <div className="dr-plate-bar">
-            <strong>Plan</strong>
-            <span className="m">Desk 1400 × 700 · chair 680</span>
+            <strong>Lead</strong>
+            <span className="m">{w.earth && c.earth ? '3-core' : '2-core'} · 0.75 mm²</span>
             <span className="spacer" />
-            <span className="m">{clash ? 'Door swing fouls the chair' : 'Door swing clear'}</span>
+            <span className="m">{unearthed ? 'Earth does not reach the appliance' : 'Plugs in'}</span>
           </div>
         </div>
       </div>
@@ -283,11 +398,6 @@ export function PowerBench() {
               ? `of 13 — over by ${(amps - FUSE).toFixed(1)} A, the fuse goes`
               : `of 13 — ${(FUSE - amps).toFixed(1)} A still spare`
           }
-        />
-        <Shot
-          src="/shots/ui/ui-theatre.jpg"
-          alt="The Draftrig editor showing a home theatre with the AV receiver selected and its load in the properties panel"
-          cap="Home theatre · 29 parts · 50 conn · 660 W"
         />
       </div>
       <div className="dr-bench-rig">
@@ -473,11 +583,6 @@ export function SightBench() {
           figure={`${ok ? '+' : '−'}${Math.abs(clear)} mm`}
           note={ok ? 'the back row sees the whole image' : 'of the picture is behind the front headrest'}
         />
-        <Shot
-          src="/shots/ui/ui-seats.jpg"
-          alt="The Draftrig editor looking past the front row at the lit screen, the properties panel showing the seat eye height and headrest height"
-          cap="Front row · eye 1120 mm · headrest 1180 mm"
-        />
       </div>
       <div className="dr-bench-rig">
         <div className="dr-plate">
@@ -601,11 +706,6 @@ export function LedBench() {
               ? `over the 20 mA it is rated for — the LED cooks`
               : `through the LED, ${(((VS - VF) * (VS - VF)) / ohms).toFixed(2)} W in the resistor`
           }
-        />
-        <Shot
-          src="/shots/ui/ui-wire.jpg"
-          alt="The Draftrig editor in Wire mode: four breadboards joined by hundreds of coloured jumpers, with the checks passing"
-          cap="Eight-bit machine · 83 parts · 238 conn · Wire mode"
         />
       </div>
       <div className="dr-bench-rig">

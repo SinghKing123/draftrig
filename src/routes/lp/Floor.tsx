@@ -15,16 +15,16 @@ import { ROOMS } from './floor/rooms'
  * three.js the editor ships — with a mock of the editor's chrome round
  * it, lifted from the advert artifact.
  *
- * Two things it is careful about.
+ * It starts itself. There was a poster and a button here, on the
+ * argument that 26 MB of mesh is not something to fetch without being
+ * asked — but the room is the first thing on the page and a picture of
+ * it behind a button is a picture, which is the one thing this page is
+ * not supposed to be. So it loads on arrival, everywhere, and the
+ * shell and the floor paint while the furniture is still coming: what
+ * a reader sees in the first second is the editor building the room,
+ * not a still of one it built earlier.
  *
- * It is 26 MB of mesh. That downloads when the section is actually
- * reached, and only on a screen wide enough to be worth it and a
- * connection that has not asked for less: anywhere else it offers a
- * still of the same scene and a button, with the figure on the button.
- * A landing page that quietly pulls 26 MB on a phone is a landing page
- * that is broken, however good the thing is that arrives.
- *
- * And the orbit rig never takes the wheel. Scroll belongs to the page.
+ * The orbit rig never takes the wheel. Scroll belongs to the page.
  */
 
 /* ------------------------------------------------------------------ */
@@ -68,21 +68,6 @@ function Ico({ k }: { k: string }) {
 
 /* ------------------------------------------------------------------ */
 
-/**
- * Whether to fetch 26 MB without being asked.
- *
- * Wide screen, no Save-Data header, and not a connection the browser
- * has told us is slow. Everything else gets the still and the button.
- */
-function autoOk(): boolean {
-  if (typeof navigator === 'undefined') return false
-  const c = (navigator as { connection?: { saveData?: boolean; effectiveType?: string } }).connection
-  if (c?.saveData) return false
-  if (c?.effectiveType && /2g|3g/.test(c.effectiveType)) return false
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return false
-  return window.innerWidth >= 900
-}
-
 const VIEWS = [
   ['top', 'Top'],
   ['front', 'Front'],
@@ -96,10 +81,7 @@ export function Floor() {
   const tags = useRef<HTMLDivElement>(null)
   const tick = useRef<HTMLDivElement>(null)
   const floor = useRef<FloorHandle | null>(null)
-  const root = useRef<HTMLDivElement>(null)
 
-  const [start, setStart] = useState(false)
-  const [near, setNear] = useState(false)
   const [prog, setProg] = useState({ n: 0, bad: 0, of: PARTS.length })
   const [sel, setSel] = useState<Selection | null>(null)
   /* Seeded from the part list rather than left empty until the scene
@@ -129,29 +111,8 @@ export function Floor() {
   }, [])
   const top = checks[0]
 
-  /* Mount the scene only once the section is close, and only then start
-     the download. The observer arms on mount and fires once. */
   useEffect(() => {
-    const el = root.current
-    if (!el) return
-    const io = new IntersectionObserver(
-      ([e]) => {
-        if (!e.isIntersecting) return
-        setNear(true)
-        if (autoOk()) setStart(true)
-        io.disconnect()
-      },
-      /* It is the hero now, so this fires on arrival. The margin stays
-         because the plate still starts a little below the fold on a
-         short window, and nobody should have to scroll to begin. */
-      { rootMargin: '700px 0px' },
-    )
-    io.observe(el)
-    return () => io.disconnect()
-  }, [])
-
-  useEffect(() => {
-    if (!start || !canvas.current || !stage.current || !tags.current) return
+    if (!canvas.current || !stage.current || !tags.current) return
     let handle: FloorHandle | null = null
     let dead = false
     void import('./floor/scene').then(({ createFloor }) => {
@@ -173,20 +134,19 @@ export function Floor() {
       handle?.dispose()
       floor.current = null
     }
-  }, [start])
+  }, [])
 
   /* The clock in the corner, written straight to the node. Ten renders
      a second of a tree this size to move one number is not a trade. */
   useEffect(() => {
-    if (!start) return
     const t0 = performance.now()
     const id = setInterval(() => {
       if (tick.current) tick.current.textContent = `t = ${((performance.now() - t0) / 1000).toFixed(1)} s`
     }, 100)
     return () => clearInterval(id)
-  }, [start])
+  }, [])
 
-  const loading = start && prog.n + prog.bad < prog.of
+  const loading = prog.n + prog.bad < prog.of
   const shown = useMemo(() => {
     const needle = q.trim().toLowerCase()
     return ROOMS.map((r) => ({
@@ -200,7 +160,7 @@ export function Floor() {
   const credit = sel ? CREDITS[sel.file] : null
 
   return (
-    <div className="fl" ref={root}>
+    <div className="fl">
       {/* ---- title bar ---- */}
       <div className="fl-top">
         <img className="fl-brand" src={BRAND.logo.lockupOnDark} alt={BRAND.name} width={473} height={96} />
@@ -272,54 +232,32 @@ export function Floor() {
 
       {/* ---- the viewport ---- */}
       <div className="fl-vp" ref={stage}>
-        {start ? (
-          <>
-            <canvas ref={canvas} aria-label="The ground floor in 3D. Drag to orbit, click a part to select it." />
-            <div className="fl-tags" ref={tags} />
-            <div className="fl-tools">
-              <div className="fl-group">
-                {VIEWS.map(([v, label]) => (
-                  <button key={v} type="button" className={view === v ? 'on' : ''} onClick={() => floor.current?.view(v)}>
-                    {label}
-                  </button>
-                ))}
-              </div>
-              <div className="fl-group fl-snap" aria-hidden="true">
-                <span>10 mm</span>
-              </div>
-            </div>
-            <div className="fl-tick" ref={tick}>
-              t = 0.0 s
-            </div>
-            {loading && (
-              <p className="fl-load">
-                Placing parts · {prog.n} of {prog.of}
-              </p>
-            )}
-            {!loading && prog.bad > 0 && (
-              <p className="fl-load">
-                {prog.bad} of {prog.of} parts did not load
-              </p>
-            )}
-          </>
-        ) : (
-          <div className="fl-poster">
-            <img
-              src="/presets/studio-desk.jpg"
-              alt="A studio desk laid out in Draftrig: an ultrawide on an arm, monitors on risers, a microphone and a rack on the wall"
-              width={1718}
-              height={1073}
-              loading="lazy"
-              decoding="async"
-            />
-            <div className="fl-poster-ask">
-              <button type="button" className="dr-btn dr-btn-go" onClick={() => setStart(true)}>
-                Run the live scene
-                <span className="arr" aria-hidden="true" />
+        <canvas ref={canvas} aria-label="The ground floor in 3D. Drag to orbit, click a part to select it." />
+        <div className="fl-tags" ref={tags} />
+        <div className="fl-tools">
+          <div className="fl-group">
+            {VIEWS.map(([v, label]) => (
+              <button key={v} type="button" className={view === v ? 'on' : ''} onClick={() => floor.current?.view(v)}>
+                {label}
               </button>
-              <span className="m">{near ? '65 parts · 26 MB of mesh' : 'Four rooms, 65 parts'}</span>
-            </div>
+            ))}
           </div>
+          <div className="fl-group fl-snap" aria-hidden="true">
+            <span>10 mm</span>
+          </div>
+        </div>
+        <div className="fl-tick" ref={tick}>
+          t = 0.0 s
+        </div>
+        {loading && (
+          <p className="fl-load">
+            Placing parts · {prog.n} of {prog.of}
+          </p>
+        )}
+        {!loading && prog.bad > 0 && (
+          <p className="fl-load">
+            {prog.bad} of {prog.of} parts did not load
+          </p>
         )}
       </div>
 

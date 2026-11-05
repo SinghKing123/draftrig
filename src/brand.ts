@@ -38,7 +38,7 @@ export const BRAND = {
     blueDeep: '#0050DC',
   },
 
-  tagline: 'Build it twice. The first time is free.',
+  tagline: 'Build anything. Buy nothing.',
 
   description:
     'Electronics and framing in one 3D scene. Wire it up and switch it on before you order anything.',

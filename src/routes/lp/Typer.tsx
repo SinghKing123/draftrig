@@ -9,9 +9,11 @@ import { REDUCED, useMedia } from '@/ui/motion'
  * the same claim made as evidence — and it is the one piece of motion
  * on this page doing the job of a sentence rather than decorating one.
  *
- * It runs once. A headline that retypes itself forever is a headline
- * nobody can finish reading, so this plays its round and settles back
- * on "anything", which is the word the sentence actually wants.
+ * It keeps going. The round comes back round to "anything", which is
+ * the word the sentence actually wants, holds it long enough to be
+ * read as the sentence, and then goes again — so the claim is being
+ * made whenever somebody happens to look up, rather than only in the
+ * first ten seconds of the visit.
  *
  * ## Why the width is measured
  *
@@ -51,9 +53,11 @@ const ROUND: Word[] = [
 ]
 
 /** Before the first deletion, so the sentence can be read as written. */
-const SETTLE = 3800
+const SETTLE = 1500
 /** How long a swapped-in word is held before it goes again. */
-const HOLD = 1600
+const HOLD = 1700
+/** "anything" is the sentence, not an example, so it gets longer. */
+const HOME_HOLD = 3200
 /** Milliseconds a character takes. Deleting is quicker, as it is by hand. */
 const TYPE = 68
 const WIPE = 38
@@ -89,26 +93,27 @@ export function Typer() {
     const run = async () => {
       let cur = HOME.word
       await wait(SETTLE)
-      for (const next of [...ROUND, HOME]) {
-        if (!alive) return
-        setLive(true)
-        for (let i = cur.length; i > 0; i--) {
+      for (;;) {
+        for (const next of [...ROUND, HOME]) {
           if (!alive) return
-          cur = cur.slice(0, i - 1)
-          setText(cur)
-          await wait(WIPE)
+          setLive(true)
+          for (let i = cur.length; i > 0; i--) {
+            if (!alive) return
+            cur = cur.slice(0, i - 1)
+            setText(cur)
+            await wait(WIPE)
+          }
+          setSize(next.size)
+          await wait(BEAT)
+          for (let i = 1; i <= next.word.length; i++) {
+            if (!alive) return
+            cur = next.word.slice(0, i)
+            setText(cur)
+            await wait(TYPE)
+          }
+          setLive(false)
+          await wait(next === HOME ? HOME_HOLD : HOLD)
         }
-        setSize(next.size)
-        await wait(BEAT)
-        for (let i = 1; i <= next.word.length; i++) {
-          if (!alive) return
-          cur = next.word.slice(0, i)
-          setText(cur)
-          await wait(TYPE)
-        }
-        setLive(false)
-        if (next === HOME) return
-        await wait(HOLD)
       }
     }
     void run()

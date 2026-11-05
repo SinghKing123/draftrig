@@ -1,15 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { BRAND, pageTitle } from '@/brand'
 import { Wordmark } from '@/ui/Logo'
-import { Reveal, Tally, useScrolled } from '@/ui/motion'
+import { Reveal, useScrolled } from '@/ui/motion'
 import { ModelCredits } from '@/ui/ModelCredits'
 import { Arcs, Grid } from './lp/Paper'
-import { Carousel } from './lp/Carousel'
 import { Typer } from './lp/Typer'
-import { FitBench, LedBench, PowerBench, SightBench } from './lp/Bench'
+import { LeadBench, LedBench, PowerBench, SightBench } from './lp/Bench'
 import { Floor } from './lp/Floor'
-import { Shelf } from './lp/Shelf'
+import { Screens } from './lp/Screens'
+import { Library } from './lp/Library'
 import { Gallery } from './lp/Gallery'
 
 /**
@@ -24,24 +24,22 @@ import { Gallery } from './lp/Gallery'
  * own near-blacks so they stopped reading as holes, and it was still a
  * column of pictures with headlines over them.
  *
- * So this one has no renders on it at all. Every section is the
- * product's own arithmetic, running: three rooms that set themselves
- * out in plan, a walkway and a door swing you drag a room depth
- * through, eight appliances you can put over a 13 A fuse, a sightline
- * you raise on a riser, and the whole catalogue drawn to one scale.
- * It is all SVG and all live, which is also why it is light — lines and
- * figures belong on paper, and this paper is the editor's warm
- * near-blacks turned inside out so the two read as one product.
+ * So the page opens with the editor running — the real meshes, the real
+ * three.js, loading as you arrive — and everything under it is either
+ * something you can move or something you can search. The screenshots
+ * that remain are half a measure wide and behind a tab strip that names
+ * the workspace each one is in, which makes them an index of the
+ * product rather than a slideshow of it.
  *
- * The figures agree with each other on purpose. The hero's theatre says
- * the back row clears by 53 mm; the sightline bench, given the same
- * rows at 3.8 and 5.3 m and the same 300 mm riser, works out 53. Both
- * are the figure the editor's inspector returns, because all three are
- * the same sum.
+ * The figures agree with each other on purpose. The sightline bench,
+ * given the shipped theatre's rows at 3.8 and 5.3 m and its 300 mm
+ * riser, works out 53 mm of headroom, because that is the figure the
+ * editor's inspector returns for the same build.
  *
- * What is deliberately absent, so it does not drift back: a screenshot,
- * a kicker above a heading, three equal cards of icon-heading-blurb, a
- * gradient, a testimonial, and any figure the editor cannot produce.
+ * What is deliberately absent, so it does not drift back: a kicker
+ * above a heading, three equal cards of icon-heading-blurb, a gradient,
+ * a testimonial, a full-measure screenshot, and any figure the editor
+ * cannot produce.
  */
 
 /** The catalogue's own section names, for the strip under the hero. */
@@ -60,26 +58,6 @@ const SECTIONS = [
   'Soldering & fabrication',
 ]
 
-function useCounts(): { parts: number | null; builds: number | null } {
-  const [n, setN] = useState<{ parts: number | null; builds: number | null }>({
-    parts: null,
-    builds: null,
-  })
-  useEffect(() => {
-    let live = true
-    void Promise.all([import('@/parts/catalog'), import('@/io/starters')]).then(
-      ([cat, starters]) => {
-        if (!live) return
-        setN({ parts: cat.allParts().length, builds: starters.STARTERS.length })
-      },
-    )
-    return () => {
-      live = false
-    }
-  }, [])
-  return n
-}
-
 function GithubGlyph() {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
@@ -90,7 +68,6 @@ function GithubGlyph() {
 
 export function Landing() {
   const scrolled = useScrolled()
-  const { parts, builds } = useCounts()
 
   useEffect(() => {
     document.title = pageTitle()
@@ -130,53 +107,33 @@ export function Landing() {
               Buy nothing.
             </Reveal>
           </h1>
-
-
         </div>
 
         {/*
-          * The product itself, above the fold.
-          *
-          * This was a plan that drew itself, which was the right idea one
-          * step too early: the strongest thing the page has is that the
-          * room is real and you can turn it round, and that was three
-          * screens down. It costs twenty-six megabytes on a wide screen,
-          * which is the whole reason `Floor` gates its own loading —
-          * see the note there. The shell and the floor paint at once and
-          * the furniture lands over the next few seconds, so what a
-          * reader sees first is the editor building the room.
+          * The product itself, above the fold, loading as the page does.
+          * It costs twenty-six megabytes of mesh — see the note in
+          * `Floor` for why it fetches them anyway — and the shell and
+          * the floor paint at once, so what a reader sees first is the
+          * editor building the room.
           */}
         <div id="floor">
           <Reveal now delay={520} className="dr-w">
             <Floor />
-            <p className="dr-floor-note">
-              Live. 4 rooms, 65 parts, 3 175 kg, 230 V. Drag to orbit, click to
-              select. Meshes CC BY 4.0, credited in the inspector.
-            </p>
-            <p className="dr-facts">
-              <span>
-                <b>{parts === null ? '—' : <Tally to={parts} />}</b> things to place
-              </span>
-              <span>
-                <b>{builds === null ? '—' : <Tally to={builds} />}</b> rooms to open and take apart
-              </span>
-              <span>
-                <b>Free</b> and no account
-              </span>
-            </p>
+            <p className="dr-floor-note">Drag to orbit, click a part.</p>
           </Reveal>
         </div>
       </header>
 
-      {/* ---- a run of the editor, by hand ---- */}
+      {/* ---- the editor, screen by screen, and the box it comes with ---- */}
       <section className="dr-sec dr-sec-floor" id="screens">
-        <div className="dr-w">
-          <Reveal className="dr-sec-head">
+        <div className="dr-w dr-two">
+          <Reveal className="dr-two-l">
             <h2>Workspaces</h2>
-            <p>Build, Wire, Code, Simulate. Eight builds, in the editor.</p>
+            <Screens />
           </Reveal>
-          <Reveal delay={80}>
-            <Carousel />
+          <Reveal delay={80} className="dr-two-r">
+            <h2>Library</h2>
+            <Library />
           </Reveal>
         </div>
       </section>
@@ -197,16 +154,15 @@ export function Landing() {
         </div>
       </div>
 
-      {/* ---- three questions you can answer yourself, here ---- */}
+      {/* ---- four questions you can answer yourself, here ---- */}
       <section className="dr-sec" id="asked">
         <div className="dr-w">
           <Reveal className="dr-sec-head">
             <h2>Solvers</h2>
-            <p>Running here, not described. Move an input, read the output.</p>
           </Reveal>
 
           <div className="dr-bench">
-            <FitBench />
+            <LeadBench />
             <PowerBench />
             <SightBench />
             <LedBench />
@@ -214,87 +170,15 @@ export function Landing() {
         </div>
       </section>
 
-
-      {/* ---- the code workspace ---- */}
-      <section className="dr-sec" id="code">
-        <div className="dr-w">
-          <Reveal className="dr-sec-head">
-            <h2>Code editor</h2>
-            <p>
-              A sketch per board, against the wiring you drew. It compiles, and
-              Simulate runs it on the board in the scene.
-            </p>
-          </Reveal>
-          <Reveal delay={60}>
-            <figure className="dr-plate dr-shot">
-              <img
-                src="/shots/ui/ui-code.jpg"
-                alt="The Draftrig code workspace: a sketch for an ESP32 reading a gas sensor onto a bar of LEDs, reported as compiling"
-                width={1600}
-                height={1000}
-                loading="lazy"
-                decoding="async"
-              />
-              <figcaption className="dr-plate-bar">
-                <strong>ESP32 sensor node</strong>
-                <span className="m">11 parts · 24 conn · 53.3 g</span>
-                <span className="spacer" />
-                <span className="m">Compiles · $15.12</span>
-              </figcaption>
-            </figure>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ---- the bill of materials ---- */}
-      <section className="dr-sec dr-sec-floor" id="bom">
-        <div className="dr-w">
-          <Reveal className="dr-sec-head">
-            <h2>Bill of materials</h2>
-            <p>
-              Every part you placed, with mass and a single-unit trade price. CSV out.
-              Prices tell a ten pound idea from a two hundred pound one; they are not
-              quotes.
-            </p>
-          </Reveal>
-          <Reveal delay={60}>
-            <figure className="dr-plate dr-shot">
-              <img
-                src="/shots/cine-ui-bom.jpg"
-                alt="The Draftrig bill of materials panel beside a bartop arcade cabinet, listing each part with its mass and price"
-                width={2880}
-                height={1800}
-                loading="lazy"
-                decoding="async"
-              />
-              <figcaption className="dr-plate-bar">
-                <strong>Bartop arcade cabinet</strong>
-                <span className="m">34 items · 11.18 kg</span>
-                <span className="spacer" />
-                <span className="m">$214.74 estimated</span>
-              </figcaption>
-            </figure>
-          </Reveal>
-        </div>
-      </section>
-
       {/* ---- twelve frames out of the viewport ---- */}
-      <section className="dr-sec" id="built">
+      <section className="dr-sec dr-sec-floor" id="built">
         <div className="dr-w">
           <Reveal className="dr-sec-head">
             <h2>Viewport</h2>
-            <p>Twelve of the 36 shipped builds, as drawn. Counts off the registry.</p>
           </Reveal>
           <Reveal delay={60}>
             <Gallery />
           </Reveal>
-        </div>
-      </section>
-
-      {/* ---- the catalogue, to one scale ---- */}
-      <section className="dr-shelf" id="shelf">
-        <div className="dr-w">
-          <Shelf />
         </div>
       </section>
 
@@ -304,7 +188,6 @@ export function Landing() {
         <div className="dr-w">
           <Reveal>
             <h2>Open the editor</h2>
-            <p>Opens empty. Free. No account until you save.</p>
             <div className="dr-end-cta">
               <Link className="dr-btn dr-btn-go" to="/projects">
                 Open the editor<span className="arr" aria-hidden="true" />
@@ -327,7 +210,7 @@ export function Landing() {
             <h3>The editor</h3>
             <Link to="/projects">Your projects</Link>
             <Link to="/app">Open the editor</Link>
-            <a href="#shelf">Part catalogue</a>
+            <a href="#screens">Part library</a>
           </nav>
 
           <nav className="dr-foot-col">
@@ -335,8 +218,7 @@ export function Landing() {
             <a href="#floor">The live floor</a>
             <a href="#screens">Workspaces</a>
             <a href="#asked">Solvers</a>
-            <a href="#code">Code editor</a>
-            <a href="#bom">Bill of materials</a>
+            <a href="#built">Viewport</a>
           </nav>
 
           <nav className="dr-foot-col">
