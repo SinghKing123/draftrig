@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react'
 import { Rig } from './Rig'
 import {
   IconEye, IconEyeOff, IconFrame, IconGrid, IconHelp, IconMagnet, IconCursor,
-  IconMove, IconRotate,
+  IconMove, IconRotate, IconRuler,
   IconX, IconXray, IconZap,
 } from './Icons'
 import { hasUsedEditor } from './firstRun'
+import { useRuler } from '@/scene/rulerState'
 import { useDoc, WIRE_COLORS } from '@/state/doc'
 import { useSim } from '@/state/sim'
 import { usePortHover } from '@/scene/portHover'
@@ -214,6 +215,8 @@ export function ViewportOverlay({
   const view = useDoc((s) => s.view)
   const setView = useDoc((s) => s.setView)
   const snap = useDoc((s) => s.snap)
+  const ruler = useRuler((s) => s.on)
+  const toggleRuler = useRuler((s) => s.toggle)
   const setSnap = useDoc((s) => s.setSnap)
   const transformMode = useDoc((s) => s.transformMode)
   const setTransformMode = useDoc((s) => s.setTransformMode)
@@ -307,6 +310,23 @@ export function ViewportOverlay({
             <IconRotate />
           </button>
         </span>
+
+        <div className="sep" />
+
+        {/*
+          * The ruler sits with the view switches rather than in the
+          * transform group: it does not change what a drag does, it takes
+          * the pointer away from dragging altogether while it is on.
+          */}
+        <button
+          className="btn ghost icon"
+          data-on={ruler}
+          title="Measure (M) — click two points for the distance between them. Points snap to corners and terminals."
+          aria-pressed={ruler}
+          onClick={toggleRuler}
+        >
+          <IconRuler />
+        </button>
 
         <div className="sep" />
 
@@ -412,7 +432,7 @@ export function ViewportOverlay({
 
       <div className="vp-stats">
         {running && (
-          <span style={{ color: 'var(--volt)' }}>
+          <span style={{ color: 'var(--volt-ink)' }}>
             <IconZap size={9} /> t = {time < 1 ? `${(time * 1000).toFixed(1)} ms` : `${time.toFixed(3)} s`}
           </span>
         )}

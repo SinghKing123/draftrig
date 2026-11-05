@@ -2493,3 +2493,38 @@ kbd {
 .app-body[data-ws='code'] ~ .sketch-tab,
 .app-body[data-ws='code'] .sketch-tab { display: none; }
 .app-body[data-ws='code'] .sketch-head > button { display: none; }
+
+/*
+ * The ruler's readout.
+ *
+ * Pinned to the middle of the span it measures, so the figure is on the
+ * thing it describes rather than in a corner of the screen. The distance
+ * leads at full size and the per-axis gaps sit under it small, because
+ * the distance is the answer and the axes are the detail.
+ */
+.measure-tag {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 4px 10px;
+  border-radius: var(--r-sm);
+  background: rgba(10, 12, 16, 0.92);
+  border: 1px solid var(--line-2);
+  box-shadow: var(--sh-2);
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}
+.measure-tag strong {
+  font-size: var(--fs-md);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--tx-0);
+}
+.measure-tag span {
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  color: var(--tx-2);
+}

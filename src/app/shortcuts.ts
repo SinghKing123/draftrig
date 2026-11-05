@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useDoc } from '@/state/doc'
 import { useSim } from '@/state/sim'
 import { engine } from '@/sim/engine'
+import { useRuler } from '@/scene/rulerState'
 
 const isTypingTarget = (t: EventTarget | null): boolean => {
   const el = t as HTMLElement | null
@@ -50,6 +51,12 @@ export function useShortcuts(): void {
           }
           break
         case 'Escape':
+          /* One Escape puts the ruler away, because that is the thing
+             the hand is holding; it does not also wipe the selection. */
+          if (useRuler.getState().on) {
+            useRuler.getState().setOn(false)
+            break
+          }
           doc.setPendingWire(null)
           doc.clearSelection()
           break
@@ -86,6 +93,11 @@ export function useShortcuts(): void {
         case 'w':
         case 'W':
           doc.setDragStyle(doc.dragStyle === 'direct' ? 'handles' : 'direct')
+          break
+        /* M for measure, where every other tool that has one keeps it. */
+        case 'm':
+        case 'M':
+          useRuler.getState().toggle()
           break
         case 'x':
         case 'X':

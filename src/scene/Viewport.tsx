@@ -23,6 +23,8 @@ import { DiagnosticsProbe } from './DiagnosticsProbe'
 import { countGlErrors } from './diagnostics'
 import { useAdaptiveQuality } from './adaptiveQuality'
 import { beginDrag, endDrag, updateDrag, type DragState } from './dragMove'
+import { Ruler } from './Ruler'
+import { useRuler } from './rulerState'
 import type { Vec3 } from '@/parts/kernel/types'
 
 /* ------------------------------------------------------------------ */
@@ -410,6 +412,8 @@ function SceneContents() {
   const onPartDown = useCallback(
     (e: ThreeEvent<PointerEvent>, id: string) => {
       if (mode === 'wire') return
+      // While measuring, a press on a part is a point on that part.
+      if (useRuler.getState().on) return
       e.stopPropagation()
 
       // Work out what the gesture applies to before the store has caught up:
@@ -508,6 +512,8 @@ function SceneContents() {
   // Only a genuine click clears the selection. Without this every camera orbit
   // that starts over empty space throws away what you had selected.
   const onMiss = useCallback(() => {
+    // The ruler is taking points, not choosing parts.
+    if (useRuler.getState().on) return
     if (dragging.active || !wasClick()) return
     clearSelection()
     setPendingWire(null)
@@ -540,6 +546,7 @@ function SceneContents() {
       <Wires />
       <Solder />
       <Ports />
+      <Ruler />
       <PendingWire cursor={cursor} />
 
       <DiagnosticsProbe />

@@ -27,6 +27,12 @@ const S = ({ children, size = 14, className, style }: IconProps & { children: Re
 export const IconCursor = (p: IconProps) => (
   <S {...p}><path d="M3 2.5 12.5 7.6l-4.1 1-1.9 4.2L3 2.5Z" /></S>
 )
+export const IconRuler = (p: IconProps) => (
+  <S {...p}>
+    <path d="M1.9 9.9 9.9 1.9l4.2 4.2-8 8z" />
+    <path d="M4.6 7.2 6 8.6M6.8 5 8.2 6.4M9 2.8l1.4 1.4" />
+  </S>
+)
 export const IconWire = (p: IconProps) => (
   <S {...p}><circle cx="3.2" cy="12.8" r="1.6" /><circle cx="12.8" cy="3.2" r="1.6" /><path d="M4.4 11.6C7 9 6 6.5 8 5.2c1-.7 2-.9 3-1.3" /></S>
 )
@@ -160,4 +166,16 @@ export const IconSparkle = (p: IconProps) => (
 /** Where to find out how something works. */
 export const IconHelp = (p: IconProps) => (
   <S {...p}><circle cx="8" cy="8" r="6.2" /><path d="M6.3 6.2a1.75 1.75 0 1 1 2.4 1.62c-.5.2-.7.6-.7 1.1v.4" /><path d="M8 11.9h.01" /></S>
+)
+
+/** Shown in dark mode: switch to light. */
+export const IconSun = (p: IconProps) => (
+  <S {...p}>
+    <circle cx="8" cy="8" r="2.9" />
+    <path d="M8 1.6v1.5M8 12.9v1.5M1.6 8h1.5M12.9 8h1.5M3.5 3.5l1.05 1.05M11.45 11.45l1.05 1.05M3.5 12.5l1.05-1.05M11.45 4.55l1.05-1.05" />
+  </S>
+)
+/** Shown in light mode: switch to dark. */
+export const IconMoon = (p: IconProps) => (
+  <S {...p}><path d="M13.4 9.6A5.6 5.6 0 0 1 6.4 2.6a5.6 5.6 0 1 0 7 7Z" /></S>
 )
