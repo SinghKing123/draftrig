@@ -3,7 +3,7 @@ import { Wordmark } from './Logo'
 import { AccountMenu } from './AccountMenu'
 import { FileMenu, type FileActions } from './FileMenu'
 import {
-  IconCursor,
+  IconBoard, IconCursor,
   IconPencil, IconPause, IconPlay, IconRedo, IconReset, IconSave, IconUndo, IconWire, IconZap,
 } from './Icons'
 import { useMayKeep } from '@/auth/gate'
@@ -15,6 +15,7 @@ import type { SaveState } from '@/app/App'
 const MODES: { id: EditorMode; label: string; icon: typeof IconCursor; hint: string }[] = [
   { id: 'build', label: 'Build', icon: IconCursor, hint: 'Place and arrange parts' },
   { id: 'wire', label: 'Wire', icon: IconWire, hint: 'Connect terminals' },
+  { id: 'pcb', label: 'Board', icon: IconBoard, hint: 'Lay the circuit out as a printed board' },
   { id: 'code', label: 'Code', icon: IconPencil, hint: 'Write the program a board runs' },
   { id: 'sim', label: 'Simulate', icon: IconZap, hint: 'Power it up and measure it' },
 ]

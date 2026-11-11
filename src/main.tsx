@@ -4,6 +4,7 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-route
 import '@/styles/tokens.css'
 import '@/styles/base.css'
 import '@/styles/app.css'
+import '@/styles/pcb.css'
 import '@/styles/site.css'
 import '@/styles/site-lp.css'
 import '@/styles/lp.css'

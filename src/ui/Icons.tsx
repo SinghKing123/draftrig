@@ -33,6 +33,15 @@ export const IconRuler = (p: IconProps) => (
     <path d="M4.6 7.2 6 8.6M6.8 5 8.2 6.4M9 2.8l1.4 1.4" />
   </S>
 )
+/** A board: a track turning a corner between two pads. */
+export const IconBoard = (p: IconProps) => (
+  <S {...p}>
+    <rect x="1.8" y="1.8" width="12.4" height="12.4" rx="1.4" />
+    <circle cx="5" cy="5" r="1.2" />
+    <circle cx="11" cy="11" r="1.2" />
+    <path d="M6.2 5h2.3l2.5 2.5V9.8" />
+  </S>
+)
 export const IconWire = (p: IconProps) => (
   <S {...p}><circle cx="3.2" cy="12.8" r="1.6" /><circle cx="12.8" cy="3.2" r="1.6" /><path d="M4.4 11.6C7 9 6 6.5 8 5.2c1-.7 2-.9 3-1.3" /></S>
 )

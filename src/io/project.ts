@@ -1,6 +1,7 @@
 import type { Doc } from '@/state/doc'
 import { emptyDoc } from '@/state/doc'
 import { BRAND, FILE_EXT } from '@/brand'
+import { emptyPcb, type Pcb } from '@/pcb/types'
 
 /**
  * Project files are plain JSON: instances reference part ids and carry their
@@ -53,6 +54,42 @@ function normalise(doc: Partial<Doc>): Doc {
     order: (doc.order ?? Object.keys(instances)).filter((id) => instances[id]),
     connections,
     connectionOrder: (doc.connectionOrder ?? Object.keys(connections)).filter((id) => connections[id]),
+    /*
+     * The board, if the file has one.
+     *
+     * Files written before the Board workspace existed have no `pcb`
+     * key, and that is exactly right for them: no board was drawn, so
+     * there is no board. Opening one in Board arranges a fresh layout
+     * rather than restoring a blank.
+     */
+    pcb: doc.pcb ? normalisePcb(doc.pcb, instances) : undefined,
+  }
+}
+
+/**
+ * A board from a file, with its placements checked against the build.
+ *
+ * A project can be edited in Build after its board was drawn, and a part
+ * deleted there leaves a placement pointing at nothing. Dropping those
+ * on load is what stops the board workspace from drawing a footprint for
+ * a part that is no longer in the document.
+ */
+function normalisePcb(pcb: Partial<Pcb>, instances: Doc['instances']): Pcb {
+  const base = emptyPcb()
+  const placements = Object.fromEntries(
+    Object.entries(pcb.placements ?? {}).filter(([id]) => instances[id]),
+  )
+  const tracks = pcb.tracks ?? {}
+  const vias = pcb.vias ?? {}
+  return {
+    w: pcb.w ?? base.w,
+    h: pcb.h ?? base.h,
+    placements,
+    tracks,
+    trackOrder: (pcb.trackOrder ?? Object.keys(tracks)).filter((id) => tracks[id]),
+    vias,
+    viaOrder: (pcb.viaOrder ?? Object.keys(vias)).filter((id) => vias[id]),
+    rules: { ...base.rules, ...(pcb.rules ?? {}) },
   }
 }
 

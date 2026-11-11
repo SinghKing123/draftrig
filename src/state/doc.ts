@@ -2,6 +2,8 @@ import { useMemo } from 'react'
 import { create } from 'zustand'
 import type { Connection, Instance, Params, ParamValue, PartDef, Port, PortBundle, PortRef, Vec3 } from '@/parts/kernel/types'
 import { defaultParams, getPart } from '@/parts/kernel/registry'
+import { emptyPcb, type Pcb } from '@/pcb/types'
+import { arrange } from '@/pcb/arrange'
 
 /* ------------------------------------------------------------------ */
 /* Document                                                            */
@@ -14,6 +16,15 @@ export interface Doc {
   order: string[]
   connections: Record<string, Connection>
   connectionOrder: string[]
+  /**
+   * The printed circuit board, once there is one.
+   *
+   * Absent until the Board workspace is opened and the circuit is
+   * arranged, because most builds are a room or a rig and have no board
+   * in them. It lives on the document rather than in a store of its own
+   * so that it saves, undoes and redoes with the build it came out of.
+   */
+  pcb?: Pcb
 }
 
 /**
@@ -21,15 +32,20 @@ export interface Doc {
  *
  * Four pages over one document, the way a tool with four jobs is laid out:
  * each one keeps the panels that job needs and puts away the ones it does
- * not. Build is parts and placement, Wire is terminals and cable, Code is
- * the program a board runs, Sim is running it and measuring it.
+ * not. Build is parts and placement, Wire is terminals and cable, Board
+ * turns that wiring into copper, Code is the program a board runs, Sim is
+ * running it and measuring it.
+ *
+ * Board is the one that reads the document rather than adding to it: the
+ * circuit it lays out is the parts and the wires that are already there,
+ * which is the step every other tool makes you draw a second time.
  *
  * `code` is new. The sketch editor existed before it as a panel floating
  * over the bench, reachable only by selecting a board and pressing a button
  * inside its properties, which is a long way to go for the half of this
  * product that is software.
  */
-export type EditorMode = 'build' | 'wire' | 'code' | 'sim'
+export type EditorMode = 'build' | 'wire' | 'pcb' | 'code' | 'sim'
 
 export type TransformMode = 'move' | 'rotate'
 
@@ -169,6 +185,21 @@ export interface DocState {
   toggleLock: (id: string) => void
   toggleHidden: (id: string) => void
 
+  /**
+   * Change the board, as one undoable edit.
+   *
+   * One primitive rather than a dozen actions. Placing, routing, sizing
+   * and changing a rule are all "mutate the board and record it", and
+   * the board editor is the only thing that calls any of them — a store
+   * action per gesture would be twelve names for one operation. Pass
+   * `record: false` for the frames of a drag, then once more with it
+   * true when the pointer comes up, which is the same bargain the part
+   * gizmo already makes.
+   */
+  editPcb: (fn: (b: Pcb) => void, record?: boolean) => void
+  /** The board, making an arranged one if the document has none yet. */
+  ensurePcb: () => Pcb
+
   connect: (a: PortRef, b: PortRef, opts?: Partial<Connection>) => string | null
   disconnect: (ids: string[]) => void
   setConnectionColor: (id: string, color: string) => void
@@ -298,6 +329,26 @@ const cloneDoc = (d: Doc): Doc => ({
   order: [...d.order],
   connections: Object.fromEntries(Object.entries(d.connections).map(([k, v]) => [k, { ...v, a: { ...v.a }, b: { ...v.b } }])),
   connectionOrder: [...d.connectionOrder],
+  pcb: d.pcb ? clonePcb(d.pcb) : undefined,
+})
+
+/**
+ * A board, deep enough that undo cannot reach back into it.
+ *
+ * The track vertices are the part that matters: they are arrays inside
+ * objects inside a record, and a shallow copy would leave two history
+ * entries dragging the same corner about.
+ */
+const clonePcb = (b: Pcb): Pcb => ({
+  ...b,
+  rules: { ...b.rules },
+  placements: Object.fromEntries(Object.entries(b.placements).map(([k, v]) => [k, { ...v }])),
+  tracks: Object.fromEntries(
+    Object.entries(b.tracks).map(([k, v]) => [k, { ...v, pts: v.pts.map((q) => [...q] as [number, number]) }]),
+  ),
+  trackOrder: [...b.trackOrder],
+  vias: Object.fromEntries(Object.entries(b.vias).map(([k, v]) => [k, { ...v, at: [...v.at] as [number, number] }])),
+  viaOrder: [...b.viaOrder],
 })
 
 const HISTORY_LIMIT = 100
@@ -391,6 +442,33 @@ export const useDoc = create<DocState>()((set, get) => {
     future: [],
 
     setMode: (m) => set({ mode: m, pendingWire: null }),
+
+    editPcb: (fn, record = true) =>
+      edit((d) => {
+        d.pcb = d.pcb ?? emptyPcb()
+        fn(d.pcb)
+      }, record),
+
+    ensurePcb: () => {
+      const here = get().doc.pcb
+      if (here) return here
+      /*
+       * A board that opens empty is a board nobody can tell what to do
+       * with, so the first look at this workspace is the circuit already
+       * on it, sized to fit. Nothing is placed by hand yet, so there is
+       * nothing to lose by arranging it.
+       */
+      const doc = get().doc
+      const fresh = emptyPcb()
+      const a = arrange(doc, fresh)
+      fresh.placements = a.placements
+      fresh.w = a.w
+      fresh.h = a.h
+      edit((d) => {
+        d.pcb = fresh
+      })
+      return fresh
+    },
     setTransformMode: (m) => set({ transformMode: m }),
     setDragStyle: (d) => set({ dragStyle: d }),
 

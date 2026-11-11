@@ -203,6 +203,22 @@ export function ModalTransform() {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return
+
+      /*
+       * A gesture aimed at the bench does nothing while the bench is not
+       * on screen.
+       *
+       * This listener is on the capture phase and stops the event dead,
+       * so for as long as the canvas is mounted it owns G and R for the
+       * whole application — including in the workspaces that hide the
+       * bench and put something else in its place, where R meant rotate
+       * a footprint and instead silently turned a part on a bench
+       * nobody could see. Asking the canvas whether it is laid out is
+       * better than listing the workspaces that hide it, because the
+       * answer stays right when a new one is added.
+       */
+      if (!el.offsetParent && el.getClientRects().length === 0) return
+
       const k = e.key.toLowerCase()
 
       if (!s.current) {

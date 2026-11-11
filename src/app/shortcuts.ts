@@ -42,6 +42,18 @@ export function useShortcuts(): void {
         return
       }
 
+      /*
+       * The board workspace owns its own keys.
+       *
+       * Delete means copper there and not parts, F fits the board rather
+       * than framing a camera that is not on screen, and R turns a
+       * footprint. Running both handlers would take a part off the bench
+       * while somebody was trying to remove a track. The workspace keys
+       * stay, because switching workspace has to work from inside one,
+       * and so do undo, redo and save above, which are document-wide.
+       */
+      if (doc.mode === 'pcb' && !/^[1-5]$/.test(e.key)) return
+
       switch (e.key) {
         case 'Delete':
         case 'Backspace':
@@ -70,9 +82,12 @@ export function useShortcuts(): void {
           doc.setMode('wire')
           break
         case '3':
-          doc.setMode('code')
+          doc.setMode('pcb')
           break
         case '4':
+          doc.setMode('code')
+          break
+        case '5':
           doc.setMode('sim')
           break
         case ' ':

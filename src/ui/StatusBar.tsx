@@ -1,8 +1,22 @@
-import { useDoc } from '@/state/doc'
+import { useDoc, type EditorMode } from '@/state/doc'
 import { useSim } from '@/state/sim'
 import { formatMass, formatMoney } from '@/parts/kernel/units'
 import { useBomPanel } from '@/state/bom'
 import { useFullBom } from './Bom'
+
+/*
+ * The workspace, named the way its tab names it.
+ *
+ * Capitalising the mode id read "Pcb" and "Sim", which are an internal
+ * key with a capital letter on it rather than the words on the tabs.
+ */
+const MODE_LABEL: Record<EditorMode, string> = {
+  build: 'Build',
+  wire: 'Wire',
+  pcb: 'Board',
+  code: 'Code',
+  sim: 'Simulate',
+}
 
 export function StatusBar() {
   const openBom = useBomPanel((s) => s.setOpen)
@@ -67,7 +81,7 @@ export function StatusBar() {
         Est. cost <b>{formatMoney(cost)}</b>
       </button>
       <span className="sb-item">Snap <b>{snap.enabled ? `${snap.grid} mm` : 'off'}</b></span>
-      <span className="sb-item">Mode <b style={{ textTransform: 'capitalize' }}>{mode}</b></span>
+      <span className="sb-item">Mode <b>{MODE_LABEL[mode]}</b></span>
       <span className="sb-item">mm · Y-up</span>
     </footer>
   )

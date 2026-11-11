@@ -4,6 +4,12 @@ import { Viewport } from '@/scene/Viewport'
 import { fbKey, peekFramebuffer, type CharBuffer } from '@/sim/display/framebuffer'
 import { TopBar, Workspaces } from '@/ui/TopBar'
 import { CodeBoards, CodeCentre } from '@/ui/CodeWorkspace'
+import { BoardWorkspace } from '@/ui/BoardWorkspace'
+import { useBoard } from '@/state/board'
+import { buildNets } from '@/pcb/nets'
+import { Connectivity, flatten } from '@/pcb/copper'
+import { checkBoard } from '@/pcb/drc'
+import { gerberFiles } from '@/pcb/gerber'
 import { Library } from '@/ui/Library'
 import { Outline } from '@/ui/Outline'
 import { useSidePanel } from '@/ui/PanelTabs'
@@ -59,6 +65,15 @@ declare global {
        * registry is the only place that knows how many there are.
        */
       parts: { allParts: typeof allParts; CATEGORY_META: typeof CATEGORY_META; getPart: typeof getPart; searchParts: typeof searchParts }
+      /** The board editor's own state, and the pure half it draws from. */
+      board: typeof useBoard
+      pcb: {
+        buildNets: typeof buildNets
+        flatten: typeof flatten
+        Connectivity: typeof Connectivity
+        checkBoard: typeof checkBoard
+        gerberFiles: typeof gerberFiles
+      }
       /** What a panel is actually showing, for tools/ and for bug reports. */
       screen: (instanceId: string, screen?: string) => unknown
     }
@@ -70,6 +85,8 @@ window.draftrig = {
   engine,
   starters: STARTERS,
   parts: { allParts, CATEGORY_META, getPart, searchParts },
+  board: useBoard,
+  pcb: { buildNets, flatten, Connectivity, checkBoard, gerberFiles },
   /*
    * A display's contents, read out of the simulation rather than off the
    * screen. Whether a panel is stale because nothing was sent to it or
@@ -482,8 +499,14 @@ export function Editor() {
         data-sketch={sketchOpen}
         data-sheet={sheet ?? 'none'}
       >
-        {mode === 'code' ? <CodeBoards /> : sideTab === 'parts' ? <Library /> : <Outline />}
-        {mode === 'code' && <CodeCentre />}
+        {mode === 'pcb' ? (
+          <BoardWorkspace />
+        ) : (
+          <>
+            {mode === 'code' ? <CodeBoards /> : sideTab === 'parts' ? <Library /> : <Outline />}
+            {mode === 'code' && <CodeCentre />}
+          </>
+        )}
         <div className="app-center">
           <div className="viewport-wrap" data-tour="viewport">
             <Viewport />
