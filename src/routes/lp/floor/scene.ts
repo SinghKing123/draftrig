@@ -329,6 +329,10 @@ export function createFloor(o: FloorOptions): FloorHandle {
     })
     buildTags()
     if (!sel) doSelect('screen', false)
+    /* The still that covers the load is a photograph of this camera at
+       drift phase zero, so the drift starts again here: the dissolve
+       lands on exactly the frame the still was. */
+    if (mode === 'overview' && !anim) ovT = performance.now()
   })
 
   /* ---------------- selection ---------------- */

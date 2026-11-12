@@ -19,10 +19,15 @@ import { ROOMS } from './floor/rooms'
  * argument that 26 MB of mesh is not something to fetch without being
  * asked — but the room is the first thing on the page and a picture of
  * it behind a button is a picture, which is the one thing this page is
- * not supposed to be. So it loads on arrival, and the shell and the
- * floor paint while the furniture is still coming: what a reader sees
- * in the first second is the editor building the room, not a still of
- * one it built earlier.
+ * not supposed to be. So it loads on arrival.
+ *
+ * What covers the wait is a photograph of this room, taken from this
+ * camera at the start of its drift and dissolved away once the last
+ * part has landed and settled. `scene.ts` restarts the drift at that
+ * moment, so the live frame underneath is the frame the photograph is
+ * and the handover is a cross-fade between two pictures of the same
+ * thing. What it replaced was a chip counting parts in the middle of
+ * an empty viewport, which is a page telling you to wait.
  *
  * The mesh is why `Landing` does not render this below 900px. The
  * answer to 26 MB on a phone is not a poster of the room, it is the
@@ -154,6 +159,17 @@ export function Floor() {
   }, [])
 
   const loading = prog.n + prog.bad < prog.of
+
+  /* The still is lifted a beat after the last part is reported, because
+     a part eases up to full size for half a second after it is placed
+     and a dissolve onto that shows the furniture still growing. */
+  const [lifted, setLifted] = useState(false)
+  useEffect(() => {
+    if (loading) return
+    const id = setTimeout(() => setLifted(true), 620)
+    return () => clearTimeout(id)
+  }, [loading])
+
   const shown = useMemo(() => {
     const needle = q.trim().toLowerCase()
     return ROOMS.map((r) => ({
@@ -240,6 +256,16 @@ export function Floor() {
       {/* ---- the viewport ---- */}
       <div className="fl-vp" ref={stage}>
         <canvas ref={canvas} aria-label="The ground floor in 3D. Drag to orbit, click a part to select it." />
+        <img
+          className="fl-still"
+          src="/floor-still.jpg"
+          alt=""
+          width={1644}
+          height={1291}
+          data-gone={lifted || undefined}
+          fetchPriority="high"
+          aria-hidden="true"
+        />
         <div className="fl-tags" ref={tags} />
         <div className="fl-tools">
           <div className="fl-group">
@@ -256,11 +282,6 @@ export function Floor() {
         <div className="fl-tick" ref={tick}>
           t = 0.0 s
         </div>
-        {loading && (
-          <p className="fl-load">
-            Placing parts · {prog.n} of {prog.of}
-          </p>
-        )}
         {!loading && prog.bad > 0 && (
           <p className="fl-load">
             {prog.bad} of {prog.of} parts did not load
