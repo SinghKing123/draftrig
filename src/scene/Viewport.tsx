@@ -12,6 +12,7 @@ import { CameraRig } from './CameraRig'
 import { publishControls, publishRenderer } from './debugCamera'
 import { clearAnchor, publishAnchor } from './anchor'
 import { Lights, PostFx, StudioEnvironment } from './Render'
+import { useScenePalette } from './palette'
 import { useDoc, useInstanceList } from '@/state/doc'
 import { installPointerTracker, wasClick } from './pointer'
 import { registerCanvas } from './capture'
@@ -95,6 +96,7 @@ function HorizonFog({ controls }: { controls: React.MutableRefObject<OrbitContro
 
 function Ground({ onPointerUp }: { onPointerUp: (e: ThreeEvent<PointerEvent>) => void }) {
   const showGrid = useDoc((s) => s.view.grid)
+  const pal = useScenePalette()
   return (
     <>
       {/*
@@ -123,7 +125,7 @@ function Ground({ onPointerUp }: { onPointerUp: (e: ThreeEvent<PointerEvent>) =>
         {/* Pushed back in depth so the grid sitting a fraction above it always
             wins, without needing a gap big enough to see. */}
         <meshStandardMaterial
-          color="#0E1116"
+          color={pal.ground}
           roughness={0.96}
           metalness={0}
           polygonOffset
@@ -137,10 +139,10 @@ function Ground({ onPointerUp }: { onPointerUp: (e: ThreeEvent<PointerEvent>) =>
           position={[0, 0.02, 0]}
           cellSize={10}
           cellThickness={0.6}
-          cellColor="#232C38"
+          cellColor={pal.gridCell}
           sectionSize={100}
           sectionThickness={1.1}
-          sectionColor="#3A4C64"
+          sectionColor={pal.gridSection}
           /* Not followCamera, and not a short fade.
              Following the camera slides the lines under the model as you
              orbit, which reads as the scene glitching rather than as an
@@ -378,6 +380,7 @@ function SceneContents() {
   useAdaptiveQuality()
   const showGizmo = useDoc((s) => s.view.gizmo)
   const quality = useDoc((s) => s.view.quality)
+  const pal = useScenePalette()
   const [grabbing, setGrabbing] = useState(false)
   // Distinct from `grabbing`, which starts on press: this waits for the drag
   // to pass the click threshold, so clicking a part does not blink its gizmo.
@@ -524,8 +527,8 @@ function SceneContents() {
       {/* The backdrop paints every direction, so a clear colour would only
           ever be seen for the one frame before it draws. Kept as the colour
           the fog fades into, which has to match the horizon band. */}
-      <color attach="background" args={['#0D1117']} />
-      <fog attach="fog" args={['#0D1117', FOG_NEAR, FOG_FAR]} />
+      <color attach="background" args={[pal.background]} />
+      <fog attach="fog" args={[pal.background, FOG_NEAR, FOG_FAR]} />
       <HorizonFog controls={controls} />
       <StudioEnvironment />
       <Lights />

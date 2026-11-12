@@ -4,9 +4,10 @@ import { BRAND, pageTitle } from '@/brand'
 import { Wordmark } from '@/ui/Logo'
 import { Reveal, useMedia, useScrolled } from '@/ui/motion'
 import { ModelCredits } from '@/ui/ModelCredits'
+import { BuildClip } from './Film'
 import { Arcs, Grid } from './lp/Paper'
 import { Typer } from './lp/Typer'
-import { LeadBench, LedBench, PowerBench, SightBench } from './lp/Bench'
+import { Steps } from './lp/Steps'
 import { Floor } from './lp/Floor'
 import { Screens } from './lp/Screens'
 import { Library } from './lp/Library'
@@ -31,10 +32,10 @@ import { Gallery } from './lp/Gallery'
  * the workspace each one is in, which makes them an index of the
  * product rather than a slideshow of it.
  *
- * The figures agree with each other on purpose. The sightline bench,
- * given the shipped theatre's rows at 3.8 and 5.3 m and its 300 mm
- * riser, works out 53 mm of headroom, because that is the figure the
- * editor's inspector returns for the same build.
+ * Under the library, four frames take one project stage each — laid
+ * out, wired, coded, run — captioned in names and figures, not
+ * sentences. That row replaced four interactive solvers, which made
+ * the same argument in prose and sliders and read as a quiz.
  *
  * What is deliberately absent, so it does not drift back: a kicker
  * above a heading, three equal cards of icon-heading-blurb, a gradient,
@@ -107,7 +108,7 @@ export function Landing() {
             Sign in
           </Link>
           <Link className="dr-btn dr-btn-go dr-btn-sm" to="/projects">
-            Open editor
+            {wide ? 'Open editor' : 'Builds'}
           </Link>
         </div>
       </header>
@@ -129,6 +130,41 @@ export function Landing() {
         </div>
 
         {/*
+          * A phone gets no live room (see WIDE), so the space under the
+          * headline carries a recording of one instead.
+          *
+          * It was a still until now, and a still of a circuit is the one
+          * thing that cannot show a circuit working: the whole claim is
+          * that the display is lit because something clocked it, and a
+          * photograph of a lit display is what a mock-up looks like too.
+          * The clip is the editor running, 154 kB against the room's
+          * 26.2 MB, and it costs less than the 219 kB still it replaced.
+          */}
+        {!wide && (
+          <div className="dr-w dr-hero-phone">
+            <Reveal now delay={240} className="dr-hero-clip">
+              <BuildClip
+                clip="clip-run"
+                alt="A scoreboard running in Draftrig: an Uno driving a character LCD that reads DRAFTRIG Scoreboard"
+              />
+            </Reveal>
+            <Reveal now delay={340}>
+              <p className="dr-hero-sub">Lay out a build, wire it, program it and run it.</p>
+            </Reveal>
+            <Reveal now delay={420} className="dr-cta">
+              <Link className="dr-btn dr-btn-go" to="/projects">
+                See the builds<span className="arr" aria-hidden="true" />
+              </Link>
+            </Reveal>
+            <Reveal now delay={480}>
+              <p className="dr-hero-note">
+                The editor itself needs a computer. On a phone a build opens as its parts, wiring and code.
+              </p>
+            </Reveal>
+          </div>
+        )}
+
+        {/*
           * The product itself, above the fold, loading as the page
           * does — on a screen wide enough to be worth 26.2 MB. See
           * WIDE above, and the note in `Floor`.
@@ -146,10 +182,15 @@ export function Landing() {
       {/* ---- the editor, screen by screen, and the box it comes with ---- */}
       <section className="dr-sec dr-sec-floor" id="screens">
         <div className="dr-w dr-two">
-          <Reveal className="dr-two-l">
-            <h2>Workspaces</h2>
-            <Screens />
-          </Reveal>
+          {/* The workspace screenshots are of a three-column desktop
+              application, and at a phone's width they are text too small
+              to read. The carousel below shows the same four on a phone. */}
+          {wide && (
+            <Reveal className="dr-two-l">
+              <h2>Workspaces</h2>
+              <Screens />
+            </Reveal>
+          )}
           <Reveal delay={80} className="dr-two-r">
             <h2>Library</h2>
             <Library />
@@ -173,19 +214,15 @@ export function Landing() {
         </div>
       </div>
 
-      {/* ---- four questions you can answer yourself, here ---- */}
-      <section className="dr-sec" id="asked">
+      {/* ---- a project, stage by stage ---- */}
+      <section className="dr-sec" id="steps">
         <div className="dr-w">
           <Reveal className="dr-sec-head">
-            <h2>Solvers</h2>
+            <h2>Steps</h2>
           </Reveal>
-
-          <div className="dr-bench">
-            <LeadBench />
-            <PowerBench />
-            <SightBench />
-            <LedBench />
-          </div>
+          <Reveal delay={60}>
+            <Steps />
+          </Reveal>
         </div>
       </section>
 
@@ -206,10 +243,11 @@ export function Landing() {
         <Grid />
         <div className="dr-w">
           <Reveal>
-            <h2>Open the editor</h2>
+            <h2>{wide ? 'Open the editor' : 'Open a build'}</h2>
             <div className="dr-end-cta">
               <Link className="dr-btn dr-btn-go" to="/projects">
-                Open the editor<span className="arr" aria-hidden="true" />
+                {wide ? 'Open the editor' : 'See the builds'}
+                <span className="arr" aria-hidden="true" />
               </Link>
               <Link className="dr-btn dr-btn-ghost" to="/signin">
                 Sign in
@@ -235,8 +273,8 @@ export function Landing() {
           <nav className="dr-foot-col">
             <h3>On this page</h3>
             {wide && <a href="#floor">The live floor</a>}
-            <a href="#screens">Workspaces</a>
-            <a href="#asked">Solvers</a>
+            <a href="#screens">{wide ? 'Workspaces' : 'Library'}</a>
+            <a href="#steps">Steps</a>
             <a href="#built">Viewport</a>
           </nav>
 
@@ -250,7 +288,7 @@ export function Landing() {
           </nav>
         </div>
 
-        <ModelCredits className="dr-w" />
+        <ModelCredits className="dr-w" fold={!wide} />
 
         <div className="dr-w dr-foot-base">
           <span>

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { LogoMark, Wordmark } from './Logo'
+import { useOnDark } from '@/state/theme'
 
 /**
  * The thing that plays when the editor opens.
@@ -38,6 +39,7 @@ export function useSting(): boolean {
 }
 
 export function Sting({ onDone }: { onDone?: () => void }) {
+  const onDark = useOnDark()
   const [gone, setGone] = useState(false)
   const done = useRef(onDone)
   done.current = onDone
@@ -73,10 +75,10 @@ export function Sting({ onDone }: { onDone?: () => void }) {
         </svg>
 
         <div className="sting-mark">
-          <LogoMark size={54} onDark />
+          <LogoMark size={54} onDark={onDark} />
         </div>
         <div className="sting-word">
-          <Wordmark size={26} onDark />
+          <Wordmark size={26} onDark={onDark} />
         </div>
       </div>
     </div>

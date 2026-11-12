@@ -5,6 +5,7 @@ import { IconPlay, IconPlus } from './Icons'
 import { STARTERS } from '@/io/starters'
 import { useDoc } from '@/state/doc'
 import { engine } from '@/sim/engine'
+import { useOnDark } from '@/state/theme'
 
 /**
  * What a first time visitor sees on an empty bench.
@@ -26,6 +27,7 @@ export function Welcome({
   onClose: () => void
   onExamples: () => void
 }) {
+  const onDark = useOnDark()
   const loadDoc = useDoc((s) => s.loadDoc)
   const [busy, setBusy] = useState<string | null>(null)
 
@@ -42,7 +44,7 @@ export function Welcome({
     return (
       <div className="welcome-scrim">
         <div className="welcome intro">
-          <LogoMark size={44} onDark />
+          <LogoMark size={44} onDark={onDark} />
           <h2>{BRAND.name}</h2>
           <p>
             3D layout, point-to-point wiring, and a modified nodal analysis solver.

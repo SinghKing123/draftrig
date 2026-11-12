@@ -188,3 +188,17 @@ export const IconSun = (p: IconProps) => (
 export const IconMoon = (p: IconProps) => (
   <S {...p}><path d="M13.4 9.6A5.6 5.6 0 0 1 6.4 2.6a5.6 5.6 0 1 0 7 7Z" /></S>
 )
+/** Send a link elsewhere: the box with the arrow leaving it. */
+export const IconShare = (p: IconProps) => (
+  <S {...p}>
+    <path d="M8 1.8v8.4M5.2 4.6 8 1.8l2.8 2.8" />
+    <path d="M5.4 7H4a1 1 0 0 0-1 1v5.2a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1h-1.4" />
+  </S>
+)
+/** A screen with a stand: the computer the editor wants. */
+export const IconDesktop = (p: IconProps) => (
+  <S {...p}>
+    <rect x="1.8" y="2.4" width="12.4" height="8.6" rx="1.2" />
+    <path d="M6 14h4M8 11v3" />
+  </S>
+)

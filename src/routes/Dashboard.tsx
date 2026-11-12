@@ -13,6 +13,7 @@ import { getThumb, removeThumb, setThumb } from '@/cloud/thumbs'
 import { STARTERS, type Starter } from '@/io/starters'
 import { StartPanel } from '@/ui/StartPanel'
 import { AI_ENABLED } from '@/ai/assistant'
+import { isPhone } from '@/ui/device'
 
 /**
  * The dashboard.
@@ -286,6 +287,13 @@ export function Dashboard() {
 
   const startBlank = () => navigate(`/app/${newProjectId()}`)
 
+  /*
+   * A phone opens builds as a sheet to read (see routes/BuildSheet), not
+   * as an editor, so an empty bench is nothing it can use. The offers to
+   * start one are left out there rather than leading to a blank page.
+   */
+  const [phone] = useState(isPhone)
+
   /* A template opens through the editor's own ?start= route rather than being
      built and saved here. It is an example you are looking at, and it becomes
      a build of yours the moment you change it. */
@@ -401,9 +409,11 @@ export function Dashboard() {
 
       <div className="dbody">
         <nav className="drail" aria-label="Sections">
-          <button className="dnew" onClick={startBlank}>
-            <IconPlus size={14} /> New build
-          </button>
+          {!phone && (
+            <button className="dnew" onClick={startBlank}>
+              <IconPlus size={14} /> New build
+            </button>
+          )}
           {SECTIONS.map((s) => (
             <button
               key={s.id}
@@ -454,11 +464,13 @@ export function Dashboard() {
                   </button>
                 </div>
                 <div className="tstrip">
-                  <button className="tcard blank" onClick={startBlank}>
-                    <span className="tcard-shot"><IconPlus size={22} /></span>
-                    <span className="tcard-name">Blank</span>
-                    <span className="tcard-kind">Empty bench</span>
-                  </button>
+                  {!phone && (
+                    <button className="tcard blank" onClick={startBlank}>
+                      <span className="tcard-shot"><IconPlus size={22} /></span>
+                      <span className="tcard-name">Blank</span>
+                      <span className="tcard-kind">Empty bench</span>
+                    </button>
+                  )}
                   {STARTERS.slice(0, 5).map((s) => (
                     <TemplateCard key={s.id} s={s} onOpen={openTemplate} />
                   ))}
@@ -481,7 +493,7 @@ export function Dashboard() {
                     <LogoMark size={32} />
                     <h3>Nothing here yet</h3>
                     <div className="dempty-row">
-                      <button className="cta primary small" onClick={startBlank}>Start a blank build</button>
+                      {!phone && <button className="cta primary small" onClick={startBlank}>Start a blank build</button>}
                       <button className="cta ghost small" onClick={() => switchTo('templates')}>Browse templates</button>
                     </div>
                   </div>
@@ -520,7 +532,7 @@ export function Dashboard() {
                   <LogoMark size={32} />
                   <h3>Nothing here yet</h3>
                   <div className="dempty-row">
-                    <button className="cta primary small" onClick={startBlank}>Start a blank build</button>
+                    {!phone && <button className="cta primary small" onClick={startBlank}>Start a blank build</button>}
                     <button className="cta ghost small" onClick={() => switchTo('templates')}>Browse templates</button>
                   </div>
                 </div>

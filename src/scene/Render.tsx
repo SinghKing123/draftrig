@@ -7,6 +7,7 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 import { useDoc } from '@/state/doc'
 import { documentBounds } from './CameraRig'
 import { useSelectedObjects } from './SelectionOutline'
+import { SCENE, useScenePalette } from './palette'
 
 /**
  * Render pipeline.
@@ -49,9 +50,9 @@ function Backdrop() {
         depthTest: false,
         fog: false,
         uniforms: {
-          uUp: { value: new THREE.Color('#1A2029') },
-          uMid: { value: new THREE.Color('#0D1117') },
-          uDown: { value: new THREE.Color('#090C11') },
+          uUp: { value: new THREE.Color(SCENE.dark.up) },
+          uMid: { value: new THREE.Color(SCENE.dark.mid) },
+          uDown: { value: new THREE.Color(SCENE.dark.down) },
         },
         vertexShader: `
           varying vec3 vDir;
@@ -91,6 +92,15 @@ function Backdrop() {
     material.dispose()
   }, [geometry, material])
 
+  // Repainted in place on a theme change rather than rebuilt: it is one
+  // shader, and three uniforms are all that differ.
+  const pal = useScenePalette()
+  useEffect(() => {
+    material.uniforms.uUp.value.set(pal.up)
+    material.uniforms.uMid.value.set(pal.mid)
+    material.uniforms.uDown.value.set(pal.down)
+  }, [material, pal])
+
   return <mesh geometry={geometry} material={material} renderOrder={-1000} frustumCulled={false} />
 }
 
@@ -123,6 +133,7 @@ export function Lights() {
   const instances = useDoc((s) => s.doc.instances)
   const order = useDoc((s) => s.doc.order)
   const key = useRef<THREE.DirectionalLight>(null)
+  const pal = useScenePalette()
 
   const fit = useMemo(() => {
     const box = documentBounds()
@@ -159,7 +170,7 @@ export function Lights() {
 
   return (
     <>
-      <hemisphereLight args={['#A8BDD6', '#191D23', 0.52]} />
+      <hemisphereLight args={[pal.hemiSky, pal.hemiGround, 0.52]} />
       <directionalLight
         ref={key}
         intensity={1.85}
@@ -269,6 +280,7 @@ export function PostFx() {
   // Called unconditionally: hooks cannot sit behind the early return below,
   // and an empty selection costs a set lookup.
   const selected = useSelectedObjects()
+  const pal = useScenePalette()
 
   if (quality === 'off') {
     return (
@@ -324,14 +336,14 @@ export function PostFx() {
           announces itself instead of disappearing into it. */}
       <Outline
         selection={selected}
-        visibleEdgeColor={0x6fa4ff}
-        hiddenEdgeColor={0x24508f}
-        edgeStrength={8}
+        visibleEdgeColor={pal.outlineVisible}
+        hiddenEdgeColor={pal.outlineHidden}
+        edgeStrength={pal.outlineStrength}
         blur
         xRay
         pulseSpeed={0}
         kernelSize={KernelSize.VERY_SMALL}
-        blendFunction={BlendFunction.SCREEN}
+        blendFunction={pal.outlineBlend}
       />
       <ToneMapping mode={ToneMappingMode.ACES_FILMIC} blendFunction={BlendFunction.NORMAL} />
       {high ? <SMAA /> : <></>}

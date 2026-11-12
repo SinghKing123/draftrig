@@ -298,9 +298,7 @@
   font-size: 13px;
   color: var(--ink-2);
 }
-.dr-plate-bar strong { color: var(--ink-0); font-weight: 600; font-size: 13.5px; }
-.dr-plate-bar .m { color: var(--ink-1); }
-.dr-plate-bar .spacer { margin-left: auto; }
+.dr-plate-bar strong { color: var(--ink-0); font-weight: 600; font-size: 15px; }
 
 /* --- the plan: a drawing that draws itself ----------------------- */
 
@@ -674,7 +672,7 @@
 .dr-foot { border-top: 1px solid var(--rule-2); padding-block: 50px 28px; font-size: 14px; background: var(--paper-2); }
 .dr-foot-grid { display: grid; grid-template-columns: 1.6fr repeat(3, 1fr); gap: 34px 24px; }
 .dr-foot-col { display: flex; flex-direction: column; gap: 9px; }
-.dr-foot-col h3 { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2); font-family: inherit; margin-bottom: 3px; }
+.dr-foot-col h3 { font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2); font-family: inherit; margin-bottom: 3px; }
 .dr-foot a { color: var(--ink-1); text-decoration: none; transition: color 0.16s; }
 .dr-foot a:hover { color: var(--ink-0); }
 .dr-foot-base {
@@ -850,6 +848,33 @@
 .fl-vp canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; touch-action: pan-y; }
 .fl-vp canvas.hover { cursor: pointer; }
 .fl-vp canvas:active { cursor: grabbing; }
+/*
+ * The room, photographed, while the room is loading.
+ *
+ * Shot from the same camera at the same moment of its drift as the
+ * scene begins at, so when it goes the frame behind it matches. It
+ * covers the canvas and nothing else: the toolbar and the clock sit
+ * over it and are live from the first paint.
+ *
+ * Sized by width and cropped in height, because that is what the
+ * camera does. This room is far wider than it is deep, so the fit
+ * that chooses the camera's distance is bound by the width of the
+ * frame at every aspect the page offers; match the width and the
+ * photograph lands within a few per cent of the frame behind it.
+ */
+.fl-still {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  z-index: 1;
+  width: 100%;
+  height: auto;
+  translate: 0 -50%;
+  pointer-events: none;
+  transition: opacity 0.7s ease;
+}
+.fl-still[data-gone] { opacity: 0; }
+
 .fl-tags { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
 .fl-tag {
   position: absolute;
@@ -967,6 +992,7 @@
 @media (prefers-reduced-motion: reduce) {
   .fl-status .run i { animation: none; }
   .fl-tag { transition: none; }
+  .fl-still { transition: none; }
 }
 
 /* --- schematic ink, for the one circuit left on the page --------- */
@@ -1020,6 +1046,8 @@
 }
 .dr-gal-item {
   margin: 0;
+  color: inherit;
+  text-decoration: none;
   background: var(--paper-1);
   box-shadow: 0 0 0 1px var(--rule-2);
   display: flex;
@@ -1028,18 +1056,16 @@
 .dr-gal-item img {
   display: block;
   width: 100%;
+  height: auto;
   aspect-ratio: 16 / 10;
   object-fit: cover;
   background: var(--void);
 }
-/* Stacked, not wrapped: on one row the short names kept their counts
-   beside them and the long ones pushed theirs to a second line, so a
-   register of twelve had captions on two different baselines. */
-.dr-gal-item figcaption {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  padding: 10px 13px 12px;
+/* One line, the build's name. The counts that used to sit under it were
+   11.5px, which is a texture rather than a number. */
+.dr-gal-cap {
+  display: block;
+  padding: 11px 13px 13px;
   border-top: 1px solid var(--rule);
 }
 .dr-gal-item strong {
@@ -1048,8 +1074,167 @@
   font-weight: 600;
   letter-spacing: -0.01em;
 }
-.dr-gal-item .m { color: var(--ink-2); font-size: 11.5px; }
-.dr-gal-item:hover .m { color: var(--live); }
+
+/* --- steps: a carousel, one project stage per card --------------- */
+
+/*
+ * The cards run past the column on both sides, out to the edges of the
+ * window, so there is always a card coming in from the right and one
+ * leaving on the left. The current card is aligned to the column, the
+ * others sit back at half strength, and the stage name is a heading on
+ * each card, so it moves with its picture.
+ */
+.dr-car { --card: 54%; --gap: 20px; position: relative; }
+
+.dr-car-view {
+  overflow: hidden;
+  /* Out to the window's edges, with the cards still starting on the column. */
+  margin-inline: calc(50% - 50vw);
+  padding: 4px calc(50vw - 50%) 34px;
+}
+
+.dr-car-track {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: var(--gap);
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+  will-change: transform;
+}
+.dr-car-track:active { cursor: grabbing; }
+.dr-car-track[data-animate] { transition: transform 700ms cubic-bezier(0.16, 1, 0.3, 1); }
+
+.dr-car-card {
+  flex: 0 0 var(--card);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--rule-2);
+  border-radius: 7px;
+  overflow: hidden;
+  background: var(--paper-1);
+  box-shadow: 0 1px 2px rgba(20, 17, 13, 0.05), 0 18px 44px -26px rgba(20, 17, 13, 0.32);
+  opacity: 0.42;
+  transition: opacity 700ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.dr-car-card[data-on] { opacity: 1; }
+
+.dr-car-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 15px 18px 13px;
+}
+.dr-car-head h3 {
+  margin: 0;
+  font-size: clamp(21px, 2vw, 28px);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+  color: var(--ink-0);
+}
+
+.dr-car-pic { border-block: 1px solid var(--rule); background: var(--void, #0D1117); }
+.dr-car-pic img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 13 / 9;
+  object-fit: cover;
+  object-position: left top;
+  pointer-events: none;
+}
+
+.dr-car-cap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+  margin: 0;
+  padding: 12px 18px 15px;
+}
+.dr-car-cap strong { color: var(--ink-0); font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+
+/* The stages, each with the bar that fills while it is up. */
+.dr-car-bar { display: flex; align-items: center; gap: 18px; }
+.dr-car-dots { flex: 1 1 auto; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.dr-car-dots button {
+  position: relative;
+  min-height: 44px;
+  padding: 12px 0 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.dr-car-dots button::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--rule-2);
+}
+.dr-car-dots button:hover { color: var(--ink-0); }
+.dr-car-dots button[data-on] { color: var(--ink-0); }
+.dr-car-dots .fill {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 1;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--sel);
+  transform-origin: left;
+  transform: scaleX(0);
+}
+/* Full while a stage is up and nothing is moving it on; filling while it is. */
+.dr-car-dots button[data-on] .fill { transform: scaleX(1); }
+.dr-car-dots button[data-on] .fill[data-run] { animation: dr-car-fill 2000ms linear both; }
+@keyframes dr-car-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+.dr-car-btns { flex: none; display: flex; gap: 8px; }
+.dr-car-btns button {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--rule-2);
+  border-radius: 4px;
+  background: var(--paper-1);
+  color: var(--ink-0);
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s;
+}
+.dr-car-btns button:hover { background: var(--paper-2); border-color: var(--rule-3); }
+
+/* A phone: one card and the edge of the next, the stage names without
+   numbers, and no arrows. A swipe or a tap on a stage does what they did. */
+@media (max-width: 760px) {
+  .dr-car { --card: 86%; --gap: 12px; }
+  .dr-car-view { padding-bottom: 24px; }
+  .dr-car-head { padding: 13px 14px 11px; }
+  .dr-car-cap { padding: 10px 14px 13px; }
+  /* A square crop on the part of the window that matters: the full editor
+     at this width is a picture of text too small to read. */
+  .dr-car-pic img { aspect-ratio: 1 / 1; object-position: var(--focus, 50% 50%); }
+  .dr-car-bar { gap: 10px; }
+  .dr-car-dots { gap: 6px; }
+  .dr-car-dots button { font-size: 13.5px; }
+  .dr-car-btns .dr-car-step { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dr-car-track[data-animate], .dr-car-card { transition: none; }
+}
 
 /* --- the product, under the sum --------------------------------- */
 
@@ -1138,7 +1323,7 @@
 }
 .dr .credits h3 {
   font-family: inherit;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1174,8 +1359,8 @@
 .dr .credits-by {
   display: block;
   font-family: 'JetBrains Mono', ui-monospace, monospace;
-  font-size: 11px;
-  letter-spacing: 0.02em;
+  font-size: 13px;
+  letter-spacing: 0.01em;
   color: var(--ink-3);
 }
 
@@ -1223,7 +1408,7 @@
   padding: 6px 12px;
   border-radius: 5px;
   font-family: 'JetBrains Mono', ui-monospace, monospace;
-  font-size: 12px;
+  font-size: 13.5px;
   letter-spacing: 0.01em;
   color: var(--ink-2);
   transition: color 0.16s, background 0.16s;
@@ -1290,7 +1475,7 @@
 .dr-lib-find .n {
   flex: none;
   font-family: 'JetBrains Mono', ui-monospace, monospace;
-  font-size: 11.5px;
+  font-size: 13px;
   color: var(--ink-3);
   font-variant-numeric: tabular-nums;
 }
@@ -1332,7 +1517,7 @@
 }
 .dr-lib-cat {
   font-family: 'JetBrains Mono', ui-monospace, monospace;
-  font-size: 11px;
+  font-size: 12.5px;
   color: var(--ink-3);
   white-space: nowrap;
 }
@@ -1387,4 +1572,200 @@
   -webkit-mask-image: radial-gradient(86% 120% at 50% 50%, #000 0%, transparent 72%);
   mask-image: radial-gradient(86% 120% at 50% 50%, #000 0%, transparent 72%);
   opacity: 0.55;
+}
+
+/* --- phone --------------------------------------------------------
+ *
+ * Below 900px there is no live room (see WIDE in Landing.tsx), so the
+ * hero carries a line, the way in and one still. The gallery's twelve
+ * frames become a row you swipe instead of twelve screens of scroll,
+ * and every frame opens its build's sheet.
+ */
+/* Above the bench grid the hero draws behind everything. */
+.dr-hero-phone { position: relative; z-index: 2; }
+.dr-hero-phone .dr-hero-sub { margin-top: 16px; font-size: 17px; max-width: 36ch; text-wrap: pretty; }
+.dr-hero-phone .dr-cta { margin-top: 22px; }
+.dr-hero-phone .dr-btn { min-height: 48px; }
+.dr-hero-still {
+  margin-top: 28px;
+  border: 1px solid var(--rule-2);
+  border-radius: 7px;
+  overflow: hidden;
+  background: #0D1117;
+  box-shadow: 0 1px 2px rgba(20, 17, 13, 0.05), 0 18px 44px -26px rgba(20, 17, 13, 0.32);
+}
+.dr-hero-still img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  object-position: 36% 100%;
+  /* In past the empty floor above the cabinet. */
+  scale: 1.22;
+  transform-origin: 38% 88%;
+}
+
+.dr .credits-fold summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  cursor: pointer;
+  color: var(--ink-0);
+  font-weight: 500;
+  list-style: none;
+}
+.dr .credits-fold summary::-webkit-details-marker { display: none; }
+.dr .credits-fold summary::after {
+  content: '';
+  width: 7px;
+  height: 7px;
+  margin-left: 10px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  rotate: 45deg;
+  translate: 0 -2px;
+  transition: rotate 0.2s;
+}
+.dr .credits-fold[open] summary::after { rotate: 225deg; translate: 0 2px; }
+
+@media (max-width: 760px) {
+  .dr-nav { padding-top: max(13px, env(safe-area-inset-top)); }
+  .dr-nav-end .dr-link, .dr-nav-end .dr-btn { min-height: 44px; }
+
+  .dr-gal {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 80%;
+    grid-template-columns: none;
+    gap: 12px;
+    margin-inline: calc(-1 * var(--gut));
+    padding: 2px var(--gut) 18px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--gut);
+    overscroll-behavior-x: contain;
+    background: none;
+    border: 0;
+    border-radius: 0;
+    scrollbar-width: none;
+  }
+  .dr-gal::-webkit-scrollbar { display: none; }
+  .dr-gal-item {
+    scroll-snap-align: start;
+    border: 1px solid var(--rule-2);
+    border-radius: 7px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(20, 17, 13, 0.05), 0 14px 34px -24px rgba(20, 17, 13, 0.3);
+  }
+  .dr-gal-item img { aspect-ratio: 4 / 3; }
+  .dr-gal-cap strong { font-size: 15px; }
+
+  .dr-end-cta { flex-direction: column; align-items: stretch; max-width: 340px; margin-inline: auto; }
+  .dr-end-cta .dr-btn { justify-content: center; min-height: 50px; }
+  .dr-foot-col a { padding-block: 6px; }
+}
+
+/* --- the page on a phone ---------------------------------------------
+ *
+ * The desktop page is built around a live room, and a phone never loads
+ * it (see WIDE in Landing.tsx). For a while what a phone got was this
+ * page with its centre cut out and the hole left open: a quarter of the
+ * scroll was section padding, the headline's two lines closed up on each
+ * other, and the four stage shots were a 960px three-column application
+ * drawn 299px wide, which is a picture of text nobody can read.
+ *
+ * Everything below is that hole closed. None of it is a smaller copy of
+ * the desktop values; each one is the figure this width actually wants.
+ */
+@media (max-width: 760px) {
+  /*
+   * The band, taken off the width instead of the height.
+   *
+   * `clamp(72px, 11vh, 144px)` is 93px on a 844px-tall phone — the air a
+   * 1440px window gets, set between sections a quarter as wide. Stacked
+   * across five sections it was 964px of the page's 3937px doing
+   * nothing. The ramp is right on a desktop and only the phone end of it
+   * is restated here.
+   */
+  .dr { --band: 54px; }
+  .dr-sec-head { margin-bottom: 22px; }
+  .dr-end { padding-block: 62px; }
+  /* The headline's size badge stands above its first line, so the hero
+     needs clearance under the nav or the badge is cut by it. */
+  .dr-hero { padding-top: 34px; padding-bottom: 30px; }
+
+  /* 0.96 is leading for a 104px headline. At 42px the lines close to
+     40.3px and the size badge standing over the second one lands on the
+     first. Opening the leading gives the badge its own air. */
+  .dr h1 { font-size: 40px; line-height: 1.06; }
+  .dr h2 { font-size: 31px; }
+
+  /* --- the hero's recording --- */
+  .dr-hero-clip {
+    display: block;
+    margin-top: 22px;
+    border: 1px solid var(--rule-2);
+    border-radius: 7px;
+    overflow: hidden;
+    background: #0D1117;
+    box-shadow: 0 1px 2px rgba(20, 17, 13, 0.05), 0 18px 44px -26px rgba(20, 17, 13, 0.32);
+  }
+  /* 16:9 is a letterbox in a portrait column. The crop takes the middle
+     70% of the frame, which is where the board and the panel are. */
+  .dr-hero-clip video {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 5 / 4;
+    object-fit: cover;
+    object-position: 50% 54%;
+  }
+  .dr-hero-phone .dr-hero-sub { margin-top: 20px; font-size: 18px; max-width: none; }
+  .dr-hero-phone .dr-cta { margin-top: 18px; }
+  .dr-hero-phone .dr-btn-go { flex: 1 1 auto; justify-content: center; min-height: 50px; }
+  /* The one thing a phone cannot do, said once, where it is useful —
+     under the way in rather than over it. */
+  .dr-hero-note {
+    margin-top: 12px;
+    color: var(--ink-2);
+    font-size: 14.5px;
+    line-height: 1.5;
+    text-wrap: pretty;
+  }
+
+  /* --- the stage shots --- */
+  /* The square crop already drops the parts panel. This takes the rest
+     of the chrome — toolbar, rulers, status bar — so what is left in the
+     frame is the build, which is the only part of a desktop window that
+     survives being drawn a third of its size. */
+  .dr-car-pic { overflow: hidden; }
+  .dr-car-pic img { scale: 1.34; transform-origin: var(--focus, 50% 50%); }
+
+  /* --- the footer --- */
+  /*
+   * The wordmark took a grid cell of its own and the row stretched to
+   * the tallest column beside it, which left 150px of nothing under a
+   * 30px logo. It gets its own row, and the three columns pack from the
+   * top instead of filling the row's height.
+   */
+  .dr-foot { padding-block: 40px 24px; }
+  .dr-foot-grid { gap: 26px 20px; align-items: start; }
+  .dr-foot-grid > :first-child { grid-column: 1 / -1; }
+  /* The links are 44px tall for a thumb, so the gap that separated 20px
+     ones now separates them twice over. */
+  .dr-foot-col { gap: 0; }
+  .dr-foot-col a { min-height: 44px; display: flex; align-items: center; padding-block: 0; }
+  .dr-foot-base { margin-top: 28px; }
+  .dr .credits-by { line-height: 1.6; }
+
+  /* The wordmark is 19px of artwork in a link with nothing around it. */
+  .dr-mark { display: flex; align-items: center; min-height: 44px; }
+}
+
+/* A phone held in landscape is still a phone: it gets the page above,
+   and the band must not come back off a 390px-tall viewport. */
+@media (max-height: 520px) and (max-width: 1000px) {
+  .dr { --band: 48px; }
+  .dr-end { padding-block: 54px; }
 }

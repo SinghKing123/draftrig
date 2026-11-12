@@ -3,12 +3,13 @@ import { Wordmark } from './Logo'
 import { AccountMenu } from './AccountMenu'
 import { FileMenu, type FileActions } from './FileMenu'
 import {
-  IconBoard, IconCursor,
-  IconPencil, IconPause, IconPlay, IconRedo, IconReset, IconSave, IconUndo, IconWire, IconZap,
+  IconBoard, IconCursor, IconMoon,
+  IconPencil, IconPause, IconPlay, IconRedo, IconReset, IconSave, IconSun, IconUndo, IconWire, IconZap,
 } from './Icons'
 import { useMayKeep } from '@/auth/gate'
 import { useDoc, type EditorMode } from '@/state/doc'
 import { useSim } from '@/state/sim'
+import { useTheme } from '@/state/theme'
 import { engine } from '@/sim/engine'
 import type { SaveState } from '@/app/App'
 
@@ -98,6 +99,9 @@ export function TopBar({ saveState = 'idle', file }: { saveState?: SaveState; fi
   const speed = useSim((s) => s.speed)
   const setSpeed = useSim((s) => s.setSpeed)
 
+  const theme = useTheme((s) => s.theme)
+  const toggleTheme = useTheme((s) => s.toggle)
+
   const rename = (value: string) => {
     useDoc.setState((s) => ({ doc: { ...s.doc, name: value } }))
   }
@@ -123,7 +127,7 @@ export function TopBar({ saveState = 'idle', file }: { saveState?: SaveState; fi
           }
         }}
       >
-        <Wordmark onDark />
+        <Wordmark onDark={theme === 'dark'} />
       </Link>
       <div className="sep-v" />
 
@@ -186,6 +190,15 @@ export function TopBar({ saveState = 'idle', file }: { saveState?: SaveState; fi
       </button>
 
       <div className="sep-v" />
+      {/* The icon is what you get, not what you have: a sun in the dark. */}
+      <button
+        className="btn ghost icon theme-toggle"
+        onClick={toggleTheme}
+        title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+        aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+      >
+        {theme === 'dark' ? <IconSun /> : <IconMoon />}
+      </button>
       <AccountMenu />
     </header>
   )

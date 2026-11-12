@@ -1899,3 +1899,101 @@
   .sp-bar { height: 50px; padding-left: 13px; }
   .sp-input { font-size: 0.9375rem; }
 }
+
+/* ---- phone ----
+ *
+ * One column that cannot be pushed wider than the screen (a bare 1fr
+ * track grows to fit the template strip, which pushed the section heads
+ * off the right edge), the sections in a tab bar at the bottom where a
+ * thumb is, and the template strip as a row of cards that snap.
+ */
+@media (max-width: 900px) {
+  .dbody { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 760px) {
+  /* The page grid's one column, too, or it widens to the template strip. */
+  .dash { grid-template-columns: minmax(0, 1fr); -webkit-tap-highlight-color: transparent; }
+
+  .dtop {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    gap: 10px;
+    padding: calc(8px + env(safe-area-inset-top, 0px)) 14px 8px;
+  }
+  .dtop .grow, .dash-fake { display: none; }
+  .dsearch { flex: 1 1 0; min-width: 0; height: 42px; }
+  .dsearch input { font-size: 16px; } /* below 16px, iOS zooms the page on focus */
+  .dtop-acct { flex: none; padding: 6px; margin: -6px; }
+  .dtop-acct .acct-avatar { width: 32px; height: 32px; }
+
+  .drail {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: 0;
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--line);
+    border-bottom: 0;
+    background: color-mix(in srgb, var(--paper) 90%, transparent);
+    -webkit-backdrop-filter: blur(14px) saturate(1.2);
+    backdrop-filter: blur(14px) saturate(1.2);
+    overflow: visible;
+  }
+  .drail .dnew, .drail .grow { display: none; }
+  .drail-item {
+    position: relative;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+    min-height: 52px;
+    padding: 6px 2px;
+    border-radius: 12px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-align: center;
+  }
+  .drail-item svg { width: 20px; height: 20px; }
+  .drail-item[data-on='true'] { background: transparent; color: var(--blue-deep); }
+  .drail-item[data-on='true'] svg, .drail-item[data-on='true'] .acct-avatar { box-shadow: none; }
+  .drail-item span { max-width: 100%; }
+  .drail-item em {
+    position: absolute;
+    top: 4px;
+    left: calc(50% + 10px);
+    margin: 0;
+    font-size: 0.66rem;
+  }
+  /* The account is already in the top bar. */
+  .drail-item:last-child { display: none; }
+
+  .dmain { padding: 18px 16px calc(96px + env(safe-area-inset-bottom, 0px)); overflow: visible; }
+
+  .dsec-head { gap: 10px; }
+  .dsec-head h2 { font-size: 1.25rem; }
+  .dlink { min-height: 44px; font-size: 0.95rem; }
+  .dseg { overflow-x: auto; max-width: 100%; }
+  .dseg button { padding: 9px 13px; font-size: 0.9rem; white-space: nowrap; }
+  .dseg.icons { display: none; }
+
+  .tstrip {
+    grid-auto-columns: 72%;
+    gap: 12px;
+    margin: 0 -16px;
+    padding: 0 16px 6px;
+    scroll-snap-type: x mandatory;
+    scroll-padding: 0 16px;
+    scrollbar-width: none;
+  }
+  .tstrip::-webkit-scrollbar { display: none; }
+  .tstrip > * { scroll-snap-align: start; }
+
+  .tgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 12px; }
+  .btiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 12px; }
+}

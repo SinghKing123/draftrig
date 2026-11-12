@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { LogoMark } from './Logo'
 import { IconX } from './Icons'
 import { useAuth } from '@/auth/AuthProvider'
+import { useOnDark } from '@/state/theme'
 
 /**
  * What a signed-out person gets when they try to keep something.
@@ -34,6 +35,7 @@ export function SignInWall({
   onContinue?: () => void
 }) {
   const { signIn, signUp } = useAuth()
+  const onDark = useOnDark()
 
   useEffect(() => {
     const key = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
@@ -53,7 +55,7 @@ export function SignInWall({
           <IconX size={13} />
         </button>
 
-        <LogoMark size={34} onDark />
+        <LogoMark size={34} onDark={onDark} />
         <h2>{reason}</h2>
         <p>Builds live in your account, on every machine you sign in from.</p>
 

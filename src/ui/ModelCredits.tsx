@@ -27,10 +27,11 @@ interface Credit {
   source: string
 }
 
-function useModelCredits(): Credit[] {
+function useModelCredits(enabled = true): Credit[] {
   const [list, setList] = useState<Credit[]>([])
 
   useEffect(() => {
+    if (!enabled) return
     let live = true
     void import('@/parts/catalog').then((m) => {
       if (!live) return
@@ -52,14 +53,21 @@ function useModelCredits(): Credit[] {
     return () => {
       live = false
     }
-  }, [])
+  }, [enabled])
 
   return list
 }
 
-export function ModelCredits({ className }: { className?: string }) {
-  const credits = useModelCredits()
-  if (credits.length === 0) return null
+/**
+ * `fold` puts the list behind a disclosure. On a phone it is several
+ * screens of names between the last section and the copyright line, and
+ * reading it means loading the whole catalogue, so a folded list is not
+ * read until somebody opens it.
+ */
+export function ModelCredits({ className, fold = false }: { className?: string; fold?: boolean }) {
+  const [opened, setOpened] = useState(false)
+  const credits = useModelCredits(!fold || opened)
+  if (!fold && credits.length === 0) return null
 
   return (
     <section className={`credits${className ? ` ${className}` : ''}`}>
@@ -67,18 +75,31 @@ export function ModelCredits({ className }: { className?: string }) {
       <p className="credits-lede">
         Some parts are drawn with scanned models. Their authors are below.
       </p>
-      <ul>
-        {credits.map((c) => (
-          <li key={c.source}>
-            <a href={c.source} target="_blank" rel="noreferrer noopener">
-              {c.title}
-            </a>
-            <span className="credits-by">
-              {c.author} · {c.license}
-            </span>
-          </li>
-        ))}
-      </ul>
+      {fold ? (
+        <details className="credits-fold" onToggle={(e) => e.currentTarget.open && setOpened(true)}>
+          <summary>Models and their authors</summary>
+          {credits.length > 0 ? <CreditList credits={credits} /> : <p className="credits-by">Loading…</p>}
+        </details>
+      ) : (
+        <CreditList credits={credits} />
+      )}
     </section>
+  )
+}
+
+function CreditList({ credits }: { credits: Credit[] }) {
+  return (
+    <ul>
+      {credits.map((c) => (
+        <li key={c.source}>
+          <a href={c.source} target="_blank" rel="noreferrer noopener">
+            {c.title}
+          </a>
+          <span className="credits-by">
+            {c.author} · {c.license}
+          </span>
+        </li>
+      ))}
+    </ul>
   )
 }

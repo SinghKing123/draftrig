@@ -1,8 +1,27 @@
 import { useEffect, useRef, useState } from 'react'
 import { engine } from '@/sim/engine'
 import { useSim } from '@/state/sim'
+import { useTheme, type Theme } from '@/state/theme'
 import { eng } from '@/parts/kernel/units'
 import { IconX } from './Icons'
+
+/* The graticule, in the two themes. A canvas cannot read CSS variables as it
+   draws, so these are the panel tokens written out. */
+const INK: Record<Theme, { grid: string; zero: string; label: string }> = {
+  dark: { grid: '#1B2029', zero: '#2E3742', label: '#545E6C' },
+  light: { grid: '#E2DED5', zero: '#C9C3B7', label: '#8D867A' },
+}
+
+/*
+ * Probe colours are stored on the probe when it is made, from the dark
+ * palette in state/sim.ts. On a light scope the pale half of that palette
+ * vanishes, so each one has a darker partner, the same as --sig-1..8.
+ */
+const ON_LIGHT: Record<string, string> = {
+  '#4C8DFF': '#1A5FE0', '#FFB020': '#C77F00', '#3DD68C': '#0E8A55', '#FF6B9D': '#D0336A',
+  '#A78BFA': '#6D4FD8', '#22D3EE': '#0B8FA8', '#FF8A4C': '#D45A1E', '#C3E88D': '#5E8A1E',
+}
+const traceColor = (c: string, theme: Theme) => (theme === 'light' ? ON_LIGHT[c.toUpperCase()] ?? c : c)
 
 /**
  * Rolling oscilloscope. Reads the engine's ring buffers directly each frame.
@@ -14,6 +33,7 @@ export function Scope() {
   const removeProbe = useSim((s) => s.removeProbe)
   const [latest, setLatest] = useState<Record<string, number>>({})
   const [window_, setWindow] = useState(0.05)
+  const theme = useTheme((s) => s.theme)
 
   useEffect(() => {
     let raf = 0
@@ -35,7 +55,8 @@ export function Scope() {
       ctx.clearRect(0, 0, w, h)
 
       // Grid.
-      ctx.strokeStyle = '#1B2029'
+      const ink = INK[theme]
+      ctx.strokeStyle = ink.grid
       ctx.lineWidth = 1
       ctx.beginPath()
       for (let i = 1; i < 10; i++) {
@@ -54,7 +75,7 @@ export function Scope() {
       const active = probes.map((p) => ({ probe: p, trace: traces.get(p.id) })).filter((x) => x.trace && x.trace.count > 1)
 
       if (!active.length) {
-        ctx.fillStyle = '#545E6C'
+        ctx.fillStyle = ink.label
         ctx.font = '12px ui-sans-serif, system-ui'
         ctx.textAlign = 'center'
         ctx.fillText('Click a terminal in Simulate mode to probe it', w / 2, h / 2)
@@ -86,7 +107,7 @@ export function Scope() {
 
       // Zero line.
       if (vmin < 0 && vmax > 0) {
-        ctx.strokeStyle = '#2E3742'
+        ctx.strokeStyle = ink.zero
         ctx.beginPath()
         ctx.moveTo(0, yOf(0))
         ctx.lineTo(w, yOf(0))
@@ -96,7 +117,7 @@ export function Scope() {
       const readings: Record<string, number> = {}
       for (const { probe, trace } of active) {
         if (!trace) continue
-        ctx.strokeStyle = probe.color
+        ctx.strokeStyle = traceColor(probe.color, theme)
         ctx.lineWidth = 1.6
         ctx.lineJoin = 'round'
         ctx.beginPath()
@@ -115,7 +136,7 @@ export function Scope() {
       }
 
       // Axis labels.
-      ctx.fillStyle = '#545E6C'
+      ctx.fillStyle = ink.label
       ctx.font = '10px ui-monospace, monospace'
       ctx.textAlign = 'left'
       ctx.fillText(eng(vmax, 'V'), 5, 11)
@@ -127,7 +148,7 @@ export function Scope() {
     }
     raf = requestAnimationFrame(draw)
     return () => cancelAnimationFrame(raf)
-  }, [probes, window_])
+  }, [probes, window_, theme])
 
   return (
     <div className="scope">
@@ -151,7 +172,7 @@ export function Scope() {
         )}
         {probes.map((p) => (
           <div key={p.id} className="trace-row">
-            <span className="swatch" style={{ background: p.color }} />
+            <span className="swatch" style={{ background: traceColor(p.color, theme) }} />
             <span className="label" title={p.key}>{p.label}</span>
             <span className="val">{latest[p.id] === undefined ? 'n/a' : eng(latest[p.id], 'V')}</span>
             <button className="x" onClick={() => removeProbe(p.id)} title="Remove probe"><IconX size={10} /></button>

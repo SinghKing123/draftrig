@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { IconChevron, IconCopy, IconDownload, IconOpen, IconPlus, IconSave, IconSpark } from './Icons'
+import { IconChevron, IconCopy, IconDownload, IconMoon, IconOpen, IconPlus, IconSave, IconSpark, IconSun } from './Icons'
 import { FILE_EXT } from '@/brand'
+import { useTheme } from '@/state/theme'
 
 /**
  * The File menu.
@@ -29,6 +30,8 @@ const MOD = isMac ? '⌘' : 'Ctrl'
 export function FileMenu(actions: FileActions) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+  const theme = useTheme((s) => s.theme)
+  const toggleTheme = useTheme((s) => s.toggle)
 
   useEffect(() => {
     if (!open) return
@@ -95,6 +98,13 @@ export function FileMenu(actions: FileActions) {
             Saving keeps the build in your projects. Downloading writes a file you
             can keep or send to someone.
           </div>
+
+          {/* Also a button in the top bar, which a phone has no room for. */}
+          <div className="dropdown-sep" />
+          <button role="menuitem" onClick={run(toggleTheme)}>
+            {theme === 'dark' ? <IconSun size={13} /> : <IconMoon size={13} />}
+            {theme === 'dark' ? 'Light mode' : 'Dark mode'}
+          </button>
         </div>
       )}
     </div>

@@ -1,0 +1,361 @@
+/* ============================================================
+   The build sheet — /app on a phone. See routes/BuildSheet.tsx.
+
+   Drawn in the editor's own tokens, so it follows the editor's
+   dark and light themes, at a phone's sizes: 15px body, 44px
+   targets, one action fixed in reach of the thumb.
+   ============================================================ */
+
+.sheet {
+  --bar-h: 52px;
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  min-height: 100dvh;
+  background: var(--bg-0);
+  color: var(--tx-0);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.45;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+  padding-bottom: calc(96px + var(--safe-b));
+}
+
+/* ---- the bar ---- */
+
+.sheet-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: 44px auto 1fr 44px;
+  align-items: center;
+  gap: 2px;
+  height: calc(var(--bar-h) + var(--safe-t));
+  padding: var(--safe-t) max(6px, env(safe-area-inset-right)) 0 max(6px, env(safe-area-inset-left));
+  background: color-mix(in srgb, var(--bg-0) 86%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  backdrop-filter: blur(14px) saturate(1.2);
+  border-bottom: 1px solid var(--line);
+}
+
+.sheet-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--tx-1);
+  cursor: pointer;
+}
+.sheet-icon:active { background: var(--bg-3); }
+
+.sheet-mark { display: grid; place-items: center; height: 44px; padding: 0 6px 0 2px; }
+
+.sheet-title {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* ---- the top of the page ---- */
+
+.sheet-main { padding: 0 max(16px, env(safe-area-inset-left)) 0 max(16px, env(safe-area-inset-right)); }
+
+.sheet-wait { min-height: 60dvh; }
+
+.sheet-pic {
+  margin: 14px 0 0;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border-radius: 14px;
+  /* The renders are always shot on the dark bench, whichever theme this is. */
+  background: #0D1117;
+}
+.sheet-pic img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+.sheet-head { padding: 18px 0 4px; }
+.sheet-head h1 {
+  margin: 0;
+  font-size: 28px;
+  line-height: 1.1;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+.sheet-head p { margin: 8px 0 0; color: var(--tx-1); text-wrap: pretty; }
+.sheet-head .sheet-figs {
+  margin-top: 10px;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--tx-2);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- the tabs, which stay under the bar while the list scrolls ---- */
+
+.sheet-tabs {
+  position: sticky;
+  top: calc(var(--bar-h) + var(--safe-t));
+  z-index: 5;
+  display: flex;
+  gap: 4px;
+  margin: 14px calc(-1 * max(16px, env(safe-area-inset-left))) 0;
+  padding: 8px max(16px, env(safe-area-inset-left));
+  background: var(--bg-0);
+  scroll-margin-top: calc(var(--bar-h) + var(--safe-t));
+}
+.sheet-tabs button {
+  flex: 1 1 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 44px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--bg-2);
+  color: var(--tx-1);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 550;
+  cursor: pointer;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.sheet-tabs button .n {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--tx-3);
+  font-variant-numeric: tabular-nums;
+}
+.sheet-tabs button[data-on] {
+  background: var(--brand-dim);
+  color: var(--brand-hi);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--brand) 55%, transparent);
+}
+.sheet-tabs button[data-on] .n { color: inherit; opacity: 0.75; }
+
+/* ---- lists ---- */
+
+.sheet-panel { min-height: 40dvh; }
+
+.sheet-group { margin-top: 20px; }
+.sheet-group h2 {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--tx-1);
+}
+.sheet-group h2 .n {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  font-weight: 400;
+  color: var(--tx-3);
+  font-variant-numeric: tabular-nums;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sheet-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.sheet-list > li { border-bottom: 1px solid var(--line); }
+
+.sheet-line {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: baseline;
+  padding: 12px 0;
+}
+.sheet-line .qty {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--tx-2);
+  font-variant-numeric: tabular-nums;
+}
+.sheet-line .what { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.sheet-line .what strong { font-size: 15px; font-weight: 550; line-height: 1.3; }
+.sheet-line .detail {
+  font-size: 13px;
+  color: var(--tx-2);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.sheet-line .mpn { font-family: var(--mono); font-size: 12px; color: var(--tx-3); }
+.sheet-line .price {
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--tx-0);
+  font-variant-numeric: tabular-nums;
+}
+
+.sheet-total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 18px 0 14px;
+  font-size: 17px;
+  font-weight: 600;
+}
+.sheet-total strong { font-family: var(--mono); font-size: 18px; font-variant-numeric: tabular-nums; }
+
+/* A wire is drawn as one: two ends and the lead between them. */
+.sheet-wire {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  padding: 10px 0;
+}
+.sheet-wire .lead { display: block; }
+.sheet-wire .ends { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.sheet-wire .ends > span { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.sheet-wire b {
+  font-weight: 500;
+  font-size: 14.5px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.sheet-wire i {
+  flex: none;
+  font-style: normal;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  color: var(--tx-1);
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: var(--bg-2);
+}
+.sheet-wire[data-mate] b { color: var(--tx-1); }
+
+.sheet-more summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  list-style: none;
+  cursor: pointer;
+}
+.sheet-more summary::-webkit-details-marker { display: none; }
+.sheet-more summary h2 { flex: 1 1 auto; margin: 0; }
+.sheet-more .caret { margin-left: 10px; color: var(--tx-3); transform: rotate(90deg); transition: transform var(--dur) var(--ease); }
+.sheet-more[open] .caret { transform: rotate(-90deg); }
+
+.sheet-code {
+  margin: 0;
+  padding: 12px 0;
+  overflow-x: auto;
+  border-radius: 12px;
+  background: var(--bg-2);
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--tx-0);
+  -webkit-overflow-scrolling: touch;
+}
+.sheet-code code { display: block; min-width: max-content; }
+.sheet-code .ln { display: block; padding-right: 16px; white-space: pre; }
+.sheet-code .no {
+  display: inline-block;
+  width: 3.2ch;
+  margin-right: 14px;
+  text-align: right;
+  color: var(--tx-3);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.sheet-stock { margin: 0; padding: 14px 16px; border-radius: 12px; background: var(--bg-2); color: var(--tx-1); }
+.sheet-stock strong { display: block; margin-top: 2px; color: var(--tx-0); font-weight: 550; }
+
+.sheet-none { margin: 28px 0; color: var(--tx-2); }
+
+/* ---- buttons ---- */
+
+.sheet-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  height: 50px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--brand);
+  color: #fff;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--brand) 28%, transparent);
+  transition: background var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+.sheet-btn:active { background: var(--brand-lo); transform: translateY(1px); }
+.sheet-btn .end { opacity: 0.8; }
+
+.sheet-btn-ghost {
+  margin-top: 4px;
+  background: transparent;
+  color: var(--tx-0);
+  box-shadow: inset 0 0 0 1px var(--line-3);
+}
+.sheet-btn-ghost:active { background: var(--bg-2); }
+
+.sheet-quiet {
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--brand);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 550;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  cursor: pointer;
+}
+
+/* ---- the foot, and the one action ---- */
+
+.sheet-foot { margin-top: 40px; padding: 20px 0 8px; border-top: 1px solid var(--line); }
+.sheet-foot p { margin: 0 0 4px; color: var(--tx-2); font-size: 14px; text-wrap: pretty; }
+
+.sheet-send {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  padding: 12px max(16px, env(safe-area-inset-left)) calc(12px + var(--safe-b));
+  background: color-mix(in srgb, var(--bg-0) 88%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  backdrop-filter: blur(14px) saturate(1.2);
+  border-top: 1px solid var(--line);
+}
+.sheet-send-note { margin: 0 0 10px; font-size: 13px; color: var(--tx-2); text-align: center; }
+
+.sheet-empty { padding-top: 22dvh; text-align: center; }
+.sheet-empty h1 { margin: 0 0 10px; font-size: 24px; letter-spacing: -0.02em; text-wrap: balance; }
+.sheet-empty p { margin: 0 auto 24px; max-width: 32ch; color: var(--tx-2); }
+.sheet-empty .sheet-btn { width: auto; }
+
+.sheet :focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }

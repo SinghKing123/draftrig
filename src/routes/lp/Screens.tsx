@@ -22,7 +22,6 @@ interface Screen {
   tab: string
   src: string
   name: string
-  spec: string
   alt: string
 }
 
@@ -31,42 +30,36 @@ const SCREENS: Screen[] = [
     tab: 'Build',
     src: '/shots/ui/car-1.jpg',
     name: 'Extrusion shop rack',
-    spec: '116 parts',
     alt: 'A shop rack built from aluminium extrusion in the Draftrig editor, with the parts tree and inspector open',
   },
   {
     tab: 'Wire',
     src: '/shots/ui/ui-wire.jpg',
     name: 'Eight-bit machine',
-    spec: '83 parts · 238 conn',
     alt: 'The Draftrig editor in Wire mode: four breadboards joined by hundreds of coloured jumpers',
   },
   {
     tab: 'Code',
     src: '/shots/ui/ui-code.jpg',
     name: 'ESP32 sensor node',
-    spec: '11 parts · compiles',
     alt: 'The Draftrig code workspace: a sketch for an ESP32 reading a gas sensor onto a bar of LEDs',
   },
   {
     tab: 'Inspect',
     src: '/shots/ui/ui-desk.jpg',
     name: 'Studio desk',
-    spec: '36 parts · 152 kg',
     alt: 'The Draftrig editor with a studio desk selected and the properties panel showing its dimensions',
   },
   {
     tab: 'BOM',
     src: '/shots/cine-ui-bom.jpg',
     name: 'Bartop arcade cabinet',
-    spec: '34 items · $214.74',
     alt: 'The Draftrig bill of materials panel beside an arcade cabinet, listing each part with its mass and price',
   },
   {
     tab: 'Checks',
     src: '/shots/ui/ui-theatre.jpg',
     name: 'Home theatre',
-    spec: '29 parts · 660 W',
     alt: 'The Draftrig editor showing a home theatre with the AV receiver selected and its load in the properties panel',
   },
 ]
@@ -136,11 +129,6 @@ export function Screens() {
 
       <div className="dr-plate-bar">
         <strong>{cur.name}</strong>
-        <span className="m">{cur.spec}</span>
-        <span className="spacer" />
-        <span className="m">
-          {String(at + 1).padStart(2, '0')} / {SCREENS.length}
-        </span>
       </div>
     </div>
   )

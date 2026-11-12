@@ -17,6 +17,8 @@ import { ConfirmEmail } from '@/routes/ConfirmEmail'
 import { Dashboard } from '@/routes/Dashboard'
 import { LogoMark } from '@/ui/Logo'
 import { Sting, useSting } from '@/ui/Sting'
+import { useTheme } from '@/state/theme'
+import { isPhone } from '@/ui/device'
 
 /**
  * The editor is the only route that needs three.js, the solver and the part
@@ -24,6 +26,12 @@ import { Sting, useSting } from '@/ui/Sting'
  * Nobody should download a 3D engine to read what the product does.
  */
 const Editor = lazy(() => import('@/app/App').then((m) => ({ default: m.Editor })))
+
+/**
+ * What a phone gets at /app instead: the build as lists, with no 3D in it.
+ * See ui/device for how a phone is told apart.
+ */
+const BuildSheet = lazy(() => import('@/routes/BuildSheet'))
 
 /**
  * Exposed for the screenshot and regression harness in tools/, which drives the
@@ -46,6 +54,18 @@ function EditorLoading({ quiet = false }: { quiet?: boolean }) {
 }
 
 function EditorRoute() {
+  // Decided once. See ui/device: a phone turned sideways is still a phone.
+  const [phone] = React.useState(isPhone)
+  return phone ? (
+    <Suspense fallback={<div style={{ minHeight: '100dvh', background: 'var(--bg-0)' }} />}>
+      <BuildSheet />
+    </Suspense>
+  ) : (
+    <DesktopEditor />
+  )
+}
+
+function DesktopEditor() {
   /*
    * The sting plays over the editor, not instead of it. The chunk downloads
    * underneath the whole time it runs, so opening the editor costs whichever
@@ -66,16 +86,25 @@ function EditorRoute() {
 }
 
 /**
- * The public pages are light and the editor is dark, so the document itself has
- * to say which it is. Without this the body keeps whichever background it was
- * given at build time and shows through when a short page is overscrolled.
+ * The public pages are light and the editor is drawn in its own tokens, so the
+ * document itself has to say which it is. Without this the body keeps
+ * whichever background it was given at build time and shows through when a
+ * short page is overscrolled.
+ *
+ * The editor's theme rides on the same element, and only on /app: the public
+ * pages have fixed palettes of their own, and an editor preference must not
+ * follow anybody back out to the front page.
  */
 function ThemeByRoute() {
   const { pathname } = useLocation()
+  const theme = useTheme((s) => s.theme)
   useEffect(() => {
-    const dark = pathname.startsWith('/app')
-    document.documentElement.dataset.surface = dark ? 'dark' : 'light'
-  }, [pathname])
+    const editor = pathname.startsWith('/app')
+    const root = document.documentElement
+    root.dataset.surface = editor ? 'dark' : 'light'
+    if (editor) root.dataset.theme = theme
+    else delete root.dataset.theme
+  }, [pathname, theme])
   return null
 }
 

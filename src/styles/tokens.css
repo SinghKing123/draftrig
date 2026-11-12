@@ -46,6 +46,13 @@
   --volt:      #FFB020;
   --volt-hi:   #FFC85C;
   --volt-dim:  rgba(255, 176, 32, 0.16);
+  /* Amber set as text straight on a surface. The same as --volt here; on a
+     light ground the fill amber is too pale to read and this one darkens. */
+  --volt-ink:  #FFB020;
+
+  /* --- scrims, behind dialogs and around the tour's spotlight --- */
+  --scrim:      rgba(6, 8, 11, 0.72);
+  --scrim-soft: rgba(6, 8, 11, 0.62);
 
   /* --- status --- */
   --ok:        #3DD68C;
@@ -92,4 +99,66 @@
   /* --- control sizes --- */
   --ctl-h: 30px;   /* buttons, selects, anything you click once */
   --field-h: 28px; /* inspector inputs, the densest thing in the app */
+}
+
+/* ============================================================
+   Light theme — the editor only, chosen from the top bar.
+
+   The same warm ramp turned inside out, which is also the front page's
+   paper: --bg-0 is the lightest and each step after it darkens, so a
+   header is a shade greyer than its panel, an input is a shallow well,
+   and a hover is darker than whatever it is hovering on. Every rule
+   that leans on the ramp keeps its meaning without being rewritten.
+
+   The accents darken until they carry text at 4.5:1 on the panels.
+   Blue is still you and amber is still live current; --volt stays a
+   bright fill (the Run button, the live dot) and --volt-ink is the
+   amber that is read.
+
+   Set on <html> by ThemeByRoute in main.tsx, and only on /app.
+   ============================================================ */
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  --void:      #E4E0D8;
+  --bg-0:      #FCFBF8;
+  --bg-1:      #F7F5F1;
+  --bg-2:      #EFECE6;
+  --bg-3:      #E8E4DC;
+  --bg-4:      #DDD8CE;
+
+  --line:      #E2DED5;
+  --line-2:    #D4CFC4;
+  --line-3:    #BBB4A6;
+
+  --tx-0:      #17140F;
+  --tx-1:      #433D35;
+  --tx-2:      #645D52;
+  --tx-3:      #8D867A;
+
+  --brand:     #1A5FE0;
+  --brand-hi:  #134BB8;
+  --brand-lo:  #1450C2;
+  --brand-dim: rgba(26, 95, 224, 0.10);
+  --brand-glow:rgba(26, 95, 224, 0.26);
+
+  --volt:      #F2A516;
+  --volt-hi:   #8A5200;
+  --volt-dim:  rgba(242, 165, 22, 0.18);
+  --volt-ink:  #9A5B00;
+
+  --ok:        #0B7A4B;
+  --warn:      #9A6200;
+  --err:       #C02F1D;
+  --info:      #1D66C9;
+
+  --sig-1: #1A5FE0;  --sig-2: #C77F00;  --sig-3: #0E8A55;  --sig-4: #D0336A;
+  --sig-5: #6D4FD8;  --sig-6: #0B8FA8;  --sig-7: #D45A1E;  --sig-8: #5E8A1E;
+
+  --scrim:      rgba(38, 32, 24, 0.38);
+  --scrim-soft: rgba(38, 32, 24, 0.3);
+
+  --sh-1: 0 1px 2px rgba(40, 32, 20, .10);
+  --sh-2: 0 5px 16px rgba(40, 32, 20, .12), 0 1px 3px rgba(40, 32, 20, .10);
+  --sh-3: 0 18px 54px rgba(40, 32, 20, .18), 0 2px 8px rgba(40, 32, 20, .12);
 }

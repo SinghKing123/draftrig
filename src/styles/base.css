@@ -95,7 +95,8 @@ body {
   cursor: default;
 }
 
-/* Set by the router: the editor is dark, everything public is light. */
+/* Set by the router. 'dark' means the editor's surface, drawn in its tokens
+   whichever theme they are in; everything public is light. */
 html[data-surface='dark'] body { background: var(--bg-0); color: var(--tx-0); }
 
 ::selection { background: var(--brand-glow); color: #fff; }
